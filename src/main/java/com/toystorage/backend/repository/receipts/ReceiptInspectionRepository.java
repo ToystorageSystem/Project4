@@ -11,7 +11,9 @@ public interface ReceiptInspectionRepository
         extends JpaRepository<ReceiptInspections, Long> {
 
     List<ReceiptInspections> findByGoodsReceiptId(Long goodsReceiptId);
-
+    long countByGoodsReceiptId(
+            Long goodsReceiptId
+    );
     boolean existsByGoodsReceiptIdAndProductId(
             Long goodsReceiptId,
             Long productId
