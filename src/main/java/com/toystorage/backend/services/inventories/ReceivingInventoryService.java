@@ -1,15 +1,15 @@
 package com.toystorage.backend.services.inventories;
 
-import com.toystorage.backend.entity.inventory.InventoryBalances;
-import com.toystorage.backend.entity.inventory.InventoryTransactions;
+import com.toystorage.backend.entity.inventories.InventoryBalances;
+import com.toystorage.backend.entity.inventories.InventoryTransactions;
 import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.WarehouseLocations;
-import com.toystorage.backend.enums.inventory.InventoryReferenceType;
-import com.toystorage.backend.enums.inventory.InventoryTransactionType;
-import com.toystorage.backend.repository.inventory.InventoryBalanceRepository;
-import com.toystorage.backend.repository.inventory.InventoryTransactionRepository;
+import com.toystorage.backend.enums.inventories.InventoryReferenceType;
+import com.toystorage.backend.enums.inventories.InventoryTransactionType;
+import com.toystorage.backend.repository.inventories.InventoryBalanceRepository;
+import com.toystorage.backend.repository.inventories.InventoryTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

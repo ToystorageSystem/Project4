@@ -1,4 +1,4 @@
-package com.toystorage.backend.entity.inventory;
+package com.toystorage.backend.entity.inventories;
 
 import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.warehouses.Warehouses;

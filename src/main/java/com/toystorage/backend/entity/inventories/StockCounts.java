@@ -1,9 +1,9 @@
-package com.toystorage.backend.entity.inventory;
+package com.toystorage.backend.entity.inventories;
 
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.Warehouses;
-import com.toystorage.backend.enums.inventory.StockCountType;
-import com.toystorage.backend.enums.inventory.StockCountStatus;
+import com.toystorage.backend.enums.inventories.StockCountType;
+import com.toystorage.backend.enums.inventories.StockCountStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

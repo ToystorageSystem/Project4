@@ -1,6 +1,6 @@
-package com.toystorage.backend.repository.inventory;
+package com.toystorage.backend.repository.inventories;
 
-import com.toystorage.backend.entity.inventory.InventoryBalances;
+import com.toystorage.backend.entity.inventories.InventoryBalances;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package com.toystorage.backend.enums.inventory;
+package com.toystorage.backend.enums.inventories;
 
 
 public enum DiscrepancyReferenceType {

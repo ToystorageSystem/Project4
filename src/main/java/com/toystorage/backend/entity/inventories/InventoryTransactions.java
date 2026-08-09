@@ -1,11 +1,11 @@
-package com.toystorage.backend.entity.inventory;
+package com.toystorage.backend.entity.inventories;
 
-import com.toystorage.backend.enums.inventory.InventoryTransactionType;
+import com.toystorage.backend.enums.inventories.InventoryTransactionType;
 import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.warehouses.Warehouses;
 import com.toystorage.backend.entity.warehouses.WarehouseLocations;
 import com.toystorage.backend.entity.users.Users;
-import com.toystorage.backend.enums.inventory.InventoryReferenceType;
+import com.toystorage.backend.enums.inventories.InventoryReferenceType;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,11 +1,11 @@
-package com.toystorage.backend.entity.inventory;
+package com.toystorage.backend.entity.inventories;
 
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.Warehouses;
-import com.toystorage.backend.enums.inventory.DiscrepancyStatus;
-import com.toystorage.backend.enums.inventory.DiscrepancyType;
-import com.toystorage.backend.enums.inventory.DiscrepancyReferenceType;
-import com.toystorage.backend.enums.inventory.ResolutionAction;
+import com.toystorage.backend.enums.inventories.DiscrepancyStatus;
+import com.toystorage.backend.enums.inventories.DiscrepancyType;
+import com.toystorage.backend.enums.inventories.DiscrepancyReferenceType;
+import com.toystorage.backend.enums.inventories.ResolutionAction;
 
 import jakarta.persistence.*;
 import lombok.*;
