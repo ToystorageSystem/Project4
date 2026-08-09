@@ -12,4 +12,5 @@ public interface GoodsReceiptItemRepository
     findByGoodsReceiptId(Long goodsReceiptId);
 
     long countByGoodsReceiptId(Long goodsReceiptId);
+
 }

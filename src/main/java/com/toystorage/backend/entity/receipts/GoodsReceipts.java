@@ -157,7 +157,12 @@ public class GoodsReceipts {
             length = 50
     )
     private String goodsReceiptsCode;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inspection_confirmed_by")
+    private Users inspectionConfirmedBy;
 
+    @Column(name = "inspection_confirmed_at")
+    private LocalDateTime inspectionConfirmedAt;
     /*
      * Tự động chạy trước khi INSERT.
      */
