@@ -38,4 +38,5 @@ public interface WarehouseLocationRepository
             String warehouseCode,
             WarehouseStatus status
     );
+    
 }
