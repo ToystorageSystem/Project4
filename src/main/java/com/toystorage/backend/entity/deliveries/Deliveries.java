@@ -40,6 +40,12 @@ public class Deliveries {
     @JoinColumn(name = "to_warehouse_id", nullable = false)
     private Warehouses toWarehouse;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "handed_over_by")
+    private Users handedOverBy;
+
+    @Column(name = "handed_over_at")
+    private LocalDateTime handedOverAt;
     /** CREATED, ASSIGNED, IN_TRANSIT, DELIVERED, FAILED, CANCELLED. */
     @Enumerated(EnumType.STRING)
     @Builder.Default
