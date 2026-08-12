@@ -5,6 +5,7 @@ public enum DamagedGoodsSourceType {
     STOCK_COUNT,
     STOCK_TRANSFER,
     STORE_RECEIPT,
+    STORE_RETURN,
     INVENTORY_INSPECTION,
     MANUAL
 }
