@@ -75,6 +75,8 @@ public class ReceiptInspections {
     )
     private Integer actualQuantity;
 
+    @Column(name = "evidence_image", length = 500)
+    private String evidenceImage;
     /*
      * Kết quả kiểm tra.
      *

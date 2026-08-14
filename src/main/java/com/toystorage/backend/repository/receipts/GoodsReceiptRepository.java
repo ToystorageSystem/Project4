@@ -20,4 +20,9 @@ public interface GoodsReceiptRepository
             Long warehouseId,
             GoodsReceiptStatus status
     );
+    List<GoodsReceipts>
+    findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
+            Long warehouseId,
+            List<GoodsReceiptStatus> statuses
+    );
 }

@@ -17,6 +17,10 @@ public interface GoodsReceiptItemRepository
             Long goodsReceiptId,
             Long productId
     );
+    boolean existsByGoodsReceiptIdAndProductId(
+            Long goodsReceiptId,
+            Long productId
+    );
 
     long countByGoodsReceiptId(Long goodsReceiptId);
 
