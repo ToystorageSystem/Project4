@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -20,13 +21,14 @@ public class Global {
     handleNotFound(NotFound ex){
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.NOT_FOUND);
+        response.put("status", HttpStatus.NOT_FOUND.value());
         response.put("error", "Not Found");
         response.put("message", ex.getMessage());
         return new ResponseEntity<>(
                 response,
                 HttpStatus.NOT_FOUND
         );
+
     }
     /*
      * 400 BAD REQUEST
@@ -36,7 +38,7 @@ public class Global {
     handleBadRequest(BadRequest ex){
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST);
+        response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("error", "Bad Request");
         response.put("message", ex.getMessage());
 
@@ -107,5 +109,85 @@ public class Global {
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
+    @ExceptionHandler(Conflict.class)
+    public ResponseEntity<Map<String, Object>>
+    handleConflict(Conflict ex) {
+
+        Map<String, Object> response =
+                new LinkedHashMap<>();
+
+        response.put(
+                "timestamp",
+                LocalDateTime.now()
+        );
+
+        response.put(
+                "status",
+                HttpStatus.CONFLICT.value()
+        );
+
+        response.put(
+                "error",
+                "Conflict"
+        );
+
+        response.put(
+                "message",
+                ex.getMessage()
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.CONFLICT
+        );
+    }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<Map<String, Object>>
+handleValidation(
+        MethodArgumentNotValidException exception
+) {
+
+    Map<String, Object> response =
+            new LinkedHashMap<>();
+
+    String message =
+            exception.getBindingResult()
+                    .getFieldErrors()
+                    .stream()
+                    .findFirst()
+                    .map(error ->
+                            error.getField()
+                                    + ": "
+                                    + error.getDefaultMessage()
+                    )
+                    .orElse(
+                            "Request data is invalid"
+                    );
+
+    response.put(
+            "timestamp",
+            LocalDateTime.now()
+    );
+
+    response.put(
+            "status",
+            HttpStatus.BAD_REQUEST.value()
+    );
+
+    response.put(
+            "error",
+            "Bad Request"
+    );
+
+    response.put(
+            "message",
+            message
+    );
+
+    return new ResponseEntity<>(
+            response,
+            HttpStatus.BAD_REQUEST
+    );
+}
 
 }
