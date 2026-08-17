@@ -65,6 +65,12 @@ public class StockTransferItems {
     @Column(name = "shortage_quantity", nullable = false)
     private Integer shortageQuantity = 0;
 
+    @Column(
+            name = "picked_quantity",
+            nullable = false
+    )
+    @Builder.Default
+    private Integer pickedQuantity = 0;
     @Min(0)
     @Builder.Default
     @Column(name = "surplus_quantity", nullable = false)
