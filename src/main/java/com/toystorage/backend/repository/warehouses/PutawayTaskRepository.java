@@ -19,4 +19,14 @@ public interface PutawayTaskRepository
             Long warehouseId,
             List<PutawayTaskStatus> statuses
     );
+    List<PutawayTasks>
+    findByAssignedToIdAndStatusInOrderByCreatedAtDesc(
+            Long staffId,
+            List<PutawayTaskStatus> statuses
+    );
+    Optional<PutawayTasks>
+    findByIdAndAssignedToId(
+            Long id,
+            Long assignedToId
+    );
 }
