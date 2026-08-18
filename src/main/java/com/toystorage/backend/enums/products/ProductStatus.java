@@ -1,7 +1,7 @@
 package com.toystorage.backend.enums.products;
 
 public enum ProductStatus {
-    PENDING,
+    PENDING_CREATE,
 
     ACTIVE,
 

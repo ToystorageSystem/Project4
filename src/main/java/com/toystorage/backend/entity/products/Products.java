@@ -79,6 +79,12 @@ public class Products {
     private String barcode;
 
     @Column(
+            name = "image_url",
+            length = 500
+    )
+    private String imageUrl;
+
+    @Column(
             name = "name",
             nullable = false,
             length = 200
@@ -126,6 +132,17 @@ public class Products {
     private String baseUnit;
 
     /**
+     * Giá nhập tham chiếu của sản phẩm.
+     */
+    @Column(
+            name = "purchase_price",
+            nullable = false,
+            precision = 18,
+            scale = 2
+    )
+    private BigDecimal purchasePrice;
+
+    /**
      * Giá bán của sản phẩm.
      */
     @Column(
@@ -159,7 +176,7 @@ public class Products {
 
     /**
      * Business Manager duyệt sản phẩm.
-     * Khi sản phẩm đang PENDING thì trường này có thể null.
+     * Khi sản phẩm đang PENDING_CREATE thì trường này có thể null.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
@@ -197,7 +214,7 @@ public class Products {
         LocalDateTime now = LocalDateTime.now();
 
         if (status == null) {
-            status = ProductStatus.PENDING;
+            status = ProductStatus.PENDING_CREATE;
         }
 
         if (createdAt == null) {
