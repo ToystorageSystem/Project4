@@ -7,7 +7,6 @@ import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.receipts.ReceiptInspections;
 import com.toystorage.backend.entity.users.Users;
-import com.toystorage.backend.enums.products.ProductStatus;
 import com.toystorage.backend.enums.receipts.GoodsReceiptStatus;
 import com.toystorage.backend.enums.receipts.InspectionResult;
 import com.toystorage.backend.exceptions.BadRequest;
@@ -74,7 +73,6 @@ public class GoodsReceivingService {
                 goodsReceiptRepository.save(receipt)
         );
     }
-
 
     // =====================================================
     // WAREHOUSE STAFF START RECEIVING
@@ -156,12 +154,6 @@ public class GoodsReceivingService {
                                                 + request.getProductId()
                                 )
                         );
-
-        if (product.getStatus() != ProductStatus.ACTIVE) {
-            throw new BadRequest(
-                    "Only ACTIVE products can be used in goods receiving"
-            );
-        }
 
         InspectionResult result =
                 resolveResult(
