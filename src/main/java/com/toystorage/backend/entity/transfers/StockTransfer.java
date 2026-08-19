@@ -75,6 +75,13 @@ public class StockTransfer {
     private Users createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "packing_completed_by")
+    private Users packingCompletedBy;
+
+    @Column(name = "packing_completed_at")
+    private LocalDateTime packingCompletedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "confirmed_by")
     private Users confirmedBy;
 
