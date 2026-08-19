@@ -12,17 +12,38 @@ import java.util.Optional;
 public interface GoodsReceiptRepository
         extends JpaRepository<GoodsReceipts, Long> {
 
-    Optional<GoodsReceipts> findByReceiptCode(String receiptCode);
+    Optional<GoodsReceipts> findByReceiptCode(
+            String receiptCode
+    );
 
-    Optional<GoodsReceipts> findByGoodsReceiptsCode(String goodsReceiptsCode);
+    boolean existsByReceiptCode(
+            String receiptCode
+    );
+
+    Optional<GoodsReceipts> findByGoodsReceiptsCode(
+            String goodsReceiptsCode
+    );
+
+    boolean existsByGoodsReceiptsCode(
+            String goodsReceiptsCode
+    );
 
     List<GoodsReceipts> findByWarehouseIdAndStatus(
             Long warehouseId,
             GoodsReceiptStatus status
     );
-    List<GoodsReceipts>
-    findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
+
+    List<GoodsReceipts> findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
             Long warehouseId,
             List<GoodsReceiptStatus> statuses
+    );
+
+    List<GoodsReceipts> findByWarehouseIdOrderByCreatedAtDesc(
+            Long warehouseId
+    );
+
+    List<GoodsReceipts> findByWarehouseIdAndStatusOrderByCreatedAtDesc(
+            Long warehouseId,
+            GoodsReceiptStatus status
     );
 }

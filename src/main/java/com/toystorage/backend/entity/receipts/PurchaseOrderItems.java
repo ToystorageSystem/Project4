@@ -121,7 +121,6 @@ public class PurchaseOrderItems {
     /*
      * Mã nội bộ của dòng sản phẩm trong đơn mua hàng.
      */
-    @DecimalMin(value = "0.0", inclusive = true)
     @Column(
             name = "purchase_order_items_code",
             nullable = false,
