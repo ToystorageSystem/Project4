@@ -61,6 +61,12 @@ public class StoreReturnItems {
     )
     private Products product;
 
+    @Column(
+            name = "evidence_image_url",
+            length = 500
+    )
+    private String evidenceImageUrl;
+
     /*
      * Vị trí tại Store đang chứa sản phẩm.
      *

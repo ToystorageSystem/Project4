@@ -76,6 +76,14 @@ public class StoreReturns {
     )
     private Warehouses warehouse;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inspected_by")
+    private Users inspectedBy;
+
+
+    @Column(name = "inspection_submitted_at")
+
+    private LocalDateTime inspectionSubmittedAt;
     /*
      * Loại trả hàng.
      *

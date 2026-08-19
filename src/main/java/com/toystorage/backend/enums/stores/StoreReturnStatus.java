@@ -8,36 +8,53 @@ public enum StoreReturnStatus {
     DRAFT,
 
     /*
-     * Chờ Business hoặc Warehouse xác nhận.
+     * Chờ Business hoặc Warehouse xác nhận yêu cầu trả hàng.
      */
     PENDING_APPROVAL,
 
     /*
      * Business hoặc Warehouse đã xác nhận.
      *
-     * Tại thời điểm này Store trừ tồn ngay.
+     * Tại thời điểm này Store trừ tồn theo nghiệp vụ trả hàng.
      */
     APPROVED,
 
     /*
-     * Store đang đóng hàng.
+     * Store đang đóng hàng trả.
      */
     PACKING,
 
     /*
-     * Store đã bàn giao hàng.
+     * Store đã bàn giao hàng cho vận chuyển.
      */
     ISSUED,
 
     /*
-     * Hàng đang được vận chuyển về kho.
+     * Hàng đang được vận chuyển về kho tổng.
      */
     SHIPPED,
 
     /*
-     * Kho đã nhận và kiểm hàng hoàn tất.
+     * Warehouse Staff đã nhận hàng vật lý
+     * và đang kiểm số lượng, tình trạng sản phẩm.
      *
-     * Tại thời điểm này kho được cộng tồn.
+     * CHƯA cộng tồn kho.
+     */
+    INSPECTING,
+
+    /*
+     * Warehouse Staff đã kiểm xong
+     * và gửi kết quả cho Warehouse Manager xác nhận.
+     *
+     * CHƯA cộng tồn kho.
+     */
+    PENDING_CONFIRMATION,
+
+    /*
+     * Warehouse Manager đã xác nhận kết quả kiểm hàng.
+     *
+     * Sau bước này hệ thống mới xử lý cộng
+     * số lượng được chấp nhận vào tồn kho phù hợp.
      */
     RECEIVED,
 
