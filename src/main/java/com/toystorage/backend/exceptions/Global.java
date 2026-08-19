@@ -2,160 +2,165 @@ package com.toystorage.backend.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class Global {
-
     /*
-     * 404 NOT FOUND
+    404 Not Found
      */
     @ExceptionHandler(NotFound.class)
     public ResponseEntity<Map<String, Object>>
-    handleNotFound(NotFound ex) {
-
-        return buildResponse(
-                HttpStatus.NOT_FOUND,
-                "Not Found",
-                ex.getMessage()
+    handleNotFound(NotFound ex){
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.NOT_FOUND);
+        response.put("error", "Not Found");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.NOT_FOUND
         );
     }
-
     /*
      * 400 BAD REQUEST
      */
     @ExceptionHandler(BadRequest.class)
     public ResponseEntity<Map<String, Object>>
-    handleBadRequest(BadRequest ex) {
+    handleBadRequest(BadRequest ex){
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST);
+        response.put("error", "Bad Request");
+        response.put("message", ex.getMessage());
 
-        return buildResponse(
-                HttpStatus.BAD_REQUEST,
-                "Bad Request",
-                ex.getMessage()
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST
         );
     }
-
     /*
-     * 400 VALIDATION ERROR
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>>
-    handleValidation(
-            MethodArgumentNotValidException ex
-    ) {
-        String message =
-                ex.getBindingResult()
-                        .getFieldErrors()
-                        .stream()
-                        .findFirst()
-                        .map(error ->
-                                error.getField()
-                                        + ": "
-                                        + error.getDefaultMessage()
-                        )
-                        .orElse(
-                                "Dữ liệu gửi lên không hợp lệ"
-                        );
+    * 400 VALIDATION ERROR
+    */
+   @ExceptionHandler(MethodArgumentNotValidException.class)
+   public ResponseEntity<Map<String, Object>> handleValidation(
+           MethodArgumentNotValidException ex
+   ) {
 
-        return buildResponse(
-                HttpStatus.BAD_REQUEST,
-                "Bad Request",
-                message
-        );
-    }
+       String message = ex.getBindingResult()
+               .getFieldErrors()
+               .stream()
+               .findFirst()
+               .map(error ->
+                       error.getField()
+                               + ": "
+                               + error.getDefaultMessage()
+               )
+               .orElse("Dữ liệu gửi lên không hợp lệ");
 
+       Map<String, Object> response = new HashMap<>();
+
+       response.put("timestamp", LocalDateTime.now());
+       response.put("status", 400);
+       response.put("error", "Bad Request");
+       response.put("message", message);
+
+       return new ResponseEntity<>(
+               response,
+               HttpStatus.BAD_REQUEST
+       );
+   }
     /*
      * 401 UNAUTHORIZED
      */
     @ExceptionHandler(Unauthorized.class)
+
     public ResponseEntity<Map<String, Object>>
     handleUnauthorized(Unauthorized ex) {
 
-        return buildResponse(
-                HttpStatus.UNAUTHORIZED,
-                "Unauthorized",
-                ex.getMessage()
+        Map<String, Object> response = new HashMap<>();
+
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", 401);
+        response.put("error", "Unauthorized");
+        response.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.UNAUTHORIZED
         );
     }
 
     /*
-     * 403 FORBIDDEN DO NGHIỆP VỤ
+     * 403 FORBIDDEN
      */
+    
     @ExceptionHandler(Forbidden.class)
+
     public ResponseEntity<Map<String, Object>>
     handleForbidden(Forbidden ex) {
 
-        return buildResponse(
-                HttpStatus.FORBIDDEN,
-                "Forbidden",
-                ex.getMessage()
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", 403);
+        response.put("error", "Forbidden");
+        response.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.FORBIDDEN
         );
     }
-
     /*
-     * 403 FORBIDDEN DO SPRING SECURITY
-     */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>>
-    handleAccessDenied(AccessDeniedException ex) {
+    * 403 FORBIDDEN DO SPRING SECURITY
+    */
+   @ExceptionHandler(AccessDeniedException.class)
+   public ResponseEntity<Map<String, Object>> handleAccessDenied(
+           AccessDeniedException ex
+   ) {
 
-        return buildResponse(
-                HttpStatus.FORBIDDEN,
-                "Forbidden",
-                "Bạn không có quyền thực hiện chức năng này"
-        );
-    }
+       Map<String, Object> response = new LinkedHashMap<>();
 
+       response.put("timestamp", LocalDateTime.now());
+       response.put("status", 403);
+       response.put("error", "Forbidden");
+       response.put(
+               "message",
+               "Bạn không có quyền thực hiện chức năng này"
+       );
+
+       return new ResponseEntity<>(
+               response,
+               HttpStatus.FORBIDDEN
+       );
+   }
     /*
      * 500 INTERNAL SERVER ERROR
      */
     @ExceptionHandler(Exception.class)
+
     public ResponseEntity<Map<String, Object>>
     handleException(Exception ex) {
 
-        return buildResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Internal Server Error",
-                ex.getMessage()
-        );
-    }
+        Map<String, Object> response = new HashMap<>();
 
-    private ResponseEntity<Map<String, Object>>
-    buildResponse(
-            HttpStatus status,
-            String error,
-            String message
-    ) {
-        Map<String, Object> response =
-                new LinkedHashMap<>();
-
-        response.put(
-                "timestamp",
-                LocalDateTime.now()
-        );
-        response.put(
-                "status",
-                status.value()
-        );
-        response.put(
-                "error",
-                error
-        );
-        response.put(
-                "message",
-                message
-        );
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", 500);
+        response.put("error", "Internal Server Error");
+        response.put("message", ex.getMessage());
 
         return new ResponseEntity<>(
                 response,
-                status
+                HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
+
 }
