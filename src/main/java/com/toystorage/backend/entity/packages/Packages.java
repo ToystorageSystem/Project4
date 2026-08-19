@@ -53,7 +53,11 @@ public class Packages {
     /** Mã kiện hàng dùng để quét barcode/QR. */
     @Column(name = "packages_code", nullable = false, unique = true, length = 100)
     private String packagesCode;
+    @Column(name = "packed_at")
+    private LocalDateTime packedAt;
 
+    @Column(name = "sealed_at")
+    private LocalDateTime sealedAt;
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
