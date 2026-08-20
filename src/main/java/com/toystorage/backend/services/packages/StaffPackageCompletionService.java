@@ -10,6 +10,9 @@ import com.toystorage.backend.entity.packages.Packages;
 import com.toystorage.backend.entity.transfers.StockTransfer;
 import com.toystorage.backend.entity.transfers.StockTransferItems;
 
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
+import com.toystorage.backend.services.warehouses.WarehouseTaskClaimService;
+
 import com.toystorage.backend.entity.users.Users;
 
 import com.toystorage.backend.enums.packages.PackageStatus;
@@ -55,6 +58,9 @@ public class StaffPackageCompletionService {
     private final StaffPackagePackingValidationService
             validationService;
 
+    private final WarehouseTaskClaimService
+            taskClaimService;
+
     private final StaffPackagePackingMapper mapper;
 
 
@@ -91,6 +97,12 @@ public class StaffPackageCompletionService {
 
         validationService.validateTransferPacking(
                 transfer
+        );
+
+        taskClaimService.validateOwner(
+                WarehouseTaskType.TRANSFER_PACKING,
+                transfer.getId(),
+                staff
         );
 
 
@@ -165,6 +177,11 @@ public class StaffPackageCompletionService {
                 transfer
         );
 
+        taskClaimService.validateOwner(
+                WarehouseTaskType.TRANSFER_PACKING,
+                transferId,
+                staff
+        );
 
         List<StockTransferItems> transferItems =
                 stockTransferItemRepository
@@ -254,6 +271,12 @@ public class StaffPackageCompletionService {
 
         stockTransferRepository.save(
                 transfer
+        );
+
+        taskClaimService.release(
+                WarehouseTaskType.TRANSFER_PACKING,
+                transferId,
+                staff
         );
     }
 

@@ -8,6 +8,9 @@ import com.toystorage.backend.entity.packages.Packages;
 import com.toystorage.backend.entity.transfers.StockTransfer;
 import com.toystorage.backend.entity.users.Users;
 
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
+import com.toystorage.backend.services.warehouses.WarehouseTaskClaimService;
+
 import com.toystorage.backend.enums.packages.PackageStatus;
 
 import com.toystorage.backend.mapper.packages.StaffPackagePackingMapper;
@@ -34,6 +37,9 @@ public class StaffPackageCreationService {
 
     private final StaffPackagePackingValidationService
             validationService;
+
+    private final WarehouseTaskClaimService
+            taskClaimService;
 
     private final StaffPackagePackingMapper mapper;
 
@@ -62,6 +68,14 @@ public class StaffPackageCreationService {
         validationService.validateTransferPacking(
                 transfer
         );
+
+        taskClaimService.claim(
+                WarehouseTaskType.TRANSFER_PACKING,
+                transferId,
+                staff
+        );
+
+
 
 
         Packages packageEntity =

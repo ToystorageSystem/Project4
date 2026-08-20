@@ -5,8 +5,9 @@ import com.toystorage.backend.dto.request.stores.ReturnedPackageScanRequest;
 
 import com.toystorage.backend.dto.response.stores.ReturnedGoodsDetailResponse;
 import com.toystorage.backend.dto.response.stores.ReturnedPackageResponse;
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
+import com.toystorage.backend.services.warehouses.WarehouseTaskClaimService;
 
-import com.toystorage.backend.entity.packages.PackageTransferItem;
 import com.toystorage.backend.entity.packages.Packages;
 
 import com.toystorage.backend.entity.stores.StoreReturnItems;
@@ -58,6 +59,9 @@ public class ReturnedGoodsInspectionService {
     private final ReturnedGoodsInspectionMapper
             mapper;
 
+    private final WarehouseTaskClaimService
+            taskClaimService;
+
 
     // =====================================================
     // START
@@ -84,26 +88,57 @@ public class ReturnedGoodsInspectionService {
         );
 
 
-        validationService.validateCanStart(
-                storeReturn
-        );
-
-
+        /*
+         * Nếu đang INSPECTING thì chỉ owner
+         * được gọi Start lại.
+         */
         if (storeReturn.getStatus()
-                == StoreReturnStatus.SHIPPED) {
+                == StoreReturnStatus.INSPECTING) {
 
-            storeReturn.setStatus(
-                    StoreReturnStatus.INSPECTING
+            taskClaimService.validateOwner(
+                    WarehouseTaskType.STORE_RETURN_RECEIVING,
+                    returnId,
+                    staff
             );
 
-            storeReturn.setUpdatedAt(
-                    LocalDateTime.now()
-            );
-
-            returnRepository.save(
+            return buildResponse(
                     storeReturn
             );
         }
+
+
+        if (storeReturn.getStatus()
+                != StoreReturnStatus.SHIPPED) {
+
+            throw new BadRequest(
+                    "Store return cannot start inspection from status "
+                            + storeReturn.getStatus()
+            );
+        }
+
+
+        /*
+         * Staff đầu tiên claim được quyền kiểm.
+         */
+        taskClaimService.claim(
+                WarehouseTaskType.STORE_RETURN_RECEIVING,
+                returnId,
+                staff
+        );
+
+
+        storeReturn.setStatus(
+                StoreReturnStatus.INSPECTING
+        );
+
+        storeReturn.setUpdatedAt(
+                LocalDateTime.now()
+        );
+
+
+        returnRepository.save(
+                storeReturn
+        );
 
 
         return buildResponse(
@@ -137,6 +172,11 @@ public class ReturnedGoodsInspectionService {
                 storeReturn
         );
 
+        taskClaimService.validateOwner(
+                WarehouseTaskType.STORE_RETURN_RECEIVING,
+                returnId,
+                staff
+        );
 
         validationService.validateEditable(
                 storeReturn
@@ -253,6 +293,11 @@ public class ReturnedGoodsInspectionService {
                 storeReturn
         );
 
+        taskClaimService.validateOwner(
+                WarehouseTaskType.STORE_RETURN_RECEIVING,
+                returnId,
+                staff
+        );
 
         validationService.validateEditable(
                 storeReturn
@@ -324,6 +369,12 @@ public class ReturnedGoodsInspectionService {
         validationService.validateWarehouse(
                 staff,
                 storeReturn
+        );
+
+        taskClaimService.validateOwner(
+                WarehouseTaskType.STORE_RETURN_RECEIVING,
+                returnId,
+                staff
         );
 
 
@@ -431,6 +482,11 @@ public class ReturnedGoodsInspectionService {
                 storeReturn
         );
 
+        taskClaimService.release(
+                WarehouseTaskType.STORE_RETURN_RECEIVING,
+                returnId,
+                staff
+        );
 
         /*
          * KHÔNG:

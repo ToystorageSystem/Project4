@@ -4,6 +4,7 @@ import com.toystorage.backend.dto.request.warehouses.ExecutePutawayItemRequest;
 
 import com.toystorage.backend.dto.response.warehouses.PutawayStaffItemResponse;
 import com.toystorage.backend.dto.response.warehouses.PutawayStaffTaskResponse;
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
 
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.PutawayTaskItems;
@@ -43,6 +44,9 @@ public class PutawayExecutionService {
     private final PutawayInventoryService
             inventoryService;
 
+    private final WarehouseTaskClaimService
+            taskClaimService;
+
     private final PutawayExecutionMapper
             mapper;
 
@@ -56,19 +60,52 @@ public class PutawayExecutionService {
     getMyTasks() {
 
         Users staff =
-                validationService.getCurrentUser();
+                validationService
+                        .getCurrentUser();
+
+
+        if (staff.getWarehouse() == null) {
+
+            throw new BadRequest(
+                    "User is not assigned to warehouse"
+            );
+        }
+
 
         List<PutawayTasks> tasks =
                 putawayTaskRepository
-                        .findByAssignedToIdAndStatusInOrderByCreatedAtDesc(
-                                staff.getId(),
+                        .findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
+                                staff.getWarehouse().getId(),
                                 List.of(
-                                        PutawayTaskStatus.ASSIGNED,
+                                        PutawayTaskStatus.AVAILABLE,
                                         PutawayTaskStatus.IN_PROGRESS
                                 )
                         );
 
+
         return tasks.stream()
+                .filter(task -> {
+
+                    /*
+                     * ASSIGNED = chưa claim:
+                     * tất cả Staff trong warehouse nhìn thấy.
+                     */
+                    if (task.getStatus()
+                            == PutawayTaskStatus.AVAILABLE) {
+
+                        return true;
+                    }
+
+
+                    /*
+                     * IN_PROGRESS:
+                     * chỉ hiện task của chính mình.
+                     */
+                    return task.getAssignedTo() != null
+                            && task.getAssignedTo()
+                            .getId()
+                            .equals(staff.getId());
+                })
                 .map(this::buildResponse)
                 .toList();
     }
@@ -113,35 +150,84 @@ public class PutawayExecutionService {
     ) {
 
         Users staff =
-                validationService.getCurrentUser();
+                validationService
+                        .getCurrentUser();
+
 
         PutawayTasks task =
-                validationService
-                        .getAssignedTask(
-                                taskId,
-                                staff
+                putawayTaskRepository
+                        .findById(taskId)
+                        .orElseThrow(() ->
+                                new BadRequest(
+                                        "Putaway task not found"
+                                )
                         );
+
 
         validationService.validateWarehouse(
                 staff,
                 task
         );
 
+
         if (task.getStatus()
-                != PutawayTaskStatus.ASSIGNED) {
+                != PutawayTaskStatus.AVAILABLE) {
 
             throw new BadRequest(
-                    "Only ASSIGNED task can be started"
+                    "Only AVAILABLE putaway task can be started"
             );
         }
+
+
+        /*
+         * Repo hiện tại dùng ASSIGNED.
+         *
+         * Ta vẫn giữ status này để không phải
+         * migration enum/database.
+         *
+         * ASSIGNED bây giờ hiểu là:
+         * "task sẵn sàng cho Staff claim".
+         */
+        if (task.getStatus()
+                != PutawayTaskStatus.AVAILABLE) {
+
+            throw new BadRequest(
+                    "Only available putaway task can be started"
+            );
+        }
+
+
+        taskClaimService.claim(
+                WarehouseTaskType.PUTAWAY,
+                taskId,
+                staff
+        );
+
+
+        /*
+         * Có thể giữ field assignedTo cũ để audit.
+         *
+         * Manager không set nữa.
+         * Staff tự set khi claim.
+         */
+        task.setAssignedTo(
+                staff
+        );
+
 
         task.setStatus(
                 PutawayTaskStatus.IN_PROGRESS
         );
 
-        putawayTaskRepository.save(task);
 
-        return buildResponse(task);
+        putawayTaskRepository.save(
+                task
+        );
+
+
+        return buildResponse(
+                task
+        );
     }
 
 
@@ -160,15 +246,23 @@ public class PutawayExecutionService {
                 validationService.getCurrentUser();
 
         PutawayTasks task =
-                validationService
-                        .getAssignedTask(
-                                taskId,
-                                staff
+                putawayTaskRepository
+                        .findById(taskId)
+                        .orElseThrow(() ->
+                                new BadRequest(
+                                        "Putaway task not found"
+                                )
                         );
 
         validationService.validateWarehouse(
                 staff,
                 task
+        );
+
+        taskClaimService.validateOwner(
+                WarehouseTaskType.PUTAWAY,
+                taskId,
+                staff
         );
 
         validationService.validateTaskCanExecute(
@@ -260,6 +354,12 @@ public class PutawayExecutionService {
                 task
         );
 
+        taskClaimService.validateOwner(
+                WarehouseTaskType.PUTAWAY,
+                taskId,
+                staff
+        );
+
         if (task.getStatus()
                 != PutawayTaskStatus.IN_PROGRESS) {
 
@@ -311,6 +411,12 @@ public class PutawayExecutionService {
 
         putawayTaskRepository.save(
                 task
+        );
+
+        taskClaimService.release(
+                WarehouseTaskType.PUTAWAY,
+                taskId,
+                staff
         );
 
 

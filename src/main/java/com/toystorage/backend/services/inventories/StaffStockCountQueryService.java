@@ -48,20 +48,33 @@ public class StaffStockCountQueryService {
 
 
         if (staff.getWarehouse() == null) {
-
             return List.of();
         }
 
 
-        return stockCountRepository
-                .findAvailableAndMine(
-                        staff.getWarehouse().getId(),
-                        staff.getId(),
-                        StockCountStatus.COMPLETED,
-                        StockCountStatus.CANCELLED
-                )
+        List<StockCounts> stockCounts =
+                stockCountRepository
+                        .findByWarehouseIdAndStatusInOrderByScheduledDateAsc(
+                                staff.getWarehouse().getId(),
+                                List.of(
+                                        StockCountStatus.PLANNED,
+                                        StockCountStatus.COUNTING,
+                                        StockCountStatus.RECOUNTING,
+                                        StockCountStatus.PENDING_CONFIRMATION
+                                )
+                        );
 
-                .stream()
+
+        return stockCounts.stream()
+
+                /*
+                 * PLANNED:
+                 * chưa ai bắt đầu -> hiện cho mọi Staff.
+                 *
+                 * Các task đang xử lý:
+                 * có thể vẫn hiện để theo dõi,
+                 * nhưng quyền WRITE sẽ do claim service chặn.
+                 */
 
                 .map(stockCount -> {
 
@@ -101,25 +114,6 @@ public class StaffStockCountQueryService {
                 staff,
                 stockCount
         );
-
-
-        /*
-         * Detail:
-         *
-         * - chưa ai nhận -> được xem để quyết định claim
-         * - mình nhận    -> được xem
-         * - người khác nhận -> không được xem thao tác
-         */
-        if (stockCount.getAssignedTo() != null
-                && !stockCount
-                .getAssignedTo()
-                .getId()
-                .equals(staff.getId())) {
-
-            throw new Forbidden(
-                    "Stock count is being handled by another staff"
-            );
-        }
 
 
         return mapper.toDetailResponse(

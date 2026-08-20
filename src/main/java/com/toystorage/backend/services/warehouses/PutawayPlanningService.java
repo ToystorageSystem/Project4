@@ -33,8 +33,6 @@ public class PutawayPlanningService {
 
     private final PutawayTaskRepository putawayTaskRepository;
 
-    private final GoodsReceiptRepository goodsReceiptRepository;
-
     private final GoodsReceiptItemRepository goodsReceiptItemRepository;
 
     private final PutawayValidationService validationService;
@@ -84,15 +82,6 @@ public class PutawayPlanningService {
             );
         }
 
-        Users staff =
-                validationService.getStaff(
-                        request.getStaffId()
-                );
-
-        validationService.validateStaffWarehouse(
-                staff,
-                receipt
-        );
 
         WarehouseLocations receivingLocation =
                 validationService
@@ -121,8 +110,7 @@ public class PutawayPlanningService {
         PutawayTasks task =
                 createMasterTask(
                         receipt,
-                        manager,
-                        staff
+                        manager
                 );
 
         taskItemService.createItems(
@@ -157,7 +145,7 @@ public class PutawayPlanningService {
                         warehouseId,
                         List.of(
                                 PutawayTaskStatus.PENDING,
-                                PutawayTaskStatus.ASSIGNED,
+                                PutawayTaskStatus.AVAILABLE,
                                 PutawayTaskStatus.IN_PROGRESS
                         )
                 )
@@ -249,8 +237,7 @@ public class PutawayPlanningService {
 
     private PutawayTasks createMasterTask(
             GoodsReceipts receipt,
-            Users manager,
-            Users staff
+            Users manager
     ) {
 
         PutawayTasks task =
@@ -260,18 +247,27 @@ public class PutawayPlanningService {
                 generateCode("PA")
         );
 
-        task.setGoodsReceipt(receipt);
+        task.setGoodsReceipt(
+                receipt
+        );
 
         task.setWarehouse(
                 receipt.getWarehouse()
         );
 
-        task.setCreatedBy(manager);
+        task.setCreatedBy(
+                manager
+        );
 
-        task.setAssignedTo(staff);
+        /*
+         * Chưa ai nhận.
+         */
+        task.setAssignedTo(
+                null
+        );
 
         task.setStatus(
-                PutawayTaskStatus.ASSIGNED
+                PutawayTaskStatus.AVAILABLE
         );
 
         task.setCreatedAt(

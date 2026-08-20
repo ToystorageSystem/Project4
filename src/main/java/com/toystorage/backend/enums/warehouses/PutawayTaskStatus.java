@@ -2,7 +2,7 @@ package com.toystorage.backend.enums.warehouses;
 
 public enum PutawayTaskStatus {
     PENDING,
-    ASSIGNED,
+    AVAILABLE,
     IN_PROGRESS,
     COMPLETED,
     CANCELLED

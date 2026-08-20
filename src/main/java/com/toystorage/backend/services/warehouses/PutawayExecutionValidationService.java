@@ -133,7 +133,7 @@ public class PutawayExecutionValidationService {
     ) {
 
         if (task.getStatus()
-                != PutawayTaskStatus.ASSIGNED
+                != PutawayTaskStatus.AVAILABLE
 
                 && task.getStatus()
                 != PutawayTaskStatus.IN_PROGRESS) {

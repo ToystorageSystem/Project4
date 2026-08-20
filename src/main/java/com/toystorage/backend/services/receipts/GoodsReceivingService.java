@@ -7,6 +7,8 @@ import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.receipts.ReceiptInspections;
 import com.toystorage.backend.entity.users.Users;
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
+import com.toystorage.backend.services.warehouses.WarehouseTaskClaimService;
 import com.toystorage.backend.enums.receipts.GoodsReceiptStatus;
 import com.toystorage.backend.enums.receipts.InspectionResult;
 import com.toystorage.backend.exceptions.BadRequest;
@@ -36,7 +38,8 @@ public class GoodsReceivingService {
     private final ReceiptInspectionRepository receiptInspectionRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-
+    private final WarehouseTaskClaimService
+            taskClaimService;
     private final GoodsReceiptMapper goodsReceiptMapper;
     private final ReceiptInspectionMapper receiptInspectionMapper;
 
@@ -84,29 +87,90 @@ public class GoodsReceivingService {
             Long receiptId
     ) {
 
-        GoodsReceipts receipt = getGoodsReceipt(receiptId);
+        GoodsReceipts receipt =
+                getGoodsReceipt(
+                        receiptId
+                );
 
-        Users staff = getCurrentUser();
+        Users staff =
+                getCurrentUser();
 
-        validateSameWarehouse(staff, receipt);
 
-        if (receipt.getStatus() != GoodsReceiptStatus.CONFIRMED) {
+        validateSameWarehouse(
+                staff,
+                receipt
+        );
+
+
+        /*
+         * Staff này đã start rồi.
+         */
+        if (receipt.getStatus()
+                == GoodsReceiptStatus.RECEIVING) {
+
+            taskClaimService.validateOwner(
+                    WarehouseTaskType.GOODS_RECEIVING,
+                    receiptId,
+                    staff
+            );
+
+            return goodsReceiptMapper
+                    .toResponse(
+                            receipt
+                    );
+        }
+
+
+        if (receipt.getStatus()
+                != GoodsReceiptStatus.CONFIRMED) {
+
             throw new BadRequest(
-                    "Warehouse Staff can only receive goods after vehicle arrival has been confirmed"
+                    "Warehouse Staff can only receive goods "
+                            + "after vehicle arrival has been confirmed"
             );
         }
 
-        receipt.setReceivedBy(staff);
-        receipt.setReceivedAt(LocalDateTime.now());
-        receipt.setStatus(GoodsReceiptStatus.RECEIVING);
-        receipt.setUpdatedAt(LocalDateTime.now());
 
-        GoodsReceipts saved =
-                goodsReceiptRepository.save(receipt);
+        /*
+         * Atomic claim.
+         */
+        taskClaimService.claim(
+                WarehouseTaskType.GOODS_RECEIVING,
+                receiptId,
+                staff
+        );
 
-        return goodsReceiptMapper.toResponse(saved);
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+
+        /*
+         * receivedBy vẫn giữ để audit.
+         */
+        receipt.setReceivedBy(
+                staff
+        );
+
+        receipt.setReceivedAt(
+                now
+        );
+
+        receipt.setStatus(
+                GoodsReceiptStatus.RECEIVING
+        );
+
+        receipt.setUpdatedAt(
+                now
+        );
+
+
+        return goodsReceiptMapper
+                .toResponse(
+                        goodsReceiptRepository
+                                .save(receipt)
+                );
     }
-
 
     // =====================================================
     // WAREHOUSE STAFF INSPECT PRODUCT
@@ -124,11 +188,17 @@ public class GoodsReceivingService {
 
         validateSameWarehouse(staff, receipt);
 
+        taskClaimService.validateOwner(
+                WarehouseTaskType.GOODS_RECEIVING,
+                receiptId,
+                staff
+        );
         if (receipt.getStatus() != GoodsReceiptStatus.RECEIVING) {
             throw new BadRequest(
                     "Goods receipt must be in RECEIVING status before product inspection"
             );
         }
+
 
         boolean alreadyInspected =
                 receiptInspectionRepository
@@ -203,6 +273,12 @@ public class GoodsReceivingService {
         Users staff = getCurrentUser();
 
         validateSameWarehouse(staff, receipt);
+
+        taskClaimService.validateOwner(
+                WarehouseTaskType.GOODS_RECEIVING,
+                receiptId,
+                staff
+        );
 
         if (receipt.getStatus() != GoodsReceiptStatus.RECEIVING) {
             throw new BadRequest(

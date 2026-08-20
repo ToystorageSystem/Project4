@@ -24,6 +24,7 @@ public interface PutawayTaskRepository
             Long staffId,
             List<PutawayTaskStatus> statuses
     );
+    
     Optional<PutawayTasks>
     findByIdAndAssignedToId(
             Long id,

@@ -2,7 +2,8 @@ package com.toystorage.backend.services.stores;
 
 import com.toystorage.backend.entity.stores.StoreReturnItems;
 import com.toystorage.backend.entity.stores.StoreReturns;
-
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
+import com.toystorage.backend.services.warehouses.WarehouseTaskClaimService;
 import com.toystorage.backend.entity.users.Users;
 
 import com.toystorage.backend.exceptions.BadRequest;
@@ -32,6 +33,8 @@ public class ReturnedGoodsEvidenceService {
     private final CloudinaryService
             cloudinaryService;
 
+    private final WarehouseTaskClaimService
+            taskClaimService;
 
     @Transactional
     public String uploadEvidence(
@@ -64,6 +67,11 @@ public class ReturnedGoodsEvidenceService {
                 storeReturn
         );
 
+        taskClaimService.validateOwner(
+                WarehouseTaskType.STORE_RETURN_RECEIVING,
+                returnId,
+                staff
+        );
 
         validationService.validateEditable(
                 storeReturn

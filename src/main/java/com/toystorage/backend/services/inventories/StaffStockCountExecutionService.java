@@ -7,6 +7,9 @@ import com.toystorage.backend.dto.response.inventories.StaffStockCountDetailResp
 import com.toystorage.backend.entity.inventories.StockCountItems;
 import com.toystorage.backend.entity.inventories.StockCounts;
 
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
+import com.toystorage.backend.services.warehouses.WarehouseTaskClaimService;
+
 import com.toystorage.backend.entity.users.Users;
 
 import com.toystorage.backend.enums.inventories.StockCountStatus;
@@ -42,6 +45,8 @@ public class StaffStockCountExecutionService {
     private final StaffStockCountMapper
             mapper;
 
+    private final WarehouseTaskClaimService
+            taskClaimService;
 
     // =====================================================
     // CLAIM + START
@@ -56,63 +61,10 @@ public class StaffStockCountExecutionService {
                 validationService.getCurrentUser();
 
 
-        if (staff.getWarehouse() == null) {
-
-            throw new Forbidden(
-                    "User is not assigned to warehouse"
-            );
-        }
-
-
-        LocalDateTime now =
-                LocalDateTime.now();
-
-
-        int updated =
-                stockCountRepository
-                        .claimAndStart(
-                                stockCountId,
-                                staff.getWarehouse().getId(),
-                                staff,
-                                StockCountStatus.PLANNED,
-                                StockCountStatus.COUNTING,
-                                now
-                        );
-
-
-        /*
-         * update = 1:
-         * mình claim thành công.
-         */
-        if (updated == 1) {
-
-            StockCounts stockCount =
-                    validationService
-                            .getStockCount(
-                                    stockCountId
-                            );
-
-
-            return buildResponse(
-                    stockCount
-            );
-        }
-
-
-        /*
-         * update = 0:
-         *
-         * - task không tồn tại
-         * - khác warehouse
-         * - người khác đã claim
-         * - task không còn PLANNED
-         */
-
         StockCounts stockCount =
-                validationService
-                        .getStockCount(
-                                stockCountId
-                        );
+                validationService.getStockCount(
+                        stockCountId
+                );
 
 
         validationService.validateWarehouse(
@@ -122,19 +74,16 @@ public class StaffStockCountExecutionService {
 
 
         /*
-         * Chính mình đã start trước đó.
-         * Cho phép idempotent.
+         * Chính owner gọi Start lại.
          */
-        if (stockCount.getAssignedTo() != null
-                && stockCount
-                .getAssignedTo()
-                .getId()
-                .equals(staff.getId())
+        if (stockCount.getStatus()
+                == StockCountStatus.COUNTING) {
 
-                &&
-
-                stockCount.getStatus()
-                        == StockCountStatus.COUNTING) {
+            taskClaimService.validateOwner(
+                    WarehouseTaskType.STOCK_COUNT,
+                    stockCountId,
+                    staff
+            );
 
             return buildResponse(
                     stockCount
@@ -142,20 +91,52 @@ public class StaffStockCountExecutionService {
         }
 
 
-        if (stockCount.getAssignedTo() != null
-                && !stockCount
-                .getAssignedTo()
-                .getId()
-                .equals(staff.getId())) {
+        if (stockCount.getStatus()
+                != StockCountStatus.PLANNED) {
 
-            throw new Forbidden(
-                    "Stock count has already been claimed by another staff"
+            throw new BadRequest(
+                    "Only PLANNED stock count can be started"
             );
         }
 
 
-        throw new BadRequest(
-                "Stock count cannot be started"
+        /*
+         * Atomic claim qua table chung.
+         */
+        taskClaimService.claim(
+                WarehouseTaskType.STOCK_COUNT,
+                stockCountId,
+                staff
+        );
+
+
+        stockCount.setStatus(
+                StockCountStatus.COUNTING
+        );
+
+
+        stockCount.setStartedAt(
+                LocalDateTime.now()
+        );
+
+
+        /*
+         * assignedTo có thể giữ để audit.
+         *
+         * Không dùng nó để lock nữa.
+         */
+        stockCount.setAssignedTo(
+                staff
+        );
+
+
+        stockCountRepository.save(
+                stockCount
+        );
+
+
+        return buildResponse(
+                stockCount
         );
     }
 
@@ -187,9 +168,10 @@ public class StaffStockCountExecutionService {
         );
 
 
-        validationService.validateOwner(
-                staff,
-                stockCount
+        taskClaimService.validateOwner(
+                WarehouseTaskType.STOCK_COUNT,
+                stockCountId,
+                staff
         );
 
 

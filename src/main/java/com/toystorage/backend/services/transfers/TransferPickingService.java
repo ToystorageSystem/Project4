@@ -5,6 +5,9 @@ import com.toystorage.backend.dto.request.transfers.PickTransferItemRequest;
 import com.toystorage.backend.dto.response.transfers.TransferPickingItemResponse;
 import com.toystorage.backend.dto.response.transfers.TransferPickingResponse;
 
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
+import com.toystorage.backend.services.warehouses.WarehouseTaskClaimService;
+
 import com.toystorage.backend.entity.inventories.InventoryBalances;
 import com.toystorage.backend.entity.transfers.StockTransferItems;
 import com.toystorage.backend.entity.transfers.StockTransfer;
@@ -45,6 +48,8 @@ public class TransferPickingService {
 
     private final TransferPickingValidationService
             validationService;
+    private final WarehouseTaskClaimService
+            taskClaimService;
 
     private final TransferPickingMapper
             mapper;
@@ -139,11 +144,13 @@ public class TransferPickingService {
                 validationService
                         .getCurrentUser();
 
+
         StockTransfer transfer =
                 validationService
                         .getTransfer(
                                 transferId
                         );
+
 
         validationService
                 .validateWarehouse(
@@ -152,26 +159,53 @@ public class TransferPickingService {
                 );
 
 
+        /*
+         * Cho phép chính owner gọi Start lại.
+         */
+        if (transfer.getStatus()
+                == TransferStatus.PICKING) {
+
+            taskClaimService.validateOwner(
+                    WarehouseTaskType.TRANSFER_PICKING,
+                    transferId,
+                    staff
+            );
+
+            return buildResponse(
+                    transfer
+            );
+        }
+
+
         if (transfer.getStatus()
                 != TransferStatus.PENDING_SOURCE_CONFIRMATION) {
 
             throw new BadRequest(
-                    "Transfer cannot start picking "
-                            + "from status "
+                    "Transfer cannot start picking from status "
                             + transfer.getStatus()
             );
         }
 
 
-        /*
-         * Phiếu phải đã được confirm.
-         */
         if (transfer.getConfirmedAt() == null) {
 
             throw new BadRequest(
                     "Transfer must be confirmed before picking"
             );
         }
+
+
+        /*
+         * CLAIM TRƯỚC.
+         *
+         * Nếu 2 Staff bấm đồng thời:
+         * chỉ 1 INSERT thành công.
+         */
+        taskClaimService.claim(
+                WarehouseTaskType.TRANSFER_PICKING,
+                transferId,
+                staff
+        );
 
 
         transfer.setStatus(
@@ -183,10 +217,9 @@ public class TransferPickingService {
         );
 
 
-        stockTransferRepository
-                .save(
-                        transfer
-                );
+        stockTransferRepository.save(
+                transfer
+        );
 
 
         return buildResponse(
@@ -223,6 +256,12 @@ public class TransferPickingService {
                         staff,
                         transfer
                 );
+
+        taskClaimService.validateOwner(
+                WarehouseTaskType.TRANSFER_PICKING,
+                transferId,
+                staff
+        );
 
 
         validationService
@@ -321,11 +360,18 @@ public class TransferPickingService {
                         transfer
                 );
 
+        taskClaimService.validateOwner(
+                WarehouseTaskType.TRANSFER_PICKING,
+                transferId,
+                staff
+        );
+
 
         validationService
                 .validatePickingStatus(
                         transfer
                 );
+
 
 
         List<StockTransferItems> items =
@@ -380,7 +426,11 @@ public class TransferPickingService {
                 .save(
                         transfer
                 );
-
+        taskClaimService.release(
+                WarehouseTaskType.TRANSFER_PICKING,
+                transferId,
+                staff
+        );
 
         return buildResponse(
                 transfer

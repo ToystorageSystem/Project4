@@ -5,6 +5,9 @@ import com.toystorage.backend.dto.response.inventories.StaffStockCountDetailResp
 import com.toystorage.backend.entity.inventories.StockCountItems;
 import com.toystorage.backend.entity.inventories.StockCounts;
 
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
+import com.toystorage.backend.services.warehouses.WarehouseTaskClaimService;
+
 import com.toystorage.backend.entity.users.Users;
 
 import com.toystorage.backend.enums.inventories.StockCountStatus;
@@ -40,6 +43,8 @@ public class StaffStockCountSubmissionService {
     private final StaffStockCountMapper
             mapper;
 
+    private final WarehouseTaskClaimService
+            taskClaimService;
 
     @Transactional
     public StaffStockCountDetailResponse submit(
@@ -63,9 +68,10 @@ public class StaffStockCountSubmissionService {
         );
 
 
-        validationService.validateOwner(
-                staff,
-                stockCount
+        taskClaimService.validateOwner(
+                WarehouseTaskType.STOCK_COUNT,
+                stockCountId,
+                staff
         );
 
 
@@ -151,7 +157,11 @@ public class StaffStockCountSubmissionService {
                 stockCount
         );
 
-
+        taskClaimService.release(
+                WarehouseTaskType.STOCK_COUNT,
+                stockCountId,
+                staff
+        );
         /*
          * DỪNG TẠI ĐÂY.
          *
