@@ -1,7 +1,7 @@
 package com.toystorage.backend.controllers.packages.packing.manager;
 
 import com.toystorage.backend.dto.response.packages.packing.PackingConfirmationResponse;
-import com.toystorage.backend.services.packages.PackingConfirmationService;
+import com.toystorage.backend.services.packages.packing.PackingConfirmationService;
 
 import lombok.RequiredArgsConstructor;
 

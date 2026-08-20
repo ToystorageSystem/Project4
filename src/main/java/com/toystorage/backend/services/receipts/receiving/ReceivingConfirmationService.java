@@ -1,9 +1,9 @@
 package com.toystorage.backend.services.receipts.receiving;
 
-import com.toystorage.backend.dto.response.receipts.receiving.ReceivingConfirmationItemResponse;
 import com.toystorage.backend.dto.response.receipts.receiving.ReceivingConfirmationResponse;
 import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
+import com.toystorage.backend.mapper.receipts.receiving.ReceivingConfirmationMapper;
 import com.toystorage.backend.entity.receipts.ReceiptInspections;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.WarehouseLocations;
@@ -44,6 +44,9 @@ public class ReceivingConfirmationService {
     private final PutawayTaskService putawayTaskService;
 
     private final WarehouseLocationService warehouseLocationService;
+
+    private final ReceivingConfirmationMapper
+            mapper;
 
 
     // =====================================================
@@ -237,201 +240,19 @@ public class ReceivingConfirmationService {
                                 receipt.getId()
                         );
 
+
         List<ReceiptInspections> inspections =
                 receiptInspectionRepository
                         .findByGoodsReceiptId(
                                 receipt.getId()
                         );
 
-        List<ReceivingConfirmationItemResponse> responses =
-                items.stream()
-                        .map(item -> {
 
-                            ReceiptInspections inspection =
-                                    inspections.stream()
-                                            .filter(i ->
-                                                    i.getProduct()
-                                                            .getId()
-                                                            .equals(
-                                                                    item.getProduct()
-                                                                            .getId()
-                                                            )
-                                            )
-                                            .findFirst()
-                                            .orElse(null);
-
-                            return ReceivingConfirmationItemResponse
-                                    .builder()
-
-                                    .productId(
-                                            item.getProduct().getId()
-                                    )
-
-                                    .productName(
-                                            item.getProduct().getName()
-                                    )
-
-                                    .expectedQuantity(
-                                            item.getExpectedQuantity()
-                                    )
-
-                                    .actualQuantity(
-                                            item.getActualQuantity()
-                                    )
-
-                                    .acceptedQuantity(
-                                            item.getAcceptedQuantity()
-                                    )
-
-                                    .damagedQuantity(
-                                            item.getDamagedQuantity()
-                                    )
-
-                                    .shortageQuantity(
-                                            item.getShortageQuantity()
-                                    )
-
-                                    .surplusQuantity(
-                                            item.getSurplusQuantity()
-                                    )
-
-                                    .inspectionResult(
-                                            inspection != null
-                                                    ? inspection
-                                                    .getInspectedResult()
-                                                    .name()
-                                                    : null
-                                    )
-
-                                    .build();
-                        })
-                        .toList();
-
-        int expected =
-                items.stream()
-                        .mapToInt(
-                                GoodsReceiptItems::getExpectedQuantity
-                        )
-                        .sum();
-
-        int actual =
-                items.stream()
-                        .mapToInt(
-                                GoodsReceiptItems::getActualQuantity
-                        )
-                        .sum();
-
-        int accepted =
-                items.stream()
-                        .mapToInt(
-                                GoodsReceiptItems::getAcceptedQuantity
-                        )
-                        .sum();
-
-        int damaged =
-                items.stream()
-                        .mapToInt(
-                                GoodsReceiptItems::getDamagedQuantity
-                        )
-                        .sum();
-
-        int shortage =
-                items.stream()
-                        .mapToInt(
-                                GoodsReceiptItems::getShortageQuantity
-                        )
-                        .sum();
-
-        int surplus =
-                items.stream()
-                        .mapToInt(
-                                GoodsReceiptItems::getSurplusQuantity
-                        )
-                        .sum();
-
-        Users staff =
-                receipt.getReceivedBy();
-
-        Users manager =
-                receipt.getInspectionConfirmedBy();
-
-        return ReceivingConfirmationResponse
-                .builder()
-
-                .receiptId(
-                        receipt.getId()
-                )
-
-                .receiptCode(
-                        receipt.getReceiptCode()
-                )
-
-                .status(
-                        receipt.getStatus().name()
-                )
-
-                .staffId(
-                        staff != null
-                                ? staff.getId()
-                                : null
-                )
-
-                .staffName(
-                        staff != null
-                                ? staff.getName()
-                                : null
-                )
-
-                .totalExpectedQuantity(
-                        expected
-                )
-
-                .totalActualQuantity(
-                        actual
-                )
-
-                .totalAcceptedQuantity(
-                        accepted
-                )
-
-                .totalDamagedQuantity(
-                        damaged
-                )
-
-                .totalShortageQuantity(
-                        shortage
-                )
-
-                .totalSurplusQuantity(
-                        surplus
-                )
-
-                .items(
-                        responses
-                )
-
-                /*
-                 * CHÚ Ý:
-                 * DTO của bạn là confirmedBy,
-                 * KHÔNG phải inspectionConfirmedBy.
-                 */
-                .confirmedBy(
-                        manager != null
-                                ? manager.getId()
-                                : null
-                )
-
-                .confirmedByName(
-                        manager != null
-                                ? manager.getName()
-                                : null
-                )
-
-                .confirmedAt(
-                        receipt.getInspectionConfirmedAt()
-                )
-
-                .build();
+        return mapper.toResponse(
+                receipt,
+                items,
+                inspections
+        );
     }
 
 

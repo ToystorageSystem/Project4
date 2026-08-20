@@ -1,9 +1,7 @@
-package com.toystorage.backend.services.packages;
+package com.toystorage.backend.services.packages.packing;
 
 import com.toystorage.backend.dto.response.packages.packing.PackingConfirmationResponse;
-import com.toystorage.backend.dto.response.packages.packing.PackingPackageItemResponse;
-import com.toystorage.backend.dto.response.packages.packing.PackingPackageResponse;
-import com.toystorage.backend.services.packages.packing.PackingValidationService;
+import com.toystorage.backend.mapper.packages.packing.PackingConfirmationMapper;
 import com.toystorage.backend.services.shipments.ShipmentManifestService;
 import com.toystorage.backend.entity.shipments.ShipmentManifests;
 import com.toystorage.backend.entity.transfers.StockTransferItems;
@@ -52,7 +50,8 @@ public class PackingConfirmationService {
 
     private final ShipmentManifestService
             shipmentManifestService;
-
+    private final PackingConfirmationMapper
+            mapper;
 
     // =====================================================
     // VIEW PACKING RESULT
@@ -82,7 +81,7 @@ public class PackingConfirmationService {
                                 transferId
                         );
 
-        return buildResponse(
+        return mapper.toResponse(
                 transfer,
                 packages,
                 null
@@ -210,7 +209,7 @@ public class PackingConfirmationService {
                                 manager
                         );
 
-        return buildResponse(
+        return mapper.toResponse(
                 transfer,
                 transferPackages,
                 manifest
@@ -300,234 +299,5 @@ public class PackingConfirmationService {
             stockTransferItemRepository
                     .save(transferItem);
         }
-    }
-
-
-    // =====================================================
-    // RESPONSE
-    // =====================================================
-
-    private PackingConfirmationResponse buildResponse(
-            StockTransfer transfer,
-            List<PackageTransferItem> links,
-            ShipmentManifests manifest
-    ) {
-
-        List<PackingPackageResponse> packageResponses =
-                links.stream()
-
-                        .map(link ->
-                                buildPackageResponse(
-                                        link.getPackageEntity()
-                                )
-                        )
-
-                        .toList();
-
-        int expected =
-                stockTransferItemRepository
-                        .findByStockTransferId(
-                                transfer.getId()
-                        )
-
-                        .stream()
-
-                        .mapToInt(
-                                StockTransferItems
-                                        ::getApprovedQuantity
-                        )
-
-                        .sum();
-
-        int packed =
-                packageResponses.stream()
-                        .mapToInt(
-                                PackingPackageResponse
-                                        ::getTotalQuantity
-                        )
-                        .sum();
-
-        boolean allSealed =
-                packageResponses.stream()
-                        .allMatch(
-                                PackingPackageResponse::getSealed
-                        );
-
-        boolean allPacked =
-                packageResponses.stream()
-                        .allMatch(p ->
-                                "PACKED".equals(p.getStatus())
-                                        ||
-                                        "CHECKED".equals(p.getStatus())
-                        );
-
-        Users confirmedBy =
-                transfer.getConfirmedBy();
-
-        return PackingConfirmationResponse.builder()
-
-                .transferId(
-                        transfer.getId()
-                )
-
-                .transferCode(
-                        transfer.getTransferCode()
-                )
-
-                .transferStatus(
-                        transfer.getStatus().name()
-                )
-
-                .expectedQuantity(expected)
-
-                .packedQuantity(packed)
-
-                .quantityMatched(
-                        expected == packed
-                )
-
-                .allPackagesSealed(
-                        allSealed
-                )
-
-                .allPackagesPacked(
-                        allPacked
-                )
-
-                .confirmedBy(
-                        confirmedBy != null
-                                ? confirmedBy.getId()
-                                : null
-                )
-
-                .confirmedByName(
-                        confirmedBy != null
-                                ? confirmedBy.getName()
-                                : null
-                )
-
-                .manifestId(
-                        manifest != null
-                                ? manifest.getId()
-                                : null
-                )
-
-                .manifestCode(
-                        manifest != null
-                                ? manifest.getManifestCode()
-                                : null
-                )
-
-                .packages(
-                        packageResponses
-                )
-
-                .build();
-    }
-
-
-    private PackingPackageResponse buildPackageResponse(
-            Packages pack
-    ) {
-
-        List<PackageItems> items =
-                packageItemRepository
-                        .findByPackageEntityId(
-                                pack.getId()
-                        );
-
-        List<PackingPackageItemResponse> responses =
-                items.stream()
-
-                        .map(item ->
-                                PackingPackageItemResponse
-                                        .builder()
-
-                                        .productId(
-                                                item
-                                                        .getProduct()
-                                                        .getId()
-                                        )
-
-                                        .productName(
-                                                item
-                                                        .getProduct()
-                                                        .getName()
-                                        )
-
-                                        .packedQuantity(
-                                                item.getQuantity()
-                                        )
-
-                                        .build()
-                        )
-
-                        .toList();
-
-        int quantity =
-                items.stream()
-                        .mapToInt(
-                                PackageItems::getQuantity
-                        )
-                        .sum();
-
-        Users packedBy =
-                pack.getPackedBy();
-
-        Users checkedBy =
-                pack.getCheckedBy();
-
-        return PackingPackageResponse.builder()
-
-                .packageId(pack.getId())
-
-                .packageCode(
-                        pack.getPackagesCode()
-                )
-
-                .status(
-                        pack.getStatus().name()
-                )
-
-                .sealNumber(
-                        pack.getSealNumber()
-                )
-
-                .sealed(
-                        pack.getSealNumber() != null
-                                && !pack
-                                .getSealNumber()
-                                .isBlank()
-                )
-
-                .packedBy(
-                        packedBy != null
-                                ? packedBy.getId()
-                                : null
-                )
-
-                .packedByName(
-                        packedBy != null
-                                ? packedBy.getName()
-                                : null
-                )
-
-                .checkedBy(
-                        checkedBy != null
-                                ? checkedBy.getId()
-                                : null
-                )
-
-                .checkedByName(
-                        checkedBy != null
-                                ? checkedBy.getName()
-                                : null
-                )
-
-                .totalQuantity(quantity)
-
-                .items(responses)
-
-                .build();
     }
 }

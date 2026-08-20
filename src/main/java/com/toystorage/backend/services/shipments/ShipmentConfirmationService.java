@@ -1,8 +1,8 @@
 package com.toystorage.backend.services.shipments;
 
 import com.toystorage.backend.dto.request.shipments.ConfirmShipmentRequest;
+import com.toystorage.backend.mapper.shipments.ShipmentConfirmationMapper;
 import com.toystorage.backend.dto.response.shipments.*;
-import com.toystorage.backend.entity.packages.PackageItems;
 import com.toystorage.backend.entity.packages.Packages;
 
 import com.toystorage.backend.entity.shipments.*;
@@ -64,6 +64,9 @@ public class ShipmentConfirmationService {
     private final ShipmentValidationService
             validationService;
 
+    private final ShipmentConfirmationMapper
+            mapper;
+
 
     // =====================================================
     // VIEW SHIPMENT
@@ -95,7 +98,7 @@ public class ShipmentConfirmationService {
                                 manifest.getId()
                         );
 
-        return buildResponse(
+        return mapper.toResponse(
                 transfer,
                 manifest,
                 null,
@@ -290,7 +293,7 @@ public class ShipmentConfirmationService {
         );
 
 
-        return buildResponse(
+        return mapper.toResponse(
                 transfer,
                 manifest,
                 delivery,
@@ -360,160 +363,4 @@ public class ShipmentConfirmationService {
         }
     }
 
-
-    // =====================================================
-    // RESPONSE
-    // =====================================================
-
-    private ShipmentConfirmationResponse buildResponse(
-            StockTransfer transfer,
-            ShipmentManifests manifest,
-            Deliveries delivery,
-            List<ShipmentManifestPackage> links
-    ) {
-
-        List<ShipmentPackageResponse> packages =
-                links.stream()
-
-                        .map(link ->
-                                buildPackageResponse(
-                                        link.getPackageEntity()
-                                )
-                        )
-
-                        .toList();
-
-        Users handover =
-                delivery != null
-                        ? delivery.getHandedOverBy()
-                        : null;
-
-        Users driver =
-                delivery != null
-                        ? delivery.getDriver()
-                        : null;
-
-        return ShipmentConfirmationResponse
-                .builder()
-
-                .transferId(
-                        transfer.getId()
-                )
-
-                .transferCode(
-                        transfer.getTransferCode()
-                )
-
-                .transferStatus(
-                        transfer.getStatus().name()
-                )
-
-                .manifestId(
-                        manifest.getId()
-                )
-
-                .manifestCode(
-                        manifest.getManifestCode()
-                )
-
-                .manifestStatus(
-                        manifest.getStatus().name()
-                )
-
-                .deliveryId(
-                        delivery != null
-                                ? delivery.getId()
-                                : null
-                )
-
-                .shipmentCode(
-                        delivery != null
-                                ? delivery.getShipmentCode()
-                                : null
-                )
-
-                .deliveryStatus(
-                        delivery != null
-                                ? delivery.getDeliveryStatus().name()
-                                : null
-                )
-
-                .driverId(
-                        driver != null
-                                ? driver.getId()
-                                : null
-                )
-
-                .driverName(
-                        driver != null
-                                ? driver.getName()
-                                : null
-                )
-
-                .handedOverBy(
-                        handover != null
-                                ? handover.getId()
-                                : null
-                )
-
-                .handedOverByName(
-                        handover != null
-                                ? handover.getName()
-                                : null
-                )
-
-                .handedOverAt(
-                        delivery != null
-                                ? delivery.getHandedOverAt()
-                                : null
-                )
-
-                .packages(packages)
-
-                .build();
-    }
-
-
-    private ShipmentPackageResponse buildPackageResponse(
-            Packages pack
-    ) {
-
-        List<PackageItems> items =
-                packageItemRepository
-                        .findByPackageEntityId(
-                                pack.getId()
-                        );
-
-        int quantity =
-                items.stream()
-                        .mapToInt(
-                                PackageItems::getQuantity
-                        )
-                        .sum();
-
-        return ShipmentPackageResponse
-                .builder()
-
-                .packageId(
-                        pack.getId()
-                )
-
-                .packageCode(
-                        pack.getPackagesCode()
-                )
-
-                .sealNumber(
-                        pack.getSealNumber()
-                )
-
-                .status(
-                        pack.getStatus().name()
-                )
-
-                .totalQuantity(
-                        quantity
-                )
-
-                .build();
-    }
 }
