@@ -85,6 +85,8 @@ public class DiscrepancyReports {
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
 
+    @Column(name = "evidence_image_url", length = 500)
+    private String evidenceImageUrl;
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

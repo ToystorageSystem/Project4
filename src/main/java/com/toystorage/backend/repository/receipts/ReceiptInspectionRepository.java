@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReceiptInspectionRepository
@@ -13,6 +14,12 @@ public interface ReceiptInspectionRepository
     List<ReceiptInspections> findByGoodsReceiptId(Long goodsReceiptId);
     long countByGoodsReceiptId(
             Long goodsReceiptId
+    );
+
+    Optional<ReceiptInspections>
+    findByGoodsReceiptIdAndProductId(
+            Long goodsReceiptId,
+            Long productId
     );
     boolean existsByGoodsReceiptIdAndProductId(
             Long goodsReceiptId,
