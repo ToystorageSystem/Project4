@@ -9,7 +9,7 @@ import com.toystorage.backend.enums.warehouses.PutawayTaskItemStatus;
 import com.toystorage.backend.enums.warehouses.PutawayTaskStatus;
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.mapper.warehouses.putaway.PutawayPlanMapper;
-import com.toystorage.backend.repository.warehouses.PutawayTaskItemRepository;
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskItemRepository;
 
 import lombok.RequiredArgsConstructor;
 

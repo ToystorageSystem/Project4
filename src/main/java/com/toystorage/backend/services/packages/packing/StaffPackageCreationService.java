@@ -15,8 +15,8 @@ import com.toystorage.backend.enums.packages.PackageStatus;
 
 import com.toystorage.backend.mapper.packages.packing.StaffPackagePackingMapper;
 
-import com.toystorage.backend.repository.packages.StaffPackageRepository;
-import com.toystorage.backend.repository.packages.StaffPackageTransferItemRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageTransferItemRepository;
 
 import lombok.RequiredArgsConstructor;
 

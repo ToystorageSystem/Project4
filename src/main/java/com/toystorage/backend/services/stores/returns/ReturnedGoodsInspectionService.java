@@ -23,11 +23,11 @@ import com.toystorage.backend.exceptions.NotFound;
 
 import com.toystorage.backend.mapper.stores.returns.ReturnedGoodsInspectionMapper;
 
-import com.toystorage.backend.repository.packages.StaffPackageRepository;
-import com.toystorage.backend.repository.packages.StaffPackageTransferItemRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageTransferItemRepository;
 
-import com.toystorage.backend.repository.stores.WarehouseReturnItemRepository;
-import com.toystorage.backend.repository.stores.WarehouseReturnRepository;
+import com.toystorage.backend.repository.stores.returns.WarehouseReturnItemRepository;
+import com.toystorage.backend.repository.stores.returns.WarehouseReturnRepository;
 
 import lombok.RequiredArgsConstructor;
 

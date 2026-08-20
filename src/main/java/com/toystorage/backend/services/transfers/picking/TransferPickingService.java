@@ -20,8 +20,8 @@ import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.mapper.transfers.picking.TransferPickingMapper;
 
 import com.toystorage.backend.repository.inventories.InventoryBalanceRepository;
-import com.toystorage.backend.repository.transfers.StockTransferItemRepository;
-import com.toystorage.backend.repository.transfers.StockTransferRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
 
 import lombok.RequiredArgsConstructor;
 

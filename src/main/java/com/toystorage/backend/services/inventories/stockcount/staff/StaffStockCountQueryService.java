@@ -9,10 +9,10 @@ import com.toystorage.backend.entity.users.Users;
 
 import com.toystorage.backend.enums.inventories.StockCountStatus;
 
-import com.toystorage.backend.mapper.inventories.stockcount.StaffStockCountMapper;
+import com.toystorage.backend.mapper.inventories.stockcount.staff.StaffStockCountMapper;
 
-import com.toystorage.backend.repository.inventories.StaffStockCountItemRepository;
-import com.toystorage.backend.repository.inventories.StaffStockCountRepository;
+import com.toystorage.backend.repository.inventories.stockcount.StaffStockCountItemRepository;
+import com.toystorage.backend.repository.inventories.stockcount.StaffStockCountRepository;
 
 import lombok.RequiredArgsConstructor;
 

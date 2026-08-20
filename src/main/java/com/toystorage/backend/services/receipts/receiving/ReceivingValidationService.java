@@ -14,7 +14,7 @@ import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
-import com.toystorage.backend.repository.receipts.GoodsReceiptRepository;
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 
 import lombok.RequiredArgsConstructor;

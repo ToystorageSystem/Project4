@@ -18,10 +18,10 @@ import com.toystorage.backend.enums.packages.PackageStatus;
 
 import com.toystorage.backend.exceptions.BadRequest;
 
-import com.toystorage.backend.repository.transfers.StockTransferItemRepository;
-import com.toystorage.backend.repository.transfers.StockTransferRepository;
-import com.toystorage.backend.repository.packages.PackageItemRepository;
-import com.toystorage.backend.repository.packages.PackageRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
+import com.toystorage.backend.repository.packages.packing.PackageItemRepository;
+import com.toystorage.backend.repository.packages.packing.PackageRepository;
 
 import lombok.RequiredArgsConstructor;
 

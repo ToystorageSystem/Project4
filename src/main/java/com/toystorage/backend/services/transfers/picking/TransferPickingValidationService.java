@@ -13,8 +13,8 @@ import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
 import com.toystorage.backend.repository.inventories.InventoryBalanceRepository;
-import com.toystorage.backend.repository.transfers.StockTransferItemRepository;
-import com.toystorage.backend.repository.transfers.StockTransferRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 
 import lombok.RequiredArgsConstructor;

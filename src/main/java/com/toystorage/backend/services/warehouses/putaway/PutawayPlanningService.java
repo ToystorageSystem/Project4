@@ -14,8 +14,8 @@ import com.toystorage.backend.enums.warehouses.PutawayTaskStatus;
 
 import com.toystorage.backend.exceptions.BadRequest;
 
-import com.toystorage.backend.repository.receipts.GoodsReceiptItemRepository;
-import com.toystorage.backend.repository.warehouses.PutawayTaskRepository;
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository;
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 
 import lombok.RequiredArgsConstructor;
 

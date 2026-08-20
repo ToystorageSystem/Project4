@@ -4,7 +4,7 @@ import com.toystorage.backend.entity.warehouses.WarehouseLocations;
 import com.toystorage.backend.enums.warehouses.WarehouseLocationType;
 import com.toystorage.backend.enums.warehouses.WarehouseStatus;
 import com.toystorage.backend.exceptions.NotFound;
-import com.toystorage.backend.repository.warehouses.WarehouseLocationRepository;
+import com.toystorage.backend.repository.warehouses.putaway.WarehouseLocationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

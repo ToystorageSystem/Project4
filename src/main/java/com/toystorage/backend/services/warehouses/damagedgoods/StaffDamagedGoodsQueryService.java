@@ -9,8 +9,8 @@ import com.toystorage.backend.entity.users.Users;
 
 import com.toystorage.backend.mapper.warehouses.damagedgoods.StaffDamagedGoodsMapper;
 
-import com.toystorage.backend.repository.warehouses.DamagedGoodsItemRepository;
-import com.toystorage.backend.repository.warehouses.DamagedGoodsReportRepository;
+import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsItemRepository;
+import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsReportRepository;
 
 import lombok.RequiredArgsConstructor;
 

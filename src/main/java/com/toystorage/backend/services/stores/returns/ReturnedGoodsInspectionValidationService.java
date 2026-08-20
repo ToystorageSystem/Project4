@@ -12,8 +12,8 @@ import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
-import com.toystorage.backend.repository.stores.WarehouseReturnItemRepository;
-import com.toystorage.backend.repository.stores.WarehouseReturnRepository;
+import com.toystorage.backend.repository.stores.returns.WarehouseReturnItemRepository;
+import com.toystorage.backend.repository.stores.returns.WarehouseReturnRepository;
 
 import com.toystorage.backend.repository.users.UserRepository;
 

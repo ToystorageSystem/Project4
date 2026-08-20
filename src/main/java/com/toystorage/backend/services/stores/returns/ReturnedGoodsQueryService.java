@@ -12,8 +12,8 @@ import com.toystorage.backend.enums.stores.StoreReturnStatus;
 
 import com.toystorage.backend.mapper.stores.returns.ReturnedGoodsInspectionMapper;
 
-import com.toystorage.backend.repository.stores.WarehouseReturnItemRepository;
-import com.toystorage.backend.repository.stores.WarehouseReturnRepository;
+import com.toystorage.backend.repository.stores.returns.WarehouseReturnItemRepository;
+import com.toystorage.backend.repository.stores.returns.WarehouseReturnRepository;
 
 import lombok.RequiredArgsConstructor;
 

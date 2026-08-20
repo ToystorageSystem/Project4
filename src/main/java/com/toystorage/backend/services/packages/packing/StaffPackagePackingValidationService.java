@@ -15,10 +15,10 @@ import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
-import com.toystorage.backend.repository.packages.StaffPackageRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageRepository;
 
-import com.toystorage.backend.repository.transfers.StockTransferItemRepository;
-import com.toystorage.backend.repository.transfers.StockTransferRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
 
 import com.toystorage.backend.repository.users.UserRepository;
 

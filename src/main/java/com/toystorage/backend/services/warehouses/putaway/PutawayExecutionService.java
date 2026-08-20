@@ -17,8 +17,8 @@ import com.toystorage.backend.exceptions.BadRequest;
 
 import com.toystorage.backend.mapper.warehouses.putaway.PutawayExecutionMapper;
 
-import com.toystorage.backend.repository.warehouses.PutawayTaskItemRepository;
-import com.toystorage.backend.repository.warehouses.PutawayTaskRepository;
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskItemRepository;
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 
 import com.toystorage.backend.services.warehouses.taskclaim.WarehouseTaskClaimService;
 import lombok.RequiredArgsConstructor;

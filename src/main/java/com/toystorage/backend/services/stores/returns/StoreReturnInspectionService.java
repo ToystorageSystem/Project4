@@ -16,8 +16,8 @@ import com.toystorage.backend.exceptions.NotFound;
 
 import com.toystorage.backend.mapper.stores.returns.StoreReturnInspectionMapper;
 
-import com.toystorage.backend.repository.stores.StoreReturnItemRepository;
-import com.toystorage.backend.repository.stores.StoreReturnRepository;
+import com.toystorage.backend.repository.stores.returns.StoreReturnItemRepository;
+import com.toystorage.backend.repository.stores.returns.StoreReturnRepository;
 
 import lombok.RequiredArgsConstructor;
 

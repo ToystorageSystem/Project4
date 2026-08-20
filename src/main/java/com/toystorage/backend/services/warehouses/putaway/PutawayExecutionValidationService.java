@@ -17,8 +17,8 @@ import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
 import com.toystorage.backend.repository.users.UserRepository;
-import com.toystorage.backend.repository.warehouses.PutawayTaskItemRepository;
-import com.toystorage.backend.repository.warehouses.PutawayTaskRepository;
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskItemRepository;
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 
 import lombok.RequiredArgsConstructor;
 

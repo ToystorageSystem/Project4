@@ -13,11 +13,11 @@ import com.toystorage.backend.enums.inventories.StockCountStatus;
 
 import com.toystorage.backend.exceptions.BadRequest;
 
-import com.toystorage.backend.mapper.inventories.stockcount.StockCountMapper;
+import com.toystorage.backend.mapper.inventories.stockcount.manager.StockCountMapper;
 
 import com.toystorage.backend.repository.inventories.InventoryBalanceRepository;
-import com.toystorage.backend.repository.inventories.StockCountItemRepository;
-import com.toystorage.backend.repository.inventories.StockCountRepository;
+import com.toystorage.backend.repository.inventories.stockcount.StockCountItemRepository;
+import com.toystorage.backend.repository.inventories.stockcount.StockCountRepository;
 
 import lombok.RequiredArgsConstructor;
 

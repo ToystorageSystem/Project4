@@ -9,10 +9,10 @@ import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
-import com.toystorage.backend.repository.transfers.StockTransferRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
 import com.toystorage.backend.repository.users.UserRepository;
-import com.toystorage.backend.repository.packages.PackageItemRepository;
-import com.toystorage.backend.repository.packages.PackageTransferItemRepository;
+import com.toystorage.backend.repository.packages.packing.PackageItemRepository;
+import com.toystorage.backend.repository.packages.packing.PackageTransferItemRepository;
 
 import lombok.RequiredArgsConstructor;
 

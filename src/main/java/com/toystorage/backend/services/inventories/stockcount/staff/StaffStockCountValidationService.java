@@ -12,8 +12,8 @@ import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
-import com.toystorage.backend.repository.inventories.StaffStockCountItemRepository;
-import com.toystorage.backend.repository.inventories.StaffStockCountRepository;
+import com.toystorage.backend.repository.inventories.stockcount.StaffStockCountItemRepository;
+import com.toystorage.backend.repository.inventories.stockcount.StaffStockCountRepository;
 
 import com.toystorage.backend.repository.users.UserRepository;
 

@@ -9,7 +9,7 @@ import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
 
-import com.toystorage.backend.repository.stores.WarehouseReturnItemRepository;
+import com.toystorage.backend.repository.stores.returns.WarehouseReturnItemRepository;
 
 import com.toystorage.backend.services.cloudinary.CloudinaryService;
 

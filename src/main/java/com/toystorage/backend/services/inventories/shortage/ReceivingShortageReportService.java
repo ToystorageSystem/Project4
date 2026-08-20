@@ -16,8 +16,8 @@ import com.toystorage.backend.services.cloudinary.CloudinaryService;
 
 import com.toystorage.backend.mapper.inventories.shortage.ReceivingShortageMapper;
 
-import com.toystorage.backend.repository.inventories.DiscrepancyItemRepository;
-import com.toystorage.backend.repository.inventories.DiscrepancyReportRepository;
+import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyItemRepository;
+import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyReportRepository;
 
 import lombok.RequiredArgsConstructor;
 

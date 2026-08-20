@@ -7,7 +7,7 @@ import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.repository.users.UserRepository;
-import com.toystorage.backend.repository.stores.StoreReturnRepository;
+import com.toystorage.backend.repository.stores.returns.StoreReturnRepository;
 
 import lombok.RequiredArgsConstructor;
 

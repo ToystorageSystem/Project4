@@ -8,8 +8,8 @@ import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.repository.users.UserRepository;
-import com.toystorage.backend.repository.inventories.StockCountItemRepository;
-import com.toystorage.backend.repository.inventories.StockCountRepository;
+import com.toystorage.backend.repository.inventories.stockcount.StockCountItemRepository;
+import com.toystorage.backend.repository.inventories.stockcount.StockCountRepository;
 
 import lombok.RequiredArgsConstructor;
 

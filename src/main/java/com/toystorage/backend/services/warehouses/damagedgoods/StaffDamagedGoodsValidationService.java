@@ -15,15 +15,15 @@ import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
-import com.toystorage.backend.repository.warehouses.DamagedGoodsReportRepository;
+import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsReportRepository;
 
-import com.toystorage.backend.repository.inventories.StaffDamagedGoodsInventoryRepository;
+import com.toystorage.backend.repository.inventories.damagedgoods.StaffDamagedGoodsInventoryRepository;
 
 import com.toystorage.backend.repository.products.ProductRepository;
 
 import com.toystorage.backend.repository.users.UserRepository;
 
-import com.toystorage.backend.repository.warehouses.WarehouseLocationRepository;
+import com.toystorage.backend.repository.warehouses.putaway.WarehouseLocationRepository;
 
 import lombok.RequiredArgsConstructor;
 

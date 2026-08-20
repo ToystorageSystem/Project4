@@ -5,7 +5,7 @@ import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
-import com.toystorage.backend.repository.warehouses.DamagedGoodsReportRepository;
+import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsReportRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

@@ -15,9 +15,9 @@ import com.toystorage.backend.enums.receipts.InspectionResult;
 
 import com.toystorage.backend.exceptions.BadRequest;
 
-import com.toystorage.backend.repository.receipts.GoodsReceiptItemRepository;
-import com.toystorage.backend.repository.receipts.GoodsReceiptRepository;
-import com.toystorage.backend.repository.receipts.ReceiptInspectionRepository;
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository;
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
+import com.toystorage.backend.repository.receipts.receiving.ReceiptInspectionRepository;
 
 import lombok.RequiredArgsConstructor;
 

@@ -22,12 +22,12 @@ import com.toystorage.backend.exceptions.BadRequest;
 
 import com.toystorage.backend.mapper.packages.packing.StaffPackagePackingMapper;
 
-import com.toystorage.backend.repository.packages.StaffPackageItemRepository;
-import com.toystorage.backend.repository.packages.StaffPackageRepository;
-import com.toystorage.backend.repository.packages.StaffPackageTransferItemRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageItemRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageTransferItemRepository;
 
-import com.toystorage.backend.repository.transfers.StockTransferItemRepository;
-import com.toystorage.backend.repository.transfers.StockTransferRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
 
 import lombok.RequiredArgsConstructor;
 

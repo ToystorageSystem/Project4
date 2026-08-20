@@ -19,8 +19,8 @@ import com.toystorage.backend.enums.warehouses.DamagedGoodsStatus;
 
 import com.toystorage.backend.mapper.warehouses.damagedgoods.StaffDamagedGoodsMapper;
 
-import com.toystorage.backend.repository.warehouses.DamagedGoodsItemRepository;
-import com.toystorage.backend.repository.warehouses.DamagedGoodsReportRepository;
+import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsItemRepository;
+import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsReportRepository;
 
 import com.toystorage.backend.services.cloudinary.CloudinaryService;
 

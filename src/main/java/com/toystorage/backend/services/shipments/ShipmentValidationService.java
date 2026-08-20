@@ -5,7 +5,7 @@ import com.toystorage.backend.entity.transfers.StockTransfer;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.exceptions.*;
 import com.toystorage.backend.repository.deliveries.DeliveryRepository;
-import com.toystorage.backend.repository.transfers.StockTransferRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

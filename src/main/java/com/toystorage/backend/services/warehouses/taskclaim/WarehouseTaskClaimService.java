@@ -7,7 +7,7 @@ import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
 
 import com.toystorage.backend.exceptions.Forbidden;
 
-import com.toystorage.backend.repository.warehouses.WarehouseTaskClaimRepository;
+import com.toystorage.backend.repository.warehouses.taskclaim.WarehouseTaskClaimRepository;
 
 import lombok.RequiredArgsConstructor;
 

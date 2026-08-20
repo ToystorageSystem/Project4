@@ -15,11 +15,11 @@ import com.toystorage.backend.enums.transfers.TransferStatus;
 
 import com.toystorage.backend.mapper.packages.packing.StaffPackingSubmissionMapper;
 
-import com.toystorage.backend.repository.packages.StaffPackageItemRepository;
-import com.toystorage.backend.repository.packages.StaffPackageTransferItemRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageItemRepository;
+import com.toystorage.backend.repository.packages.packing.StaffPackageTransferItemRepository;
 
-import com.toystorage.backend.repository.transfers.StockTransferItemRepository;
-import com.toystorage.backend.repository.transfers.StockTransferRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepository;
+import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
 
 import lombok.RequiredArgsConstructor;
 

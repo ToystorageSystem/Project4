@@ -17,8 +17,8 @@ import com.toystorage.backend.exceptions.NotFound;
 
 import com.toystorage.backend.mapper.inventories.discrepancy.DiscrepancyReportMapper;
 
-import com.toystorage.backend.repository.inventories.DiscrepancyReportRepository;
-import com.toystorage.backend.repository.receipts.ReceiptInspectionRepository;
+import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyReportRepository;
+import com.toystorage.backend.repository.receipts.receiving.ReceiptInspectionRepository;
 
 import lombok.RequiredArgsConstructor;
 
