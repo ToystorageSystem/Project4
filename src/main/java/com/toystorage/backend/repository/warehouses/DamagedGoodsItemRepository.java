@@ -10,4 +10,5 @@ public interface DamagedGoodsItemRepository
 
     List<DamagedGoodsItems>
     findByDamagedGoodsReportId(Long reportId);
+
 }
