@@ -68,6 +68,10 @@ public class StockCounts {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_to")
+    private Users assignedTo;
+
     /* Mã nội bộ theo đúng database. */
     @Column(name = "stock_counts_code", nullable = false, unique = true, length = 255)
     private String stockCountsCode;
