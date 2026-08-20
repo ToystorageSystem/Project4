@@ -203,7 +203,14 @@ public class ShipmentConfirmationService {
                 transfer
         );
 
+        if (delivery.getDeliveryStatus()
+                != DeliveryStatus.ACCEPTED) {
 
+            throw new BadRequest(
+                    "Delivery Staff must accept the trip "
+                            + "before package handover"
+            );
+        }
         /*
          * Không bàn giao hai lần.
          */

@@ -3,32 +3,45 @@ package com.toystorage.backend.enums.deliveries;
 public enum DeliveryStatus {
 
     /*
-     * Chuyến giao hàng đã được tạo.
+     * Chuyến vừa được tạo.
      */
     CREATED,
 
     /*
-     * Đã phân công người hoặc bộ phận vận chuyển.
+     * Hệ thống đã tự động phân công Delivery Staff.
      */
     ASSIGNED,
 
     /*
-     * Hàng đã sẵn sàng xuất kho.
+     * Delivery Staff đã đồng ý nhận chuyến.
+     *
+     * Chưa đồng nghĩa với đã nhận kiện hàng.
+     */
+    ACCEPTED,
+
+    /*
+     * Delivery Staff từ chối chuyến.
+     */
+    REJECTED,
+
+    /*
+     * Hàng đã sẵn sàng để bàn giao.
      */
     READY_TO_SHIP,
 
     /*
-     * Hàng đã rời kho và đang vận chuyển.
+     * Delivery Staff đã nhận kiện
+     * và bắt đầu vận chuyển.
      */
     IN_TRANSIT,
 
     /*
-     * Hàng đã đến địa điểm nhận nhưng chưa bàn giao hoàn tất.
+     * Đã đến điểm giao.
      */
     ARRIVED,
 
     /*
-     * Hàng đã được bàn giao thành công.
+     * Hoàn tất giao hàng.
      */
     DELIVERED,
 
@@ -38,7 +51,7 @@ public enum DeliveryStatus {
     FAILED,
 
     /*
-     * Chuyến giao hàng đã bị hủy.
+     * Chuyến bị hủy.
      */
     CANCELLED
 }
