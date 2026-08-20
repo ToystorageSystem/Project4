@@ -124,17 +124,18 @@ public class PutawayExecutionService {
                 validationService.getCurrentUser();
 
         PutawayTasks task =
-                validationService
-                        .getAssignedTask(
-                                taskId,
-                                staff
+                putawayTaskRepository
+                        .findById(taskId)
+                        .orElseThrow(() ->
+                                new BadRequest(
+                                        "Putaway task not found"
+                                )
                         );
 
-        validationService
-                .validateWarehouse(
-                        staff,
-                        task
-                );
+        validationService.validateWarehouse(
+                staff,
+                task
+        );
 
         return buildResponse(task);
     }
@@ -168,15 +169,6 @@ public class PutawayExecutionService {
                 staff,
                 task
         );
-
-
-        if (task.getStatus()
-                != PutawayTaskStatus.AVAILABLE) {
-
-            throw new BadRequest(
-                    "Only AVAILABLE putaway task can be started"
-            );
-        }
 
 
         /*
@@ -343,10 +335,12 @@ public class PutawayExecutionService {
                 validationService.getCurrentUser();
 
         PutawayTasks task =
-                validationService
-                        .getAssignedTask(
-                                taskId,
-                                staff
+                putawayTaskRepository
+                        .findById(taskId)
+                        .orElseThrow(() ->
+                                new BadRequest(
+                                        "Putaway task not found"
+                                )
                         );
 
         validationService.validateWarehouse(
