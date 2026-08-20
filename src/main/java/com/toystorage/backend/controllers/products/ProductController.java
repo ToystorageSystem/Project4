@@ -4,10 +4,12 @@ import com.toystorage.backend.dto.request.products.CreateProductRequest;
 import com.toystorage.backend.dto.request.products.RejectProductRequest;
 import com.toystorage.backend.dto.request.products.UpdateProductRequest;
 import com.toystorage.backend.dto.response.products.ProductChangeRequestResponse;
+import com.toystorage.backend.dto.response.products.ProductImageUploadResponse;
 import com.toystorage.backend.dto.response.products.ProductPageResponse;
 import com.toystorage.backend.dto.response.products.ProductResponse;
 import com.toystorage.backend.enums.products.ProductStatus;
 import com.toystorage.backend.services.products.ProductService;
+import com.toystorage.backend.services.products.ProductImageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,6 +37,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final ProductExcelImportService productExcelImportService;
+    private final ProductImageService productImageService;
 
     /**
      * Business Staff tạo sản phẩm và gửi yêu cầu duyệt.
@@ -277,6 +280,33 @@ public class ProductController {
                         requestId,
                         request
                 )
+        );
+    }
+
+    /**
+     * Business Staff upload ảnh sản phẩm lên Cloudinary.
+     *
+     * API này chỉ upload ảnh và trả về URL.
+     * Chưa tạo hoặc cập nhật Product trong database.
+     */
+    @PostMapping(
+            value = "/images",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @PreAuthorize("""
+            hasAnyAuthority(
+                'PRODUCT_CREATE',
+                'PRODUCT_UPDATE',
+                'ROLE_BUSINESS_STAFF',
+                'ROLE_ADMIN'
+            )
+            """)
+    public ResponseEntity<ProductImageUploadResponse>
+    uploadProductImage(
+            @RequestParam("image") MultipartFile image
+    ) {
+        return ResponseEntity.ok(
+                productImageService.uploadImage(image)
         );
     }
 
