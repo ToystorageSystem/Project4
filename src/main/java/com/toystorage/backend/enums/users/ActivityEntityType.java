@@ -9,6 +9,7 @@ public enum ActivityEntityType {
     AUTHENTICATION,
     PRODUCT,
     SUPPLIER,
+    SUPPLIER_PRODUCT,
     PURCHASE_ORDER,
     GOODS_RECEIPT,
     INVENTORY,

@@ -1,12 +1,12 @@
 package com.toystorage.backend.entity.users;
 
-
 import com.toystorage.backend.enums.users.ActivityAction;
 import com.toystorage.backend.enums.users.ActivityEntityType;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -27,6 +27,13 @@ public class ActivityLogs {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(
+            name = "activity_logs_code",
+            nullable = false,
+            length = 50
+    )
+    private String activityLogsCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -62,9 +69,18 @@ public class ActivityLogs {
 
     @PrePersist
     protected void onCreate() {
+        if (activityLogsCode == null || activityLogsCode.isBlank()) {
+            activityLogsCode =
+                    "AL-"
+                            + UUID.randomUUID()
+                            .toString()
+                            .replace("-", "")
+                            .substring(0, 16)
+                            .toUpperCase();
+        }
+
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
     }
-
 }
