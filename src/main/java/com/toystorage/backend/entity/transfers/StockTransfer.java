@@ -8,6 +8,7 @@ import com.toystorage.backend.enums.transfers.TransferType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +96,11 @@ public class StockTransfer {
     @Lob
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+    @Column(name = "expected_shipment_date")
+    private LocalDate expectedShipmentDate;
+
+    @Column(name = "expected_receipt_date")
+    private LocalDate expectedReceiptDate;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

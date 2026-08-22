@@ -83,6 +83,7 @@ public class TransferPickingService {
                                         .getId(),
 
                                 List.of(
+                                        TransferStatus.CREATED,
                                         TransferStatus.PENDING_SOURCE_CONFIRMATION,
                                         TransferStatus.PICKING
                                 )
@@ -177,8 +178,11 @@ public class TransferPickingService {
         }
 
 
-        if (transfer.getStatus()
-                != TransferStatus.PENDING_SOURCE_CONFIRMATION) {
+        if (
+                transfer.getStatus() != TransferStatus.CREATED
+                        && transfer.getStatus()
+                        != TransferStatus.PENDING_SOURCE_CONFIRMATION
+        ) {
 
             throw new BadRequest(
                     "Transfer cannot start picking from status "

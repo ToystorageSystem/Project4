@@ -35,4 +35,11 @@ public interface StockTransferItemRepository
             @Param("transferId") Long transferId,
             @Param("barcode") String barcode
     );
+    // =====================================================
+    // STOCK TRANSFER CREATION
+    // =====================================================
+
+    boolean existsByStockTransferItemsCode(
+            String stockTransferItemsCode
+    );
 }
