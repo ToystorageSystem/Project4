@@ -1,7 +1,9 @@
 package com.toystorage.backend.services.transfers;
 
+import com.toystorage.backend.dto.request.transfers.CancelStockTransferRequest;
 import com.toystorage.backend.dto.request.transfers.CreateStockTransferItemRequest;
 import com.toystorage.backend.dto.request.transfers.CreateStockTransferRequest;
+import com.toystorage.backend.dto.request.transfers.UpdateStockTransferRequest;
 import com.toystorage.backend.dto.response.transfers.StockTransferDetailResponse;
 import com.toystorage.backend.dto.response.transfers.StockTransferProductOptionResponse;
 import com.toystorage.backend.dto.response.transfers.StockTransferWarehouseOptionResponse;
@@ -24,6 +26,7 @@ import com.toystorage.backend.enums.users.ActivityEntityType;
 import com.toystorage.backend.enums.warehouses.WarehouseStatus;
 import com.toystorage.backend.enums.warehouses.WarehouseType;
 import com.toystorage.backend.exceptions.BadRequest;
+import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.mapper.transfers.StockTransferCreationMapper;
@@ -37,6 +40,7 @@ import com.toystorage.backend.repository.users.UserRepository;
 import com.toystorage.backend.repository.warehouses.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,8 +50,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -372,11 +379,6 @@ public class StockTransferCreationService {
         }
 
 
-        /*
-         * Khi submit phải kiểm tra lại toàn bộ
-         * vì dữ liệu/tồn kho có thể đã thay đổi
-         * kể từ lúc tạo DRAFT.
-         */
         validateWarehousePair(
                 transfer.getFromWarehouse().getId(),
                 transfer.getToWarehouse().getId()
@@ -418,11 +420,6 @@ public class StockTransferCreationService {
                 );
 
 
-        /*
-         * Lock inventory theo thứ tự Product ID
-         * để giảm nguy cơ deadlock nếu nhiều phiếu
-         * được submit cùng lúc.
-         */
         List<StockTransferItems> sortedItems =
                 items.stream()
                         .sorted(
@@ -485,6 +482,294 @@ public class StockTransferCreationService {
                 snapshot(
                         transfer,
                         items
+                )
+        );
+
+
+        return getDetailedResponse(
+                transfer.getId()
+        );
+    }
+
+
+    // =====================================================
+    // UPDATE STOCK TRANSFER
+    // DRAFT / CREATED / PENDING_SOURCE_CONFIRMATION
+    // =====================================================
+
+    @Transactional
+    public StockTransferDetailResponse update(
+            Long transferId,
+            UpdateStockTransferRequest request
+    ) {
+
+        Users currentUser =
+                getCurrentUser();
+
+
+        StockTransfer transfer =
+                getDetailedTransfer(
+                        transferId
+                );
+
+
+        validateCanModifyTransfer(
+                transfer,
+                currentUser
+        );
+
+
+        TransferStatus currentStatus =
+                transfer.getStatus();
+
+
+        /*
+         * Chỉ DRAFT được đổi điểm nhận.
+         */
+        if (
+                currentStatus != TransferStatus.DRAFT
+                        && !Objects.equals(
+                        request.getToWarehouseId(),
+                        transfer.getToWarehouse().getId()
+                )
+        ) {
+
+            throw new BadRequest(
+                    "Destination can only be changed while stock transfer is DRAFT"
+            );
+        }
+
+
+        validateWarehousePair(
+                transfer.getFromWarehouse().getId(),
+                request.getToWarehouseId()
+        );
+
+
+        Warehouses destination =
+                getActiveDestination(
+                        request.getToWarehouseId()
+                );
+
+
+        validateDates(
+                request.getExpectedShipmentDate(),
+                request.getExpectedReceiptDate()
+        );
+
+
+        validateReason(
+                request.getReasonCode(),
+                request.getReasonNote()
+        );
+
+
+        String oldValue =
+                snapshot(
+                        transfer,
+                        transfer.getItems()
+                );
+
+
+        boolean maintainReservation =
+                currentStatus == TransferStatus.CREATED
+                        || hasActiveReservation(
+                        transfer.getId()
+                );
+
+
+        if (maintainReservation) {
+
+            releaseReservedInventory(
+                    transfer,
+                    currentUser
+            );
+        }
+
+
+        transfer.setToWarehouse(
+                destination
+        );
+
+        transfer.setExpectedShipmentDate(
+                request.getExpectedShipmentDate()
+        );
+
+        transfer.setExpectedReceiptDate(
+                request.getExpectedReceiptDate()
+        );
+
+        transfer.setReasonCode(
+                request.getReasonCode()
+        );
+
+        transfer.setReasonNote(
+                normalizeText(
+                        request.getReasonNote()
+                )
+        );
+
+        transfer.setNotes(
+                normalizeText(
+                        request.getNotes()
+                )
+        );
+
+
+        List<StockTransferItems> finalItems =
+                applyUpdatedItems(
+                        transfer,
+                        request.getItems()
+                );
+
+
+        if (maintainReservation) {
+
+            List<StockTransferItems> sortedItems =
+                    finalItems.stream()
+                            .sorted(
+                                    Comparator.comparing(
+                                            item ->
+                                                    item.getProduct()
+                                                            .getId()
+                                    )
+                            )
+                            .toList();
+
+
+            for (StockTransferItems item : sortedItems) {
+
+                validateProductBeforeSubmit(
+                        item
+                );
+
+                reserveInventory(
+                        transfer,
+                        item,
+                        currentUser
+                );
+
+                item.setApprovedQuantity(
+                        item.getRequestedQuantity()
+                );
+            }
+
+        } else {
+
+            for (StockTransferItems item : finalItems) {
+
+                item.setApprovedQuantity(
+                        0
+                );
+            }
+        }
+
+
+        stockTransferItemRepository.saveAll(
+                finalItems
+        );
+
+
+        transfer =
+                stockTransferRepository.save(
+                        transfer
+                );
+
+
+        saveHistory(
+                currentUser,
+                ActivityAction.UPDATE,
+                transfer,
+                oldValue,
+                snapshot(
+                        transfer,
+                        finalItems
+                )
+        );
+
+
+        return getDetailedResponse(
+                transfer.getId()
+        );
+    }
+
+
+    // =====================================================
+    // CANCEL STOCK TRANSFER
+    // =====================================================
+
+    @Transactional
+    public StockTransferDetailResponse cancel(
+            Long transferId,
+            CancelStockTransferRequest request
+    ) {
+
+        Users currentUser =
+                getCurrentUser();
+
+
+        StockTransfer transfer =
+                getDetailedTransfer(
+                        transferId
+                );
+
+
+        validateCanModifyTransfer(
+                transfer,
+                currentUser
+        );
+
+
+        String cancelReason =
+                normalizeText(
+                        request.getReason()
+                );
+
+
+        if (cancelReason == null) {
+
+            throw new BadRequest(
+                    "Cancel reason is required"
+            );
+        }
+
+
+        String oldValue =
+                snapshot(
+                        transfer,
+                        transfer.getItems()
+                );
+
+
+        releaseReservedInventory(
+                transfer,
+                currentUser
+        );
+
+
+        transfer.setRejectionReason(
+                cancelReason
+        );
+
+        transfer.setStatus(
+                TransferStatus.CANCELLED
+        );
+
+
+        transfer =
+                stockTransferRepository.save(
+                        transfer
+                );
+
+
+        saveHistory(
+                currentUser,
+                ActivityAction.CANCEL,
+                transfer,
+                oldValue,
+                snapshot(
+                        transfer,
+                        transfer.getItems()
                 )
         );
 
@@ -661,6 +946,109 @@ public class StockTransferCreationService {
 
 
     // =====================================================
+    // APPLY UPDATED ITEMS
+    // ADD / REMOVE / CHANGE REQUESTED QUANTITY
+    // =====================================================
+
+    private List<StockTransferItems> applyUpdatedItems(
+            StockTransfer transfer,
+            List<CreateStockTransferItemRequest> requests
+    ) {
+
+        List<StockTransferItems> requestedItems =
+                buildItems(
+                        transfer,
+                        requests
+                );
+
+
+        Map<Long, StockTransferItems> existingByProductId =
+                new HashMap<>();
+
+
+        for (StockTransferItems existingItem : transfer.getItems()) {
+
+            existingByProductId.put(
+                    existingItem.getProduct().getId(),
+                    existingItem
+            );
+        }
+
+
+        List<StockTransferItems> finalItems =
+                new ArrayList<>();
+
+
+        List<StockTransferItems> newItems =
+                new ArrayList<>();
+
+
+        for (StockTransferItems requestedItem : requestedItems) {
+
+            Long productId =
+                    requestedItem.getProduct().getId();
+
+
+            StockTransferItems existingItem =
+                    existingByProductId.remove(
+                            productId
+                    );
+
+
+            if (existingItem != null) {
+
+                existingItem.setRequestedQuantity(
+                        requestedItem.getRequestedQuantity()
+                );
+
+                finalItems.add(
+                        existingItem
+                );
+
+            } else {
+
+                newItems.add(
+                        requestedItem
+                );
+
+                finalItems.add(
+                        requestedItem
+                );
+            }
+        }
+
+
+        List<StockTransferItems> removedItems =
+                new ArrayList<>(
+                        existingByProductId.values()
+                );
+
+
+        if (!removedItems.isEmpty()) {
+
+            transfer.getItems().removeAll(
+                    removedItems
+            );
+
+            stockTransferItemRepository.deleteAll(
+                    removedItems
+            );
+        }
+
+
+        for (StockTransferItems newItem : newItems) {
+
+            transfer.addItem(
+                    newItem
+            );
+        }
+
+
+        return finalItems;
+    }
+
+
+    // =====================================================
     // RESERVE INVENTORY
     // =====================================================
 
@@ -757,13 +1145,6 @@ public class StockTransferCreationService {
                             : balance.getReservedQuantity();
 
 
-            /*
-             * Không trừ quantity vật lý ở đây.
-             *
-             * Hàng vẫn đang nằm tại source.
-             * Chỉ tăng reserved_quantity,
-             * do đó available_quantity giảm.
-             */
             balance.setReservedQuantity(
                     reservedBefore
                             + reserveQuantity
@@ -792,11 +1173,6 @@ public class StockTransferCreationService {
 
         if (remaining != 0) {
 
-            /*
-             * Trường hợp bảo vệ bổ sung.
-             * Bình thường không chạy tới đây
-             * vì phía trên đã SUM và lock.
-             */
             throw new BadRequest(
                     "Unable to reserve complete inventory for product "
                             + item.getProduct().getId()
@@ -806,7 +1182,7 @@ public class StockTransferCreationService {
 
 
     // =====================================================
-    // INVENTORY TRANSACTION
+    // CREATE TRANSFER OUT TRANSACTION
     // =====================================================
 
     private void createTransferOutTransaction(
@@ -837,11 +1213,6 @@ public class StockTransferCreationService {
                                 item.getProduct()
                         )
 
-                        /*
-                         * Với TRANSFER_OUT tại bước submit,
-                         * before/after đang thể hiện
-                         * available inventory bị reserve.
-                         */
                         .quantityBefore(
                                 availableBefore
                         )
@@ -877,6 +1248,325 @@ public class StockTransferCreationService {
         inventoryTransactionRepository.save(
                 transaction
         );
+    }
+
+
+    // =====================================================
+    // ACTIVE RESERVATION OF THIS TRANSFER
+    // =====================================================
+
+    private boolean hasActiveReservation(
+            Long transferId
+    ) {
+
+        List<InventoryTransactions> history =
+                getReservationHistory(
+                        transferId
+                );
+
+
+        Map<ReservationKey, Integer> netByBalance =
+                buildReservationNetByBalance(
+                        history
+                );
+
+
+        return netByBalance
+                .values()
+                .stream()
+                .anyMatch(
+                        value ->
+                                value != null
+                                        && value < 0
+                );
+    }
+
+
+    // =====================================================
+    // RELEASE RESERVED INVENTORY OF THIS TRANSFER ONLY
+    // =====================================================
+
+    private void releaseReservedInventory(
+            StockTransfer transfer,
+            Users currentUser
+    ) {
+
+        List<InventoryTransactions> history =
+                getReservationHistory(
+                        transfer.getId()
+                );
+
+
+        if (history.isEmpty()) {
+            return;
+        }
+
+
+        Map<ReservationKey, Integer> netByBalance =
+                buildReservationNetByBalance(
+                        history
+                );
+
+
+        List<Map.Entry<ReservationKey, Integer>> activeReservations =
+                netByBalance
+                        .entrySet()
+                        .stream()
+
+                        .filter(
+                                entry ->
+                                        entry.getValue() != null
+                                                && entry.getValue() < 0
+                        )
+
+                        .sorted(
+                                Comparator
+                                        .comparing(
+                                                (
+                                                        Map.Entry<
+                                                                ReservationKey,
+                                                                Integer
+                                                                > entry
+                                                ) ->
+                                                        entry.getKey()
+                                                                .productId()
+                                        )
+                                        .thenComparing(
+                                                entry ->
+                                                        entry.getKey()
+                                                                .locationId()
+                                        )
+                        )
+
+                        .toList();
+
+
+        for (
+                Map.Entry<ReservationKey, Integer> entry
+                : activeReservations
+        ) {
+
+            ReservationKey key =
+                    entry.getKey();
+
+
+            int releaseQuantity =
+                    -entry.getValue();
+
+
+            InventoryBalances balance =
+                    inventoryBalanceRepository
+                            .findExactBalanceForUpdate(
+                                    key.warehouseId(),
+                                    key.locationId(),
+                                    key.productId()
+                            )
+                            .orElseThrow(() ->
+                                    new BadRequest(
+                                            "Reserved inventory balance no longer exists for product "
+                                                    + key.productId()
+                                    )
+                            );
+
+
+            int reservedBefore =
+                    balance.getReservedQuantity() == null
+                            ? 0
+                            : balance.getReservedQuantity();
+
+
+            if (
+                    releaseQuantity
+                            > reservedBefore
+            ) {
+
+                throw new BadRequest(
+                        "Reserved inventory is inconsistent for product "
+                                + key.productId()
+                                + ". Reserved: "
+                                + reservedBefore
+                                + ", transfer requires release: "
+                                + releaseQuantity
+                );
+            }
+
+
+            int availableBefore =
+                    balance.getAvailableQuantity() == null
+                            ? 0
+                            : balance.getAvailableQuantity();
+
+
+            balance.setReservedQuantity(
+                    reservedBefore
+                            - releaseQuantity
+            );
+
+
+            inventoryBalanceRepository.save(
+                    balance
+            );
+
+
+            createTransferCancelledTransaction(
+                    transfer,
+                    balance,
+                    currentUser,
+                    availableBefore,
+                    releaseQuantity
+            );
+        }
+
+
+        inventoryBalanceRepository.flush();
+    }
+
+
+    // =====================================================
+    // CALCULATE RESERVATION NET
+    // =====================================================
+
+    private Map<ReservationKey, Integer>
+    buildReservationNetByBalance(
+            List<InventoryTransactions> history
+    ) {
+
+        Map<ReservationKey, Integer> netByBalance =
+                new HashMap<>();
+
+
+        for (InventoryTransactions transaction : history) {
+
+            if (
+                    transaction.getWarehouse() == null
+                            || transaction.getLocation() == null
+                            || transaction.getProduct() == null
+                            || transaction.getQuantityChange() == null
+            ) {
+
+                continue;
+            }
+
+
+            ReservationKey key =
+                    new ReservationKey(
+                            transaction.getWarehouse().getId(),
+                            transaction.getLocation().getId(),
+                            transaction.getProduct().getId()
+                    );
+
+
+            netByBalance.merge(
+                    key,
+                    transaction.getQuantityChange(),
+                    Integer::sum
+            );
+        }
+
+
+        return netByBalance;
+    }
+
+
+    // =====================================================
+    // GET RESERVATION HISTORY
+    // =====================================================
+
+    private List<InventoryTransactions> getReservationHistory(
+            Long transferId
+    ) {
+
+        return inventoryTransactionRepository
+                .findReservationHistory(
+                        InventoryReferenceType.STOCK_TRANSFER,
+                        transferId,
+
+                        List.of(
+                                InventoryTransactionType.TRANSFER_OUT,
+                                InventoryTransactionType.TRANSFER_CANCELLED
+                        )
+                );
+    }
+
+
+    // =====================================================
+    // CREATE TRANSFER CANCELLED TRANSACTION
+    // =====================================================
+
+    private void createTransferCancelledTransaction(
+            StockTransfer transfer,
+            InventoryBalances balance,
+            Users currentUser,
+            int availableBefore,
+            int releaseQuantity
+    ) {
+
+        InventoryTransactions transaction =
+                InventoryTransactions.builder()
+
+                        .inventoryTransactionsCode(
+                                generateTransactionCode()
+                        )
+
+                        .warehouse(
+                                balance.getWarehouse()
+                        )
+
+                        .location(
+                                balance.getLocation()
+                        )
+
+                        .product(
+                                balance.getProduct()
+                        )
+
+                        .quantityBefore(
+                                availableBefore
+                        )
+
+                        .quantityChange(
+                                releaseQuantity
+                        )
+
+                        .quantityAfter(
+                                availableBefore
+                                        + releaseQuantity
+                        )
+
+                        .referenceId(
+                                transfer.getId()
+                        )
+
+                        .referenceType(
+                                InventoryReferenceType.STOCK_TRANSFER
+                        )
+
+                        .transactionType(
+                                InventoryTransactionType.TRANSFER_CANCELLED
+                        )
+
+                        .performedBy(
+                                currentUser
+                        )
+
+                        .build();
+
+
+        inventoryTransactionRepository.save(
+                transaction
+        );
+    }
+
+
+    // =====================================================
+    // RESERVATION KEY
+    // =====================================================
+
+    private record ReservationKey(
+            Long warehouseId,
+            Long locationId,
+            Long productId
+    ) {
     }
 
 
@@ -991,7 +1681,7 @@ public class StockTransferCreationService {
 
     // =====================================================
     // ACTIVE DESTINATION
-    // CHỈ STORE
+    // STORE ONLY
     // =====================================================
 
     private Warehouses getActiveDestination(
@@ -1015,14 +1705,6 @@ public class StockTransferCreationService {
         }
 
 
-        /*
-         * Rule Task #11:
-         *
-         * MAIN_WAREHOUSE chỉ nhận hàng từ Supplier,
-         * không nhận Stock Transfer từ Store.
-         *
-         * Vì vậy destination bắt buộc STORE.
-         */
         if (
                 warehouse.getType()
                         != WarehouseType.STORE
@@ -1151,6 +1833,106 @@ public class StockTransferCreationService {
 
 
     // =====================================================
+    // VALIDATE UPDATE / CANCEL
+    // =====================================================
+
+    private void validateCanModifyTransfer(
+            StockTransfer transfer,
+            Users currentUser
+    ) {
+
+        TransferStatus status =
+                transfer.getStatus();
+
+
+        /*
+         * Mapping Task #12:
+         *
+         * DRAFT                       -> cho phép
+         * CREATED                     -> cho phép
+         * PENDING_SOURCE_CONFIRMATION -> cho phép
+         *
+         * PICKING trở đi -> không sửa/hủy.
+         */
+        if (
+                status != TransferStatus.DRAFT
+                        && status != TransferStatus.CREATED
+                        && status != TransferStatus.PENDING_SOURCE_CONFIRMATION
+        ) {
+
+            throw new BadRequest(
+                    "Stock transfer can no longer be updated or cancelled in status: "
+                            + status
+            );
+        }
+
+
+        /*
+         * Creator được sửa/hủy phiếu của mình.
+         */
+        if (
+                transfer.getCreatedBy() != null
+                        && Objects.equals(
+                        transfer.getCreatedBy().getId(),
+                        currentUser.getId()
+                )
+        ) {
+
+            return;
+        }
+
+
+        /*
+         * Business Manager hoặc Admin được override.
+         */
+        if (hasBusinessOverridePermission()) {
+            return;
+        }
+
+
+        throw new Forbidden(
+                "Only the creator, Business Manager, or Admin can update or cancel this stock transfer"
+        );
+    }
+
+
+    private boolean hasBusinessOverridePermission() {
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+
+        if (
+                authentication == null
+                        || !authentication.isAuthenticated()
+        ) {
+
+            return false;
+        }
+
+
+        return authentication
+                .getAuthorities()
+                .stream()
+
+                .map(
+                        GrantedAuthority::getAuthority
+                )
+
+                .anyMatch(
+                        authority ->
+                                "ROLE_BUSINESS_MANAGER"
+                                        .equals(authority)
+
+                                        || "ROLE_ADMIN"
+                                        .equals(authority)
+                );
+    }
+
+
+    // =====================================================
     // CURRENT USER
     // =====================================================
 
@@ -1166,8 +1948,8 @@ public class StockTransferCreationService {
                 authentication == null
                         || !authentication.isAuthenticated()
                         || "anonymousUser".equals(
-                                authentication.getPrincipal()
-                        )
+                        authentication.getPrincipal()
+                )
         ) {
 
             throw new Unauthorized(
@@ -1435,6 +2217,15 @@ public class StockTransferCreationService {
                 ", notes="
         ).append(
                 transfer.getNotes()
+        );
+
+
+        builder.append(
+                ", cancelReason="
+        ).append(
+                transfer.getStatus() == TransferStatus.CANCELLED
+                        ? transfer.getRejectionReason()
+                        : null
         );
 
 

@@ -1,6 +1,8 @@
 package com.toystorage.backend.controllers.transfers;
 
+import com.toystorage.backend.dto.request.transfers.CancelStockTransferRequest;
 import com.toystorage.backend.dto.request.transfers.CreateStockTransferRequest;
+import com.toystorage.backend.dto.request.transfers.UpdateStockTransferRequest;
 import com.toystorage.backend.dto.response.transfers.StockTransferDetailResponse;
 import com.toystorage.backend.dto.response.transfers.StockTransferProductOptionResponse;
 import com.toystorage.backend.dto.response.transfers.StockTransferWarehouseOptionResponse;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -200,6 +203,74 @@ public class StockTransferCreationController {
                 stockTransferCreationService
                         .submit(
                                 transferId
+                        )
+        );
+    }
+
+
+    // =====================================================
+    // UPDATE STOCK TRANSFER
+    // =====================================================
+
+    @PutMapping("/{transferId}")
+    @PreAuthorize("""
+            hasAnyAuthority(
+                'STOCK_TRANSFER_CREATE',
+                'ROLE_BUSINESS_STAFF',
+                'ROLE_BUSINESS_MANAGER',
+                'ROLE_ADMIN'
+            )
+            """)
+    public ResponseEntity<StockTransferDetailResponse>
+    updateStockTransfer(
+
+            @PathVariable
+            Long transferId,
+
+            @Valid
+            @RequestBody
+            UpdateStockTransferRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                stockTransferCreationService
+                        .update(
+                                transferId,
+                                request
+                        )
+        );
+    }
+
+
+    // =====================================================
+    // CANCEL STOCK TRANSFER
+    // =====================================================
+
+    @PatchMapping("/{transferId}/cancel")
+    @PreAuthorize("""
+            hasAnyAuthority(
+                'STOCK_TRANSFER_CREATE',
+                'ROLE_BUSINESS_STAFF',
+                'ROLE_BUSINESS_MANAGER',
+                'ROLE_ADMIN'
+            )
+            """)
+    public ResponseEntity<StockTransferDetailResponse>
+    cancelStockTransfer(
+
+            @PathVariable
+            Long transferId,
+
+            @Valid
+            @RequestBody
+            CancelStockTransferRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                stockTransferCreationService
+                        .cancel(
+                                transferId,
+                                request
                         )
         );
     }

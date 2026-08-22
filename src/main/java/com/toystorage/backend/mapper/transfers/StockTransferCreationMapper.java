@@ -9,6 +9,7 @@ import com.toystorage.backend.entity.transfers.StockTransfer;
 import com.toystorage.backend.entity.transfers.StockTransferItems;
 import com.toystorage.backend.entity.warehouses.Warehouses;
 import org.springframework.stereotype.Component;
+import com.toystorage.backend.enums.transfers.TransferStatus;
 
 import java.util.Collections;
 import java.util.List;
@@ -351,7 +352,11 @@ public class StockTransferCreationMapper {
                 .notes(
                         transfer.getNotes()
                 )
-
+                .cancelReason(
+                        transfer.getStatus() == TransferStatus.CANCELLED
+                                ? transfer.getRejectionReason()
+                                : null
+                )
                 // =========================
                 // SUMMARY
                 // =========================

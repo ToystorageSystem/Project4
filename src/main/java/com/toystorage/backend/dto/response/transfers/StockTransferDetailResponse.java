@@ -61,6 +61,11 @@ public class StockTransferDetailResponse {
     private String notes;
 
     /*
+     * Task #12
+     */
+    private String cancelReason;
+
+    /*
      * Summary
      */
     private Integer totalProducts;

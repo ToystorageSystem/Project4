@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+
 public interface InventoryBalanceRepository
         extends JpaRepository<InventoryBalances, Long> {
 
@@ -19,10 +20,12 @@ public interface InventoryBalanceRepository
             Long locationId,
             Long productId
     );
+
     List<InventoryBalances>
     findByWarehouseId(
             Long warehouseId
     );
+
     Optional<InventoryBalances>
     findFirstByWarehouseIdAndProductId(
             Long warehouseId,
@@ -30,13 +33,13 @@ public interface InventoryBalanceRepository
     );
 
     @Query("""
-    select b
-    from InventoryBalances b
-    join b.location l
-    where b.warehouse.id = :warehouseId
-      and b.product.id = :productId
-      and l.warehouseCode = :locationCode
-""")
+            select b
+            from InventoryBalances b
+            join b.location l
+            where b.warehouse.id = :warehouseId
+              and b.product.id = :productId
+              and l.warehouseCode = :locationCode
+            """)
     Optional<InventoryBalances>
     findPickingBalance(
             @Param("warehouseId")
@@ -48,7 +51,9 @@ public interface InventoryBalanceRepository
             @Param("locationCode")
             String locationCode
     );
-        // =====================================================
+
+
+    // =====================================================
     // STOCK TRANSFER - TOTAL AVAILABLE QUANTITY
     // =====================================================
 
@@ -59,8 +64,11 @@ public interface InventoryBalanceRepository
               and b.product.id = :productId
             """)
     Long sumAvailableQuantity(
-            @Param("warehouseId") Long warehouseId,
-            @Param("productId") Long productId
+            @Param("warehouseId")
+            Long warehouseId,
+
+            @Param("productId")
+            Long productId
     );
 
 
@@ -78,8 +86,11 @@ public interface InventoryBalanceRepository
             order by b.product.name asc
             """)
     List<Object[]> findAvailableProductsByWarehouseId(
-            @Param("warehouseId") Long warehouseId,
-            @Param("productStatus") ProductStatus productStatus
+            @Param("warehouseId")
+            Long warehouseId,
+
+            @Param("productStatus")
+            ProductStatus productStatus
     );
 
 
@@ -96,7 +107,34 @@ public interface InventoryBalanceRepository
             order by b.id asc
             """)
     List<InventoryBalances> findByWarehouseIdAndProductIdForUpdate(
-            @Param("warehouseId") Long warehouseId,
-            @Param("productId") Long productId
+            @Param("warehouseId")
+            Long warehouseId,
+
+            @Param("productId")
+            Long productId
+    );
+
+
+    // =====================================================
+    // STOCK TRANSFER - LOCK EXACT RESERVED BALANCE
+    // =====================================================
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select b
+            from InventoryBalances b
+            where b.warehouse.id = :warehouseId
+              and b.location.id = :locationId
+              and b.product.id = :productId
+            """)
+    Optional<InventoryBalances> findExactBalanceForUpdate(
+            @Param("warehouseId")
+            Long warehouseId,
+
+            @Param("locationId")
+            Long locationId,
+
+            @Param("productId")
+            Long productId
     );
 }
