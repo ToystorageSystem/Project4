@@ -106,6 +106,18 @@ public class SupplierInvoices {
     private LocalDate invoiceDate;
 
     /*
+     * Ngày đến hạn thanh toán.
+     *
+     * Không đặt nullable = false ở entity để tương thích
+     * với các dữ liệu hóa đơn cũ đã tồn tại trong database.
+     * Khi tạo hóa đơn mới, Service/DTO sẽ bắt buộc nhập trường này.
+     */
+    @Column(
+            name = "due_date"
+    )
+    private LocalDate dueDate;
+
+    /*
      * Giá trị hàng hóa trước thuế.
      */
     @Column(
