@@ -1,8 +1,8 @@
 package com.toystorage.backend.entity.inventories;
 
 import com.toystorage.backend.entity.products.Products;
-import com.toystorage.backend.entity.warehouses.Warehouses;
 import com.toystorage.backend.entity.warehouses.WarehouseLocations;
+import com.toystorage.backend.entity.warehouses.Warehouses;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -61,6 +61,9 @@ public class InventoryBalances {
     )
     private String inventoryBalancesCode;
 
+    /**
+     * Kho hoặc cửa hàng đang chứa tồn kho.
+     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "warehouse_id",
@@ -71,6 +74,9 @@ public class InventoryBalances {
     )
     private Warehouses warehouse;
 
+    /**
+     * Vị trí cụ thể trong kho hoặc cửa hàng.
+     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "location_id",
@@ -81,6 +87,9 @@ public class InventoryBalances {
     )
     private WarehouseLocations location;
 
+    /**
+     * Sản phẩm đang được lưu tại vị trí.
+     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "product_id",
@@ -92,7 +101,7 @@ public class InventoryBalances {
     private Products product;
 
     /**
-     * Tổng số lượng vật lý tại vị trí.
+     * Tồn thực tế / On-hand quantity.
      */
     @Column(
             name = "quantity",
@@ -101,7 +110,8 @@ public class InventoryBalances {
     private Integer quantity;
 
     /**
-     * Số lượng đã được giữ chỗ cho phiếu khác.
+     * Số lượng đã được giữ cho các nghiệp vụ khác,
+     * ví dụ Stock Transfer.
      */
     @Column(
             name = "reserved_quantity",
@@ -110,7 +120,28 @@ public class InventoryBalances {
     private Integer reservedQuantity;
 
     /**
-     * Số lượng có thể tiếp tục sử dụng.
+     * Mức tồn tối thiểu tại địa điểm.
+     *
+     * Dùng để xác định trạng thái tồn kho:
+     *
+     * available = 0
+     * -> OUT_OF_STOCK
+     *
+     * available > 0
+     * và available <= minimumStockLevel
+     * -> LOW_STOCK
+     *
+     * available > minimumStockLevel
+     * -> IN_STOCK
+     */
+    @Column(
+            name = "minimum_stock_level",
+            nullable = false
+    )
+    private Integer minimumStockLevel;
+
+    /**
+     * Tồn khả dụng.
      *
      * availableQuantity = quantity - reservedQuantity
      */
@@ -120,14 +151,21 @@ public class InventoryBalances {
     )
     private Integer availableQuantity;
 
+    /**
+     * Thời gian cập nhật tồn kho gần nhất.
+     */
     @Column(
             name = "updated_at",
             nullable = false
     )
     private LocalDateTime updatedAt;
 
+    /**
+     * Khởi tạo giá trị trước khi INSERT.
+     */
     @PrePersist
     protected void onCreate() {
+
         if (quantity == null) {
             quantity = 0;
         }
@@ -136,20 +174,43 @@ public class InventoryBalances {
             reservedQuantity = 0;
         }
 
+        if (minimumStockLevel == null) {
+            minimumStockLevel = 0;
+        }
+
         calculateAvailableQuantity();
+
         updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * Cập nhật tồn khả dụng và thời gian
+     * trước khi UPDATE.
+     */
     @PreUpdate
     protected void onUpdate() {
+
         calculateAvailableQuantity();
+
         updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * Công thức:
+     *
+     * available = on-hand - reserved
+     */
     private void calculateAvailableQuantity() {
-        int currentQuantity = quantity == null ? 0 : quantity;
+
+        int currentQuantity =
+                quantity != null
+                        ? quantity
+                        : 0;
+
         int currentReservedQuantity =
-                reservedQuantity == null ? 0 : reservedQuantity;
+                reservedQuantity != null
+                        ? reservedQuantity
+                        : 0;
 
         availableQuantity =
                 currentQuantity - currentReservedQuantity;

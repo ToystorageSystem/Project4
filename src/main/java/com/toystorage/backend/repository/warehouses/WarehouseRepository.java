@@ -16,4 +16,12 @@ public interface WarehouseRepository
             WarehouseType type,
             WarehouseStatus status
     );
+
+    // =====================================================
+    // INVENTORY REPORT
+    // =====================================================
+
+    List<Warehouses> findByStatusOrderByNameAsc(
+            WarehouseStatus status
+    );
 }
