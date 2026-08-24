@@ -78,6 +78,15 @@ public class Products {
     )
     private String barcode;
 
+    /**
+     * URL hình ảnh sản phẩm.
+     */
+    @Column(
+            name = "image_url",
+            length = 500
+    )
+    private String imageUrl;
+
     @Column(
             name = "name",
             nullable = false,
@@ -124,6 +133,17 @@ public class Products {
             length = 30
     )
     private String baseUnit;
+
+    /**
+     * Giá nhập của sản phẩm.
+     */
+    @Column(
+            name = "purchase_price",
+            nullable = false,
+            precision = 18,
+            scale = 2
+    )
+    private BigDecimal purchasePrice;
 
     /**
      * Giá bán của sản phẩm.

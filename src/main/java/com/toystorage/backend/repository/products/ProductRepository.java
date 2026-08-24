@@ -47,4 +47,17 @@ public interface ProductRepository
             @Param("status")
             CommonStatus status
     );
+    // =====================================================
+    // PRODUCT APPROVAL - DUPLICATE VALIDATION
+    // =====================================================
+
+    boolean existsByProductsCodeIgnoreCaseAndIdNot(
+            String productsCode,
+            Long id
+    );
+
+    boolean existsByBarcodeAndIdNot(
+            String barcode,
+            Long id
+    );
 }
