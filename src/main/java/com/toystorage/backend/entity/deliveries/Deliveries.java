@@ -1,5 +1,6 @@
 package com.toystorage.backend.entity.deliveries;
 
+import com.toystorage.backend.entity.shipments.ShipmentManifests;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.Warehouses;
 import com.toystorage.backend.enums.deliveries.DeliveryStatus;
@@ -25,6 +26,16 @@ public class Deliveries {
     @Column(name = "shipment_code", nullable = false, unique = true, length = 50)
     private String shipmentCode;
 
+    /**
+     * Bảng kê đi hàng mà chuyến giao này thuộc về.
+     *
+     * DB:
+     * deliveries.manifest_id -> shipment_manifests.id
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manifest_id")
+    private ShipmentManifests manifest;
+
     /** Tài xế được phân công giao hàng. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "driver_id")
@@ -40,13 +51,20 @@ public class Deliveries {
     @JoinColumn(name = "to_warehouse_id", nullable = false)
     private Warehouses toWarehouse;
 
+    /** Người bàn giao hàng cho tài xế. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "handed_over_by")
     private Users handedOverBy;
 
+    /** Thời điểm bàn giao hàng. */
     @Column(name = "handed_over_at")
     private LocalDateTime handedOverAt;
-    /** CREATED, ASSIGNED, IN_TRANSIT, DELIVERED, FAILED, CANCELLED. */
+
+    /**
+     * CREATED, ASSIGNED, READY_TO_SHIP,
+     * IN_TRANSIT, ARRIVED, DELIVERED,
+     * FAILED, CANCELLED.
+     */
     @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(name = "status", nullable = false, length = 30)
@@ -69,8 +87,15 @@ public class Deliveries {
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
-        if (createdAt == null) createdAt = now;
-        if (updatedAt == null) updatedAt = now;
+
+        if (createdAt == null) {
+            createdAt = now;
+        }
+
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+
         if (deliveryStatus == null) {
             deliveryStatus = DeliveryStatus.CREATED;
         }

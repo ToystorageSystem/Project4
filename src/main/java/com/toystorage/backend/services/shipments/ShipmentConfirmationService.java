@@ -216,6 +216,22 @@ public class ShipmentConfirmationService {
 
 
         /*
+         * Không được lấy một Delivery đã thuộc Manifest khác
+         * rồi gắn sang Manifest hiện tại.
+         */
+        if (delivery.getManifest() != null
+                && !delivery.getManifest()
+                .getId()
+                .equals(manifest.getId())) {
+
+            throw new BadRequest(
+                    "Delivery is already linked "
+                            + "to another shipment manifest"
+            );
+        }
+
+
+        /*
          * Package -> SHIPPED
          */
         for (ShipmentManifestPackage link
@@ -253,6 +269,17 @@ public class ShipmentConfirmationService {
 
         stockTransferRepository.save(
                 transfer
+        );
+
+
+        /*
+         * Liên kết Delivery với Shipment Manifest.
+         *
+         * Khi save Delivery:
+         * deliveries.manifest_id = manifest.id
+         */
+        delivery.setManifest(
+                manifest
         );
 
 
