@@ -40,7 +40,7 @@ public class DeliveryTripController {
 
 
     // =====================================================
-    // LIST
+    // LIST MY TRIPS
     // =====================================================
 
     @GetMapping
@@ -85,7 +85,7 @@ public class DeliveryTripController {
 
 
     // =====================================================
-    // ACCEPT
+    // ACCEPT TRIP
     // =====================================================
 
     @PatchMapping(
@@ -110,7 +110,7 @@ public class DeliveryTripController {
 
 
     // =====================================================
-    // REJECT
+    // REJECT TRIP
     // =====================================================
 
     @PatchMapping(
@@ -134,6 +134,76 @@ public class DeliveryTripController {
                         .reject(
                                 deliveryId,
                                 request
+                        )
+        );
+    }
+    // =====================================================
+// ARRIVED
+// =====================================================
+
+    @PatchMapping(
+            "/{deliveryId}/arrived"
+    )
+//    @PreAuthorize(
+//            "hasRole('DELIVERY_STAFF')"
+//    )
+    public ResponseEntity<DeliveryTripDetailResponse>
+    markArrived(
+            @PathVariable
+            Long deliveryId
+    ) {
+
+        return ResponseEntity.ok(
+                deliveryTripService
+                        .markArrived(
+                                deliveryId
+                        )
+        );
+    }
+// =====================================================
+// DELIVERED
+// =====================================================
+
+    @PatchMapping(
+            "/{deliveryId}/delivered"
+    )
+//    @PreAuthorize(
+//            "hasRole('DELIVERY_STAFF')"
+//    )
+    public ResponseEntity<DeliveryTripDetailResponse>
+    completeDelivery(
+            @PathVariable
+            Long deliveryId
+    ) {
+
+        return ResponseEntity.ok(
+                deliveryTripService
+                        .completeDelivery(
+                                deliveryId
+                        )
+        );
+    }
+
+    // =====================================================
+// FAILED
+// =====================================================
+
+    @PatchMapping(
+            "/{deliveryId}/failed"
+    )
+//    @PreAuthorize(
+//            "hasRole('DELIVERY_STAFF')"
+//    )
+    public ResponseEntity<DeliveryTripDetailResponse>
+    failDelivery(
+            @PathVariable
+            Long deliveryId
+    ) {
+
+        return ResponseEntity.ok(
+                deliveryTripService
+                        .failDelivery(
+                                deliveryId
                         )
         );
     }

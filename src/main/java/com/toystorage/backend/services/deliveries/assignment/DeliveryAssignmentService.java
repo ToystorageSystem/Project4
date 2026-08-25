@@ -41,7 +41,7 @@ import java.util.Optional;
 public class DeliveryAssignmentService {
 
     /*
-     * Kiểm tra lại roles_code thực tế trong DB.
+     * Phải đúng với roles_code trong database.
      */
     private static final String
             DELIVERY_STAFF_ROLE_CODE =
@@ -69,13 +69,15 @@ public class DeliveryAssignmentService {
      * FUTURE AI
      * =====================================================
      *
+     * Sau này khi bật AI:
+     *
      * private final AiDriverScoringService
      *         aiDriverScoringService;
      */
 
 
     // =====================================================
-    // AUTO ASSIGN - BẮT BUỘC CÓ DRIVER
+    // AUTO ASSIGN
     // =====================================================
 
     @Transactional
@@ -83,19 +85,25 @@ public class DeliveryAssignmentService {
             Long deliveryId
     ) {
 
+        /*
+         * findByIdForUpdate()
+         * lock row Delivery để tránh 2 thread
+         * cùng assign 2 tài xế khác nhau.
+         */
         Deliveries delivery =
                 getDelivery(
                         deliveryId
                 );
 
 
-        /*
-         * Nếu đã assign hợp lệ rồi
-         * thì không assign lại.
-         */
+        // =================================================
+        // ĐÃ CÓ DRIVER VÀ ĐANG ĐƯỢC XỬ LÝ
+        // =================================================
+
         if (delivery.getDriver() != null
-                && delivery.getDeliveryStatus()
-                == DeliveryStatus.ASSIGNED) {
+                && isActiveAssignmentStatus(
+                delivery.getDeliveryStatus()
+        )) {
 
             DeliveryAssignmentHistory history =
                     assignmentHistoryRepository
@@ -115,10 +123,27 @@ public class DeliveryAssignmentService {
         }
 
 
+        // =================================================
+        // CHỈ CREATED / REJECTED ĐƯỢC ASSIGN
+        // =================================================
+
+        if (delivery.getDeliveryStatus()
+                != DeliveryStatus.CREATED
+                && delivery.getDeliveryStatus()
+                != DeliveryStatus.REJECTED) {
+
+            throw new BadRequest(
+                    "Delivery cannot be assigned from status "
+                            + delivery.getDeliveryStatus()
+            );
+        }
+
+
         Users selectedDriver =
                 findBestDriver(
                         delivery
                 )
+
                         .orElseThrow(() ->
                                 new BadRequest(
                                         "No Delivery Staff available"
@@ -136,9 +161,7 @@ public class DeliveryAssignmentService {
     // =====================================================
     // TRY AUTO ASSIGN
     //
-    // Dùng khi Reject.
-    //
-    // Không có tài xế cũng KHÔNG throw.
+    // Không có tài xế thì KHÔNG throw.
     // =====================================================
 
     @Transactional
@@ -152,6 +175,49 @@ public class DeliveryAssignmentService {
                 );
 
 
+        // =================================================
+        // ĐÃ ASSIGN RỒI
+        // =================================================
+
+        if (delivery.getDriver() != null
+                && isActiveAssignmentStatus(
+                delivery.getDeliveryStatus()
+        )) {
+
+            DeliveryAssignmentHistory history =
+                    assignmentHistoryRepository
+                            .findTopByDeliveryIdAndDriverIdOrderByAssignedAtDesc(
+                                    deliveryId,
+                                    delivery
+                                            .getDriver()
+                                            .getId()
+                            )
+                            .orElse(null);
+
+
+            return mapper.toResponse(
+                    delivery,
+                    history
+            );
+        }
+
+
+        // =================================================
+        // STATUS VALIDATION
+        // =================================================
+
+        if (delivery.getDeliveryStatus()
+                != DeliveryStatus.CREATED
+                && delivery.getDeliveryStatus()
+                != DeliveryStatus.REJECTED) {
+
+            throw new BadRequest(
+                    "Delivery cannot be assigned from status "
+                            + delivery.getDeliveryStatus()
+            );
+        }
+
+
         Optional<Users> selectedDriver =
                 findBestDriver(
                         delivery
@@ -159,10 +225,9 @@ public class DeliveryAssignmentService {
 
 
         /*
-         * Chưa có ai rảnh.
+         * Không có tài xế hiện tại.
          *
-         * Giữ CREATED + driver null.
-         * Sau này scheduler/API có thể thử lại.
+         * Để CREATED chờ hệ thống thử lại.
          */
         if (selectedDriver.isEmpty()) {
 
@@ -174,9 +239,11 @@ public class DeliveryAssignmentService {
                     DeliveryStatus.CREATED
             );
 
+
             deliveryRepository.save(
                     delivery
             );
+
 
             return mapper.toResponse(
                     delivery,
@@ -208,8 +275,31 @@ public class DeliveryAssignmentService {
 
 
         /*
-         * Bỏ owner cũ.
+         * Không được reassign chuyến:
+         *
+         * ACCEPTED
+         * IN_TRANSIT
+         * ARRIVED
+         * ...
+         *
+         * tránh đổi tài xế giữa chuyến.
          */
+        if (delivery.getDeliveryStatus()
+                != DeliveryStatus.REJECTED
+                && delivery.getDeliveryStatus()
+                != DeliveryStatus.CREATED) {
+
+            throw new BadRequest(
+                    "Only CREATED or REJECTED delivery "
+                            + "can be reassigned"
+            );
+        }
+
+
+        // =================================================
+        // CLEAR CURRENT DRIVER
+        // =================================================
+
         delivery.setDriver(
                 null
         );
@@ -222,14 +312,22 @@ public class DeliveryAssignmentService {
                 null
         );
 
+
+        /*
+         * Không xóa rejection history.
+         *
+         * History table vẫn giữ người đã reject.
+         */
+
         deliveryRepository.save(
                 delivery
         );
 
 
-        /*
-         * Không bắt buộc phải có người ngay.
-         */
+        // =================================================
+        // TRY NEXT DRIVER
+        // =================================================
+
         return tryAutoAssign(
                 deliveryId
         );
@@ -252,14 +350,15 @@ public class DeliveryAssignmentService {
 
 
         if (drivers.isEmpty()) {
+
             return Optional.empty();
         }
 
 
-        /*
-         * Tài xế đã reject chuyến này
-         * thì không assign lại.
-         */
+        // =================================================
+        // REMOVE PREVIOUS REJECTED DRIVERS
+        // =================================================
+
         List<Users> candidates =
                 drivers.stream()
 
@@ -275,12 +374,13 @@ public class DeliveryAssignmentService {
 
 
         if (candidates.isEmpty()) {
+
             return Optional.empty();
         }
 
 
         // =================================================
-        // RULE BASED
+        // RULE BASED SCORING
         // =================================================
 
         return candidates.stream()
@@ -298,25 +398,30 @@ public class DeliveryAssignmentService {
                 )
 
                 /*
-                 * score < 0 nghĩa là không available.
+                 * score < 0:
+                 * tài xế không available.
                  */
                 .filter(driverScore ->
                         driverScore.score() >= 0
                 )
 
-                .max(
+                /*
+                 * Score cao nhất trước.
+                 *
+                 * Nếu cùng score:
+                 * ưu tiên User ID nhỏ hơn
+                 * để kết quả deterministic.
+                 */
+                .sorted(
                         Comparator
                                 .comparingDouble(
                                         DriverScore::score
                                 )
+                                .reversed()
 
-                                /*
-                                 * Nếu bằng score:
-                                 * ưu tiên ID nhỏ hơn.
-                                 */
                                 .thenComparing(
                                         driverScore ->
-                                                -driverScore
+                                                driverScore
                                                         .driver()
                                                         .getId()
                                 )
@@ -324,15 +429,18 @@ public class DeliveryAssignmentService {
 
                 .map(
                         DriverScore::driver
-                );
+                )
+
+                .findFirst();
 
 
         /*
          * =================================================
-         * AI VERSION SAU NÀY
+         * FUTURE AI VERSION
          * =================================================
          *
          * return Optional.ofNullable(
+         *
          *         aiDriverScoringService
          *                 .selectBestDriver(
          *                         candidates,
@@ -355,6 +463,10 @@ public class DeliveryAssignmentService {
         LocalDateTime now =
                 LocalDateTime.now();
 
+
+        // =================================================
+        // DELIVERY
+        // =================================================
 
         delivery.setDriver(
                 selectedDriver
@@ -382,6 +494,10 @@ public class DeliveryAssignmentService {
                         delivery
                 );
 
+
+        // =================================================
+        // ASSIGNMENT HISTORY
+        // =================================================
 
         DeliveryAssignmentHistory history =
                 DeliveryAssignmentHistory
@@ -417,7 +533,37 @@ public class DeliveryAssignmentService {
 
 
     // =====================================================
-    // GET DELIVERY
+    // ACTIVE ASSIGNMENT STATUS
+    // =====================================================
+
+    private boolean isActiveAssignmentStatus(
+            DeliveryStatus status
+    ) {
+
+        if (status == null) {
+            return false;
+        }
+
+
+        return status
+                == DeliveryStatus.ASSIGNED
+
+                || status
+                == DeliveryStatus.ACCEPTED
+
+                || status
+                == DeliveryStatus.READY_TO_SHIP
+
+                || status
+                == DeliveryStatus.IN_TRANSIT
+
+                || status
+                == DeliveryStatus.ARRIVED;
+    }
+
+
+    // =====================================================
+    // GET DELIVERY WITH LOCK
     // =====================================================
 
     private Deliveries getDelivery(
@@ -437,6 +583,10 @@ public class DeliveryAssignmentService {
                 );
     }
 
+
+    // =====================================================
+    // DRIVER SCORE
+    // =====================================================
 
     private record DriverScore(
             Users driver,

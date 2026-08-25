@@ -42,6 +42,9 @@ import com.toystorage.backend.repository.shipments
 import com.toystorage.backend.services.deliveries.assignment
         .DeliveryAssignmentService;
 
+import com.toystorage.backend.services.deliveries.tracking
+        .DeliveryTrackingLifecycleService;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
@@ -74,6 +77,9 @@ public class DeliveryTripService {
     private final DeliveryTripMapper
             mapper;
 
+    private final DeliveryTrackingLifecycleService
+            trackingLifecycleService;
+
 
     // =====================================================
     // MY TRIPS
@@ -103,7 +109,8 @@ public class DeliveryTripService {
                         );
 
 
-        return deliveries.stream()
+        return deliveries
+                .stream()
 
                 .map(delivery ->
                         mapper.toListResponse(
@@ -171,6 +178,7 @@ public class DeliveryTripService {
                         );
 
 
+        // Chỉ ASSIGNED mới được nhận chuyến.
         if (delivery.getDeliveryStatus()
                 != DeliveryStatus.ASSIGNED) {
 
@@ -184,18 +192,19 @@ public class DeliveryTripService {
                 LocalDateTime.now();
 
 
+        /*
+         * Atomic update.
+         *
+         * Nếu hai request accept đồng thời,
+         * chỉ một request update thành công.
+         */
         int updated =
                 deliveryRepository
                         .acceptAssignedDelivery(
-
                                 deliveryId,
-
                                 driver.getId(),
-
                                 DeliveryStatus.ASSIGNED,
-
                                 DeliveryStatus.ACCEPTED,
-
                                 now
                         );
 
@@ -207,6 +216,10 @@ public class DeliveryTripService {
             );
         }
 
+
+        // =================================================
+        // UPDATE ASSIGNMENT HISTORY
+        // =================================================
 
         DeliveryAssignmentHistory history =
                 assignmentHistoryRepository
@@ -232,6 +245,10 @@ public class DeliveryTripService {
         );
 
 
+        /*
+         * Reload delivery vì phía trên dùng
+         * JPQL update trực tiếp.
+         */
         delivery =
                 validationService
                         .getMyDelivery(
@@ -302,24 +319,18 @@ public class DeliveryTripService {
                 LocalDateTime.now();
 
 
-        // =====================================================
+        // =================================================
         // REJECT CURRENT DRIVER
-        // =====================================================
+        // =================================================
 
         int updated =
                 deliveryRepository
                         .rejectAssignedDelivery(
-
                                 deliveryId,
-
                                 driver.getId(),
-
                                 reason,
-
                                 DeliveryStatus.ASSIGNED,
-
                                 DeliveryStatus.REJECTED,
-
                                 now
                         );
 
@@ -332,9 +343,9 @@ public class DeliveryTripService {
         }
 
 
-        // =====================================================
-        // UPDATE HISTORY
-        // =====================================================
+        // =================================================
+        // UPDATE ASSIGNMENT HISTORY
+        // =================================================
 
         DeliveryAssignmentHistory history =
                 assignmentHistoryRepository
@@ -364,14 +375,18 @@ public class DeliveryTripService {
         );
 
 
-        // =====================================================
-        // TRY REASSIGN
-        //
-        // Nếu không còn tài xế:
-        // Delivery sẽ ở CREATED,
-        // KHÔNG rollback reject.
-        // =====================================================
+        // =================================================
+        // AUTO REASSIGN
+        // =================================================
 
+        /*
+         * Driver vừa từ chối sẽ được lưu trong history.
+         *
+         * AssignmentService sẽ tìm driver khác.
+         *
+         * Nếu không có:
+         * delivery quay về CREATED để chờ lần assign sau.
+         */
         var assignment =
                 assignmentService
                         .reassign(
@@ -412,9 +427,223 @@ public class DeliveryTripService {
 
 
     // =====================================================
+    // ARRIVED AT DESTINATION
+    // =====================================================
+
+    @Transactional
+    public DeliveryTripDetailResponse markArrived(
+            Long deliveryId
+    ) {
+
+        Users driver =
+                validationService
+                        .getCurrentUser();
+
+
+        Deliveries delivery =
+                validationService
+                        .getMyDelivery(
+                                deliveryId,
+                                driver
+                        );
+
+
+        /*
+         * Chỉ chuyến đang vận chuyển
+         * mới được chuyển sang ARRIVED.
+         */
+        if (delivery.getDeliveryStatus()
+                != DeliveryStatus.IN_TRANSIT) {
+
+            throw new BadRequest(
+                    "Only IN_TRANSIT delivery can be marked as ARRIVED"
+            );
+        }
+
+
+        delivery.setDeliveryStatus(
+                DeliveryStatus.ARRIVED
+        );
+
+
+        delivery =
+                deliveryRepository.save(
+                        delivery
+                );
+
+
+        /*
+         * Không gọi stopTracking() ở đây.
+         *
+         * Khi status đã là ARRIVED,
+         * DeliveryLocationService sẽ tự từ chối
+         * các location mới vì chỉ IN_TRANSIT
+         * mới được gửi GPS.
+         *
+         * Nhưng location cuối vẫn còn trong cache
+         * để người theo dõi xem được.
+         */
+
+
+        return mapper.toDetailResponse(
+                delivery,
+                getManifestPackages(
+                        delivery
+                )
+        );
+    }
+
+
+    // =====================================================
+    // COMPLETE DELIVERY
+    // =====================================================
+
+    @Transactional
+    public DeliveryTripDetailResponse completeDelivery(
+            Long deliveryId
+    ) {
+
+        Users driver =
+                validationService
+                        .getCurrentUser();
+
+
+        Deliveries delivery =
+                validationService
+                        .getMyDelivery(
+                                deliveryId,
+                                driver
+                        );
+
+
+        /*
+         * Phải ARRIVED trước khi hoàn tất giao hàng.
+         */
+        if (delivery.getDeliveryStatus()
+                != DeliveryStatus.ARRIVED) {
+
+            throw new BadRequest(
+                    "Only ARRIVED delivery can be completed"
+            );
+        }
+
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+
+        delivery.setDeliveryStatus(
+                DeliveryStatus.DELIVERED
+        );
+
+
+        delivery.setDeliveredAt(
+                now
+        );
+
+
+        delivery =
+                deliveryRepository.save(
+                        delivery
+                );
+
+
+        /*
+         * Chuyến đã hoàn tất.
+         *
+         * Xóa realtime cache.
+         * History GPS trong database không bị xóa.
+         */
+        trackingLifecycleService
+                .stopTracking(
+                        deliveryId
+                );
+
+
+        return mapper.toDetailResponse(
+                delivery,
+                getManifestPackages(
+                        delivery
+                )
+        );
+    }
+
+
+    // =====================================================
+    // FAIL DELIVERY
+    // =====================================================
+
+    @Transactional
+    public DeliveryTripDetailResponse failDelivery(
+            Long deliveryId
+    ) {
+
+        Users driver =
+                validationService
+                        .getCurrentUser();
+
+
+        Deliveries delivery =
+                validationService
+                        .getMyDelivery(
+                                deliveryId,
+                                driver
+                        );
+
+
+        /*
+         * Chỉ chuyến đã bắt đầu vận chuyển
+         * hoặc đã đến điểm nhận mới được FAILED.
+         */
+        if (delivery.getDeliveryStatus()
+                != DeliveryStatus.IN_TRANSIT
+
+                && delivery.getDeliveryStatus()
+                != DeliveryStatus.ARRIVED) {
+
+            throw new BadRequest(
+                    "Only IN_TRANSIT or ARRIVED delivery can be failed"
+            );
+        }
+
+
+        delivery.setDeliveryStatus(
+                DeliveryStatus.FAILED
+        );
+
+
+        delivery =
+                deliveryRepository.save(
+                        delivery
+                );
+
+
+        /*
+         * FAILED là trạng thái kết thúc tracking.
+         */
+        trackingLifecycleService
+                .stopTracking(
+                        deliveryId
+                );
+
+
+        return mapper.toDetailResponse(
+                delivery,
+                getManifestPackages(
+                        delivery
+                )
+        );
+    }
+
+
+    // =====================================================
     // MANIFEST PACKAGES
     // =====================================================
 
+    /*
+     * Private helper đặt cuối service để các public
+     * business method ở phía trên dễ đọc hơn.
+     */
     private List<ShipmentManifestPackage>
     getManifestPackages(
             Deliveries delivery
