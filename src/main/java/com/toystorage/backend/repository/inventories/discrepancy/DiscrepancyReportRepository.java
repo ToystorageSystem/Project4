@@ -35,5 +35,9 @@ public interface DiscrepancyReportRepository
     findByReportedByIdOrderByCreatedAtDesc(
             Long userId
     );
+    List<DiscrepancyReports>
+    findByResponsiblePartyOrderByCreatedAtDesc(
+            String responsibleParty
+    );
 
 }
