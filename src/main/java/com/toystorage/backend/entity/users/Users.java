@@ -20,30 +20,74 @@ public class Users {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_code", nullable = false, unique = true, length =50)
+    @Column(
+            name = "user_code",
+            nullable = false,
+            unique = true,
+            length = 50
+    )
     private String userCode;
 
-    @Column(nullable = false, length = 150)
+    @Column(
+            name = "name",
+            nullable = false,
+            length = 150
+    )
     private String name;
 
-    @Column(nullable = false, length = 150)
+    @Column(
+            name = "email",
+            nullable = false,
+            unique = true,
+            length = 150
+    )
     private String email;
 
-    @Column(nullable = false, length = 150)
+    @Column(
+            name = "phone",
+            length = 20
+    )
+    private String phone;
+
+    @Column(
+            name = "password",
+            nullable = false,
+            length = 150
+    )
     private String password;
 
-    @Column(name = "identity_card", nullable = false, unique = true, length = 12)
+    @Column(
+            name = "identity_card",
+            nullable = false,
+            unique = true,
+            length = 12
+    )
     private String identityCard;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(
+            name = "status",
+            nullable = false,
+            length = 30
+    )
     private UserStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warehouse_id")
     private Warehouses warehouse;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(
+            name = "must_change_password",
+            nullable = false
+    )
+    @Builder.Default
+    private boolean mustChangePassword = false;
+
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false
+    )
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
@@ -51,14 +95,18 @@ public class Users {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+
+        if (status == null) {
+            status = UserStatus.ACTIVE;
+        }
     }
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-
-
-
 }
