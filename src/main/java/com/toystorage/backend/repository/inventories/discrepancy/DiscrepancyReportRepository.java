@@ -24,6 +24,7 @@ public interface DiscrepancyReportRepository
             DiscrepancyReferenceType referenceType,
             Long referenceId
     );
+
     boolean existsByReferenceTypeAndReferenceIdAndDiscrepancyTypeAndStatusIn(
             DiscrepancyReferenceType referenceType,
             Long referenceId,

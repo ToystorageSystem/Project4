@@ -5,6 +5,7 @@ import com.toystorage.backend.dto.request.inventories.discrepancy.EscalateDiscre
 import com.toystorage.backend.dto.request.inventories.discrepancy.ResolveDiscrepancyRequest;
 import com.toystorage.backend.dto.response.inventories.discrepancy.DiscrepancyReportResponse;
 import com.toystorage.backend.services.inventories.discrepancy.ReceivingDiscrepancyService;
+import com.toystorage.backend.dto.request.inventories.discrepancy.UpdateAcceptedQuantityRequest;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class ReceivingDiscrepancyController {
 
     private final ReceivingDiscrepancyService
             receivingDiscrepancyService;
+
 
 
     /*
@@ -156,6 +158,32 @@ public class ReceivingDiscrepancyController {
                 receivingDiscrepancyService
                         .escalateToBusinessManager(
                                 discrepancyId,
+                                request
+                        )
+        );
+    }
+    /*
+     * CẬP NHẬT SỐ LƯỢNG MANAGER CHẤP NHẬN
+     */
+
+    @PatchMapping(
+            "/{discrepancyId}/items/{productId}/accepted-quantity"
+    )
+    public ResponseEntity<DiscrepancyReportResponse>
+    updateAcceptedQuantity(
+            @PathVariable Long discrepancyId,
+            @PathVariable Long productId,
+
+            @Valid
+            @RequestBody
+            UpdateAcceptedQuantityRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                receivingDiscrepancyService
+                        .updateAcceptedQuantity(
+                                discrepancyId,
+                                productId,
                                 request
                         )
         );

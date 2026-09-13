@@ -1,7 +1,12 @@
 package com.toystorage.backend.dto.response.receipts.receiving;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -21,6 +26,20 @@ public class ReceivingProgressResponse {
 
     private String staffName;
 
+    /*
+     * Thời điểm Warehouse Staff
+     * claim GOODS_RECEIVING.
+     */
+    private LocalDateTime receivingStartedAt;
+
+    /*
+     * Thời điểm Warehouse Staff
+     * finish inspection và release task.
+     *
+     * null = vẫn đang kiểm.
+     */
+    private LocalDateTime inspectionCompletedAt;
+
     private Integer totalProducts;
 
     private Integer inspectedProducts;
@@ -39,5 +58,13 @@ public class ReceivingProgressResponse {
 
     private Double progressPercent;
 
+    /*
+     * Toàn bộ product trong receipt.
+     */
+    private List<ReceivingProductProgressResponse> products;
+
+    /*
+     * Product có vấn đề.
+     */
     private List<ReceivingIssueResponse> issues;
 }

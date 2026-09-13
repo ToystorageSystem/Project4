@@ -4,7 +4,6 @@ import com.toystorage.backend.dto.request.receipts.receiving.ReceiptInspectionBa
 
 import com.toystorage.backend.dto.response.receipts.receiving.ReceivingDetailResponse;
 import com.toystorage.backend.dto.response.receipts.receiving.ReceivingListResponse;
-
 import com.toystorage.backend.services.receipts.receiving.ReceivingInspectionService;
 import com.toystorage.backend.services.receipts.receiving.ReceivingQueryService;
 

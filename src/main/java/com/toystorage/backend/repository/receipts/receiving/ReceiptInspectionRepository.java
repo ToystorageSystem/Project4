@@ -25,4 +25,25 @@ public interface ReceiptInspectionRepository
             Long goodsReceiptId,
             Long productId
     );
+    long countByTaskClaimId(
+            Long taskClaimId
+    );
+
+
+    List<ReceiptInspections>
+    findByTaskClaimId(
+            Long taskClaimId
+    );
+
+
+    Optional<ReceiptInspections>
+    findByTaskClaimIdAndProductId(
+            Long taskClaimId,
+            Long productId
+    );
+    Optional<ReceiptInspections>
+    findFirstByGoodsReceiptIdAndProductIdOrderByInspectedAtDesc(
+            Long goodsReceiptId,
+            Long productId
+    );
 }

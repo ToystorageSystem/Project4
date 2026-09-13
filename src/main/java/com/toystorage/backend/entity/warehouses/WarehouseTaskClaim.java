@@ -9,16 +9,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "warehouse_task_claims",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_warehouse_task_claim",
-                        columnNames = {
-                                "task_type",
-                                "reference_id"
-                        }
-                )
-        }
+        name = "warehouse_task_claims"
 )
 @Getter
 @Setter
@@ -76,6 +67,8 @@ public class WarehouseTaskClaim {
     @Column(name = "released_at")
     private LocalDateTime releasedAt;
 
+    @Column(name = "attempt_no", nullable = false)
+    private Integer attemptNo;
 
     @PrePersist
     protected void onCreate() {

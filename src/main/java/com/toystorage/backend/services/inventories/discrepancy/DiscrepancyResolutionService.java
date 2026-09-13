@@ -50,15 +50,23 @@ public class DiscrepancyResolutionService {
 
         for (ReceiptInspections inspection : inspections) {
 
+            Long productId =
+                    inspection
+                            .getProduct()
+                            .getId();
+
             GoodsReceiptItems item =
                     goodsReceiptItemRepository
                             .findByGoodsReceiptIdAndProductId(
                                     receiptId,
-                                    inspection.getProduct().getId()
+                                    productId
                             )
                             .orElseThrow(() ->
                                     new NotFound(
-                                            "Goods receipt item not found"
+                                            "Goods receipt item not found for receipt "
+                                                    + receiptId
+                                                    + " and product "
+                                                    + productId
                                     )
                             );
 

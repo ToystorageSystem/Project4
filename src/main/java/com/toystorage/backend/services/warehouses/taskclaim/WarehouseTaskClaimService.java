@@ -11,7 +11,6 @@ import com.toystorage.backend.repository.warehouses.taskclaim.WarehouseTaskClaim
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.dao.DataIntegrityViolationException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,25 +40,27 @@ public class WarehouseTaskClaimService {
          * Nếu chính mình claim rồi
          * thì return luôn -> idempotent.
          */
-        var existing =
+        WarehouseTaskClaim activeClaim =
                 claimRepository
-                        .findByTaskTypeAndReferenceId(
+                        .findFirstByTaskTypeAndReferenceIdAndReleasedAtIsNull(
                                 taskType,
                                 referenceId
-                        );
+                        )
+                        .orElse(null);
 
 
-        if (existing.isPresent()) {
+        if (activeClaim != null) {
 
-            WarehouseTaskClaim claim =
-                    existing.get();
-
-
-            if (claim.getClaimedBy()
+            /*
+             * Chính Staff hiện tại đã claim.
+             * Cho phép gọi API lại mà không tạo attempt mới.
+             */
+            if (activeClaim
+                    .getClaimedBy()
                     .getId()
                     .equals(staff.getId())) {
 
-                return claim;
+                return activeClaim;
             }
 
 
@@ -68,8 +69,16 @@ public class WarehouseTaskClaimService {
             );
         }
 
-
-        try {
+        int nextAttemptNo =
+                claimRepository
+                        .findFirstByTaskTypeAndReferenceIdOrderByAttemptNoDesc(
+                                taskType,
+                                referenceId
+                        )
+                        .map(previousClaim ->
+                                previousClaim.getAttemptNo() + 1
+                        )
+                        .orElse(1);
 
             WarehouseTaskClaim claim =
                     WarehouseTaskClaim
@@ -91,54 +100,17 @@ public class WarehouseTaskClaimService {
                                     LocalDateTime.now()
                             )
 
+                            .attemptNo(
+                                    nextAttemptNo
+                            )
+
                             .build();
 
 
-            /*
-             * saveAndFlush rất quan trọng:
-             *
-             * DB sẽ kiểm UNIQUE ngay tại đây.
-             */
             return claimRepository
                     .saveAndFlush(
                             claim
                     );
-
-        } catch (DataIntegrityViolationException ex) {
-
-            /*
-             * Hai Staff cùng INSERT:
-             *
-             * người đầu tiên insert thành công.
-             * người thứ hai dính UNIQUE constraint.
-             */
-
-            WarehouseTaskClaim winner =
-                    claimRepository
-                            .findByTaskTypeAndReferenceId(
-                                    taskType,
-                                    referenceId
-                            )
-
-                            .orElseThrow(() ->
-                                    new Forbidden(
-                                            "Task has already been claimed"
-                                    )
-                            );
-
-
-            if (winner.getClaimedBy()
-                    .getId()
-                    .equals(staff.getId())) {
-
-                return winner;
-            }
-
-
-            throw new Forbidden(
-                    "Task has already been claimed by another staff"
-            );
-        }
     }
 
 
@@ -155,11 +127,10 @@ public class WarehouseTaskClaimService {
 
         WarehouseTaskClaim claim =
                 claimRepository
-                        .findByTaskTypeAndReferenceId(
+                        .findFirstByTaskTypeAndReferenceIdAndReleasedAtIsNull(
                                 taskType,
                                 referenceId
                         )
-
                         .orElseThrow(() ->
                                 new Forbidden(
                                         "Task has not been claimed"
@@ -176,12 +147,35 @@ public class WarehouseTaskClaimService {
             );
         }
     }
+    @Transactional(readOnly = true)
+    public WarehouseTaskClaim getActiveClaim(
+            WarehouseTaskType taskType,
+            Long referenceId
+    ) {
 
-
+        return claimRepository
+                .findFirstByTaskTypeAndReferenceIdAndReleasedAtIsNull(
+                        taskType,
+                        referenceId
+                )
+                .orElse(null);
+    }
     // =====================================================
     // COMPLETE / RELEASE
     // =====================================================
+    @Transactional(readOnly = true)
+    public WarehouseTaskClaim getLatestClaim(
+            WarehouseTaskType taskType,
+            Long referenceId
+    ) {
 
+        return claimRepository
+                .findFirstByTaskTypeAndReferenceIdOrderByAttemptNoDesc(
+                        taskType,
+                        referenceId
+                )
+                .orElse(null);
+    }
     @Transactional
     public void release(
             WarehouseTaskType taskType,
@@ -195,21 +189,20 @@ public class WarehouseTaskClaimService {
                 staff
         );
 
-
         WarehouseTaskClaim claim =
                 claimRepository
-                        .findByTaskTypeAndReferenceId(
+                        .findFirstByTaskTypeAndReferenceIdAndReleasedAtIsNull(
                                 taskType,
                                 referenceId
                         )
-                        .orElseThrow();
-
-
+                        .orElseThrow(() ->
+                                new Forbidden(
+                                        "Active task claim was not found"
+                                )
+                        );
         claim.setReleasedAt(
                 LocalDateTime.now()
         );
-
-
         claimRepository.save(
                 claim
         );

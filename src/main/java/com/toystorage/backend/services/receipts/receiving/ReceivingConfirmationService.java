@@ -18,6 +18,16 @@ import com.toystorage.backend.repository.receipts.receiving.ReceiptInspectionRep
 import com.toystorage.backend.repository.users.UserRepository;
 import com.toystorage.backend.services.warehouses.putaway.PutawayTaskService;
 import com.toystorage.backend.services.warehouses.location.WarehouseLocationService;
+import com.toystorage.backend.dto.request.receipts.receiving.RequestReinspectionRequest;
+import com.toystorage.backend.services.inventories.discrepancy.ReceivingDiscrepancyService;
+import com.toystorage.backend.entity.receipts.ReceivingReinspectionRequest;
+import com.toystorage.backend.entity.warehouses.WarehouseTaskClaim;
+
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
+
+import com.toystorage.backend.repository.receipts.receiving.ReceivingReinspectionRequestRepository;
+
+import com.toystorage.backend.services.warehouses.taskclaim.WarehouseTaskClaimService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -48,6 +58,15 @@ public class ReceivingConfirmationService {
     private final ReceivingConfirmationMapper
             mapper;
 
+    private final ReceivingReinspectionRequestRepository
+            reinspectionRequestRepository;
+
+    private final WarehouseTaskClaimService
+            warehouseTaskClaimService;
+
+    private final ReceivingDiscrepancyService
+            receivingDiscrepancyService;
+
 
     // =====================================================
     // VIEW RESULT
@@ -69,12 +88,9 @@ public class ReceivingConfirmationService {
                 receipt
         );
 
-        if (receipt.getStatus()
-                != GoodsReceiptStatus.INSPECTED) {
-
-            throw new BadRequest(
-                    "Inspection has not been completed yet"
-            );
+        if (receipt.getStatus() != GoodsReceiptStatus.INSPECTED
+                && receipt.getStatus() != GoodsReceiptStatus.COMPLETED) {
+            throw new BadRequest("Inspection has not been completed yet");
         }
 
         return buildResponse(receipt);
@@ -134,22 +150,47 @@ public class ReceivingConfirmationService {
             );
         }
 
-        long inspectionCount =
-                receiptInspectionRepository
-                        .countByGoodsReceiptId(
+        WarehouseTaskClaim latestClaim =
+                warehouseTaskClaimService
+                        .getLatestClaim(
+                                WarehouseTaskType.GOODS_RECEIVING,
                                 receiptId
                         );
 
-        /*
-         * Đảm bảo tất cả sản phẩm đã được kiểm.
-         */
-        if (inspectionCount != items.size()) {
+
+        if (latestClaim == null) {
 
             throw new BadRequest(
-                    "Not all goods receipt items have been inspected"
+                    "Receiving task claim was not found"
             );
         }
 
+
+        if (latestClaim.getReleasedAt() == null) {
+
+            throw new BadRequest(
+                    "Warehouse Staff has not finished "
+                            + "the latest inspection attempt"
+            );
+        }
+
+
+        long inspectionCount =
+                receiptInspectionRepository
+                        .countByTaskClaimId(
+                                latestClaim.getId()
+                        );
+
+
+        if (inspectionCount != items.size()) {
+
+            throw new BadRequest(
+                    "Not all goods receipt items have been inspected "
+                            + "in the latest inspection attempt"
+            );
+        }
+
+        receivingDiscrepancyService.assertCanConfirm(receiptId);
         /*
          * =============================================
          * WAREHOUSE
@@ -219,8 +260,9 @@ public class ReceivingConfirmationService {
         );
 
         /*
-         * Không gọi getInspectionResult()
-         * vì receipt lúc này đã COMPLETED.
+         * Build response directly after confirmation.
+         * getInspectionResult() also supports COMPLETED
+         * for read-only history viewing.
          */
         return buildResponse(receipt);
     }
@@ -240,11 +282,20 @@ public class ReceivingConfirmationService {
                                 receipt.getId()
                         );
 
+        WarehouseTaskClaim latestClaim =
+                warehouseTaskClaimService
+                        .getLatestClaim(
+                                WarehouseTaskType.GOODS_RECEIVING,
+                                receipt.getId()
+                        );
+
 
         List<ReceiptInspections> inspections =
-                receiptInspectionRepository
-                        .findByGoodsReceiptId(
-                                receipt.getId()
+                latestClaim == null
+                        ? List.of()
+                        : receiptInspectionRepository
+                        .findByTaskClaimId(
+                                latestClaim.getId()
                         );
 
 
@@ -346,5 +397,116 @@ public class ReceivingConfirmationService {
                             + "for another warehouse"
             );
         }
+    }
+    @Transactional
+    public ReceivingConfirmationResponse requestReinspection(
+            Long receiptId,
+            RequestReinspectionRequest request
+    ) {
+
+        GoodsReceipts receipt =
+                getReceipt(receiptId);
+
+        Users manager =
+                getCurrentUser();
+
+        validateSameWarehouse(
+                manager,
+                receipt
+        );
+
+        if (receipt.getStatus()
+                != GoodsReceiptStatus.INSPECTED) {
+
+            throw new BadRequest(
+                    "Re-inspection can only be requested "
+                            + "after inspection is completed"
+            );
+        }
+        WarehouseTaskClaim latestClaim =
+                warehouseTaskClaimService
+                        .getLatestClaim(
+                                WarehouseTaskType.GOODS_RECEIVING,
+                                receiptId
+                        );
+
+
+        if (latestClaim == null) {
+
+            throw new BadRequest(
+                    "Previous inspection task was not found"
+            );
+        }
+
+
+        if (latestClaim.getReleasedAt() == null) {
+
+            throw new BadRequest(
+                    "Current inspection has not been completed"
+            );
+        }
+
+
+        ReceivingReinspectionRequest reinspectionRequest =
+                ReceivingReinspectionRequest
+                        .builder()
+
+                        .goodsReceipt(
+                                receipt
+                        )
+
+                        .requestedBy(
+                                manager
+                        )
+
+                        .reason(
+                                request
+                                        .getReason()
+                                        .trim()
+                        )
+
+                        .allowSameStaff(
+                                request.isAllowSameStaff()
+                        )
+
+                        .requestedAt(
+                                LocalDateTime.now()
+                        )
+
+                        .build();
+
+
+        reinspectionRequestRepository.save(
+                reinspectionRequest
+        );
+        /*
+         * Tạo record ReceivingReinspectionRequest
+         * để lưu:
+         * manager
+         * reason
+         * requestedAt
+         * allowSameStaff
+         */
+        receivingDiscrepancyService.markReinspectionRequested(
+                receiptId,
+                manager,
+                request.getReason().trim()
+        );
+
+        receipt.setStatus(
+                GoodsReceiptStatus.RECEIVING
+        );
+
+        receipt.setUpdatedAt(
+                LocalDateTime.now()
+        );
+
+        goodsReceiptRepository.save(
+                receipt
+        );
+
+        return buildResponse(
+                receipt
+        );
     }
 }

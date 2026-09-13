@@ -3,6 +3,7 @@ package com.toystorage.backend.entity.receipts;
 import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.enums.receipts.InspectionResult;
+import com.toystorage.backend.entity.warehouses.WarehouseTaskClaim;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -118,8 +119,7 @@ public class ReceiptInspections {
      */
     @Column(
             name = "inspected_at",
-            nullable = false,
-            updatable = false
+            nullable = false
     )
     private LocalDateTime inspectedAt;
 
@@ -148,6 +148,13 @@ public class ReceiptInspections {
             length = 50
     )
     private String receiptInspectionsCode;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "task_claim_id",
+            nullable = false
+    )
+    private WarehouseTaskClaim taskClaim;
 
     @PrePersist
     protected void onCreate() {

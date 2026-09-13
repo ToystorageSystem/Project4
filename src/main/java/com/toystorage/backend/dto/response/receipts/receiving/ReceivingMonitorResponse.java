@@ -23,6 +23,7 @@ public class ReceivingMonitorResponse {
 
     private String staffName;
 
+    // Product progress
     private Integer totalProducts;
 
     private Integer inspectedProducts;
@@ -30,6 +31,13 @@ public class ReceivingMonitorResponse {
     private Integer remainingProducts;
 
     private Integer issueProducts;
+
+    // Quantity progress
+    private Integer totalExpectedQuantity;
+
+    private Integer totalActualQuantity;
+
+    private Integer remainingQuantity;
 
     private Double progressPercent;
 

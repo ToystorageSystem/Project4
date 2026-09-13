@@ -10,5 +10,12 @@ import java.util.List;
 public interface UserRoleRepository
         extends JpaRepository<UserRoles, Long> {
 
+    // Lấy tất cả role của user
     List<UserRoles> findByUser_Id(Long userId);
+
+    // Kiểm tra user đã có role này chưa
+    boolean existsByUser_IdAndRole_Id(
+            Long userId,
+            Long roleId
+    );
 }
