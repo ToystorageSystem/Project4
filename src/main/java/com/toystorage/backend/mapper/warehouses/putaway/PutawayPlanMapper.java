@@ -2,6 +2,7 @@ package com.toystorage.backend.mapper.warehouses.putaway;
 
 import com.toystorage.backend.dto.response.warehouses.putaway.PutawayPlanItemResponse;
 import com.toystorage.backend.entity.warehouses.PutawayTaskItems;
+import com.toystorage.backend.entity.warehouses.WarehouseLocations;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,16 +12,32 @@ public class PutawayPlanMapper {
             PutawayTaskItems item
     ) {
 
+        WarehouseLocations fromLocation =
+                item.getFromLocation();
+
+        WarehouseLocations toLocation =
+                item.getToLocation();
+
         return PutawayPlanItemResponse.builder()
 
-                .id(item.getId())
+                .id(
+                        item.getId()
+                )
 
                 .productId(
                         item.getProduct().getId()
                 )
 
+                .productCode(
+                        item.getProduct().getProductsCode()
+                )
+
                 .productName(
                         item.getProduct().getName()
+                )
+
+                .barcode(
+                        item.getProduct().getBarcode()
                 )
 
                 .expectedQuantity(
@@ -36,27 +53,51 @@ public class PutawayPlanMapper {
                 )
 
                 .fromLocationId(
-                        item.getFromLocation().getId()
+                        fromLocation != null
+                                ? fromLocation.getId()
+                                : null
+                )
+
+                .fromLocationCode(
+                        fromLocation != null
+                                ? fromLocation.getWarehouseCode()
+                                : null
                 )
 
                 .fromLocationName(
-                        item.getFromLocation().getName()
+                        fromLocation != null
+                                ? fromLocation.getName()
+                                : null
                 )
 
                 .toLocationId(
-                        item.getToLocation().getId()
+                        toLocation != null
+                                ? toLocation.getId()
+                                : null
+                )
+
+                .toLocationCode(
+                        toLocation != null
+                                ? toLocation.getWarehouseCode()
+                                : null
                 )
 
                 .toLocationName(
-                        item.getToLocation().getName()
+                        toLocation != null
+                                ? toLocation.getName()
+                                : null
                 )
 
                 .zone(
-                        item.getToLocation().getZone()
+                        toLocation != null
+                                ? toLocation.getZone()
+                                : null
                 )
 
                 .shelf(
-                        item.getToLocation().getShelf()
+                        toLocation != null
+                                ? toLocation.getShelf()
+                                : null
                 )
 
                 .build();

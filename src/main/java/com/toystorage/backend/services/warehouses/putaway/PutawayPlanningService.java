@@ -41,89 +41,6 @@ public class PutawayPlanningService {
     private final PutawayProgressService progressService;
 
 
-    // =====================================================
-    // CREATE PLAN
-    // =====================================================
-
-    @Transactional
-    public PutawayPlanResponse createPlan(
-            Long receiptId,
-            CreatePutawayPlanRequest request
-    ) {
-
-        Users manager =
-                validationService.getCurrentUser();
-
-        GoodsReceipts receipt =
-                validationService.getReceipt(
-                        receiptId
-                );
-
-        validationService.validateReceiptWarehouse(
-                manager,
-                receipt
-        );
-
-        if (receipt.getStatus()
-                != GoodsReceiptStatus.COMPLETED) {
-
-            throw new BadRequest(
-                    "Putaway plan can only be created "
-                            + "after receiving is completed"
-            );
-        }
-
-        if (putawayTaskRepository
-                .existsByGoodsReceiptId(receiptId)) {
-
-            throw new BadRequest(
-                    "Putaway plan already exists for this receipt"
-            );
-        }
-
-
-        WarehouseLocations receivingLocation =
-                validationService
-                        .getReceivingLocation(
-                                receipt.getWarehouse().getId()
-                        );
-
-        List<GoodsReceiptItems> receiptItems =
-                goodsReceiptItemRepository
-                        .findByGoodsReceiptId(
-                                receiptId
-                        );
-
-        if (receiptItems.isEmpty()) {
-
-            throw new BadRequest(
-                    "Goods receipt contains no items"
-            );
-        }
-
-        validationService.validatePutawayItems(
-                receiptItems,
-                request.getItems()
-        );
-
-        PutawayTasks task =
-                createMasterTask(
-                        receipt,
-                        manager
-                );
-
-        taskItemService.createItems(
-                task,
-                receipt,
-                receiptItems,
-                request.getItems(),
-                receivingLocation
-        );
-
-        return progressService
-                .buildResponse(task);
-    }
-
 
     // =====================================================
     // LIST
@@ -145,7 +62,9 @@ public class PutawayPlanningService {
                         List.of(
                                 PutawayTaskStatus.PENDING,
                                 PutawayTaskStatus.AVAILABLE,
-                                PutawayTaskStatus.IN_PROGRESS
+                                PutawayTaskStatus.IN_PROGRESS,
+                                PutawayTaskStatus.COMPLETED,
+                                PutawayTaskStatus.CANCELLED
                         )
                 )
 
@@ -183,50 +102,6 @@ public class PutawayPlanningService {
 
         return progressService
                 .buildResponse(task);
-    }
-
-
-    // =====================================================
-    // CONFIRM COMPLETION
-    // =====================================================
-
-    @Transactional
-    public PutawayPlanResponse confirmCompletion(
-            Long taskId
-    ) {
-
-        PutawayTasks task =
-                validationService.getTask(
-                        taskId
-                );
-
-        Users manager =
-                validationService.getCurrentUser();
-
-        validationService.validateTaskWarehouse(
-                manager,
-                task
-        );
-
-        progressService.validateCompleted(
-                task
-        );
-
-        task.setStatus(
-                PutawayTaskStatus.COMPLETED
-        );
-
-        task.setCompletedAt(
-                LocalDateTime.now()
-        );
-
-        PutawayTasks saved =
-                putawayTaskRepository.save(
-                        task
-                );
-
-        return progressService
-                .buildResponse(saved);
     }
 
 

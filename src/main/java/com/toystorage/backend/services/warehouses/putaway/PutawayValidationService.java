@@ -14,6 +14,7 @@ import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
+import com.toystorage.backend.enums.warehouses.WarehouseLocationType;
 import com.toystorage.backend.repository.warehouses.putaway.WarehouseLocationRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -139,12 +140,11 @@ public class PutawayValidationService {
     ) {
 
         return warehouseLocationRepository
-                .findFirstByWarehouseIdAndWarehouseCodeAndStatus(
+                .findFirstByWarehouseIdAndLocationTypeAndStatus(
                         warehouseId,
-                        "RECEIVING",
+                        WarehouseLocationType.RECEIVING,
                         WarehouseStatus.ACTIVE
                 )
-
                 .orElseThrow(() ->
                         new NotFound(
                                 "Receiving location not found"
@@ -152,45 +152,6 @@ public class PutawayValidationService {
                 );
     }
 
-
-    public WarehouseLocations getDestinationLocation(
-            GoodsReceipts receipt,
-            Long locationId
-    ) {
-
-        WarehouseLocations location =
-                warehouseLocationRepository
-                        .findById(locationId)
-
-                        .orElseThrow(() ->
-                                new NotFound(
-                                        "Warehouse location not found: "
-                                                + locationId
-                                )
-                        );
-
-        if (!location.getWarehouse()
-                .getId()
-                .equals(
-                        receipt.getWarehouse()
-                                .getId()
-                )) {
-
-            throw new Forbidden(
-                    "Destination location belongs to another warehouse"
-            );
-        }
-
-        if (location.getStatus()
-                != WarehouseStatus.ACTIVE) {
-
-            throw new BadRequest(
-                    "Destination location is inactive"
-            );
-        }
-
-        return location;
-    }
 
 
     public void validateReceiptWarehouse(

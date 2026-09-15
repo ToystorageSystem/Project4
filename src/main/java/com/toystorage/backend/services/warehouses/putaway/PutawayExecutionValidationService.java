@@ -133,15 +133,10 @@ public class PutawayExecutionValidationService {
     ) {
 
         if (task.getStatus()
-                != PutawayTaskStatus.AVAILABLE
-
-                && task.getStatus()
                 != PutawayTaskStatus.IN_PROGRESS) {
 
             throw new BadRequest(
-                    "Putaway task cannot be executed "
-                            + "in status "
-                            + task.getStatus()
+                    "Putaway task must be IN_PROGRESS"
             );
         }
     }
@@ -159,18 +154,6 @@ public class PutawayExecutionValidationService {
             throw new BadRequest(
                     "Scanned product does not match "
                             + "assigned product"
-            );
-        }
-
-        if (!item.getToLocation()
-                .getWarehouseCode()
-                .equalsIgnoreCase(
-                        request.getLocationCode()
-                )) {
-
-            throw new BadRequest(
-                    "Scanned location does not match "
-                            + "assigned putaway location"
             );
         }
     }
@@ -209,16 +192,30 @@ public class PutawayExecutionValidationService {
             int quantity
     ) {
 
+        if (quantity <= 0) {
+
+            throw new BadRequest(
+                    "Putaway quantity must be greater than 0"
+            );
+        }
+
+
+        int currentQuantity =
+                item.getPutawayQuantity() == null
+                        ? 0
+                        : item.getPutawayQuantity();
+
+
         int after =
-                item.getPutawayQuantity()
+                currentQuantity
                         + quantity;
+
 
         if (after
                 > item.getExpectedQuantity()) {
 
             throw new BadRequest(
-                    "Putaway quantity exceeds "
-                            + "assigned quantity"
+                    "Putaway quantity exceeds assigned quantity"
             );
         }
     }

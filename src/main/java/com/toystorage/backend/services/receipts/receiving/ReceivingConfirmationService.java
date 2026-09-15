@@ -225,11 +225,20 @@ public class ReceivingConfirmationService {
          * =============================================
          */
 
+        Users receivingStaff =
+                latestClaim.getClaimedBy();
+
+        if (receivingStaff == null) {
+            throw new BadRequest(
+                    "Receiving staff was not found"
+            );
+        }
+
         putawayTaskService
                 .createFromGoodsReceipt(
                         receipt,
                         items,
-                        manager,
+                        receivingStaff,
                         receivingLocation
                 );
 

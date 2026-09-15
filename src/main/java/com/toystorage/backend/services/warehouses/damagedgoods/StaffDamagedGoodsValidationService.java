@@ -9,7 +9,7 @@ import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.users.Users;
 
 import com.toystorage.backend.entity.warehouses.WarehouseLocations;
-
+import com.toystorage.backend.repository.warehouses.putaway.WarehouseLocationRepository;
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
@@ -22,8 +22,6 @@ import com.toystorage.backend.repository.inventories.damagedgoods.StaffDamagedGo
 import com.toystorage.backend.repository.products.ProductRepository;
 
 import com.toystorage.backend.repository.users.UserRepository;
-
-import com.toystorage.backend.repository.warehouses.putaway.WarehouseLocationRepository;
 
 import lombok.RequiredArgsConstructor;
 

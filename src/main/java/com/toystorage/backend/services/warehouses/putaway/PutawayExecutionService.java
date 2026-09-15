@@ -5,7 +5,8 @@ import com.toystorage.backend.dto.request.warehouses.putaway.ExecutePutawayItemR
 import com.toystorage.backend.dto.response.warehouses.putaway.PutawayStaffItemResponse;
 import com.toystorage.backend.dto.response.warehouses.putaway.PutawayStaffTaskResponse;
 import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
-
+import com.toystorage.backend.entity.warehouses.WarehouseLocations;
+import com.toystorage.backend.services.warehouses.location.WarehouseLocationService;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.PutawayTaskItems;
 import com.toystorage.backend.entity.warehouses.PutawayTasks;
@@ -50,7 +51,8 @@ public class PutawayExecutionService {
 
     private final PutawayExecutionMapper
             mapper;
-
+    private final WarehouseLocationService
+            warehouseLocationService;
 
     // =====================================================
     // MY TASKS
@@ -85,28 +87,15 @@ public class PutawayExecutionService {
 
 
         return tasks.stream()
-                .filter(task -> {
+                .filter(task ->
+                        task.getAssignedTo() != null
 
-                    /*
-                     * ASSIGNED = chưa claim:
-                     * tất cả Staff trong warehouse nhìn thấy.
-                     */
-                    if (task.getStatus()
-                            == PutawayTaskStatus.AVAILABLE) {
-
-                        return true;
-                    }
-
-
-                    /*
-                     * IN_PROGRESS:
-                     * chỉ hiện task của chính mình.
-                     */
-                    return task.getAssignedTo() != null
-                            && task.getAssignedTo()
-                            .getId()
-                            .equals(staff.getId());
-                })
+                                && task.getAssignedTo()
+                                .getId()
+                                .equals(
+                                        staff.getId()
+                                )
+                )
                 .map(this::buildResponse)
                 .toList();
     }
@@ -137,6 +126,17 @@ public class PutawayExecutionService {
                 staff,
                 task
         );
+        if (task.getAssignedTo() == null
+                || !task.getAssignedTo()
+                .getId()
+                .equals(
+                        staff.getId()
+                )) {
+
+            throw new BadRequest(
+                    "This Putaway task is not assigned to you"
+            );
+        }
 
         return buildResponse(task);
     }
@@ -188,7 +188,17 @@ public class PutawayExecutionService {
                     "Only available putaway task can be started"
             );
         }
+        if (task.getAssignedTo() == null
+                || !task.getAssignedTo()
+                .getId()
+                .equals(
+                        staff.getId()
+                )) {
 
+            throw new BadRequest(
+                    "This Putaway task is not assigned to you"
+            );
+        }
 
         taskClaimService.claim(
                 WarehouseTaskType.PUTAWAY,
@@ -197,15 +207,6 @@ public class PutawayExecutionService {
         );
 
 
-        /*
-         * Có thể giữ field assignedTo cũ để audit.
-         *
-         * Manager không set nữa.
-         * Staff tự set khi claim.
-         */
-        task.setAssignedTo(
-                staff
-        );
 
 
         task.setStatus(
@@ -274,14 +275,53 @@ public class PutawayExecutionService {
                 request
         );
 
+
+        WarehouseLocations destination =
+                warehouseLocationService
+                        .getPutawayLocation(
+                                task.getWarehouse().getId(),
+                                request.getLocationCode()
+                        );
+
+
         validationService.validateLocation(
-                item.getToLocation()
+                destination
         );
+
 
         validationService.validateQuantity(
                 item,
                 request.getQuantity()
         );
+
+
+        /*
+         * Gán location Staff vừa scan.
+         */
+        if (item.getToLocation() == null) {
+
+            item.setToLocation(
+                    destination
+            );
+
+        } else {
+
+            /*
+             * Nếu Staff đã putaway một phần rồi
+             * thì các lần tiếp theo phải cùng location.
+             */
+            if (!item.getToLocation()
+                    .getId()
+                    .equals(
+                            destination.getId()
+                    )) {
+
+                throw new BadRequest(
+                        "This item has already been started "
+                                + "at another storage location"
+                );
+            }
+        }
 
 
         inventoryService.moveInventory(

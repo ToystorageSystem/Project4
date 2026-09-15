@@ -22,27 +22,7 @@ public class PutawayPlanningController {
             putawayPlanningService;
 
 
-    @PostMapping("/goods-receipts/{receiptId}")
-//    @PreAuthorize(
-//            "hasAuthority('PUTAWAY_PLAN_CREATE')"
-//    )
-    public ResponseEntity<PutawayPlanResponse>
-    createPlan(
-            @PathVariable Long receiptId,
 
-            @Valid
-            @RequestBody
-            CreatePutawayPlanRequest request
-    ) {
-
-        return ResponseEntity.ok(
-                putawayPlanningService
-                        .createPlan(
-                                receiptId,
-                                request
-                        )
-        );
-    }
 
 
     @GetMapping
@@ -74,19 +54,4 @@ public class PutawayPlanningController {
         );
     }
 
-
-    @PatchMapping("/{taskId}/confirm-completion")
-//    @PreAuthorize(
-//            "hasAuthority('PUTAWAY_PLAN_CONFIRM')"
-//    )
-    public ResponseEntity<PutawayPlanResponse>
-    confirmCompletion(
-            @PathVariable Long taskId
-    ) {
-
-        return ResponseEntity.ok(
-                putawayPlanningService
-                        .confirmCompletion(taskId)
-        );
-    }
 }

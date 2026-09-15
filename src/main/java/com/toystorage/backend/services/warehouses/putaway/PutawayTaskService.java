@@ -27,23 +27,25 @@ public class PutawayTaskService {
     private final PutawayTaskRepository putawayTaskRepository;
     private final PutawayTaskItemRepository putawayTaskItemRepository;
 
-    private final WarehouseLocationService warehouseLocationService;
 
     @Transactional
     public PutawayTasks createFromGoodsReceipt(
             GoodsReceipts receipt,
             List<GoodsReceiptItems> items,
-            Users manager,
+            Users staff,
             WarehouseLocations receivingLocation
     ) {
 
         if (putawayTaskRepository
-                .existsByGoodsReceiptId(receipt.getId())) {
+                .existsByGoodsReceiptId(
+                        receipt.getId()
+                )) {
 
             throw new BadRequest(
                     "Putaway task already exists for this receipt"
             );
         }
+
 
         PutawayTasks task =
                 new PutawayTasks();
@@ -52,38 +54,53 @@ public class PutawayTaskService {
                 generateCode("PA")
         );
 
-        task.setGoodsReceipt(receipt);
+        task.setGoodsReceipt(
+                receipt
+        );
 
         task.setWarehouse(
                 receipt.getWarehouse()
         );
 
-        task.setCreatedBy(manager);
+        /*
+         * Task được sinh tự động cho
+         * Staff vừa thực hiện receiving.
+         */
+        task.setCreatedBy(
+                staff
+        );
 
+        task.setAssignedTo(
+                staff
+        );
+
+        /*
+         * Task đã sẵn sàng,
+         * Staff chỉ cần bấm Start.
+         */
         task.setStatus(
-                PutawayTaskStatus.PENDING
+                PutawayTaskStatus.AVAILABLE
         );
 
         task.setCreatedAt(
                 LocalDateTime.now()
         );
 
+
         PutawayTasks savedTask =
-                putawayTaskRepository.save(task);
+                putawayTaskRepository.save(
+                        task
+                );
+
 
         for (GoodsReceiptItems item : items) {
 
             if (item.getAcceptedQuantity() == null
                     || item.getAcceptedQuantity() <= 0) {
+
                 continue;
             }
 
-            WarehouseLocations destination =
-                    warehouseLocationService
-                            .getDestinationLocation(
-                                    receipt.getWarehouse().getId(),
-                                    item.getProduct().getId()
-                            );
 
             PutawayTaskItems taskItem =
                     new PutawayTaskItems();
@@ -92,7 +109,9 @@ public class PutawayTaskService {
                     generateCode("PAI")
             );
 
-            taskItem.setPutawayTask(savedTask);
+            taskItem.setPutawayTask(
+                    savedTask
+            );
 
             taskItem.setProduct(
                     item.getProduct()
@@ -102,24 +121,34 @@ public class PutawayTaskService {
                     item.getAcceptedQuantity()
             );
 
-            taskItem.setPutawayQuantity(0);
+            taskItem.setPutawayQuantity(
+                    0
+            );
 
             taskItem.setStatus(
                     PutawayTaskItemStatus.PENDING
             );
 
+            /*
+             * Hàng hiện đang nằm ở khu Receiving.
+             */
             taskItem.setFromLocation(
                     receivingLocation
             );
 
+            /*
+             * Chưa chọn kệ.
+             * Staff sẽ scan/chọn sau.
+             */
             taskItem.setToLocation(
-                    destination
+                    null
             );
 
             putawayTaskItemRepository.save(
                     taskItem
             );
         }
+
 
         return savedTask;
     }

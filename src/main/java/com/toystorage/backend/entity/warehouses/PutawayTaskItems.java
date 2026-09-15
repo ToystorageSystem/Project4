@@ -43,11 +43,13 @@ public class PutawayTaskItems {
 
     /**
      * Vị trí kệ đích.
+     *
+     * Có thể null khi Putaway task vừa được tạo.
+     * Staff sẽ chọn/scan vị trí khi thực hiện Putaway.
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "to_location_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "to_location_id")
     private WarehouseLocations toLocation;
-
     /**
      * Số lượng dự kiến cần đưa lên kệ.
      */

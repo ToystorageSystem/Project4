@@ -47,12 +47,6 @@ public class PutawayTaskItemService {
                             request.getProductId()
                     );
 
-            WarehouseLocations destination =
-                    validationService
-                            .getDestinationLocation(
-                                    receipt,
-                                    request.getToLocationId()
-                            );
 
             PutawayTaskItems taskItem =
                     new PutawayTaskItems();
@@ -82,7 +76,7 @@ public class PutawayTaskItemService {
             );
 
             taskItem.setToLocation(
-                    destination
+                    null
             );
 
             putawayTaskItemRepository.save(
