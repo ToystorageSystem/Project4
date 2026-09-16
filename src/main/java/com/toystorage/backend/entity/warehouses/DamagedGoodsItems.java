@@ -44,7 +44,11 @@ public class DamagedGoodsItems {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "location_id", nullable = false)
     private WarehouseLocations location;
-
+    /**
+     * Số lượng do Warehouse Manager xác nhận thực tế bị hỏng.
+     */
+    @Column(name = "confirmed_quantity")
+    private Integer confirmedQuantity;
     /**
      * Số lượng sản phẩm bị lỗi.
      */

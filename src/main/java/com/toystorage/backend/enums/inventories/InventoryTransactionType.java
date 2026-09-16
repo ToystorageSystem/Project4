@@ -47,6 +47,7 @@ public enum InventoryTransactionType {
      */
     DAMAGED,
 
+    DAMAGED_RETURN_TO_SUPPLIER,
     /**
      * Giảm tồn do hàng hết hạn.
      */

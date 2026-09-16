@@ -1,18 +1,18 @@
 package com.toystorage.backend.enums.warehouses;
 
-public enum DamagedGoodsItemStatus {
+public enum DamagedGoodsHistoryAction {
 
     REPORTED,
 
-    INSPECTING,
+    INSPECTION_STARTED,
 
-    QUARANTINED,
+    QUANTITY_CONFIRMED,
+
+    MOVED_TO_QUARANTINE,
 
     RETURNED_TO_SUPPLIER,
 
     DISPOSED,
-
-    REJECTED,
 
     RESOLVED
 }

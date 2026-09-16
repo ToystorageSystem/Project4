@@ -1,15 +1,25 @@
 package com.toystorage.backend.services.inventories.damagedgoods;
 
-import com.toystorage.backend.entity.warehouses.DamagedGoodsItems;
 import com.toystorage.backend.entity.inventories.InventoryBalances;
 import com.toystorage.backend.entity.inventories.InventoryTransactions;
+
 import com.toystorage.backend.entity.users.Users;
+
+import com.toystorage.backend.entity.warehouses.DamagedGoodsItems;
+import com.toystorage.backend.entity.warehouses.WarehouseLocations;
+
+import com.toystorage.backend.enums.inventories.InventoryReferenceType;
+import com.toystorage.backend.enums.inventories.InventoryTransactionType;
+
+import com.toystorage.backend.enums.warehouses.WarehouseLocationType;
+
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
+
 import com.toystorage.backend.repository.inventories.InventoryBalanceRepository;
 import com.toystorage.backend.repository.inventories.InventoryTransactionRepository;
-import com.toystorage.backend.enums.inventories.InventoryTransactionType;
-import com.toystorage.backend.enums.inventories.InventoryReferenceType;
+
+import com.toystorage.backend.services.warehouses.damagedgoods.DamagedGoodsLocationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,138 +29,213 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+
 @Service
 @RequiredArgsConstructor
 public class DamagedInventoryService {
 
-    private final InventoryBalanceRepository inventoryBalanceRepository;
+    private final InventoryBalanceRepository
+            inventoryBalanceRepository;
 
-    private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final InventoryTransactionRepository
+            inventoryTransactionRepository;
+
+    private final DamagedGoodsLocationService
+            damagedGoodsLocationService;
 
 
     // =====================================================
-    // LOẠI HÀNG HỎNG KHỎI AVAILABLE
+    // MOVE TO QUARANTINE
     // =====================================================
 
     @Transactional
-    public void removeFromAvailable(
+    public WarehouseLocations moveToQuarantine(
             DamagedGoodsItems item,
             Integer quantity,
             Users manager
     ) {
 
-        InventoryBalances balance =
-                inventoryBalanceRepository
-                        .findByWarehouseIdAndLocationIdAndProductId(
-                                item.getDamagedGoodsReport()
-                                        .getWarehouse()
-                                        .getId(),
+        Long warehouseId =
+                item.getDamagedGoodsReport()
+                        .getWarehouse()
+                        .getId();
 
-                                item.getLocation().getId(),
 
-                                item.getProduct().getId()
-                        )
+        WarehouseLocations sourceLocation =
+                item.getLocation();
 
-                        .orElseThrow(() ->
-                                new NotFound(
-                                        "Inventory balance not found"
-                                )
+
+        WarehouseLocations quarantineLocation =
+                damagedGoodsLocationService
+                        .getQuarantineLocation(
+                                warehouseId
                         );
 
-        if (balance.getQuantity() < quantity) {
 
-            throw new BadRequest(
-                    "Damaged quantity exceeds physical inventory"
-            );
+        /*
+         * Item đã nằm ở quarantine từ trước
+         * ví dụ Store Return.
+         */
+        if (
+                sourceLocation.getId()
+                        .equals(
+                                quarantineLocation.getId()
+                        )
+
+                        || sourceLocation.getLocationType()
+                        == WarehouseLocationType.QUARANTINE
+
+                        || sourceLocation.getLocationType()
+                        == WarehouseLocationType.DAMAGED
+        ) {
+
+            InventoryBalances balance =
+                    getBalance(
+                            warehouseId,
+                            sourceLocation.getId(),
+                            item.getProduct().getId()
+                    );
+
+
+            if (balance.getQuantity() < quantity) {
+
+                throw new BadRequest(
+                        "Damaged quantity exceeds quarantine inventory"
+                );
+            }
+
+
+            return sourceLocation;
         }
 
-        if (balance.getAvailableQuantity() < quantity) {
 
-            /*
-             * Nếu quantity đó đã không còn available
-             * thì không được trừ âm.
-             */
+        InventoryBalances sourceBalance =
+                getBalance(
+                        warehouseId,
+                        sourceLocation.getId(),
+                        item.getProduct().getId()
+                );
+
+
+        /*
+         * Không được lấy lượng hàng đang reserve.
+         */
+        if (
+                sourceBalance.getAvailableQuantity()
+                        < quantity
+        ) {
+
             throw new BadRequest(
                     "Damaged quantity exceeds available inventory"
             );
         }
 
-        int before =
-                balance.getQuantity();
 
-        /*
-         * Hàng vẫn còn vật lý trong kho,
-         * chỉ không còn khả dụng.
-         */
-        balance.setAvailableQuantity(
-                balance.getAvailableQuantity()
-                        - quantity
+        int sourceBefore =
+                sourceBalance.getQuantity();
+
+
+        int sourceAfter =
+                sourceBefore - quantity;
+
+
+        sourceBalance.setQuantity(
+                sourceAfter
         );
 
-        balance.setUpdatedAt(
-                LocalDateTime.now()
+
+        inventoryBalanceRepository.save(
+                sourceBalance
         );
 
-        inventoryBalanceRepository.save(balance);
+
+        InventoryBalances quarantineBalance =
+                inventoryBalanceRepository
+                        .findByWarehouseIdAndLocationIdAndProductId(
+                                warehouseId,
+                                quarantineLocation.getId(),
+                                item.getProduct().getId()
+                        )
+
+                        .orElseGet(() -> {
+
+                            InventoryBalances balance =
+                                    new InventoryBalances();
+
+                            balance.setInventoryBalancesCode(
+                                    generateCode("IB")
+                            );
+
+                            balance.setWarehouse(
+                                    item
+                                            .getDamagedGoodsReport()
+                                            .getWarehouse()
+                            );
+
+                            balance.setLocation(
+                                    quarantineLocation
+                            );
+
+                            balance.setProduct(
+                                    item.getProduct()
+                            );
+
+                            balance.setQuantity(0);
+
+                            balance.setReservedQuantity(0);
+
+                            return balance;
+                        });
 
 
-        /*
-         * Transaction DAMAGED.
-         *
-         * quantity tổng chưa giảm nếu chỉ quarantine.
-         */
-        InventoryTransactions transaction =
-                new InventoryTransactions();
+        int quarantineBefore =
+                quarantineBalance.getQuantity() == null
+                        ? 0
+                        : quarantineBalance.getQuantity();
 
-        transaction.setInventoryTransactionsCode(
-                generateCode("IT")
+
+        int quarantineAfter =
+                quarantineBefore + quantity;
+
+
+        quarantineBalance.setQuantity(
+                quarantineAfter
         );
 
-        transaction.setWarehouse(
-                item.getDamagedGoodsReport()
-                        .getWarehouse()
+
+        inventoryBalanceRepository.save(
+                quarantineBalance
         );
 
-        transaction.setLocation(
-                item.getLocation()
+
+        createTransaction(
+                item,
+                sourceLocation,
+                InventoryTransactionType.LOCATION_TRANSFER,
+                -quantity,
+                sourceBefore,
+                sourceAfter,
+                manager
         );
 
-        transaction.setProduct(
-                item.getProduct()
+
+        createTransaction(
+                item,
+                quarantineLocation,
+                InventoryTransactionType.LOCATION_TRANSFER,
+                quantity,
+                quarantineBefore,
+                quarantineAfter,
+                manager
         );
 
-        transaction.setQuantityBefore(before);
 
-        transaction.setQuantityChange(0);
-
-        transaction.setQuantityAfter(before);
-
-        transaction.setTransactionType(
-                InventoryTransactionType.DAMAGED
-        );
-
-        transaction.setReferenceType(
-                InventoryReferenceType.INVENTORY_ADJUSTMENT
-        );
-
-        transaction.setReferenceId(
-                item.getDamagedGoodsReport().getId()
-        );
-
-        transaction.setPerformedBy(manager);
-
-        transaction.setCreatedAt(
-                LocalDateTime.now()
-        );
-
-        inventoryTransactionRepository.save(
-                transaction
-        );
+        return quarantineLocation;
     }
 
 
     // =====================================================
-    // TIÊU HỦY
+    // DISPOSE
     // =====================================================
 
     @Transactional
@@ -161,96 +246,227 @@ public class DamagedInventoryService {
     ) {
 
         InventoryBalances balance =
-                inventoryBalanceRepository
-                        .findByWarehouseIdAndLocationIdAndProductId(
-                                item.getDamagedGoodsReport()
-                                        .getWarehouse()
-                                        .getId(),
+                getBalance(
+                        item.getDamagedGoodsReport()
+                                .getWarehouse()
+                                .getId(),
 
-                                item.getLocation().getId(),
+                        item.getLocation().getId(),
 
-                                item.getProduct().getId()
-                        )
+                        item.getProduct().getId()
+                );
 
-                        .orElseThrow(() ->
-                                new NotFound(
-                                        "Inventory balance not found"
-                                )
-                        );
 
         if (balance.getQuantity() < quantity) {
 
             throw new BadRequest(
-                    "Dispose quantity exceeds inventory"
+                    "Dispose quantity exceeds quarantine inventory"
             );
         }
+
 
         int before =
                 balance.getQuantity();
 
+
         int after =
                 before - quantity;
 
-        balance.setQuantity(after);
 
-        /*
-         * available đã được loại từ lúc xác định damaged.
-         * Không trừ available lần thứ hai.
-         */
-
-        balance.setUpdatedAt(
-                LocalDateTime.now()
+        balance.setQuantity(
+                after
         );
 
-        inventoryBalanceRepository.save(balance);
 
+        inventoryBalanceRepository.save(
+                balance
+        );
+
+
+        createTransaction(
+                item,
+                item.getLocation(),
+                InventoryTransactionType.DAMAGED,
+                -quantity,
+                before,
+                after,
+                manager
+        );
+    }
+
+
+    // =====================================================
+    // RETURN SUPPLIER
+    // =====================================================
+
+    @Transactional
+    public void returnToSupplier(
+            DamagedGoodsItems item,
+            Integer quantity,
+            Users manager
+    ) {
+
+        InventoryBalances balance =
+                getBalance(
+                        item.getDamagedGoodsReport()
+                                .getWarehouse()
+                                .getId(),
+
+                        item.getLocation().getId(),
+
+                        item.getProduct().getId()
+                );
+
+
+        if (balance.getQuantity() < quantity) {
+
+            throw new BadRequest(
+                    "Return quantity exceeds quarantine inventory"
+            );
+        }
+
+
+        int before =
+                balance.getQuantity();
+
+
+        int after =
+                before - quantity;
+
+
+        balance.setQuantity(
+                after
+        );
+
+
+        inventoryBalanceRepository.save(
+                balance
+        );
+
+
+        createTransaction(
+                item,
+                item.getLocation(),
+                InventoryTransactionType
+                        .DAMAGED_RETURN_TO_SUPPLIER,
+                -quantity,
+                before,
+                after,
+                manager
+        );
+    }
+
+
+    // =====================================================
+    // GET BALANCE
+    // =====================================================
+
+    private InventoryBalances getBalance(
+            Long warehouseId,
+            Long locationId,
+            Long productId
+    ) {
+
+        return inventoryBalanceRepository
+                .findByWarehouseIdAndLocationIdAndProductId(
+                        warehouseId,
+                        locationId,
+                        productId
+                )
+
+                .orElseThrow(() ->
+                        new NotFound(
+                                "Inventory balance not found"
+                        )
+                );
+    }
+
+
+    // =====================================================
+    // TRANSACTION
+    // =====================================================
+
+    private void createTransaction(
+            DamagedGoodsItems item,
+            WarehouseLocations location,
+            InventoryTransactionType transactionType,
+            Integer change,
+            Integer before,
+            Integer after,
+            Users manager
+    ) {
 
         InventoryTransactions transaction =
                 new InventoryTransactions();
+
 
         transaction.setInventoryTransactionsCode(
                 generateCode("IT")
         );
 
+
         transaction.setWarehouse(
-                item.getDamagedGoodsReport().getWarehouse()
+                item
+                        .getDamagedGoodsReport()
+                        .getWarehouse()
         );
 
+
         transaction.setLocation(
-                item.getLocation()
+                location
         );
+
 
         transaction.setProduct(
                 item.getProduct()
         );
 
-        transaction.setQuantityBefore(before);
-
-        transaction.setQuantityChange(
-                -quantity
-        );
-
-        transaction.setQuantityAfter(after);
 
         transaction.setTransactionType(
-                InventoryTransactionType.DAMAGED
+                transactionType
         );
+
+
+        transaction.setQuantityBefore(
+                before
+        );
+
+
+        transaction.setQuantityChange(
+                change
+        );
+
+
+        transaction.setQuantityAfter(
+                after
+        );
+
 
         transaction.setReferenceType(
-                InventoryReferenceType.INVENTORY_ADJUSTMENT
+                InventoryReferenceType.DAMAGED_GOODS
         );
+
 
         transaction.setReferenceId(
-                item.getDamagedGoodsReport().getId()
+                item
+                        .getDamagedGoodsReport()
+                        .getId()
         );
 
-        transaction.setPerformedBy(manager);
+
+        transaction.setPerformedBy(
+                manager
+        );
+
 
         transaction.setCreatedAt(
                 LocalDateTime.now()
         );
 
-        inventoryTransactionRepository.save(transaction);
+
+        inventoryTransactionRepository.save(
+                transaction
+        );
     }
 
 

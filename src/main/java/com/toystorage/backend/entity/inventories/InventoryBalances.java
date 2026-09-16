@@ -3,6 +3,7 @@ package com.toystorage.backend.entity.inventories;
 import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.warehouses.Warehouses;
 import com.toystorage.backend.entity.warehouses.WarehouseLocations;
+import com.toystorage.backend.enums.warehouses.WarehouseLocationType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -147,11 +148,44 @@ public class InventoryBalances {
     }
 
     private void calculateAvailableQuantity() {
-        int currentQuantity = quantity == null ? 0 : quantity;
+
+        int currentQuantity =
+                quantity == null
+                        ? 0
+                        : quantity;
+
         int currentReservedQuantity =
-                reservedQuantity == null ? 0 : reservedQuantity;
+                reservedQuantity == null
+                        ? 0
+                        : reservedQuantity;
+
+
+        /*
+         * Hàng ở khu cách ly hoặc khu hàng hỏng
+         * tuyệt đối không được tính là available.
+         */
+        if (
+                location != null
+                        && (
+                        location.getLocationType()
+                                == WarehouseLocationType.QUARANTINE
+
+                                || location.getLocationType()
+                                == WarehouseLocationType.DAMAGED
+                )
+        ) {
+
+            availableQuantity = 0;
+
+            return;
+        }
+
 
         availableQuantity =
-                currentQuantity - currentReservedQuantity;
+                Math.max(
+                        0,
+                        currentQuantity
+                                - currentReservedQuantity
+                );
     }
 }

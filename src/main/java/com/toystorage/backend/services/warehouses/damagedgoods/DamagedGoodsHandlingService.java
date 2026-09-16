@@ -2,23 +2,38 @@ package com.toystorage.backend.services.warehouses.damagedgoods;
 
 import com.toystorage.backend.dto.request.warehouses.damagedgoods.HandleDamagedGoodsRequest;
 import com.toystorage.backend.dto.response.warehouses.damagedgoods.DamagedGoodsReportResponse;
+
+import com.toystorage.backend.entity.users.Users;
+
+import com.toystorage.backend.entity.warehouses.DamagedGoodsHistory;
 import com.toystorage.backend.entity.warehouses.DamagedGoodsItems;
 import com.toystorage.backend.entity.warehouses.DamagedGoodsReports;
-import com.toystorage.backend.entity.users.Users;
+import com.toystorage.backend.entity.warehouses.WarehouseLocations;
+
+import com.toystorage.backend.enums.warehouses.DamagedGoodsHistoryAction;
 import com.toystorage.backend.enums.warehouses.DamagedGoodsItemStatus;
 import com.toystorage.backend.enums.warehouses.DamagedGoodsStatus;
+import com.toystorage.backend.enums.warehouses.DamageDisposition;
+
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
+
 import com.toystorage.backend.mapper.warehouses.damagedgoods.DamagedGoodsMapper;
+
+import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsHistoryRepository;
 import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsItemRepository;
 import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsReportRepository;
+
 import com.toystorage.backend.services.inventories.damagedgoods.DamagedInventoryService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +45,9 @@ public class DamagedGoodsHandlingService {
     private final DamagedGoodsItemRepository
             itemRepository;
 
+    private final DamagedGoodsHistoryRepository
+            historyRepository;
+
     private final DamagedGoodsValidationService
             validationService;
 
@@ -39,15 +57,23 @@ public class DamagedGoodsHandlingService {
     private final DamagedGoodsMapper
             damagedGoodsMapper;
 
+
+    // =====================================================
+    // LIST
+    // =====================================================
+
     @Transactional(readOnly = true)
-    public List<DamagedGoodsReportResponse>
-    getReports() {
+    public List<DamagedGoodsReportResponse> getReports() {
 
         Users manager =
                 validationService.getCurrentUser();
 
+
         Long warehouseId =
-                validationService.getWarehouseId(manager);
+                validationService.getWarehouseId(
+                        manager
+                );
+
 
         return reportRepository
                 .findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
@@ -58,10 +84,20 @@ public class DamagedGoodsHandlingService {
                                 DamagedGoodsStatus.APPROVED
                         )
                 )
+
                 .stream()
-                .map(this::buildResponse)
+
+                .map(
+                        this::buildResponse
+                )
+
                 .toList();
     }
+
+
+    // =====================================================
+    // DETAIL
+    // =====================================================
 
     @Transactional(readOnly = true)
     public DamagedGoodsReportResponse getReport(
@@ -69,18 +105,33 @@ public class DamagedGoodsHandlingService {
     ) {
 
         DamagedGoodsReports report =
-                validationService.getReport(reportId);
+                validationService
+                        .getReport(
+                                reportId
+                        );
+
 
         Users manager =
-                validationService.getCurrentUser();
+                validationService
+                        .getCurrentUser();
 
-        validationService.validateWarehouse(
-                manager,
+
+        validationService
+                .validateWarehouse(
+                        manager,
+                        report
+                );
+
+
+        return buildResponse(
                 report
         );
-
-        return buildResponse(report);
     }
+
+
+    // =====================================================
+    // START INSPECTION
+    // =====================================================
 
     @Transactional
     public DamagedGoodsReportResponse startInspection(
@@ -88,42 +139,84 @@ public class DamagedGoodsHandlingService {
     ) {
 
         DamagedGoodsReports report =
-                validationService.getReport(reportId);
+                validationService
+                        .getReport(
+                                reportId
+                        );
+
 
         Users manager =
-                validationService.getCurrentUser();
+                validationService
+                        .getCurrentUser();
 
-        validationService.validateWarehouse(
-                manager,
-                report
-        );
 
-        if (report.getStatus()
-                != DamagedGoodsStatus.REPORTED) {
+        validationService
+                .validateWarehouse(
+                        manager,
+                        report
+                );
+
+
+        if (
+                report.getStatus()
+                        != DamagedGoodsStatus.REPORTED
+        ) {
 
             throw new BadRequest(
                     "Only REPORTED damaged goods can be inspected"
             );
         }
 
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+
         report.setStatus(
                 DamagedGoodsStatus.INSPECTING
         );
 
-        report.setReviewedBy(manager);
+
+        report.setReviewedBy(
+                manager
+        );
+
 
         report.setReviewedAt(
-                LocalDateTime.now()
+                now
         );
+
 
         report.setUpdatedAt(
-                LocalDateTime.now()
+                now
         );
 
+
+        reportRepository.save(
+                report
+        );
+
+
+        saveHistory(
+                report,
+                null,
+                DamagedGoodsHistoryAction
+                        .INSPECTION_STARTED,
+                null,
+                "Warehouse Manager started inspection",
+                manager
+        );
+
+
         return buildResponse(
-                reportRepository.save(report)
+                report
         );
     }
+
+
+    // =====================================================
+    // HANDLE ITEM
+    // =====================================================
 
     @Transactional
     public DamagedGoodsReportResponse handleItem(
@@ -133,130 +226,366 @@ public class DamagedGoodsHandlingService {
     ) {
 
         DamagedGoodsReports report =
-                validationService.getReport(reportId);
+                validationService
+                        .getReport(
+                                reportId
+                        );
+
 
         Users manager =
-                validationService.getCurrentUser();
+                validationService
+                        .getCurrentUser();
 
-        validationService.validateWarehouse(
-                manager,
-                report
-        );
 
-        if (report.getStatus()
-                != DamagedGoodsStatus.INSPECTING) {
+        validationService
+                .validateWarehouse(
+                        manager,
+                        report
+                );
+
+
+        // =================================================
+        // REPORT STATUS
+        // =================================================
+
+        if (
+                report.getStatus()
+                        != DamagedGoodsStatus.INSPECTING
+        ) {
 
             throw new BadRequest(
                     "Damaged goods report must be INSPECTING before handling items"
             );
         }
 
+
+        // =================================================
+        // GET ITEM
+        // =================================================
+
         DamagedGoodsItems item =
                 itemRepository
-                        .findById(itemId)
-                        .orElseThrow(() ->
-                                new NotFound(
-                                        "Damaged goods item not found"
-                                )
+                        .findById(
+                                itemId
+                        )
+
+                        .orElseThrow(
+                                () ->
+                                        new NotFound(
+                                                "Damaged goods item not found"
+                                        )
                         );
 
-        if (item.getDamagedGoodsReport() == null
-                || !item.getDamagedGoodsReport()
-                .getId()
-                .equals(reportId)) {
+
+        // =================================================
+        // VALIDATE REPORT ITEM
+        // =================================================
+
+        if (
+                item.getDamagedGoodsReport()
+                        == null
+
+                        || !item
+                        .getDamagedGoodsReport()
+                        .getId()
+                        .equals(
+                                reportId
+                        )
+        ) {
 
             throw new BadRequest(
                     "Item does not belong to report"
             );
         }
 
-        if (request.getConfirmedQuantity() == null
-                || request.getConfirmedQuantity() <= 0) {
+
+        // =================================================
+        // PREVENT DOUBLE PROCESS
+        // =================================================
+
+        if (
+                item.getStatus()
+                        == DamagedGoodsItemStatus.QUARANTINED
+
+                        || item.getStatus()
+                        == DamagedGoodsItemStatus
+                        .RETURNED_TO_SUPPLIER
+
+                        || item.getStatus()
+                        == DamagedGoodsItemStatus.DISPOSED
+        ) {
+
+            throw new BadRequest(
+                    "Damaged goods item has already been handled"
+            );
+        }
+
+
+        // =================================================
+        // CONFIRMED QUANTITY
+        // =================================================
+
+        Integer confirmedQuantity =
+                request.getConfirmedQuantity();
+
+
+        if (
+                confirmedQuantity == null
+                        || confirmedQuantity <= 0
+        ) {
 
             throw new BadRequest(
                     "Confirmed quantity must be greater than 0"
             );
         }
 
-        if (request.getConfirmedQuantity()
-                > item.getQuantity()) {
+
+        if (
+                confirmedQuantity
+                        > item.getQuantity()
+        ) {
 
             throw new BadRequest(
                     "Confirmed quantity cannot exceed reported quantity"
             );
         }
 
-        /*
-         * Loại hàng hỏng khỏi available inventory trước khi xử lý.
-         */
-        inventoryService.removeFromAvailable(
+
+        // =================================================
+        // DISPOSITION
+        // =================================================
+
+        DamageDisposition disposition =
+                request.getDisposition();
+
+
+        if (disposition == null) {
+
+            throw new BadRequest(
+                    "Disposition is required"
+            );
+        }
+
+
+        if (
+                disposition
+                        != DamageDisposition.QUARANTINE
+
+                        && disposition
+                        != DamageDisposition.RETURN_TO_SUPPLIER
+
+                        && disposition
+                        != DamageDisposition.DISPOSE
+        ) {
+
+            throw new BadRequest(
+                    "Unsupported damaged goods disposition: "
+                            + disposition
+            );
+        }
+
+
+        // =================================================
+        // SAVE CONFIRMATION
+        // =================================================
+
+        item.setConfirmedQuantity(
+                confirmedQuantity
+        );
+
+
+        item.setDisposition(
+                disposition
+        );
+
+
+        item.setStatus(
+                DamagedGoodsItemStatus.INSPECTING
+        );
+
+
+        itemRepository.save(
+                item
+        );
+
+
+        saveHistory(
+                report,
                 item,
-                request.getConfirmedQuantity(),
+                DamagedGoodsHistoryAction
+                        .QUANTITY_CONFIRMED,
+                confirmedQuantity,
+                request.getResolutionNote(),
                 manager
         );
 
-        item.setQuantity(
-                request.getConfirmedQuantity()
+
+        // =================================================
+        // ALWAYS MOVE TO QUARANTINE FIRST
+        // =================================================
+
+        WarehouseLocations quarantineLocation =
+                inventoryService
+                        .moveToQuarantine(
+                                item,
+                                confirmedQuantity,
+                                manager
+                        );
+
+
+        item.setLocation(
+                quarantineLocation
         );
 
-        item.setDisposition(
-                request.getDisposition()
+
+        itemRepository.save(
+                item
         );
 
-        switch (request.getDisposition()) {
+
+        saveHistory(
+                report,
+                item,
+                DamagedGoodsHistoryAction
+                        .MOVED_TO_QUARANTINE,
+                confirmedQuantity,
+                "Damaged goods moved to quarantine",
+                manager
+        );
+
+
+        // =================================================
+        // FINAL DISPOSITION
+        // =================================================
+
+        switch (
+                disposition
+        ) {
+
+            // =============================================
+            // QUARANTINE
+            // =============================================
 
             case QUARANTINE -> {
+
                 item.setStatus(
-                        DamagedGoodsItemStatus.APPROVED
+                        DamagedGoodsItemStatus
+                                .QUARANTINED
                 );
 
-                /*
-                 * TODO:
-                 * Gọi location-transfer service để chuyển vật lý
-                 * sang location QUARANTINE.
-                 */
+
+                itemRepository.save(
+                        item
+                );
             }
+
+
+            // =============================================
+            // RETURN TO SUPPLIER
+            // =============================================
 
             case RETURN_TO_SUPPLIER -> {
+
+                inventoryService
+                        .returnToSupplier(
+                                item,
+                                confirmedQuantity,
+                                manager
+                        );
+
+
                 item.setStatus(
-                        DamagedGoodsItemStatus.APPROVED
+                        DamagedGoodsItemStatus
+                                .RETURNED_TO_SUPPLIER
                 );
 
-                /*
-                 * TODO:
-                 * Tạo supplier-return workflow.
-                 * Hàng vẫn không được đưa lại vào available inventory.
-                 */
-            }
 
-            case DISPOSE -> {
-                inventoryService.dispose(
+                itemRepository.save(
+                        item
+                );
+
+
+                saveHistory(
+                        report,
                         item,
-                        request.getConfirmedQuantity(),
+                        DamagedGoodsHistoryAction
+                                .RETURNED_TO_SUPPLIER,
+                        confirmedQuantity,
+                        request.getResolutionNote(),
                         manager
                 );
+            }
+
+
+            // =============================================
+            // DISPOSE
+            // =============================================
+
+            case DISPOSE -> {
+
+                inventoryService
+                        .dispose(
+                                item,
+                                confirmedQuantity,
+                                manager
+                        );
+
 
                 item.setStatus(
                         DamagedGoodsItemStatus.DISPOSED
                 );
+
+
+                itemRepository.save(
+                        item
+                );
+
+
+                saveHistory(
+                        report,
+                        item,
+                        DamagedGoodsHistoryAction
+                                .DISPOSED,
+                        confirmedQuantity,
+                        request.getResolutionNote(),
+                        manager
+                );
             }
 
-            default -> item.setStatus(
-                    DamagedGoodsItemStatus.APPROVED
-            );
+
+            default ->
+                    throw new BadRequest(
+                            "Unsupported damaged goods disposition"
+                    );
         }
 
-        itemRepository.save(item);
 
-        updateReportStatus(report);
+        // =================================================
+        // UPDATE REPORT
+        // =================================================
+
+        updateReportStatus(
+                report,
+                manager
+        );
+
 
         return buildResponse(
-                validationService.getReport(reportId)
+                validationService
+                        .getReport(
+                                reportId
+                        )
         );
     }
 
+
+    // =====================================================
+    // UPDATE REPORT STATUS
+    // =====================================================
+
     private void updateReportStatus(
-            DamagedGoodsReports report
+            DamagedGoodsReports report,
+            Users manager
     ) {
 
         List<DamagedGoodsItems> items =
@@ -265,34 +594,138 @@ public class DamagedGoodsHandlingService {
                                 report.getId()
                         );
 
+
         boolean allFinished =
                 !items.isEmpty()
-                        && items.stream()
-                        .allMatch(item ->
-                                item.getStatus()
-                                        == DamagedGoodsItemStatus.APPROVED
-                                        ||
+
+                        && items
+                        .stream()
+
+                        .allMatch(
+                                item ->
+
                                         item.getStatus()
-                                                == DamagedGoodsItemStatus.DISPOSED
+                                                == DamagedGoodsItemStatus
+                                                .QUARANTINED
+
+                                                ||
+
+                                                item.getStatus()
+                                                        == DamagedGoodsItemStatus
+                                                        .RETURNED_TO_SUPPLIER
+
+                                                ||
+
+                                                item.getStatus()
+                                                        == DamagedGoodsItemStatus
+                                                        .DISPOSED
                         );
 
-        if (allFinished) {
 
-            report.setStatus(
-                    DamagedGoodsStatus.APPROVED
-            );
+        if (!allFinished) {
 
-            report.setResolvedAt(
+            report.setUpdatedAt(
                     LocalDateTime.now()
             );
+
+
+            reportRepository.save(
+                    report
+            );
+
+
+            return;
         }
+
+
+        report.setStatus(
+                DamagedGoodsStatus.RESOLVED
+        );
+
+
+        report.setResolvedAt(
+                LocalDateTime.now()
+        );
+
 
         report.setUpdatedAt(
                 LocalDateTime.now()
         );
 
-        reportRepository.save(report);
+
+        reportRepository.save(
+                report
+        );
+
+
+        saveHistory(
+                report,
+                null,
+                DamagedGoodsHistoryAction.RESOLVED,
+                null,
+                "Damaged goods report resolved",
+                manager
+        );
     }
+
+
+    // =====================================================
+    // HISTORY
+    // =====================================================
+
+    private void saveHistory(
+            DamagedGoodsReports report,
+            DamagedGoodsItems item,
+            DamagedGoodsHistoryAction action,
+            Integer quantity,
+            String note,
+            Users user
+    ) {
+
+        DamagedGoodsHistory history =
+                DamagedGoodsHistory
+                        .builder()
+
+                        .report(
+                                report
+                        )
+
+                        .item(
+                                item
+                        )
+
+                        .action(
+                                action
+                        )
+
+                        .quantity(
+                                quantity
+                        )
+
+                        .note(
+                                note
+                        )
+
+                        .performedBy(
+                                user
+                        )
+
+                        .createdAt(
+                                LocalDateTime.now()
+                        )
+
+                        .build();
+
+
+        historyRepository.save(
+                history
+        );
+    }
+
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
 
     private DamagedGoodsReportResponse buildResponse(
             DamagedGoodsReports report
@@ -303,6 +736,7 @@ public class DamagedGoodsHandlingService {
                         .findByDamagedGoodsReportId(
                                 report.getId()
                         );
+
 
         return damagedGoodsMapper
                 .toReportResponse(
