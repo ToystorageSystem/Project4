@@ -29,7 +29,8 @@ public interface ShipmentManifestTransferRepository
      */
     @EntityGraph(attributePaths = {
             "transfer",
-            "transfer.items"
+            "transfer.items",
+            "transfer.items.product"
     })
     List<ShipmentManifestTransfer>
     findByManifest_Id(

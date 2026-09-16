@@ -70,6 +70,13 @@ public class Deliveries {
     @Column(name = "status", nullable = false, length = 30)
     private DeliveryStatus deliveryStatus = DeliveryStatus.CREATED;
 
+    /** Thời điểm dự kiến bắt đầu lấy/giao hàng. */
+    @Column(name = "expected_pickup_at")
+    private LocalDateTime expectedPickupAt;
+
+    /** Thời điểm dự kiến giao tới điểm nhận. */
+    @Column(name = "expected_delivery_at")
+    private LocalDateTime expectedDeliveryAt;
     /** Thời điểm tài xế bắt đầu chuyến giao. */
     @Column(name = "started_at")
     private LocalDateTime startedAt;
