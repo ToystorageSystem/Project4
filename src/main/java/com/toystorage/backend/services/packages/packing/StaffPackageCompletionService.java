@@ -132,6 +132,9 @@ public class StaffPackageCompletionService {
         }
 
 
+        LocalDateTime now =
+                LocalDateTime.now();
+
         packageEntity.setSealNumber(
                 request.getSealNumber()
         );
@@ -140,11 +143,21 @@ public class StaffPackageCompletionService {
                 PackageStatus.PACKED
         );
 
+        packageEntity.setSealedAt(
+                now
+        );
+
+        packageEntity.setPackedAt(
+                now
+        );
+
+        packageEntity.setUpdatedAt(
+                now
+        );
 
         packageRepository.save(
                 packageEntity
         );
-
 
         return mapper.toResponse(
                 packageEntity,
@@ -260,8 +273,12 @@ public class StaffPackageCompletionService {
         }
 
 
-        transfer.setStatus(
-                TransferStatus.PACKED
+        transfer.setPackingCompletedBy(
+                staff
+        );
+
+        transfer.setPackingCompletedAt(
+                LocalDateTime.now()
         );
 
         transfer.setUpdatedAt(

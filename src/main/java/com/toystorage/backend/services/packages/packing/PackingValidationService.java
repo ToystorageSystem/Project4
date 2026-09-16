@@ -5,6 +5,7 @@ import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.packages.PackageItems;
 import com.toystorage.backend.entity.packages.PackageTransferItem;
 import com.toystorage.backend.entity.packages.Packages;
+import com.toystorage.backend.enums.packages.PackageStatus;
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
@@ -144,9 +145,10 @@ public class PackingValidationService {
         /*
          * Package phải được staff đóng xong.
          */
-        if (!"PACKED".equals(
-                pack.getStatus().name()
-        )) {
+        if (
+                pack.getStatus()
+                        != PackageStatus.PACKED
+        ) {
 
             throw new BadRequest(
                     "Package "
@@ -161,14 +163,28 @@ public class PackingValidationService {
          * Schema hiện tại chỉ có seal_number,
          * chưa có seal_status.
          */
-        if (pack.getSealNumber() == null
-                || pack.getSealNumber()
-                .isBlank()) {
+        if (
+                pack.getSealNumber() == null
+                        ||
+                        pack.getSealNumber().isBlank()
+        ) {
 
             throw new BadRequest(
                     "Package "
                             + pack.getPackagesCode()
                             + " has no seal number"
+            );
+        }
+
+
+        if (
+                pack.getSealedAt() == null
+        ) {
+
+            throw new BadRequest(
+                    "Package "
+                            + pack.getPackagesCode()
+                            + " has not been sealed"
             );
         }
 
@@ -187,4 +203,5 @@ public class PackingValidationService {
             );
         }
     }
+
 }

@@ -59,6 +59,10 @@ public interface DeliveryRepository
             Collection<DeliveryStatus> statuses
     );
 
+    Optional<Deliveries>
+    findTopByManifestIdOrderByCreatedAtDesc(
+            Long manifestId
+    );
 
     // =====================================================
     // ACCEPT

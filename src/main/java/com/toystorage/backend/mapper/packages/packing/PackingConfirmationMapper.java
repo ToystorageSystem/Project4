@@ -229,9 +229,12 @@ public class PackingConfirmationMapper {
 
                 .sealed(
                         packageEntity.getSealNumber() != null
-                                && !packageEntity
-                                .getSealNumber()
-                                .isBlank()
+                                &&
+                                !packageEntity
+                                        .getSealNumber()
+                                        .isBlank()
+                                &&
+                                packageEntity.getSealedAt() != null
                 )
 
                 .packedBy(

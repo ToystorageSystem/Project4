@@ -4,7 +4,7 @@ import com.toystorage.backend.dto.request.shipments.ConfirmShipmentRequest;
 import com.toystorage.backend.mapper.shipments.ShipmentConfirmationMapper;
 import com.toystorage.backend.dto.response.shipments.*;
 import com.toystorage.backend.entity.packages.Packages;
-
+import com.toystorage.backend.dto.response.packages.shipments.DispatchHandoverListResponse;
 import com.toystorage.backend.entity.shipments.*;
 import com.toystorage.backend.entity.deliveries.Deliveries;
 import com.toystorage.backend.entity.deliveries.DeliveryPackages;
@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -80,28 +81,57 @@ public class ShipmentConfirmationService {
         Users manager =
                 validationService.getCurrentUser();
 
+
         StockTransfer transfer =
-                validationService
-                        .getTransfer(transferId);
+                validationService.getTransfer(
+                        transferId
+                );
+
 
         validationService.validateWarehouse(
                 manager,
                 transfer
         );
 
-        ShipmentManifests manifest =
-                getManifest(transferId);
 
+        /*
+         * Manifest bắt buộc phải tồn tại.
+         */
+        ShipmentManifests manifest =
+                getManifest(
+                        transferId
+                );
+
+
+        /*
+         * Danh sách kiện thuộc manifest.
+         */
         List<ShipmentManifestPackage> links =
                 shipmentManifestPackageRepository
                         .findByManifestId(
                                 manifest.getId()
                         );
 
+
+        /*
+         * Delivery của manifest.
+         *
+         * Nếu bên vận chuyển chưa tạo delivery
+         * thì trả null, Manager vẫn có thể xem manifest
+         * nhưng chưa được Confirm Handover.
+         */
+        Deliveries delivery =
+                deliveryRepository
+                        .findTopByManifestIdOrderByCreatedAtDesc(
+                                manifest.getId()
+                        )
+                        .orElse(null);
+
+
         return mapper.toResponse(
                 transfer,
                 manifest,
-                null,
+                delivery,
                 links
         );
     }
@@ -202,6 +232,20 @@ public class ShipmentConfirmationService {
                 delivery,
                 transfer
         );
+        if (
+                delivery.getManifest() == null
+                        || !delivery
+                        .getManifest()
+                        .getId()
+                        .equals(
+                                manifest.getId()
+                        )
+        ) {
+
+            throw new BadRequest(
+                    "Delivery does not belong to this shipment manifest"
+            );
+        }
 
         if (delivery.getDeliveryStatus()
                 != DeliveryStatus.ACCEPTED) {
@@ -369,5 +413,240 @@ public class ShipmentConfirmationService {
             );
         }
     }
+    // =====================================================
+// DISPATCH & HANDOVER LIST
+// =====================================================
 
+    @Transactional(readOnly = true)
+    public List<DispatchHandoverListResponse>
+    getDispatchHandoverList(
+            String keyword
+    ) {
+
+        Users manager =
+                validationService
+                        .getCurrentUser();
+
+
+        if (manager.getWarehouse() == null) {
+
+            throw new BadRequest(
+                    "Manager is not assigned to a warehouse"
+            );
+        }
+
+
+        Long warehouseId =
+                manager
+                        .getWarehouse()
+                        .getId();
+
+
+        /*
+         * Chỉ lấy transfer đã confirm packing
+         * nhưng chưa xuất kho.
+         */
+        List<StockTransfer> transfers =
+                stockTransferRepository
+                        .findByFromWarehouseIdAndStatusInOrderByCreatedAtDesc(
+                                warehouseId,
+                                List.of(
+                                        TransferStatus.PACKED
+                                )
+                        );
+
+
+        String search =
+                keyword == null
+                        ? ""
+                        : keyword
+                        .trim()
+                        .toLowerCase();
+
+
+        List<DispatchHandoverListResponse> result =
+                new ArrayList<>();
+
+
+        for (StockTransfer transfer
+                : transfers) {
+
+            ShipmentManifestTransfer manifestLink =
+                    shipmentManifestTransferRepository
+                            .findByTransferId(
+                                    transfer.getId()
+                            )
+                            .orElse(null);
+
+
+            /*
+             * Business rule:
+             * Phải có bảng kê đi hàng.
+             */
+            if (manifestLink == null) {
+                continue;
+            }
+
+
+            ShipmentManifests manifest =
+                    manifestLink
+                            .getManifest();
+
+
+            List<ShipmentManifestPackage> packageLinks =
+                    shipmentManifestPackageRepository
+                            .findByManifestId(
+                                    manifest.getId()
+                            );
+
+
+            Deliveries delivery =
+                    deliveryRepository
+                            .findTopByManifestIdOrderByCreatedAtDesc(
+                                    manifest.getId()
+                            )
+                            .orElse(null);
+
+
+            String destinationName =
+                    transfer.getToWarehouse() != null
+                            ? transfer
+                            .getToWarehouse()
+                            .getName()
+                            : null;
+
+
+            String sourceName =
+                    transfer.getFromWarehouse() != null
+                            ? transfer
+                            .getFromWarehouse()
+                            .getName()
+                            : null;
+
+
+            String driverName =
+                    delivery != null
+                            && delivery.getDriver() != null
+                            ? delivery
+                            .getDriver()
+                            .getName()
+                            : null;
+
+
+            /*
+             * Search.
+             */
+            if (!search.isBlank()) {
+
+                boolean matched =
+                        containsIgnoreCase(
+                                transfer.getTransferCode(),
+                                search
+                        )
+                                || containsIgnoreCase(
+                                manifest.getManifestCode(),
+                                search
+                        )
+                                || containsIgnoreCase(
+                                destinationName,
+                                search
+                        )
+                                || containsIgnoreCase(
+                                driverName,
+                                search
+                        );
+
+
+                if (!matched) {
+                    continue;
+                }
+            }
+
+
+            result.add(
+                    DispatchHandoverListResponse
+                            .builder()
+
+                            .transferId(
+                                    transfer.getId()
+                            )
+
+                            .transferCode(
+                                    transfer.getTransferCode()
+                            )
+
+                            .manifestId(
+                                    manifest.getId()
+                            )
+
+                            .manifestCode(
+                                    manifest.getManifestCode()
+                            )
+
+                            .fromWarehouseName(
+                                    sourceName
+                            )
+
+                            .toWarehouseName(
+                                    destinationName
+                            )
+
+                            .deliveryId(
+                                    delivery != null
+                                            ? delivery.getId()
+                                            : null
+                            )
+
+                            .shipmentCode(
+                                    delivery != null
+                                            ? delivery.getShipmentCode()
+                                            : null
+                            )
+
+                            .deliveryStatus(
+                                    delivery != null
+                                            && delivery.getDeliveryStatus() != null
+                                            ? delivery
+                                            .getDeliveryStatus()
+                                            .name()
+                                            : null
+                            )
+
+                            .driverId(
+                                    delivery != null
+                                            && delivery.getDriver() != null
+                                            ? delivery
+                                            .getDriver()
+                                            .getId()
+                                            : null
+                            )
+
+                            .driverName(
+                                    driverName
+                            )
+
+                            .packageCount(
+                                    packageLinks.size()
+                            )
+
+                            .build()
+            );
+        }
+
+
+        return result;
+    }
+    private boolean containsIgnoreCase(
+            String value,
+            String search
+    ) {
+
+        return value != null
+                && search != null
+                && value
+                .toLowerCase()
+                .contains(
+                        search.toLowerCase()
+                );
+    }
 }

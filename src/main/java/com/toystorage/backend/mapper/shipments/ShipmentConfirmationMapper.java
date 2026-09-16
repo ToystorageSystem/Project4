@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+
 @Component
 @RequiredArgsConstructor
 public class ShipmentConfirmationMapper {
@@ -67,6 +68,10 @@ public class ShipmentConfirmationMapper {
         return ShipmentConfirmationResponse
                 .builder()
 
+                // =================================================
+                // TRANSFER
+                // =================================================
+
                 .transferId(
                         transfer.getId()
                 )
@@ -77,9 +82,53 @@ public class ShipmentConfirmationMapper {
 
                 .transferStatus(
                         transfer.getStatus() != null
-                                ? transfer.getStatus().name()
+                                ? transfer
+                                .getStatus()
+                                .name()
                                 : null
                 )
+
+
+                // =================================================
+                // WAREHOUSE
+                // =================================================
+
+                .fromWarehouseId(
+                        transfer.getFromWarehouse() != null
+                                ? transfer
+                                .getFromWarehouse()
+                                .getId()
+                                : null
+                )
+
+                .fromWarehouseName(
+                        transfer.getFromWarehouse() != null
+                                ? transfer
+                                .getFromWarehouse()
+                                .getName()
+                                : null
+                )
+
+                .toWarehouseId(
+                        transfer.getToWarehouse() != null
+                                ? transfer
+                                .getToWarehouse()
+                                .getId()
+                                : null
+                )
+
+                .toWarehouseName(
+                        transfer.getToWarehouse() != null
+                                ? transfer
+                                .getToWarehouse()
+                                .getName()
+                                : null
+                )
+
+
+                // =================================================
+                // MANIFEST
+                // =================================================
 
                 .manifestId(
                         manifest != null
@@ -96,9 +145,16 @@ public class ShipmentConfirmationMapper {
                 .manifestStatus(
                         manifest != null
                                 && manifest.getStatus() != null
-                                ? manifest.getStatus().name()
+                                ? manifest
+                                .getStatus()
+                                .name()
                                 : null
                 )
+
+
+                // =================================================
+                // DELIVERY
+                // =================================================
 
                 .deliveryId(
                         delivery != null
@@ -121,6 +177,11 @@ public class ShipmentConfirmationMapper {
                                 : null
                 )
 
+
+                // =================================================
+                // DRIVER
+                // =================================================
+
                 .driverId(
                         driver != null
                                 ? driver.getId()
@@ -132,6 +193,11 @@ public class ShipmentConfirmationMapper {
                                 ? driver.getName()
                                 : null
                 )
+
+
+                // =================================================
+                // HANDOVER
+                // =================================================
 
                 .handedOverBy(
                         handedOverBy != null
@@ -150,6 +216,11 @@ public class ShipmentConfirmationMapper {
                                 ? delivery.getHandedOverAt()
                                 : null
                 )
+
+
+                // =================================================
+                // PACKAGES
+                // =================================================
 
                 .packages(
                         packages
@@ -177,7 +248,10 @@ public class ShipmentConfirmationMapper {
         int totalQuantity =
                 items.stream()
                         .mapToInt(
-                                PackageItems::getQuantity
+                                item ->
+                                        item.getQuantity() != null
+                                                ? item.getQuantity()
+                                                : 0
                         )
                         .sum();
 
@@ -199,7 +273,9 @@ public class ShipmentConfirmationMapper {
 
                 .status(
                         packageEntity.getStatus() != null
-                                ? packageEntity.getStatus().name()
+                                ? packageEntity
+                                .getStatus()
+                                .name()
                                 : null
                 )
 

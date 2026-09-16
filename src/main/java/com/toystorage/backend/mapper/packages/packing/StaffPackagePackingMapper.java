@@ -150,15 +150,11 @@ public class StaffPackagePackingMapper {
                 )
 
                 .packedAt(
-                        packageEntity.getCreatedAt()
+                        packageEntity.getPackedAt()
                 )
 
                 .sealedAt(
-                        packageEntity.getStatus() != null
-                                && packageEntity.getStatus()
-                                == com.toystorage.backend.enums.packages.PackageStatus.PACKED
-                                ? packageEntity.getUpdatedAt()
-                                : null
+                        packageEntity.getSealedAt()
                 )
 
                 .items(

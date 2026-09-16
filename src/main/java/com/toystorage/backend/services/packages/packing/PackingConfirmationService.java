@@ -10,7 +10,12 @@ import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.packages.PackageItems;
 import com.toystorage.backend.entity.packages.PackageTransferItem;
 import com.toystorage.backend.entity.packages.Packages;
+import com.toystorage.backend.repository.packages.packing.PackageTransferItemRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import com.toystorage.backend.enums.transfers.TransferStatus;
 import com.toystorage.backend.enums.packages.PackageStatus;
 
@@ -52,11 +57,99 @@ public class PackingConfirmationService {
             shipmentManifestService;
     private final PackingConfirmationMapper
             mapper;
-
+    private final PackageTransferItemRepository
+            packageTransferItemRepository;
     // =====================================================
     // VIEW PACKING RESULT
     // =====================================================
+    @Transactional(readOnly = true)
+    public Page<PackingConfirmationResponse>
+    getPackingConfirmations(
+            int page,
+            int size,
+            String keyword
+    ) {
 
+        Users manager =
+                validationService
+                        .getCurrentUser();
+
+
+        if (manager.getWarehouse() == null) {
+            throw new BadRequest(
+                    "Manager is not assigned to a warehouse"
+            );
+        }
+
+
+        int safePage =
+                Math.max(
+                        page,
+                        0
+                );
+
+
+        int safeSize =
+                Math.min(
+                        Math.max(
+                                size,
+                                1
+                        ),
+                        24
+                );
+
+
+        String search =
+                keyword == null
+                        ? ""
+                        : keyword.trim();
+
+
+        Pageable pageable =
+                PageRequest.of(
+                        safePage,
+                        safeSize,
+                        Sort.by(
+                                Sort.Direction.DESC,
+                                "createdAt"
+                        )
+                );
+
+
+        Page<StockTransfer> transfers =
+                stockTransferRepository
+                        .findPackingConfirmations(
+                                manager
+                                        .getWarehouse()
+                                        .getId(),
+
+                                TransferStatus.PACKING,
+
+                                search,
+
+                                pageable
+                        );
+
+
+        return transfers.map(
+                transfer -> {
+
+                    List<PackageTransferItem>
+                            packages =
+                            packageTransferItemRepository
+                                    .findByStockTransferId(
+                                            transfer.getId()
+                                    );
+
+
+                    return mapper.toResponse(
+                            transfer,
+                            packages,
+                            null
+                    );
+                }
+        );
+    }
     @Transactional(readOnly = true)
     public PackingConfirmationResponse getPackingResult(
             Long transferId

@@ -3,7 +3,9 @@ package com.toystorage.backend.controllers.shipments;
 import com.toystorage.backend.dto.request.shipments.ConfirmShipmentRequest;
 import com.toystorage.backend.dto.response.shipments.ShipmentConfirmationResponse;
 import com.toystorage.backend.services.shipments.ShipmentConfirmationService;
+import com.toystorage.backend.dto.response.packages.shipments.DispatchHandoverListResponse;
 
+import java.util.List;
 import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
@@ -55,6 +57,25 @@ public class ShipmentConfirmationController {
                         .confirmShipment(
                                 transferId,
                                 request
+                        )
+        );
+    }
+
+    @GetMapping("/dispatch-handover")
+    public ResponseEntity<
+            List<DispatchHandoverListResponse>
+            >
+    getDispatchHandoverList(
+            @RequestParam(
+                    defaultValue = ""
+            )
+            String keyword
+    ) {
+
+        return ResponseEntity.ok(
+                shipmentConfirmationService
+                        .getDispatchHandoverList(
+                                keyword
                         )
         );
     }

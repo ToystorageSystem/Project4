@@ -12,15 +12,20 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShipmentPackageResponse {
+public class ShipmentPackageItemResponse {
 
-    private Long packageId;
+    // PRODUCT
+    private Long productId;
 
-    private String packageCode;
+    private String productCode;
 
-    private String sealNumber;
+    private String productName;
 
-    private String status;
 
-    private Integer totalQuantity;
+    // UNIT
+    private String unit;
+
+
+    // QUANTITY
+    private Integer quantity;
 }
