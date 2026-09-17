@@ -188,4 +188,54 @@ public class ReceivingDiscrepancyController {
                         )
         );
     }
+    /*
+     * DISCREPANCY CỦA MỘT RECEIPT
+     */
+    @GetMapping("/receipt/{receiptId}")
+    public ResponseEntity<
+            List<DiscrepancyReportResponse>
+            >
+    getByReceipt(
+            @PathVariable Long receiptId
+    ) {
+
+        return ResponseEntity.ok(
+                receivingDiscrepancyService
+                        .getByReceipt(
+                                receiptId
+                        )
+        );
+    }
+
+
+    /*
+     * CASE ĐÃ CHUYỂN BUSINESS
+     */
+    @GetMapping("/business")
+    public ResponseEntity<
+            List<DiscrepancyReportResponse>
+            >
+    getBusinessQueue() {
+
+        return ResponseEntity.ok(
+                receivingDiscrepancyService
+                        .getBusinessQueue()
+        );
+    }
+
+
+    /*
+     * CASE ĐÃ XỬ LÝ XONG
+     */
+    @GetMapping("/resolved")
+    public ResponseEntity<
+            List<DiscrepancyReportResponse>
+            >
+    getResolvedReports() {
+
+        return ResponseEntity.ok(
+                receivingDiscrepancyService
+                        .getResolvedReports()
+        );
+    }
 }

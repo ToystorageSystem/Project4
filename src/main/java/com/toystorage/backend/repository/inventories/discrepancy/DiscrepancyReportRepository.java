@@ -1,11 +1,10 @@
 package com.toystorage.backend.repository.inventories.discrepancy;
 
-
-
 import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.enums.inventories.DiscrepancyReferenceType;
 import com.toystorage.backend.enums.inventories.DiscrepancyStatus;
 import com.toystorage.backend.enums.inventories.DiscrepancyType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -19,11 +18,13 @@ public interface DiscrepancyReportRepository
             List<DiscrepancyStatus> statuses
     );
 
+
     List<DiscrepancyReports>
     findByReferenceTypeAndReferenceId(
             DiscrepancyReferenceType referenceType,
             Long referenceId
     );
+
 
     boolean existsByReferenceTypeAndReferenceIdAndDiscrepancyTypeAndStatusIn(
             DiscrepancyReferenceType referenceType,
@@ -32,9 +33,31 @@ public interface DiscrepancyReportRepository
             List<DiscrepancyStatus> statuses
     );
 
+
     List<DiscrepancyReports>
     findByReportedByIdOrderByCreatedAtDesc(
             Long userId
     );
 
+
+    /*
+     * Các case đã được Warehouse Manager
+     * chuyển cho Business Manager.
+     */
+    List<DiscrepancyReports>
+    findByWarehouseIdAndResponsiblePartyAndStatusOrderByCreatedAtDesc(
+            Long warehouseId,
+            String responsibleParty,
+            DiscrepancyStatus status
+    );
+
+
+    /*
+     * History / Done.
+     */
+    List<DiscrepancyReports>
+    findByWarehouseIdAndStatusOrderByCreatedAtDesc(
+            Long warehouseId,
+            DiscrepancyStatus status
+    );
 }

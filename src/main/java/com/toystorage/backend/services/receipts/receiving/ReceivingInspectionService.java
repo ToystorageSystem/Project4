@@ -892,4 +892,5 @@ public class ReceivingInspectionService {
                 )
                 .toUpperCase();
     }
+
 }

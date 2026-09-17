@@ -43,20 +43,131 @@ public class ReceivingDiscrepancyService {
     private final ReceivingIncidentReportService receivingIncidentReportService;
 
     @Transactional(readOnly = true)
-    public List<DiscrepancyReportResponse> getReceivingDiscrepancies() {
-        Users manager = validationService.getCurrentUser();
-        Long warehouseId = validationService.getWarehouseId(manager);
+    public List<DiscrepancyReportResponse>
+    getReceivingDiscrepancies() {
 
+        Users manager =
+                validationService.getCurrentUser();
+
+        Long warehouseId =
+                validationService.getWarehouseId(
+                        manager
+                );
+
+        /*
+         * Warehouse Manager cần thấy:
+         *
+         * OPEN
+         * INVESTIGATING
+         * RESOLVED
+         *
+         * để frontend không hiểu nhầm
+         * RESOLVED thành "report missing".
+         */
         return discrepancyReportRepository
                 .findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
                         warehouseId,
-                        List.of(DiscrepancyStatus.OPEN, DiscrepancyStatus.INVESTIGATING))
+                        List.of(
+                                DiscrepancyStatus.OPEN,
+                                DiscrepancyStatus.INVESTIGATING,
+                                DiscrepancyStatus.RESOLVED
+                        )
+                )
                 .stream()
-                .filter(r -> r.getReferenceType() == DiscrepancyReferenceType.GOODS_RECEIPT)
+                .filter(
+                        report ->
+                                report.getReferenceType()
+                                        == DiscrepancyReferenceType.GOODS_RECEIPT
+                )
                 .map(this::buildResponse)
                 .toList();
     }
+    @Transactional(readOnly = true)
+    public List<DiscrepancyReportResponse>
+    getByReceipt(
+            Long receiptId
+    ) {
 
+        Users manager =
+                validationService.getCurrentUser();
+
+        Long warehouseId =
+                validationService.getWarehouseId(
+                        manager
+                );
+
+        return discrepancyReportRepository
+                .findByReferenceTypeAndReferenceId(
+                        DiscrepancyReferenceType.GOODS_RECEIPT,
+                        receiptId
+                )
+                .stream()
+                .filter(
+                        report ->
+                                report.getWarehouse() != null
+                                        &&
+                                        report.getWarehouse()
+                                                .getId()
+                                                .equals(
+                                                        warehouseId
+                                                )
+                )
+                .map(this::buildResponse)
+                .toList();
+    }
+    @Transactional(readOnly = true)
+    public List<DiscrepancyReportResponse>
+    getBusinessQueue() {
+
+        Users user =
+                validationService.getCurrentUser();
+
+        Long warehouseId =
+                validationService.getWarehouseId(
+                        user
+                );
+
+        return discrepancyReportRepository
+                .findByWarehouseIdAndResponsiblePartyAndStatusOrderByCreatedAtDesc(
+                        warehouseId,
+                        "BUSINESS_MANAGER",
+                        DiscrepancyStatus.INVESTIGATING
+                )
+                .stream()
+                .filter(
+                        report ->
+                                report.getReferenceType()
+                                        == DiscrepancyReferenceType.GOODS_RECEIPT
+                )
+                .map(this::buildResponse)
+                .toList();
+    }
+    @Transactional(readOnly = true)
+    public List<DiscrepancyReportResponse>
+    getResolvedReports() {
+
+        Users user =
+                validationService.getCurrentUser();
+
+        Long warehouseId =
+                validationService.getWarehouseId(
+                        user
+                );
+
+        return discrepancyReportRepository
+                .findByWarehouseIdAndStatusOrderByCreatedAtDesc(
+                        warehouseId,
+                        DiscrepancyStatus.RESOLVED
+                )
+                .stream()
+                .filter(
+                        report ->
+                                report.getReferenceType()
+                                        == DiscrepancyReferenceType.GOODS_RECEIPT
+                )
+                .map(this::buildResponse)
+                .toList();
+    }
     @Transactional(readOnly = true)
     public DiscrepancyReportResponse getDiscrepancy(Long discrepancyId) {
         DiscrepancyReports report = getReport(discrepancyId);
