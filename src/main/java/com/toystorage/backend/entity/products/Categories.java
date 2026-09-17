@@ -35,13 +35,6 @@ public class Categories {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Mã danh mục.
-     *
-     * Ví dụ:
-     * CAT-001
-     * CAT-002
-     */
     @Column(
             name = "categories_code",
             nullable = false,
@@ -49,20 +42,19 @@ public class Categories {
     )
     private String categoriesCode;
 
-    /**
-     * Tên danh mục.
-     *
-     * Ví dụ:
-     * Dog Food
-     * Cat Food
-     * Accessories
-     */
     @Column(
             name = "name",
             nullable = false,
             length = 150
     )
     private String name;
+
+    @Lob
+    @Column(
+            name = "description",
+            columnDefinition = "TEXT"
+    )
+    private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(

@@ -7,7 +7,10 @@ public enum ActivityEntityType {
     USER_ROLE,
     ROLE_PERMISSION,
     AUTHENTICATION,
+
     PRODUCT,
+    CATEGORY,
+
     SUPPLIER,
     PURCHASE_ORDER,
     GOODS_RECEIPT,
