@@ -37,7 +37,12 @@ public class DiscrepancyReports {
     /** ID của chứng từ nguồn. */
     @Column(name = "reference_id", nullable = false)
     private Long referenceId;
-
+    /**
+     * Product phát sinh discrepancy.
+     * Với GOODS_RECEIPT, mỗi product có một report riêng.
+     */
+    @Column(name = "product_id")
+    private Long productId;
     /** Kho/cửa hàng phát sinh chênh lệch. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "warehouse_id", nullable = false)

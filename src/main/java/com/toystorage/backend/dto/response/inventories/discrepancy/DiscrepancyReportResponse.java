@@ -24,6 +24,8 @@ public class DiscrepancyReportResponse {
 
     private Long goodsReceiptId;
 
+    private Long productId;
+
     private Long warehouseId;
 
     private String responsibleParty;

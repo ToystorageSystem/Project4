@@ -33,7 +33,13 @@ public interface DiscrepancyReportRepository
             List<DiscrepancyStatus> statuses
     );
 
-
+    boolean existsByReferenceTypeAndReferenceIdAndProductIdAndDiscrepancyTypeAndStatusIn(
+            DiscrepancyReferenceType referenceType,
+            Long referenceId,
+            Long productId,
+            DiscrepancyType discrepancyType,
+            List<DiscrepancyStatus> statuses
+    );
     List<DiscrepancyReports>
     findByReportedByIdOrderByCreatedAtDesc(
             Long userId
