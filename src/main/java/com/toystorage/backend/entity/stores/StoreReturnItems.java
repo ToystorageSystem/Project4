@@ -159,6 +159,16 @@ public class StoreReturnItems {
             columnDefinition = "TEXT"
     )
     private String note;
+    /*
+        phân biệt receivedQuantity = 0 do chưa inspect
+        receivedQuantity = 0 nhưng Staff đã inspect thật
+     */
+    @Builder.Default
+    @Column(
+            name = "inspected",
+            nullable = false
+    )
+    private Boolean inspected = false;
 
     /*
      * Mã nội bộ của dòng sản phẩm trả.

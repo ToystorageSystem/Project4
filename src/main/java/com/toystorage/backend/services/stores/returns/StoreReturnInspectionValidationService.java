@@ -8,7 +8,7 @@ import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.repository.users.UserRepository;
 import com.toystorage.backend.repository.stores.returns.StoreReturnRepository;
-
+import com.toystorage.backend.enums.stores.StoreReturnStatus;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.Authentication;
@@ -116,15 +116,17 @@ public class StoreReturnInspectionValidationService {
             StoreReturns storeReturn
     ) {
 
-        String status =
-                storeReturn.getStatus().name();
+        StoreReturnStatus status =
+                storeReturn.getStatus();
 
-        if (!"SHIPPED".equals(status)
-                && !"RECEIVED".equals(status)) {
+        if (
+                status != StoreReturnStatus.SHIPPED
+                        &&
+                        status != StoreReturnStatus.INSPECTING
+        ) {
 
             throw new BadRequest(
-                    "Store return must be SHIPPED "
-                            + "before warehouse inspection"
+                    "Store return must be SHIPPED or INSPECTING before warehouse inspection"
             );
         }
     }
