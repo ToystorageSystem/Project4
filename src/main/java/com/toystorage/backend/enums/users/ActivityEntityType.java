@@ -7,6 +7,9 @@ public enum ActivityEntityType {
     USER_ROLE,
     ROLE_PERMISSION,
     AUTHENTICATION,
+
+    WAREHOUSE,
+
     PRODUCT,
     SUPPLIER,
     PURCHASE_ORDER,

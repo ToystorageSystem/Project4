@@ -2,26 +2,26 @@ package com.toystorage.backend.entity.warehouses;
 
 import com.toystorage.backend.enums.warehouses.WarehouseStatus;
 import com.toystorage.backend.enums.warehouses.WarehouseType;
+
 import jakarta.persistence.*;
-import lombok.*;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(
         name = "warehouses",
-        /**
-         * những cái này làm vì nhóm mình không có tạo bảng trực tiếp mà dùng hibernate
-        */
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_warehouses_code",
                         columnNames = "warehouses_code"
                 )
         },
-        /**
-         * Index (chỉ mục) trong SQL là một cấu trúc dữ liệu giúp tăng tốc độ tìm kiếm và truy vấn dữ liệu.
-        */
         indexes = {
                 @Index(
                         name = "idx_warehouses_type",
@@ -44,26 +44,47 @@ import java.time.LocalDateTime;
 @Builder
 public class Warehouses {
 
+    // =========================================================
+    // ID
+    // =========================================================
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
+    // =========================================================
+    // WAREHOUSE CODE
+    // =========================================================
+
     /**
-     * Mã kho hoặc cửa hàng.
+     * Mã địa điểm.
      *
      * Ví dụ:
      * WH-001
      * STORE-001
+     *
+     * Mã phải duy nhất trong hệ thống.
      */
     @Column(
             name = "warehouses_code",
             nullable = false,
+            unique = true,
             length = 50
     )
     private String warehousesCode;
 
+
+    // =========================================================
+    // NAME
+    // =========================================================
+
     /**
-     * Tên kho hoặc cửa hàng.
+     * Tên Kho tổng hoặc Cửa hàng.
+     *
+     * Ví dụ:
+     * Kho Tổng TP.HCM
+     * ToyStore Quận 1
      */
     @Column(
             name = "name",
@@ -72,8 +93,21 @@ public class Warehouses {
     )
     private String name;
 
+
+    // =========================================================
+    // TYPE
+    // =========================================================
+
     /**
-     * Phân biệt kho tổng và cửa hàng.
+     * Loại địa điểm.
+     *
+     * MAIN_WAREHOUSE = Kho tổng
+     * STORE          = Cửa hàng
+     *
+     * Lưu ý:
+     * Issue #25 ghi CENTRAL_WAREHOUSE,
+     * nhưng hệ thống hiện tại đã sử dụng MAIN_WAREHOUSE.
+     * Giữ MAIN_WAREHOUSE để không ảnh hưởng các nghiệp vụ cũ.
      */
     @Enumerated(EnumType.STRING)
     @Column(
@@ -83,12 +117,43 @@ public class Warehouses {
     )
     private WarehouseType type;
 
+
+    // =========================================================
+    // ADDRESS
+    // =========================================================
+
+    /**
+     * Địa chỉ Kho tổng hoặc Cửa hàng.
+     */
     @Column(
             name = "address",
             length = 255
     )
     private String address;
 
+
+    // =========================================================
+    // PHONE
+    // =========================================================
+
+    /**
+     * Số điện thoại liên hệ của địa điểm.
+     */
+    @Column(
+            name = "phone",
+            length = 20
+    )
+    private String phone;
+
+
+    // =========================================================
+    // STATUS
+    // =========================================================
+
+    /**
+     * ACTIVE   = đang hoạt động
+     * INACTIVE = đã ngừng hoạt động
+     */
     @Enumerated(EnumType.STRING)
     @Column(
             name = "status",
@@ -97,6 +162,11 @@ public class Warehouses {
     )
     private WarehouseStatus status;
 
+
+    // =========================================================
+    // CREATED AT
+    // =========================================================
+
     @Column(
             name = "created_at",
             nullable = false,
@@ -104,15 +174,27 @@ public class Warehouses {
     )
     private LocalDateTime createdAt;
 
+
+    // =========================================================
+    // UPDATED AT
+    // =========================================================
+
     @Column(
             name = "updated_at",
             nullable = false
     )
     private LocalDateTime updatedAt;
 
+
+    // =========================================================
+    // PRE PERSIST
+    // =========================================================
+
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
+
+        LocalDateTime now =
+                LocalDateTime.now();
 
         if (createdAt == null) {
             createdAt = now;
@@ -125,8 +207,15 @@ public class Warehouses {
         }
     }
 
+
+    // =========================================================
+    // PRE UPDATE
+    // =========================================================
+
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+
+        updatedAt =
+                LocalDateTime.now();
     }
 }

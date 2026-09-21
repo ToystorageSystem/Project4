@@ -12,68 +12,57 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserRepository
         extends JpaRepository<Users, Long> {
 
-    /*
-     * LOGIN đang dùng.
-     * KHÔNG XÓA.
-     */
-    Optional<Users> findByEmail(String email);
+
+    // =========================================================
+    // LOGIN
+    // =========================================================
+
+    Optional<Users> findByEmail(
+            String email
+    );
 
 
-    /*
-     * Kiểm tra email trùng khi tạo user.
-     */
-    boolean existsByEmailIgnoreCase(String email);
+    // =========================================================
+    // UNIQUE EMAIL
+    // =========================================================
+
+    boolean existsByEmailIgnoreCase(
+            String email
+    );
 
 
-    /*
-     * Kiểm tra email trùng khi cập nhật.
-     *
-     * Ví dụ đang sửa User ID = 5,
-     * email của chính User 5 thì vẫn hợp lệ.
-     */
     boolean existsByEmailIgnoreCaseAndIdNot(
             String email,
             Long id
     );
 
 
-    /*
-     * Kiểm tra CCCD trùng khi tạo.
-     */
+    // =========================================================
+    // UNIQUE IDENTITY CARD
+    // =========================================================
+
     boolean existsByIdentityCard(
             String identityCard
     );
 
 
-    /*
-     * Kiểm tra CCCD trùng khi cập nhật.
-     */
     boolean existsByIdentityCardAndIdNot(
             String identityCard,
             Long id
     );
 
 
-    /*
-     * Sinh mã user tự động.
-     *
-     * Ví dụ DB đang có:
-     *
-     * USR001
-     * USR002
-     * USR011
-     *
-     * Query trả về 11.
-     *
-     * Service sẽ sinh:
-     * USR012
-     */
+    // =========================================================
+    // AUTO USER CODE
+    // =========================================================
+
     @Query(
             value = """
                     SELECT COALESCE(
@@ -93,9 +82,10 @@ public interface UserRepository
     Long findMaxUserCodeNumber();
 
 
-    /*
-     * Danh sách + tìm kiếm + lọc.
-     */
+    // =========================================================
+    // USER LIST + SEARCH + FILTER
+    // =========================================================
+
     @Query("""
         SELECT DISTINCT u
         FROM Users u
@@ -140,7 +130,9 @@ public interface UserRepository
             )
         """)
     Page<Users> searchUsers(
-            @Param("keyword") String keyword,
+
+            @Param("keyword")
+            String keyword,
 
             @Param("roleId")
             Long roleId,
@@ -152,5 +144,38 @@ public interface UserRepository
             UserStatus status,
 
             Pageable pageable
+    );
+
+
+    // =========================================================
+    // USERS ASSIGNED TO WAREHOUSE / STORE
+    // =========================================================
+
+    List<Users> findByWarehouse_IdOrderByIdAsc(
+            Long warehouseId
+    );
+
+
+    // =========================================================
+    // FIND MANAGER CURRENTLY ASSIGNED TO WAREHOUSE
+    // =========================================================
+
+    @Query("""
+        SELECT DISTINCT u
+        FROM Users u
+
+        JOIN UserRoles ur
+            ON ur.user.id = u.id
+
+        WHERE u.warehouse.id = :warehouseId
+          AND ur.role.roleCode = :roleCode
+    """)
+    List<Users> findWarehouseUsersByRoleCode(
+
+            @Param("warehouseId")
+            Long warehouseId,
+
+            @Param("roleCode")
+            String roleCode
     );
 }
