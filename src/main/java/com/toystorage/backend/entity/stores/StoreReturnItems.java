@@ -202,6 +202,10 @@ public class StoreReturnItems {
         if (conditionStatus == null) {
             conditionStatus = ReturnItemCondition.NORMAL;
         }
+
+        if (inspected == null) {
+            inspected = false;
+        }
     }
 
     /*

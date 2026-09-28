@@ -5,29 +5,39 @@ import com.toystorage.backend.dto.request.stores.returns.ReturnedPackageScanRequ
 
 import com.toystorage.backend.dto.response.stores.returns.ReturnedGoodsDetailResponse;
 import com.toystorage.backend.dto.response.stores.returns.ReturnedPackageResponse;
-import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
-import com.toystorage.backend.services.warehouses.taskclaim.WarehouseTaskClaimService;
 
+import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.entity.packages.Packages;
-
 import com.toystorage.backend.entity.stores.StoreReturnItems;
 import com.toystorage.backend.entity.stores.StoreReturns;
-
 import com.toystorage.backend.entity.users.Users;
+import com.toystorage.backend.entity.warehouses.WarehouseLocations;
+
+import com.toystorage.backend.enums.inventories.DiscrepancyReferenceType;
+import com.toystorage.backend.enums.inventories.DiscrepancyStatus;
+import com.toystorage.backend.enums.inventories.DiscrepancyType;
 
 import com.toystorage.backend.enums.packages.PackageStatus;
+
+import com.toystorage.backend.enums.stores.ReturnItemCondition;
 import com.toystorage.backend.enums.stores.StoreReturnStatus;
+
+import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
 
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
 
 import com.toystorage.backend.mapper.stores.returns.ReturnedGoodsInspectionMapper;
 
+import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyReportRepository;
+
 import com.toystorage.backend.repository.packages.packing.StaffPackageRepository;
 import com.toystorage.backend.repository.packages.packing.StaffPackageTransferItemRepository;
 
 import com.toystorage.backend.repository.stores.returns.WarehouseReturnItemRepository;
 import com.toystorage.backend.repository.stores.returns.WarehouseReturnRepository;
+
+import com.toystorage.backend.services.warehouses.taskclaim.WarehouseTaskClaimService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -36,6 +46,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -63,8 +75,18 @@ public class ReturnedGoodsInspectionService {
             taskClaimService;
 
 
+    private final DiscrepancyReportRepository
+            discrepancyReportRepository;
+
+    private final StoreReturnInventoryService
+            inventoryService;
+
+    private final StoreReturnLocationService
+            locationService;
+
+
     // =====================================================
-    // START
+    // START INSPECTION
     // =====================================================
 
     @Transactional
@@ -75,12 +97,10 @@ public class ReturnedGoodsInspectionService {
         Users staff =
                 validationService.getCurrentUser();
 
-
         StoreReturns storeReturn =
                 validationService.getReturn(
                         returnId
                 );
-
 
         validationService.validateWarehouse(
                 staff,
@@ -88,12 +108,10 @@ public class ReturnedGoodsInspectionService {
         );
 
 
-        /*
-         * Nếu đang INSPECTING thì chỉ owner
-         * được gọi Start lại.
-         */
-        if (storeReturn.getStatus()
-                == StoreReturnStatus.INSPECTING) {
+        if (
+                storeReturn.getStatus()
+                        == StoreReturnStatus.INSPECTING
+        ) {
 
             taskClaimService.validateOwner(
                     WarehouseTaskType.STORE_RETURN_RECEIVING,
@@ -107,8 +125,10 @@ public class ReturnedGoodsInspectionService {
         }
 
 
-        if (storeReturn.getStatus()
-                != StoreReturnStatus.SHIPPED) {
+        if (
+                storeReturn.getStatus()
+                        != StoreReturnStatus.SHIPPED
+        ) {
 
             throw new BadRequest(
                     "Store return cannot start inspection from status "
@@ -117,9 +137,6 @@ public class ReturnedGoodsInspectionService {
         }
 
 
-        /*
-         * Staff đầu tiên claim được quyền kiểm.
-         */
         taskClaimService.claim(
                 WarehouseTaskType.STORE_RETURN_RECEIVING,
                 returnId,
@@ -148,7 +165,7 @@ public class ReturnedGoodsInspectionService {
 
 
     // =====================================================
-    // SCAN RETURN PACKAGE
+    // SCAN PACKAGE
     // =====================================================
 
     @Transactional
@@ -172,11 +189,13 @@ public class ReturnedGoodsInspectionService {
                 storeReturn
         );
 
+
         taskClaimService.validateOwner(
                 WarehouseTaskType.STORE_RETURN_RECEIVING,
                 returnId,
                 staff
         );
+
 
         validationService.validateEditable(
                 storeReturn
@@ -195,12 +214,10 @@ public class ReturnedGoodsInspectionService {
                         );
 
 
-        /*
-         * Store Return liên kết StockTransfer.
-         * Package cũng liên kết StockTransfer.
-         * Hai bên phải cùng transfer.
-         */
-        if (storeReturn.getStockTransfer() == null) {
+        if (
+                storeReturn.getStockTransfer()
+                        == null
+        ) {
 
             throw new BadRequest(
                     "Store return is not linked to stock transfer"
@@ -226,12 +243,10 @@ public class ReturnedGoodsInspectionService {
         }
 
 
-        /*
-         * Package đã tới kho vật lý.
-         * Không có inventory change tại đây.
-         */
-        if (packageEntity.getStatus()
-                == PackageStatus.SHIPPED) {
+        if (
+                packageEntity.getStatus()
+                        == PackageStatus.SHIPPED
+        ) {
 
             packageEntity.setStatus(
                     PackageStatus.RECEIVED
@@ -269,7 +284,7 @@ public class ReturnedGoodsInspectionService {
 
 
     // =====================================================
-    // INSPECT PRODUCT
+    // INSPECT ITEM
     // =====================================================
 
     @Transactional
@@ -293,11 +308,13 @@ public class ReturnedGoodsInspectionService {
                 storeReturn
         );
 
+
         taskClaimService.validateOwner(
                 WarehouseTaskType.STORE_RETURN_RECEIVING,
                 returnId,
                 staff
         );
+
 
         validationService.validateEditable(
                 storeReturn
@@ -312,8 +329,41 @@ public class ReturnedGoodsInspectionService {
                         );
 
 
+        Integer receivedQuantity =
+                request.getReceivedQuantity();
+
+
+        if (
+                receivedQuantity == null
+                        ||
+                        receivedQuantity < 0
+        ) {
+
+            throw new BadRequest(
+                    "Received quantity must be greater than or equal to 0"
+            );
+        }
+
+
+        /*
+         * QUAN TRỌNG:
+         *
+         * Không giới hạn:
+         *
+         * receivedQuantity <= issuedQuantity
+         *
+         * vì thực tế Warehouse có thể nhận THỪA.
+         *
+         * Ví dụ:
+         *
+         * Store khai gửi 10
+         * Warehouse đếm 12
+         *
+         * => received = 12
+         * => tạo SURPLUS discrepancy.
+         */
         item.setReceivedQuantity(
-                request.getReceivedQuantity()
+                receivedQuantity
         );
 
 
@@ -327,15 +377,11 @@ public class ReturnedGoodsInspectionService {
         );
 
 
-        /*
-         * received - approved:
-         *
-         * < 0 = thiếu
-         * > 0 = thừa
-         * = 0 = đúng
-         *
-         * Không update tồn kho.
-         */
+        item.setInspected(
+                true
+        );
+
+
         returnItemRepository.save(
                 item
         );
@@ -348,7 +394,11 @@ public class ReturnedGoodsInspectionService {
 
 
     // =====================================================
-    // SUBMIT TO MANAGER
+    // COMPLETE RECEIVING
+    //
+    // Staff kiểm xong + xác nhận đã đưa hàng về location.
+    //
+    // KHÔNG cần Warehouse Manager confirm.
     // =====================================================
 
     @Transactional
@@ -371,6 +421,7 @@ public class ReturnedGoodsInspectionService {
                 storeReturn
         );
 
+
         taskClaimService.validateOwner(
                 WarehouseTaskType.STORE_RETURN_RECEIVING,
                 returnId,
@@ -390,7 +441,9 @@ public class ReturnedGoodsInspectionService {
                         );
 
 
-        if (items.isEmpty()) {
+        if (
+                items.isEmpty()
+        ) {
 
             throw new BadRequest(
                     "Store return contains no items"
@@ -398,83 +451,166 @@ public class ReturnedGoodsInspectionService {
         }
 
 
-        for (StoreReturnItems item : items) {
+        // =================================================
+        // VALIDATE ALL ITEMS
+        // =================================================
 
-            if (item.getReceivedQuantity() == null) {
+        for (
+                StoreReturnItems item : items
+        ) {
+
+            if (
+                    !Boolean.TRUE.equals(
+                            item.getInspected()
+                    )
+            ) {
 
                 throw new BadRequest(
-                        "Received quantity is required for product "
-                                + item.getProduct().getName()
+                        "Product has not been inspected: "
+                                + item.getProduct()
+                                .getName()
                 );
             }
 
 
-            if (item.getConditionStatus() == null) {
+            if (
+                    item.getReceivedQuantity()
+                            == null
+            ) {
+
+                throw new BadRequest(
+                        "Received quantity is required for product "
+                                + item.getProduct()
+                                .getName()
+                );
+            }
+
+
+            if (
+                    item.getConditionStatus()
+                            == null
+            ) {
 
                 throw new BadRequest(
                         "Condition is required for product "
-                                + item.getProduct().getName()
+                                + item.getProduct()
+                                .getName()
                 );
             }
 
 
             int expected =
-                    item.getApprovedQuantity();
+                    getExpectedQuantity(
+                            item
+                    );
 
             int actual =
                     item.getReceivedQuantity();
 
 
-            /*
-             * Có chênh lệch thì bắt buộc ghi chú.
-             */
-            if (actual != expected
-                    && (
-                    item.getNote() == null
-                            || item.getNote().isBlank()
-            )) {
+            if (
+                    actual != expected
+
+                            &&
+
+                            (
+                                    item.getNote()
+                                            == null
+
+                                            ||
+
+                                            item.getNote()
+                                                    .isBlank()
+                            )
+            ) {
 
                 throw new BadRequest(
                         "Note is required for discrepancy product "
-                                + item.getProduct().getName()
+                                + item.getProduct()
+                                .getName()
                 );
             }
 
 
-            /*
-             * Damaged / expired / quarantine
-             * cũng bắt buộc ghi chú.
-             */
-            if (!"NORMAL".equals(
-                    item.getConditionStatus().name()
-            )
-                    && (
-                    item.getNote() == null
-                            || item.getNote().isBlank()
-            )) {
+            if (
+                    item.getConditionStatus()
+                            != ReturnItemCondition.NORMAL
+
+                            &&
+
+                            (
+                                    item.getNote()
+                                            == null
+
+                                            ||
+
+                                            item.getNote()
+                                                    .isBlank()
+                            )
+            ) {
 
                 throw new BadRequest(
                         "Note is required for abnormal condition product "
-                                + item.getProduct().getName()
+                                + item.getProduct()
+                                .getName()
                 );
             }
         }
+
+
+        // =================================================
+        // DISCREPANCY + INVENTORY
+        // =================================================
+
+        for (
+                StoreReturnItems item : items
+        ) {
+
+            syncDiscrepancy(
+                    storeReturn,
+                    item,
+                    staff
+            );
+
+
+            moveToInventory(
+                    storeReturn,
+                    item,
+                    staff
+            );
+        }
+
+
+        // =================================================
+        // COMPLETE RETURN
+        // =================================================
+
+        LocalDateTime now =
+                LocalDateTime.now();
 
 
         storeReturn.setInspectedBy(
                 staff
         );
 
+
         storeReturn.setInspectionSubmittedAt(
-                LocalDateTime.now()
+                now
         );
+
+
+        storeReturn.setReceivedAt(
+                now
+        );
+
 
         storeReturn.setStatus(
-                StoreReturnStatus.PENDING_CONFIRMATION
+                StoreReturnStatus.RECEIVED
         );
 
+
         storeReturn.setUpdatedAt(
-                LocalDateTime.now()
+                now
         );
 
 
@@ -482,27 +618,428 @@ public class ReturnedGoodsInspectionService {
                 storeReturn
         );
 
+
+        // =================================================
+        // RELEASE CLAIM
+        // =================================================
+
         taskClaimService.release(
                 WarehouseTaskType.STORE_RETURN_RECEIVING,
                 returnId,
                 staff
         );
 
-        /*
-         * KHÔNG:
-         *
-         * - update InventoryBalances
-         * - tạo InventoryTransactions
-         * - chuyển RECEIVED
-         *
-         * Manager làm bước xác nhận.
-         */
+
         return mapper.toDetailResponse(
                 storeReturn,
                 items
         );
     }
 
+
+    // =====================================================
+    // INVENTORY
+    // =====================================================
+
+    private void moveToInventory(
+            StoreReturns storeReturn,
+            StoreReturnItems item,
+            Users staff
+    ) {
+
+        int quantity =
+                item.getReceivedQuantity() != null
+                        ? item.getReceivedQuantity()
+                        : 0;
+
+
+        if (
+                quantity <= 0
+        ) {
+
+            return;
+        }
+
+
+        ReturnItemCondition condition =
+                item.getConditionStatus();
+
+
+        // =================================================
+        // NORMAL
+        // =================================================
+
+        if (
+                condition == ReturnItemCondition.NORMAL
+        ) {
+
+            WarehouseLocations location =
+                    locationService
+                            .getNormalLocation(
+                                    storeReturn
+                                            .getWarehouse()
+                                            .getId()
+                            );
+
+
+            inventoryService
+                    .addAvailableInventory(
+                            storeReturn,
+                            item,
+                            location,
+                            quantity,
+                            staff
+                    );
+
+
+            item.setApprovedQuantity(
+                    quantity
+            );
+
+
+            item.setRejectedQuantity(
+                    0
+            );
+
+
+            returnItemRepository.save(
+                    item
+            );
+
+            return;
+        }
+
+
+        // =================================================
+        // DAMAGED / EXPIRED / QUARANTINE
+        // =================================================
+
+        WarehouseLocations quarantineLocation =
+                locationService
+                        .getQuarantineLocation(
+                                storeReturn
+                                        .getWarehouse()
+                                        .getId()
+                        );
+
+
+        inventoryService
+                .addQuarantineInventory(
+                        storeReturn,
+                        item,
+                        quarantineLocation,
+                        quantity,
+                        staff
+                );
+
+
+        item.setApprovedQuantity(
+                0
+        );
+
+
+        item.setRejectedQuantity(
+                quantity
+        );
+
+
+        returnItemRepository.save(
+                item
+        );
+    }
+
+
+    // =====================================================
+    // DISCREPANCY
+    // =====================================================
+
+    private void syncDiscrepancy(
+            StoreReturns storeReturn,
+            StoreReturnItems item,
+            Users staff
+    ) {
+
+        int expected =
+                getExpectedQuantity(
+                        item
+                );
+
+
+        int actual =
+                item.getReceivedQuantity() != null
+                        ? item.getReceivedQuantity()
+                        : 0;
+
+
+        // =================================================
+        // SHORTAGE
+        // =================================================
+
+        if (
+                actual < expected
+        ) {
+
+            createDiscrepancyIfNotExists(
+                    storeReturn,
+                    item,
+                    staff,
+                    DiscrepancyType.SHORTAGE,
+
+                    "Store return shortage. Expected: "
+                            + expected
+                            + ", received: "
+                            + actual
+                            + ", missing: "
+                            + (
+                            expected - actual
+                    )
+            );
+        }
+
+
+        // =================================================
+        // SURPLUS
+        // =================================================
+
+        if (
+                actual > expected
+        ) {
+
+            createDiscrepancyIfNotExists(
+                    storeReturn,
+                    item,
+                    staff,
+                    DiscrepancyType.SURPLUS,
+
+                    "Store return surplus. Expected: "
+                            + expected
+                            + ", received: "
+                            + actual
+                            + ", surplus: "
+                            + (
+                            actual - expected
+                    )
+            );
+        }
+
+
+        // =================================================
+        // DAMAGED
+        // =================================================
+
+        if (
+                item.getConditionStatus()
+                        == ReturnItemCondition.DAMAGED
+        ) {
+
+            createDiscrepancyIfNotExists(
+                    storeReturn,
+                    item,
+                    staff,
+                    DiscrepancyType.DAMAGED,
+
+                    "Damaged product detected during Store Return inspection"
+            );
+        }
+
+
+        // =================================================
+        // EXPIRED
+        //
+        // Hiện project chưa có DiscrepancyType.EXPIRED.
+        // =================================================
+
+        if (
+                item.getConditionStatus()
+                        == ReturnItemCondition.EXPIRED
+        ) {
+
+            createDiscrepancyIfNotExists(
+                    storeReturn,
+                    item,
+                    staff,
+                    DiscrepancyType.DAMAGED,
+
+                    "Expired product detected during Store Return inspection"
+            );
+        }
+    }
+
+
+    // =====================================================
+    // CREATE DISCREPANCY
+    // =====================================================
+
+    private void createDiscrepancyIfNotExists(
+            StoreReturns storeReturn,
+            StoreReturnItems item,
+            Users staff,
+            DiscrepancyType type,
+            String description
+    ) {
+
+        boolean exists =
+                discrepancyReportRepository
+                        .existsByReferenceTypeAndReferenceIdAndProductIdAndDiscrepancyTypeAndStatusIn(
+
+                                DiscrepancyReferenceType.STORE_RETURN,
+
+                                storeReturn.getId(),
+
+                                item.getProduct()
+                                        .getId(),
+
+                                type,
+
+                                List.of(
+                                        DiscrepancyStatus.OPEN,
+                                        DiscrepancyStatus.INVESTIGATING
+                                )
+                        );
+
+
+        if (
+                exists
+        ) {
+
+            return;
+        }
+
+
+        String code =
+                generateCode(
+                        "DR-SR"
+                );
+
+
+        DiscrepancyReports report =
+                DiscrepancyReports
+                        .builder()
+
+                        .reportCode(
+                                code
+                        )
+
+                        .discrepancyReportsCode(
+                                code
+                        )
+
+                        .referenceType(
+                                DiscrepancyReferenceType.STORE_RETURN
+                        )
+
+                        .referenceId(
+                                storeReturn.getId()
+                        )
+
+                        .productId(
+                                item.getProduct()
+                                        .getId()
+                        )
+
+                        .warehouse(
+                                storeReturn
+                                        .getWarehouse()
+                        )
+
+                        .discrepancyType(
+                                type
+                        )
+
+                        .status(
+                                DiscrepancyStatus.OPEN
+                        )
+
+                        .reportedBy(
+                                staff
+                        )
+
+                        /*
+                         * Không block Store Return.
+                         *
+                         * Discrepancy sẽ được xử lý riêng.
+                         */
+                        .responsibleParty(
+                                "WAREHOUSE"
+                        )
+
+                        .description(
+                                description
+                        )
+
+                        .evidenceImageUrl(
+                                item.getEvidenceImageUrl()
+                        )
+
+                        .build();
+
+
+        discrepancyReportRepository.save(
+                report
+        );
+    }
+
+
+    // =====================================================
+    // EXPECTED QUANTITY
+    // =====================================================
+
+    private int getExpectedQuantity(
+            StoreReturnItems item
+    ) {
+
+        if (
+                item.getIssuedQuantity()
+                        != null
+        ) {
+
+            return item.getIssuedQuantity();
+        }
+
+
+        if (
+                item.getApprovedQuantity()
+                        != null
+        ) {
+
+            return item.getApprovedQuantity();
+        }
+
+
+        return item.getRequestedQuantity()
+                != null
+                ? item.getRequestedQuantity()
+                : 0;
+    }
+
+
+    // =====================================================
+    // CODE
+    // =====================================================
+
+    private String generateCode(
+            String prefix
+    ) {
+
+        return prefix
+                + "-"
+                + UUID.randomUUID()
+                .toString()
+                .replace(
+                        "-",
+                        ""
+                )
+                .substring(
+                        0,
+                        10
+                )
+                .toUpperCase();
+    }
+
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
 
     private ReturnedGoodsDetailResponse buildResponse(
             StoreReturns storeReturn

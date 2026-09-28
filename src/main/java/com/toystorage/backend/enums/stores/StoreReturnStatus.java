@@ -2,64 +2,57 @@ package com.toystorage.backend.enums.stores;
 
 public enum StoreReturnStatus {
 
-    /*
-     * Store đang tạo yêu cầu.
-     */
     DRAFT,
 
-    /*
-     * Chờ Business hoặc Warehouse xác nhận yêu cầu trả hàng.
-     */
     PENDING_APPROVAL,
 
-    /*
-     * Business hoặc Warehouse đã xác nhận.
-     *
-     * Tại thời điểm này Store trừ tồn theo nghiệp vụ trả hàng.
-     */
     APPROVED,
 
-    /*
-     * Store đang đóng hàng trả.
-     */
     PACKING,
 
-    /*
-     * Store đã bàn giao hàng cho vận chuyển.
-     */
     ISSUED,
 
     /*
-     * Hàng đang được vận chuyển về kho tổng.
+     * Store đã gửi hàng.
+     *
+     * Warehouse chưa bắt đầu kiểm.
      */
     SHIPPED,
 
     /*
-     * Warehouse Staff đã nhận hàng vật lý
-     * và đang kiểm số lượng, tình trạng sản phẩm.
+     * Warehouse Staff đang:
      *
-     * CHƯA cộng tồn kho.
+     * - kiểm số lượng
+     * - kiểm tình trạng
+     * - xử lý vị trí nhận hàng
+     *
+     * Chưa hoàn thành Store Return.
      */
     INSPECTING,
 
     /*
-     * Warehouse Staff đã kiểm xong
-     * và gửi kết quả cho Warehouse Manager xác nhận.
+     * LEGACY STATUS.
      *
-     * CHƯA cộng tồn kho.
+     * Luồng Store Return mới không còn sử dụng
+     * bước Warehouse Manager confirmation.
+     *
+     * Giữ lại tạm thời để tương thích database
+     * và dữ liệu cũ.
      */
     PENDING_CONFIRMATION,
 
     /*
-     * Warehouse Manager đã xác nhận kết quả kiểm hàng.
+     * Warehouse Staff đã:
      *
-     * Sau bước này hệ thống mới xử lý cộng
-     * số lượng được chấp nhận vào tồn kho phù hợp.
+     * - kiểm hàng
+     * - xác nhận số lượng thực tế
+     * - xử lý location
+     * - hoàn thành receiving
+     *
+     * Thiếu/thừa/hỏng nếu có được xử lý
+     * bằng discrepancy riêng.
      */
     RECEIVED,
 
-    /*
-     * Phiếu trả hàng bị hủy.
-     */
     CANCELLED
 }

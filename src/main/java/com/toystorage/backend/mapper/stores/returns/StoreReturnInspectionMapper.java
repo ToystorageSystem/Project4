@@ -1,15 +1,24 @@
 package com.toystorage.backend.mapper.stores.returns;
 
+import com.toystorage.backend.dto.response.inventories.discrepancy.DiscrepancyReportResponse;
 import com.toystorage.backend.dto.response.stores.returns.StoreReturnInspectionItemResponse;
 import com.toystorage.backend.dto.response.stores.returns.StoreReturnInspectionResponse;
+
+import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.entity.stores.StoreReturnItems;
 import com.toystorage.backend.entity.stores.StoreReturns;
+
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
 public class StoreReturnInspectionMapper {
+
+
+    // =====================================================
+    // ITEM
+    // =====================================================
 
     public StoreReturnInspectionItemResponse toItemResponse(
             StoreReturnItems item
@@ -76,38 +85,174 @@ public class StoreReturnInspectionMapper {
     }
 
 
+    // =====================================================
+    // DISCREPANCY
+    // =====================================================
+
+    public DiscrepancyReportResponse toDiscrepancyResponse(
+            DiscrepancyReports report
+    ) {
+
+        return DiscrepancyReportResponse
+                .builder()
+
+                .id(
+                        report.getId()
+                )
+
+                .reportCode(
+                        report.getReportCode()
+                )
+
+                .discrepancyType(
+                        report.getDiscrepancyType() != null
+                                ? report.getDiscrepancyType().name()
+                                : null
+                )
+
+                .status(
+                        report.getStatus() != null
+                                ? report.getStatus().name()
+                                : null
+                )
+
+                .description(
+                        report.getDescription()
+                )
+
+                /*
+                 * DTO này trước đây thiết kế cho Goods Receipt.
+                 * Store Return không sử dụng goodsReceiptId.
+                 */
+                .goodsReceiptId(
+                        null
+                )
+
+                .productId(
+                        report.getProductId()
+                )
+
+                .warehouseId(
+                        report.getWarehouse() != null
+                                ? report.getWarehouse().getId()
+                                : null
+                )
+
+                .responsibleParty(
+                        report.getResponsibleParty()
+                )
+
+                .resolutionAction(
+                        report.getResolutionAction() != null
+                                ? report.getResolutionAction().name()
+                                : null
+                )
+
+                .resolutionNote(
+                        report.getResolutionNote()
+                )
+
+                .reviewedBy(
+                        report.getReviewedBy() != null
+                                ? report.getReviewedBy().getId()
+                                : null
+                )
+
+                .reviewedByName(
+                        report.getReviewedBy() != null
+                                ? report.getReviewedBy().getName()
+                                : null
+                )
+
+                .reviewedAt(
+                        report.getReviewedAt()
+                )
+
+                .resolvedBy(
+                        report.getResolvedBy() != null
+                                ? report.getResolvedBy().getId()
+                                : null
+                )
+
+                .resolvedByName(
+                        report.getResolvedBy() != null
+                                ? report.getResolvedBy().getName()
+                                : null
+                )
+
+                .resolvedAt(
+                        report.getResolvedAt()
+                )
+
+                .createdAt(
+                        report.getCreatedAt()
+                )
+
+                /*
+                 * Store Return hiện không dùng
+                 * discrepancy_items.
+                 */
+                .items(
+                        List.of()
+                )
+
+                .build();
+    }
+
+
+    // =====================================================
+    // RETURN RESPONSE
+    // =====================================================
+
     public StoreReturnInspectionResponse toResponse(
             StoreReturns storeReturn,
-            List<StoreReturnItems> items
+            List<StoreReturnItems> items,
+            List<DiscrepancyReports> discrepancies
     ) {
 
         int requested =
                 items.stream()
                         .mapToInt(
-                                StoreReturnItems::getRequestedQuantity
+                                item ->
+                                        item.getRequestedQuantity() != null
+                                                ? item.getRequestedQuantity()
+                                                : 0
                         )
                         .sum();
+
 
         int received =
                 items.stream()
                         .mapToInt(
-                                StoreReturnItems::getReceivedQuantity
+                                item ->
+                                        item.getReceivedQuantity() != null
+                                                ? item.getReceivedQuantity()
+                                                : 0
                         )
                         .sum();
+
 
         int approved =
                 items.stream()
                         .mapToInt(
-                                StoreReturnItems::getApprovedQuantity
+                                item ->
+                                        item.getApprovedQuantity() != null
+                                                ? item.getApprovedQuantity()
+                                                : 0
                         )
                         .sum();
+
 
         int rejected =
                 items.stream()
                         .mapToInt(
-                                StoreReturnItems::getRejectedQuantity
+                                item ->
+                                        item.getRejectedQuantity() != null
+                                                ? item.getRejectedQuantity()
+                                                : 0
                         )
                         .sum();
+
 
         return StoreReturnInspectionResponse
                 .builder()
@@ -121,27 +266,39 @@ public class StoreReturnInspectionMapper {
                 )
 
                 .returnType(
-                        storeReturn.getReturnType().name()
+                        storeReturn.getReturnType() != null
+                                ? storeReturn.getReturnType().name()
+                                : null
                 )
 
                 .status(
-                        storeReturn.getStatus().name()
+                        storeReturn.getStatus() != null
+                                ? storeReturn.getStatus().name()
+                                : null
                 )
 
                 .storeId(
-                        storeReturn.getStore().getId()
+                        storeReturn.getStore() != null
+                                ? storeReturn.getStore().getId()
+                                : null
                 )
 
                 .storeName(
-                        storeReturn.getStore().getName()
+                        storeReturn.getStore() != null
+                                ? storeReturn.getStore().getName()
+                                : null
                 )
 
                 .warehouseId(
-                        storeReturn.getWarehouse().getId()
+                        storeReturn.getWarehouse() != null
+                                ? storeReturn.getWarehouse().getId()
+                                : null
                 )
 
                 .warehouseName(
-                        storeReturn.getWarehouse().getName()
+                        storeReturn.getWarehouse() != null
+                                ? storeReturn.getWarehouse().getName()
+                                : null
                 )
 
                 .totalRequestedQuantity(
@@ -166,8 +323,28 @@ public class StoreReturnInspectionMapper {
 
                 .items(
                         items.stream()
-                                .map(this::toItemResponse)
+                                .map(
+                                        this::toItemResponse
+                                )
                                 .toList()
+                )
+
+                /*
+                 * QUAN TRỌNG:
+                 *
+                 * Luôn có discrepancies trong JSON.
+                 *
+                 * Không có:
+                 * "discrepancies": []
+                 */
+                .discrepancies(
+                        discrepancies != null
+                                ? discrepancies.stream()
+                                .map(
+                                        this::toDiscrepancyResponse
+                                )
+                                .toList()
+                                : List.of()
                 )
 
                 .build();

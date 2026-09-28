@@ -25,6 +25,19 @@ import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyRepo
 import com.toystorage.backend.repository.stores.returns.StoreReturnItemRepository;
 import com.toystorage.backend.repository.stores.returns.StoreReturnRepository;
 
+import com.toystorage.backend.entity.warehouses.DamagedGoodsItems;
+import com.toystorage.backend.entity.warehouses.DamagedGoodsReports;
+import com.toystorage.backend.entity.warehouses.WarehouseLocations;
+
+import com.toystorage.backend.enums.warehouses.DamageDisposition;
+import com.toystorage.backend.enums.warehouses.DamageType;
+import com.toystorage.backend.enums.warehouses.DamagedGoodsItemStatus;
+import com.toystorage.backend.enums.warehouses.DamagedGoodsSourceType;
+import com.toystorage.backend.enums.warehouses.DamagedGoodsStatus;
+
+import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsItemRepository;
+import com.toystorage.backend.repository.warehouses.damagedgoods.DamagedGoodsReportRepository;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
@@ -53,6 +66,17 @@ public class StoreReturnInspectionService {
     private final DiscrepancyReportRepository
             discrepancyReportRepository;
 
+    private final StoreReturnLocationService
+            locationService;
+
+    private final StoreReturnInventoryService
+            inventoryService;
+
+    private final DamagedGoodsReportRepository
+            damagedGoodsReportRepository;
+
+    private final DamagedGoodsItemRepository
+            damagedGoodsItemRepository;
 
     // =====================================================
     // SERVICES
@@ -831,10 +855,13 @@ public class StoreReturnInspectionService {
     // RESPONSE
     // =====================================================
 
-    private StoreReturnInspectionResponse
-    buildResponse(
+    private StoreReturnInspectionResponse buildResponse(
             StoreReturns storeReturn
     ) {
+
+        // =====================================================
+        // ITEMS
+        // =====================================================
 
         List<StoreReturnItems> items =
                 storeReturnItemRepository
@@ -843,10 +870,520 @@ public class StoreReturnInspectionService {
                         );
 
 
+        // =====================================================
+        // DISCREPANCIES
+        // =====================================================
+
+        List<DiscrepancyReports> discrepancies =
+                discrepancyReportRepository
+                        .findByReferenceTypeAndReferenceId(
+
+                                DiscrepancyReferenceType.STORE_RETURN,
+
+                                storeReturn.getId()
+                        );
+
+
+        // =====================================================
+        // RESPONSE
+        // =====================================================
+
         return mapper
                 .toResponse(
                         storeReturn,
-                        items
+                        items,
+                        discrepancies
                 );
+    }
+    @Transactional
+    public void resolveAsWarehouse(
+            Long returnId,
+            Long discrepancyId,
+            String reason
+    ) {
+
+        StoreReturns storeReturn =
+                validationService.getReturn(
+                        returnId
+                );
+
+        Users manager =
+                validationService.getCurrentUser();
+
+        validationService.validateWarehouse(
+                manager,
+                storeReturn
+        );
+
+        DiscrepancyReports report =
+                discrepancyReportRepository
+                        .findById(discrepancyId)
+                        .orElseThrow(() ->
+                                new NotFound(
+                                        "Discrepancy not found: "
+                                                + discrepancyId
+                                )
+                        );
+
+        validateStoreReturnDiscrepancy(
+                storeReturn,
+                report
+        );
+
+        if (
+                report.getStatus()
+                        == DiscrepancyStatus.RESOLVED
+        ) {
+
+            throw new BadRequest(
+                    "Discrepancy has already been resolved"
+            );
+        }
+
+        report.setResponsibleParty(
+                "WAREHOUSE_MANAGER"
+        );
+
+        report.setReviewedBy(
+                manager
+        );
+
+        report.setReviewedAt(
+                LocalDateTime.now()
+        );
+
+        report.setResolutionNote(
+                reason
+        );
+
+        if (
+                report.getDiscrepancyType()
+                        == DiscrepancyType.DAMAGED
+        ) {
+
+            createDamagedGoodsReport(
+                    storeReturn,
+                    report,
+                    manager,
+                    reason
+            );
+        }
+
+        report.setStatus(
+                DiscrepancyStatus.RESOLVED
+        );
+
+        report.setResolvedBy(
+                manager
+        );
+
+        report.setResolvedAt(
+                LocalDateTime.now()
+        );
+
+        discrepancyReportRepository.save(
+                report
+        );
+    }
+    @Transactional
+    public void sendToStoreManager(
+            Long returnId,
+            Long discrepancyId,
+            String reason
+    ) {
+
+        StoreReturns storeReturn =
+                validationService.getReturn(
+                        returnId
+                );
+
+        Users manager =
+                validationService.getCurrentUser();
+
+        validationService.validateWarehouse(
+                manager,
+                storeReturn
+        );
+
+        DiscrepancyReports report =
+                discrepancyReportRepository
+                        .findById(discrepancyId)
+                        .orElseThrow(() ->
+                                new NotFound(
+                                        "Discrepancy not found: "
+                                                + discrepancyId
+                                )
+                        );
+
+        validateStoreReturnDiscrepancy(
+                storeReturn,
+                report
+        );
+
+        if (
+                report.getStatus()
+                        == DiscrepancyStatus.RESOLVED
+        ) {
+
+            throw new BadRequest(
+                    "Resolved discrepancy cannot be transferred"
+            );
+        }
+
+        report.setResponsibleParty(
+                "STORE_MANAGER"
+        );
+
+        report.setStatus(
+                DiscrepancyStatus.INVESTIGATING
+        );
+
+        report.setReviewedBy(
+                manager
+        );
+
+        report.setReviewedAt(
+                LocalDateTime.now()
+        );
+
+        report.setResolutionNote(
+                reason
+        );
+
+        discrepancyReportRepository.save(
+                report
+        );
+    }
+    private void validateStoreReturnDiscrepancy(
+            StoreReturns storeReturn,
+            DiscrepancyReports report
+    ) {
+
+        if (
+                report.getReferenceType()
+                        != DiscrepancyReferenceType.STORE_RETURN
+        ) {
+
+            throw new BadRequest(
+                    "Discrepancy is not a store return discrepancy"
+            );
+        }
+
+        if (
+                !report.getReferenceId()
+                        .equals(
+                                storeReturn.getId()
+                        )
+        ) {
+
+            throw new BadRequest(
+                    "Discrepancy does not belong to this store return"
+            );
+        }
+
+        if (
+                report.getWarehouse() == null
+
+                        ||
+
+                        !report.getWarehouse()
+                                .getId()
+                                .equals(
+                                        storeReturn
+                                                .getWarehouse()
+                                                .getId()
+                                )
+        ) {
+
+            throw new BadRequest(
+                    "Discrepancy belongs to another warehouse"
+            );
+        }
+    }
+    private void createDamagedGoodsReport(
+            StoreReturns storeReturn,
+            DiscrepancyReports discrepancy,
+            Users manager,
+            String reason
+    ) {
+
+        StoreReturnItems returnItem =
+                storeReturnItemRepository
+                        .findByStoreReturnId(
+                                storeReturn.getId()
+                        )
+                        .stream()
+                        .filter(item ->
+                                item.getProduct() != null
+                                        &&
+                                        item.getProduct()
+                                                .getId()
+                                                .equals(
+                                                        discrepancy.getProductId()
+                                                )
+                        )
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new NotFound(
+                                        "Store return item not found for discrepancy"
+                                )
+                        );
+
+        WarehouseLocations quarantine =
+                locationService
+                        .getQuarantineLocation(
+                                storeReturn
+                                        .getWarehouse()
+                                        .getId()
+                        );
+
+        String reportCode =
+                "DGR-"
+                        + UUID.randomUUID()
+                        .toString()
+                        .replace("-", "")
+                        .substring(0, 12)
+                        .toUpperCase();
+
+        DamagedGoodsReports damagedReport =
+                DamagedGoodsReports
+                        .builder()
+
+                        .reportCode(
+                                reportCode
+                        )
+
+                        .damagedGoodsReportsCode(
+                                reportCode
+                        )
+
+                        .warehouse(
+                                storeReturn.getWarehouse()
+                        )
+
+                        .sourceType(
+                                DamagedGoodsSourceType.STORE_RETURN
+                        )
+
+                        .sourceId(
+                                storeReturn.getId()
+                        )
+
+                        .status(
+                                DamagedGoodsStatus.REPORTED
+                        )
+
+                        .reportedBy(
+                                manager
+                        )
+
+                        .description(
+                                reason
+                        )
+
+                        .build();
+
+        damagedReport =
+                damagedGoodsReportRepository.save(
+                        damagedReport
+                );
+
+        DamageType damageType =
+                returnItem.getConditionStatus()
+                        == ReturnItemCondition.EXPIRED
+                        ? DamageType.EXPIRED
+                        : DamageType.OTHER;
+
+        DamagedGoodsItems damagedItem =
+                DamagedGoodsItems
+                        .builder()
+
+                        .damagedGoodsReport(
+                                damagedReport
+                        )
+
+                        .product(
+                                returnItem.getProduct()
+                        )
+
+                        .location(
+                                quarantine
+                        )
+
+                        .quantity(
+                                returnItem.getReceivedQuantity()
+                        )
+
+                        .damageType(
+                                damageType
+                        )
+
+                        .conditionNote(
+                                returnItem.getNote()
+                        )
+
+                        .evidenceImage(
+                                returnItem.getEvidenceImageUrl()
+                        )
+
+                        .disposition(
+                                DamageDisposition.QUARANTINE
+                        )
+
+                        .status(
+                                DamagedGoodsItemStatus.REPORTED
+                        )
+
+                        .damagedGoodsItemsCode(
+                                "DGI-"
+                                        + UUID.randomUUID()
+                                        .toString()
+                                        .replace("-", "")
+                                        .substring(0, 12)
+                                        .toUpperCase()
+                        )
+
+                        .build();
+
+        damagedGoodsItemRepository.save(
+                damagedItem
+        );
+    }
+    @Transactional
+    public StoreReturnInspectionResponse confirmStoreReturn(
+            Long returnId
+    ) {
+
+        StoreReturns storeReturn =
+                validationService
+                        .getReturn(
+                                returnId
+                        );
+
+        Users manager =
+                validationService
+                        .getCurrentUser();
+
+        validationService
+                .validateWarehouse(
+                        manager,
+                        storeReturn
+                );
+
+        if (
+                storeReturn.getStatus()
+                        != StoreReturnStatus.PENDING_CONFIRMATION
+        ) {
+
+            throw new BadRequest(
+                    "Store return is not waiting for confirmation"
+            );
+        }
+
+        List<DiscrepancyReports> reports =
+                discrepancyReportRepository
+                        .findByReferenceTypeAndReferenceId(
+                                DiscrepancyReferenceType.STORE_RETURN,
+                                returnId
+                        );
+
+        boolean hasUnresolved =
+                reports.stream()
+                        .anyMatch(report ->
+                                report.getStatus()
+                                        == DiscrepancyStatus.OPEN
+
+                                        ||
+
+                                        report.getStatus()
+                                                == DiscrepancyStatus.INVESTIGATING
+                        );
+
+        if (hasUnresolved) {
+
+            throw new BadRequest(
+                    "Store return still has unresolved discrepancies"
+            );
+        }
+
+        List<StoreReturnItems> items =
+                storeReturnItemRepository
+                        .findByStoreReturnId(
+                                returnId
+                        );
+
+        for (
+                StoreReturnItems item
+                : items
+        ) {
+
+            switch (
+                    item.getConditionStatus()
+            ) {
+
+                case NORMAL -> {
+
+                    WarehouseLocations normalLocation =
+                            locationService
+                                    .getNormalLocation(
+                                            storeReturn
+                                                    .getWarehouse()
+                                                    .getId()
+                                    );
+
+                    inventoryService
+                            .addAvailableInventory(
+                                    storeReturn,
+                                    item,
+                                    normalLocation,
+                                    item.getReceivedQuantity(),
+                                    manager
+                            );
+                }
+
+
+                case QUARANTINE,
+                     DAMAGED,
+                     EXPIRED -> {
+
+                    WarehouseLocations quarantine =
+                            locationService
+                                    .getQuarantineLocation(
+                                            storeReturn
+                                                    .getWarehouse()
+                                                    .getId()
+                                    );
+
+                    inventoryService
+                            .addQuarantineInventory(
+                                    storeReturn,
+                                    item,
+                                    quarantine,
+                                    item.getReceivedQuantity(),
+                                    manager
+                            );
+                }
+            }
+        }
+
+        storeReturn.setStatus(
+                StoreReturnStatus.RECEIVED
+        );
+
+        storeReturn.setReceivedAt(
+                LocalDateTime.now()
+        );
+
+        storeReturn.setUpdatedAt(
+                LocalDateTime.now()
+        );
+
+        storeReturnRepository.save(
+                storeReturn
+        );
+
+        return buildResponse(
+                storeReturn
+        );
     }
 }

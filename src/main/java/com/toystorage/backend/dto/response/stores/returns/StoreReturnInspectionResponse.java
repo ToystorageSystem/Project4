@@ -2,7 +2,7 @@ package com.toystorage.backend.dto.response.stores.returns;
 
 import lombok.Builder;
 import lombok.Getter;
-
+import com.toystorage.backend.dto.response.inventories.discrepancy.DiscrepancyReportResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,4 +32,5 @@ public class StoreReturnInspectionResponse {
     private LocalDateTime receivedAt;
 
     private List<StoreReturnInspectionItemResponse> items;
+    private List<DiscrepancyReportResponse> discrepancies;
 }

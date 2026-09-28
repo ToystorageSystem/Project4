@@ -3,7 +3,7 @@ package com.toystorage.backend.controllers.stores.returns;
 
 import com.toystorage.backend.dto.request.stores.returns.InspectStoreReturnItemRequest;
 import com.toystorage.backend.dto.response.stores.returns.StoreReturnInspectionResponse;
-
+import com.toystorage.backend.dto.request.stores.returns.ResolveStoreReturnDiscrepancyRequest;
 import com.toystorage.backend.services.stores.returns.StoreReturnInspectionService;
 
 import jakarta.validation.Valid;
@@ -49,7 +49,9 @@ public class StoreReturnInspectionController {
 
         return ResponseEntity.ok(
                 storeReturnInspectionService
-                        .getStoreReturn(returnId)
+                        .getStoreReturn(
+                                returnId
+                        )
         );
     }
 
@@ -76,6 +78,69 @@ public class StoreReturnInspectionController {
                                 returnId,
                                 itemId,
                                 request
+                        )
+        );
+    }
+    @PatchMapping(
+            "/{returnId}/discrepancies/{discrepancyId}/warehouse"
+    )
+    public ResponseEntity<Void>
+    resolveAsWarehouse(
+            @PathVariable Long returnId,
+            @PathVariable Long discrepancyId,
+
+            @Valid
+            @RequestBody
+            ResolveStoreReturnDiscrepancyRequest request
+    ) {
+
+        storeReturnInspectionService
+                .resolveAsWarehouse(
+                        returnId,
+                        discrepancyId,
+                        request.getReason()
+                );
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+    @PatchMapping(
+            "/{returnId}/discrepancies/{discrepancyId}/send-store"
+    )
+    public ResponseEntity<Void>
+    sendToStoreManager(
+            @PathVariable Long returnId,
+            @PathVariable Long discrepancyId,
+
+            @Valid
+            @RequestBody
+            ResolveStoreReturnDiscrepancyRequest request
+    ) {
+
+        storeReturnInspectionService
+                .sendToStoreManager(
+                        returnId,
+                        discrepancyId,
+                        request.getReason()
+                );
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+    @PatchMapping(
+            "/{returnId}/confirm"
+    )
+    public ResponseEntity<StoreReturnInspectionResponse>
+    confirmStoreReturn(
+            @PathVariable Long returnId
+    ) {
+
+        return ResponseEntity.ok(
+                storeReturnInspectionService
+                        .confirmStoreReturn(
+                                returnId
                         )
         );
     }
