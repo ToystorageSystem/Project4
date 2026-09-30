@@ -10,7 +10,6 @@ import com.toystorage.backend.dto.response.auth.LoginResponse;
 import com.toystorage.backend.entity.users.Users;
 
 import com.toystorage.backend.enums.users.ActivityAction;
-import com.toystorage.backend.enums.users.ActivityEntityType;
 
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
@@ -63,9 +62,6 @@ public class AuthService {
 
     private final PasswordEncoder passwordEncoder;
 
-    /*
-     * Ghi Activity Log.
-     */
     private final ActivityLogService activityLogService;
 
 
@@ -75,11 +71,18 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public LoginResponse login(
+
             LoginRequest request,
+
             HttpServletRequest httpRequest
     ) {
 
         Authentication authentication;
+
+
+        // =====================================================
+        // 1. AUTHENTICATE
+        // =====================================================
 
         try {
 
@@ -94,6 +97,27 @@ public class AuthService {
 
         } catch (AuthenticationException ex) {
 
+
+            // =================================================
+            // LOGIN FAILED
+            //
+            // Không ghi password.
+            //
+            // logAuthenticationAttempt sử dụng REQUIRES_NEW
+            // nên log vẫn được commit trước khi throw Unauthorized.
+            // =================================================
+
+            activityLogService
+                    .logAuthenticationAttempt(
+
+                            request.getEmail(),
+
+                            httpRequest,
+
+                            ActivityAction.LOGIN_FAILED
+                    );
+
+
             throw new Unauthorized(
                     "Email hoặc mật khẩu không đúng, hoặc tài khoản không hoạt động"
             );
@@ -101,7 +125,7 @@ public class AuthService {
 
 
         // =====================================================
-        // SECURITY CONTEXT
+        // 2. SECURITY CONTEXT
         // =====================================================
 
         SecurityContext securityContext =
@@ -120,11 +144,13 @@ public class AuthService {
 
 
         // =====================================================
-        // HTTP SESSION
+        // 3. HTTP SESSION
         // =====================================================
 
         HttpSession session =
-                httpRequest.getSession(true);
+                httpRequest.getSession(
+                        true
+                );
 
 
         session.setAttribute(
@@ -136,26 +162,27 @@ public class AuthService {
         );
 
 
-        /*
-         * Timeout 15 phút không hoạt động.
-         */
+        // 15 phút không hoạt động
         session.setMaxInactiveInterval(
                 15 * 60
         );
 
 
-        /*
-         * Đăng ký session để Admin có thể
-         * revoke session khi LOCK/INACTIVE.
-         */
-        sessionRegistry.registerNewSession(
-                session.getId(),
-                authentication.getPrincipal()
-        );
+        // =====================================================
+        // 4. REGISTER SESSION
+        // =====================================================
+
+        sessionRegistry
+                .registerNewSession(
+
+                        session.getId(),
+
+                        authentication.getPrincipal()
+                );
 
 
         // =====================================================
-        // USER
+        // 5. USER
         // =====================================================
 
         Users user =
@@ -163,15 +190,38 @@ public class AuthService {
                         .findByEmail(
                                 request.getEmail()
                         )
-                        .orElseThrow(() ->
-                                new NotFound(
-                                        "Không tìm thấy tài khoản"
-                                )
+                        .orElseThrow(
+                                () ->
+                                        new NotFound(
+                                                "Không tìm thấy tài khoản"
+                                        )
                         );
 
 
         // =====================================================
-        // AUTHORITIES
+        // 6. LOGIN SUCCESS ACTIVITY LOG
+        //
+        // Chỉ ghi:
+        //
+        // attemptedEmail
+        // result = SUCCESS
+        //
+        // Không ghi password.
+        // =====================================================
+
+        activityLogService
+                .logAuthenticationAttempt(
+
+                        request.getEmail(),
+
+                        httpRequest,
+
+                        ActivityAction.LOGIN
+                );
+
+
+        // =====================================================
+        // 7. AUTHORITIES
         // =====================================================
 
         Set<String> authorities =
@@ -179,8 +229,9 @@ public class AuthService {
                         .getAuthorities()
                         .stream()
 
-                        .map(authority ->
-                                authority.getAuthority()
+                        .map(
+                                authority ->
+                                        authority.getAuthority()
                         )
 
                         .collect(
@@ -189,7 +240,7 @@ public class AuthService {
 
 
         // =====================================================
-        // RESPONSE
+        // 8. RESPONSE
         // =====================================================
 
         return LoginResponse
@@ -215,10 +266,6 @@ public class AuthService {
                         authorities
                 )
 
-                /*
-                 * Frontend dùng field này để biết
-                 * user có bị bắt đổi mật khẩu hay không.
-                 */
                 .mustChangePassword(
                         user.isMustChangePassword()
                 )
@@ -233,12 +280,14 @@ public class AuthService {
 
     @Transactional
     public void changePassword(
+
             ChangePasswordRequest request,
+
             Authentication authentication
     ) {
 
         // =====================================================
-        // 1. KIỂM TRA ĐĂNG NHẬP
+        // 1. CHECK AUTHENTICATION
         // =====================================================
 
         if (
@@ -275,20 +324,23 @@ public class AuthService {
                         .findById(
                                 userId
                         )
-                        .orElseThrow(() ->
-                                new NotFound(
-                                        "Không tìm thấy tài khoản"
-                                )
+                        .orElseThrow(
+                                () ->
+                                        new NotFound(
+                                                "Không tìm thấy tài khoản"
+                                        )
                         );
 
 
         // =====================================================
-        // 2. KIỂM TRA OLD PASSWORD
+        // 2. CHECK OLD PASSWORD
         // =====================================================
 
         boolean oldPasswordCorrect =
                 passwordEncoder.matches(
+
                         request.getOldPassword(),
+
                         user.getPassword()
                 );
 
@@ -302,12 +354,14 @@ public class AuthService {
 
 
         // =====================================================
-        // 3. KHÔNG CHO PASSWORD MỚI TRÙNG PASSWORD CŨ
+        // 3. NEW PASSWORD MUST DIFFER
         // =====================================================
 
         boolean samePassword =
                 passwordEncoder.matches(
+
                         request.getNewPassword(),
+
                         user.getPassword()
                 );
 
@@ -321,16 +375,14 @@ public class AuthService {
 
 
         // =====================================================
-        // 4. CHỤP TRẠNG THÁI TRƯỚC KHI ĐỔI
+        // 4. OLD VALUE
+        //
+        // TUYỆT ĐỐI KHÔNG ghi:
+        //
+        // - oldPassword
+        // - newPassword
+        // - password hash
         // =====================================================
-
-        /*
-         * TUYỆT ĐỐI KHÔNG ghi:
-         *
-         * oldPassword
-         * newPassword
-         * password hash
-         */
 
         Map<String, Object> oldValue =
                 new LinkedHashMap<>();
@@ -354,10 +406,6 @@ public class AuthService {
         );
 
 
-        /*
-         * Đã đổi mật khẩu thành công
-         * nên bỏ yêu cầu bắt buộc đổi password.
-         */
         user.setMustChangePassword(
                 false
         );
@@ -370,7 +418,7 @@ public class AuthService {
 
 
         // =====================================================
-        // 6. TẠO NEW VALUE CHO ACTIVITY LOG
+        // 6. NEW VALUE
         // =====================================================
 
         Map<String, Object> newValue =
@@ -390,30 +438,19 @@ public class AuthService {
 
 
         // =====================================================
-        // 7. GHI ACTIVITY LOG
+        // 7. ACTIVITY LOG
         // =====================================================
 
         activityLogService.log(
 
-                /*
-                 * Chính user đang đăng nhập
-                 * là actor.
-                 */
                 authentication,
 
-                /*
-                 * Lấy request hiện tại để ghi
-                 * IP + User-Agent.
-                 */
                 getCurrentHttpRequest(),
 
                 ActivityAction.CHANGE_PASSWORD,
 
-                ActivityEntityType.USER,
+                com.toystorage.backend.enums.users.ActivityEntityType.USER,
 
-                /*
-                 * User tự đổi password cho chính mình.
-                 */
                 savedUser.getId(),
 
                 oldValue,

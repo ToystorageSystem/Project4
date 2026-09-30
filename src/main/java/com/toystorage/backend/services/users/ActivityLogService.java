@@ -1,7 +1,9 @@
 package com.toystorage.backend.services.users;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.toystorage.backend.dto.response.users.ActivityLogResponse;
 
@@ -23,9 +25,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 
 import org.springframework.stereotype.Service;
+
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -40,7 +48,16 @@ public class ActivityLogService {
 
 
     // =========================================================
-    // GHI ACTIVITY LOG
+    // NORMAL ACTIVITY LOG
+    //
+    // Dùng cho các thao tác đã đăng nhập:
+    //
+    // CREATE
+    // UPDATE
+    // DELETE
+    // GRANT_PERMISSION
+    // LOCK_USER
+    // ...
     // =========================================================
 
     @Transactional
@@ -62,7 +79,7 @@ public class ActivityLogService {
     ) {
 
         // =====================================================
-        // 1. XÁC ĐỊNH NGƯỜI THỰC HIỆN
+        // 1. ACTOR
         // =====================================================
 
         if (
@@ -76,63 +93,189 @@ public class ActivityLogService {
         }
 
 
-        /*
-         * authentication.getName()
-         * hiện tại chính là email đăng nhập.
-         */
         String email =
                 authentication.getName();
 
 
         Users actor =
                 userRepository
-                        .findByEmail(email)
-                        .orElseThrow(() ->
-                                new NotFound(
-                                        "Không tìm thấy người thực hiện thao tác"
-                                )
+                        .findByEmail(
+                                email
+                        )
+                        .orElseThrow(
+                                () ->
+                                        new NotFound(
+                                                "Không tìm thấy người thực hiện thao tác"
+                                        )
                         );
 
 
         // =====================================================
-        // 2. LẤY IP
+        // 2. SAVE
         // =====================================================
 
-        String ipAddress =
-                getClientIp(httpRequest);
+        return saveLog(
 
+                actor,
+
+                httpRequest,
+
+                action,
+
+                entityType,
+
+                entityId,
+
+                oldValue,
+
+                newValue
+        );
+    }
+
+
+    // =========================================================
+    // LOGIN / LOGIN FAILED
+    //
+    // REQUIRES_NEW:
+    //
+    // LOGIN_FAILED vẫn được lưu ngay cả khi AuthService
+    // sau đó throw Unauthorized.
+    // =========================================================
+
+    @Transactional(
+            propagation = Propagation.REQUIRES_NEW
+    )
+    public ActivityLogs logAuthenticationAttempt(
+
+            String attemptedEmail,
+
+            HttpServletRequest httpRequest,
+
+            ActivityAction action
+    ) {
 
         // =====================================================
-        // 3. LẤY THÔNG TIN THIẾT BỊ
+        // Chỉ method này mới dùng cho LOGIN / LOGIN_FAILED
         // =====================================================
 
-        String deviceInfo = null;
+        if (
+                action != ActivityAction.LOGIN
+                        && action != ActivityAction.LOGIN_FAILED
+        ) {
 
-        if (httpRequest != null) {
-
-            deviceInfo =
-                    httpRequest.getHeader(
-                            "User-Agent"
-                    );
-
-
-            if (
-                    deviceInfo != null
-                            && deviceInfo.length() > 500
-            ) {
-
-                deviceInfo =
-                        deviceInfo.substring(
-                                0,
-                                500
-                        );
-            }
+            throw new IllegalArgumentException(
+                    "Authentication log chỉ hỗ trợ LOGIN hoặc LOGIN_FAILED"
+            );
         }
 
 
         // =====================================================
-        // 4. TẠO LOG
+        // EMAIL CÓ THỂ KHÔNG TỒN TẠI
+        //
+        // Login thất bại với email giả:
+        //
+        // actor = null
         // =====================================================
+
+        String normalizedEmail =
+                attemptedEmail != null
+                        ? attemptedEmail.trim()
+                        : null;
+
+
+        Users actor =
+                normalizedEmail == null
+                        || normalizedEmail.isBlank()
+
+                        ? null
+
+                        : userRepository
+                        .findByEmail(
+                                normalizedEmail
+                        )
+                        .orElse(
+                                null
+                        );
+
+
+        // =====================================================
+        // LOGIN DETAIL
+        //
+        // TUYỆT ĐỐI không chứa password.
+        // =====================================================
+
+        Map<String, Object> detail =
+                new LinkedHashMap<>();
+
+
+        detail.put(
+                "attemptedEmail",
+                normalizedEmail
+        );
+
+
+        detail.put(
+                "result",
+
+                action == ActivityAction.LOGIN
+                        ? "SUCCESS"
+                        : "FAILED"
+        );
+
+
+        return saveLog(
+
+                actor,
+
+                httpRequest,
+
+                action,
+
+                ActivityEntityType.AUTHENTICATION,
+
+                actor != null
+                        ? actor.getId()
+                        : null,
+
+                null,
+
+                detail
+        );
+    }
+
+
+    // =========================================================
+    // SAVE LOG
+    // =========================================================
+
+    private ActivityLogs saveLog(
+
+            Users actor,
+
+            HttpServletRequest httpRequest,
+
+            ActivityAction action,
+
+            ActivityEntityType entityType,
+
+            Long entityId,
+
+            Object oldValue,
+
+            Object newValue
+    ) {
+
+        String ipAddress =
+                getClientIp(
+                        httpRequest
+                );
+
+
+        String deviceInfo =
+                getDeviceInfo(
+                        httpRequest
+                );
+
 
         ActivityLogs log =
                 ActivityLogs
@@ -142,33 +285,32 @@ public class ActivityLogService {
                                 generateLogCode()
                         )
 
-                        /*
-                         * user = người thực hiện.
-                         */
-                        .user(actor)
+                        .user(
+                                actor
+                        )
 
-                        .action(action)
+                        .action(
+                                action
+                        )
 
-                        .entityType(entityType)
+                        .entityType(
+                                entityType
+                        )
 
-                        /*
-                         * entityId = đối tượng bị thao tác.
-                         *
-                         * Ví dụ:
-                         *
-                         * Admin 12 lock User 15:
-                         *
-                         * user_id   = 12
-                         * entity_id = 15
-                         */
-                        .entityId(entityId)
+                        .entityId(
+                                entityId
+                        )
 
                         .oldValue(
-                                toJson(oldValue)
+                                toSafeJson(
+                                        oldValue
+                                )
                         )
 
                         .newValue(
-                                toJson(newValue)
+                                toSafeJson(
+                                        newValue
+                                )
                         )
 
                         .ipAddress(
@@ -182,14 +324,15 @@ public class ActivityLogService {
                         .build();
 
 
-        return activityLogRepository.save(
-                log
-        );
+        return activityLogRepository
+                .save(
+                        log
+                );
     }
 
 
     // =========================================================
-    // XEM LỊCH SỬ CỦA USER
+    // USER HISTORY
     // =========================================================
 
     @Transactional(readOnly = true)
@@ -197,10 +340,11 @@ public class ActivityLogService {
             Long userId
     ) {
 
-        /*
-         * Đảm bảo User tồn tại.
-         */
-        if (!userRepository.existsById(userId)) {
+        if (
+                !userRepository.existsById(
+                        userId
+                )
+        ) {
 
             throw new NotFound(
                     "Không tìm thấy tài khoản"
@@ -227,7 +371,7 @@ public class ActivityLogService {
 
 
     // =========================================================
-    // MAPPER
+    // RESPONSE
     // =========================================================
 
     private ActivityLogResponse toResponse(
@@ -264,6 +408,12 @@ public class ActivityLogService {
                 .actorName(
                         actor != null
                                 ? actor.getName()
+                                : null
+                )
+
+                .actorEmail(
+                        actor != null
+                                ? actor.getEmail()
                                 : null
                 )
 
@@ -308,26 +458,54 @@ public class ActivityLogService {
 
 
     // =========================================================
-    // JSON
+    // SAFE JSON
+    //
+    // Trước khi lưu oldValue/newValue:
+    //
+    // password
+    // token
+    // secret
+    // authorization
+    // cookie
+    // apiKey
+    // sessionId
+    //
+    // sẽ được thay bằng [REDACTED].
     // =========================================================
 
-    private String toJson(
+    private String toSafeJson(
             Object value
     ) {
 
         if (value == null) {
+
             return null;
         }
 
 
         try {
 
+            JsonNode jsonNode =
+                    objectMapper
+                            .valueToTree(
+                                    value
+                            );
+
+
+            sanitizeJsonNode(
+                    jsonNode
+            );
+
+
             return objectMapper
                     .writeValueAsString(
-                            value
+                            jsonNode
                     );
 
-        } catch (JsonProcessingException ex) {
+        } catch (
+                IllegalArgumentException
+                        | JsonProcessingException ex
+        ) {
 
             throw new IllegalStateException(
                     "Không thể chuyển dữ liệu Activity Log sang JSON",
@@ -338,7 +516,156 @@ public class ActivityLogService {
 
 
     // =========================================================
-    // IP ADDRESS
+    // SANITIZE JSON RECURSIVELY
+    // =========================================================
+
+    private void sanitizeJsonNode(
+            JsonNode node
+    ) {
+
+        if (node == null) {
+            return;
+        }
+
+
+        // =====================================================
+        // OBJECT
+        // =====================================================
+
+        if (node.isObject()) {
+
+            ObjectNode objectNode =
+                    (ObjectNode) node;
+
+
+            List<String> fieldNames =
+                    new ArrayList<>();
+
+
+            objectNode
+                    .fieldNames()
+                    .forEachRemaining(
+                            fieldNames::add
+                    );
+
+
+            for (String fieldName : fieldNames) {
+
+                JsonNode child =
+                        objectNode.get(
+                                fieldName
+                        );
+
+
+                if (
+                        isSensitiveKey(
+                                fieldName
+                        )
+                ) {
+
+                    objectNode.put(
+                            fieldName,
+                            "[REDACTED]"
+                    );
+
+                } else {
+
+                    sanitizeJsonNode(
+                            child
+                    );
+                }
+            }
+
+
+            return;
+        }
+
+
+        // =====================================================
+        // ARRAY
+        // =====================================================
+
+        if (node.isArray()) {
+
+            for (JsonNode child : node) {
+
+                sanitizeJsonNode(
+                        child
+                );
+            }
+        }
+    }
+
+
+    // =========================================================
+    // SENSITIVE FIELD DETECTION
+    // =========================================================
+
+    private boolean isSensitiveKey(
+            String key
+    ) {
+
+        if (key == null) {
+
+            return false;
+        }
+
+
+        String normalized =
+                key
+                        .toLowerCase(
+                                Locale.ROOT
+                        )
+                        .replaceAll(
+                                "[^a-z0-9]",
+                                ""
+                        );
+
+
+        return normalized.contains(
+                "password"
+        )
+
+                || normalized.contains(
+                "token"
+        )
+
+                || normalized.contains(
+                "secret"
+        )
+
+                || normalized.contains(
+                "apikey"
+        )
+
+                || normalized.contains(
+                "authorization"
+        )
+
+                || normalized.contains(
+                "cookie"
+        )
+
+                || normalized.contains(
+                "sessionid"
+        )
+
+                || normalized.contains(
+                "jsessionid"
+        )
+
+                || normalized.equals(
+                "credential"
+        )
+
+                || normalized.equals(
+                "credentials"
+        );
+    }
+
+
+    // =========================================================
+    // CLIENT IP
     // =========================================================
 
     private String getClientIp(
@@ -346,14 +673,11 @@ public class ActivityLogService {
     ) {
 
         if (request == null) {
+
             return null;
         }
 
 
-        /*
-         * Khi deploy qua proxy/nginx,
-         * IP thật thường nằm ở đây.
-         */
         String forwardedFor =
                 request.getHeader(
                         "X-Forwarded-For"
@@ -372,7 +696,11 @@ public class ActivityLogService {
 
 
             if (ip.length() > 45) {
-                return ip.substring(0, 45);
+
+                return ip.substring(
+                        0,
+                        45
+                );
             }
 
 
@@ -401,23 +729,55 @@ public class ActivityLogService {
 
 
     // =========================================================
-    // GENERATE LOG CODE
+    // DEVICE
+    // =========================================================
+
+    private String getDeviceInfo(
+            HttpServletRequest request
+    ) {
+
+        if (request == null) {
+
+            return null;
+        }
+
+
+        String deviceInfo =
+                request.getHeader(
+                        "User-Agent"
+                );
+
+
+        if (
+                deviceInfo != null
+                        && deviceInfo.length() > 500
+        ) {
+
+            return deviceInfo.substring(
+                    0,
+                    500
+            );
+        }
+
+
+        return deviceInfo;
+    }
+
+
+    // =========================================================
+    // LOG CODE
     // =========================================================
 
     private String generateLogCode() {
 
-        /*
-         * Ví dụ:
-         *
-         * ACT-AFB4221213514CE6A22A8CECBF547166
-         *
-         * Không phụ thuộc ID DB.
-         */
         return "ACT-"
                 + UUID
                 .randomUUID()
                 .toString()
-                .replace("-", "")
+                .replace(
+                        "-",
+                        ""
+                )
                 .toUpperCase();
     }
 }

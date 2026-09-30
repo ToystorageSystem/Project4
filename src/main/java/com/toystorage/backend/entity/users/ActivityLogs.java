@@ -40,8 +40,9 @@ public class ActivityLogs {
 
 
     // =========================================================
-    // MÃ LOG
+    // LOG CODE
     // =========================================================
+
     @Column(
             name = "activity_logs_code",
             nullable = false,
@@ -52,25 +53,16 @@ public class ActivityLogs {
 
 
     // =========================================================
-    // USER THỰC HIỆN HÀNH ĐỘNG
+    // ACTOR
+    //
+    // Có thể NULL trong trường hợp LOGIN_FAILED
+    // với email không tồn tại trong hệ thống.
     // =========================================================
 
-    /*
-     * Đây là người thực hiện hành động.
-     *
-     * Ví dụ:
-     *
-     * Admin id = 12
-     * khóa User id = 15
-     *
-     * activity_logs.user_id = 12
-     *
-     * KHÔNG PHẢI 15.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "user_id",
-            nullable = false
+            nullable = true
     )
     private Users user;
 
@@ -92,12 +84,6 @@ public class ActivityLogs {
     // ENTITY
     // =========================================================
 
-    /*
-     * Với task User:
-     *
-     * entityType = USER
-     * entityId   = ID user bị thao tác.
-     */
     @Enumerated(EnumType.STRING)
     @Column(
             name = "entity_type",
@@ -166,7 +152,9 @@ public class ActivityLogs {
     protected void onCreate() {
 
         if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+
+            createdAt =
+                    LocalDateTime.now();
         }
     }
 }

@@ -4,22 +4,21 @@ import com.toystorage.backend.entity.users.ActivityLogs;
 import com.toystorage.backend.enums.users.ActivityEntityType;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
 public interface ActivityLogRepository
-        extends JpaRepository<ActivityLogs, Long> {
+        extends JpaRepository<ActivityLogs, Long>,
+        JpaSpecificationExecutor<ActivityLogs> {
 
-    /*
-     * Lịch sử của một entity.
-     *
-     * Với User Management:
-     *
-     * entityType = USER
-     * entityId   = userId
-     */
+    // =========================================================
+    // ENTITY HISTORY
+    // =========================================================
+
     List<ActivityLogs>
     findByEntityTypeAndEntityIdOrderByCreatedAtDesc(
             ActivityEntityType entityType,
@@ -27,9 +26,10 @@ public interface ActivityLogRepository
     );
 
 
-    /*
-     * Xem toàn bộ hành động do một user thực hiện.
-     */
+    // =========================================================
+    // ACTIONS PERFORMED BY USER
+    // =========================================================
+
     List<ActivityLogs>
     findByUser_IdOrderByCreatedAtDesc(
             Long userId
