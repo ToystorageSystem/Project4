@@ -8,51 +8,31 @@ import {
 import { AuthProvider } from "./auth/AuthContext";
 
 import Login from "./pages/auth/Login";
-import ReceivingMonitorPage
-    from "./pages/warehouses/receiving/ReceivingMonitorPage";
-import ReceivingWaitingReviewPage
-    from "./pages/warehouses/receiving/ReceivingWaitingReviewPage";
-import ReceivingCompletedPage
-    from "./pages/warehouses/receiving/ReceivingCompletedPage";
-import ReceivingIncidentReportsPage
-    from "./pages/warehouses/receiving/ReceivingIncidentReportsPage";
-import ReceivingIncidentReportPrintPage
-    from "./pages/warehouses/receiving/ReceivingIncidentReportPrintPage";
-import WarehouseDashboardPage
-    from "./pages/warehouses/dashboard/WarehouseDashboardPage.jsx";
-import WarehouseLocationsPage
-    from "./pages/warehouses/locations/WarehouseLocationsPage";
-import PutawayTasksPage
-    from "./pages/warehouses/putaway/PutawayTasksPage";
-import PutawayDetailPage
-    from "./pages/warehouses/putaway/PutawayDetailPage";
-import PackingConfirmationPage
-    from "./pages/warehouses/packing/PackingConfirmationPage";
-import ShipmentHistoryPage
-    from "./pages/warehouses/shipments/ShipmentHistoryPage";
-import DispatchHandoverListPage
-    from "./pages/warehouses/dispatch/DispatchHandoverListPage";
+import ReceivingMonitorPage from "./pages/warehouses/receiving/ReceivingMonitorPage";
+import ReceivingWaitingReviewPage from "./pages/warehouses/receiving/ReceivingWaitingReviewPage";
+import ReceivingCompletedPage from "./pages/warehouses/receiving/ReceivingCompletedPage";
+import ReceivingIncidentReportsPage from "./pages/warehouses/receiving/ReceivingIncidentReportsPage";
+import ReceivingIncidentReportPrintPage from "./pages/warehouses/receiving/ReceivingIncidentReportPrintPage";
+import WarehouseDiscrepancyPage from "./pages/warehouses/discrepancies/WarehouseDiscrepancyPage.jsx";
+import WarehouseDashboardPage from "./pages/warehouses/dashboard/WarehouseDashboardPage.jsx";
+import WarehouseLocationsPage from "./pages/warehouses/locations/WarehouseLocationsPage";
+import PutawayTasksPage from "./pages/warehouses/putaway/PutawayTasksPage";
+import PutawayDetailPage from "./pages/warehouses/putaway/PutawayDetailPage";
+import PackingConfirmationPage from "./pages/warehouses/packing/PackingConfirmationPage";
+import PackingConfirmationDetailPage from "./pages/warehouses/packing/PackingConfirmationDetailPage";
+import ShipmentHistoryPage from "./pages/warehouses/shipments/ShipmentHistoryPage";
+import ShipmentManifestPage from "./pages/warehouses/shipments/ShipmentManifestPage";
+import DispatchHandoverListPage from "./pages/warehouses/dispatch/DispatchHandoverListPage";
+import DispatchHandoverPage from "./pages/warehouses/dispatch/DispatchHandoverPage";
+import DamagedGoodsPage from "./pages/warehouses/damagedgoods/DamagedGoodsPage.jsx";
+import DamagedGoodsDetailPage from "./pages/warehouses/damagedgoods/DamagedGoodsDetailPage.jsx";
 
-import DispatchHandoverPage
-    from "./pages/warehouses/dispatch/DispatchHandoverPage";
-import ShipmentManifestPage
-    from "./pages/warehouses/shipments/ShipmentManifestPage";
-import PackingConfirmationDetailPage
-    from "./pages/warehouses/packing/PackingConfirmationDetailPage";
-import DamagedGoodsPage
-    from "./pages/warehouses/damagedgoods/DamagedGoodsPage.jsx";
-
-import DamagedGoodsDetailPage
-    from "./pages/warehouses/damagedgoods/DamagedGoodsDetailPage.jsx";
 export default function App() {
     return (
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
-                    <Route
-                        path="/login"
-                        element={<Login />}
-                    />
+                    <Route path="/login" element={<Login />} />
 
                     <Route
                         path="/warehouse/receiving/in-progress"
@@ -70,6 +50,11 @@ export default function App() {
                     />
 
                     <Route
+                        path="/warehouse/discrepancies"
+                        element={<WarehouseDiscrepancyPage />}
+                    />
+
+                    <Route
                         path="/warehouse/receiving/incident-reports"
                         element={<ReceivingIncidentReportsPage />}
                     />
@@ -78,23 +63,22 @@ export default function App() {
                         path="/warehouse/receiving/incident-reports/:id/print"
                         element={<ReceivingIncidentReportPrintPage />}
                     />
+
                     <Route
                         path="/warehouse/dashboard"
                         element={<WarehouseDashboardPage />}
                     />
+
                     <Route
                         path="/warehouse/packing"
-                        element={
-                            <PackingConfirmationPage />
-                        }
+                        element={<PackingConfirmationPage />}
                     />
 
                     <Route
                         path="/warehouse/packing/:transferId"
-                        element={
-                            <PackingConfirmationDetailPage />
-                        }
+                        element={<PackingConfirmationDetailPage />}
                     />
+
                     <Route
                         path="/warehouse/receiving"
                         element={
@@ -109,39 +93,37 @@ export default function App() {
                         path="/warehouse/putaway"
                         element={<PutawayTasksPage />}
                     />
-                    <Route
-                        path="/warehouse/damaged-goods"
-                        element={
-                            <DamagedGoodsPage />
-                        }
-                    />
-
-
-                    <Route
-                        path="/warehouse/damaged-goods/:reportId"
-                        element={
-                            <DamagedGoodsDetailPage />
-                        }
-                    />
 
                     <Route
                         path="/warehouse/putaway/:taskId"
                         element={<PutawayDetailPage />}
                     />
+
+                    <Route
+                        path="/warehouse/damaged-goods"
+                        element={<DamagedGoodsPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/damaged-goods/:reportId"
+                        element={<DamagedGoodsDetailPage />}
+                    />
+
                     <Route
                         path="/warehouse/locations"
                         element={<WarehouseLocationsPage />}
                     />
+
                     <Route
                         path="/warehouse/manifests/transfer/:transferId"
                         element={<ShipmentManifestPage />}
                     />
+
                     <Route
                         path="/warehouse/shipment-history"
-                        element={
-                            <ShipmentHistoryPage />
-                        }
+                        element={<ShipmentHistoryPage />}
                     />
+
                     <Route
                         path="/warehouse/dispatch"
                         element={<DispatchHandoverListPage />}

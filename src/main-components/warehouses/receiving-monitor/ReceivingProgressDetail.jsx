@@ -210,7 +210,14 @@ export default function ReceivingProgressDetail({
             data?.products ??
             data?.items ??
             [];
-
+    const hasDamagedGoods =
+        products.some(
+            (item) =>
+                item?.inspected &&
+                Number(
+                    item?.damagedQuantity ?? 0
+                ) > 0
+        );
 
     const issues =
             useMemo(
