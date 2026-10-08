@@ -320,11 +320,15 @@ public class ProductApprovalService {
 
 
         /*
-         * Nếu reject CREATE:
-         * sản phẩm PENDING_CREATE sẽ chuyển thành REJECTED.
+         * CREATE bị reject:
+         * product chuyển thành REJECTED.
          *
-         * Nếu reject UPDATE / DEACTIVATE:
-         * sản phẩm thực tế giữ nguyên.
+         * UPDATE gửi lại sau khi bị reject:
+         * product đang ở PENDING_UPDATE, cần trả về trạng thái
+         * trước khi Staff gửi lại (PENDING, ACTIVE hoặc INACTIVE).
+         *
+         * DEACTIVATE bị reject:
+         * product thực tế giữ nguyên.
          */
         if (requestType == ProductChangeType.CREATE) {
 
@@ -338,6 +342,23 @@ public class ProductApprovalService {
 
             product.setRejectionReason(
                     reason
+            );
+
+            productRepository.save(
+                    product
+            );
+
+        } else if (
+                requestType == ProductChangeType.UPDATE
+                        &&
+                        product.getStatus()
+                                == ProductStatus.PENDING_UPDATE
+        ) {
+
+            product.setStatus(
+                    resolveOriginalUpdateStatus(
+                            changeRequest
+                    )
             );
 
             productRepository.save(
@@ -471,8 +492,28 @@ public class ProductApprovalService {
                 );
 
 
-        ProductStatus currentStatus =
+        ProductStatus targetStatus =
                 product.getStatus();
+
+
+        /*
+         * Task #4:
+         * Nếu đây là UPDATE được Staff gửi lại sau khi bị reject,
+         * product đang ở PENDING_UPDATE.
+         *
+         * Khi Manager approve, product phải quay về trạng thái
+         * trước khi gửi lại (ACTIVE hoặc INACTIVE).
+         */
+        if (
+                product.getStatus()
+                        == ProductStatus.PENDING_UPDATE
+        ) {
+
+            targetStatus =
+                    resolveOriginalUpdateStatus(
+                            changeRequest
+                    );
+        }
 
 
         applyRequestedProductData(
@@ -486,13 +527,8 @@ public class ProductApprovalService {
         );
 
 
-        /*
-         * UPDATE thông thường không được tự ý thay đổi status.
-         *
-         * Status chỉ thay đổi qua request DEACTIVATE.
-         */
         product.setStatus(
-                currentStatus
+                targetStatus
         );
 
         product.setApprovedBy(
@@ -541,6 +577,77 @@ public class ProductApprovalService {
         product.setRejectionReason(
                 null
         );
+    }
+
+
+    // =====================================================
+    // ORIGINAL UPDATE STATUS
+    // =====================================================
+
+    private ProductStatus resolveOriginalUpdateStatus(
+            ProductChangeRequests changeRequest
+    ) {
+
+        JsonNode oldValue =
+                parseJson(
+                        changeRequest.getOldValue()
+                );
+
+
+        if (
+                oldValue == null
+                        ||
+                        !oldValue.hasNonNull(
+                                "status"
+                        )
+        ) {
+
+            throw new BadRequest(
+                    "Original product status is missing from update request"
+            );
+        }
+
+
+        String statusValue =
+                oldValue
+                        .get("status")
+                        .asText()
+                        .trim();
+
+
+        ProductStatus originalStatus;
+
+        try {
+
+            originalStatus =
+                    ProductStatus.valueOf(
+                            statusValue.toUpperCase()
+                    );
+
+        } catch (IllegalArgumentException exception) {
+
+            throw new BadRequest(
+                    "Invalid original product status: "
+                            + statusValue
+            );
+        }
+
+
+        if (
+                originalStatus != ProductStatus.PENDING
+                        &&
+                        originalStatus != ProductStatus.ACTIVE
+                        &&
+                        originalStatus != ProductStatus.INACTIVE
+        ) {
+
+            throw new BadRequest(
+                    "Original product status must be PENDING, ACTIVE or INACTIVE"
+            );
+        }
+
+
+        return originalStatus;
     }
 
 
