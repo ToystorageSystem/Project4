@@ -1,3 +1,4 @@
+
 package com.toystorage.backend.repository.transfers.picking;
 
 import com.toystorage.backend.entity.transfers.StockTransferItems;
@@ -12,13 +13,13 @@ import java.util.Optional;
 public interface StockTransferItemRepository
         extends JpaRepository<StockTransferItems, Long> {
 
-    List<StockTransferItems>
-    findByStockTransferId(
+    // Cac phuong thuc cu - giu nguyen
+
+    List<StockTransferItems> findByStockTransferId(
             Long stockTransferId
     );
 
-    Optional<StockTransferItems>
-    findByIdAndStockTransferId(
+    Optional<StockTransferItems> findByIdAndStockTransferId(
             Long itemId,
             Long transferId
     );
@@ -30,9 +31,20 @@ public interface StockTransferItemRepository
         where i.stockTransfer.id = :transferId
           and p.barcode = :barcode
     """)
-    Optional<StockTransferItems>
-    findByTransferAndBarcode(
+    Optional<StockTransferItems> findByTransferAndBarcode(
             @Param("transferId") Long transferId,
             @Param("barcode") String barcode
+    );
+
+    // Issue #21: Lay san pham trong chi tiet phieu xuat
+    @Query("""
+        SELECT item
+        FROM StockTransferItems item
+        JOIN FETCH item.product
+        WHERE item.stockTransfer.id = :transferId
+        ORDER BY item.id ASC
+    """)
+    List<StockTransferItems> findDetailsByStockTransferId(
+            @Param("transferId") Long transferId
     );
 }

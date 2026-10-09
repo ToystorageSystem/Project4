@@ -1,7 +1,9 @@
+
 package com.toystorage.backend.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -12,29 +14,36 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class Global {
+
     /*
-    404 Not Found
+     * 404 NOT FOUND
      */
     @ExceptionHandler(NotFound.class)
-    public ResponseEntity<Map<String, Object>>
-    handleNotFound(NotFound ex){
+    public ResponseEntity<Map<String, Object>> handleNotFound(
+            NotFound ex
+    ) {
         Map<String, Object> response = new HashMap<>();
+
         response.put("timestamp", LocalDateTime.now());
         response.put("status", HttpStatus.NOT_FOUND);
         response.put("error", "Not Found");
         response.put("message", ex.getMessage());
+
         return new ResponseEntity<>(
                 response,
                 HttpStatus.NOT_FOUND
         );
     }
+
     /*
      * 400 BAD REQUEST
      */
     @ExceptionHandler(BadRequest.class)
-    public ResponseEntity<Map<String, Object>>
-    handleBadRequest(BadRequest ex){
+    public ResponseEntity<Map<String, Object>> handleBadRequest(
+            BadRequest ex
+    ) {
         Map<String, Object> response = new HashMap<>();
+
         response.put("timestamp", LocalDateTime.now());
         response.put("status", HttpStatus.BAD_REQUEST);
         response.put("error", "Bad Request");
@@ -45,14 +54,14 @@ public class Global {
                 HttpStatus.BAD_REQUEST
         );
     }
+
     /*
      * 401 UNAUTHORIZED
      */
     @ExceptionHandler(Unauthorized.class)
-
-    public ResponseEntity<Map<String, Object>>
-    handleUnauthorized(Unauthorized ex) {
-
+    public ResponseEntity<Map<String, Object>> handleUnauthorized(
+            Unauthorized ex
+    ) {
         Map<String, Object> response = new HashMap<>();
 
         response.put("timestamp", LocalDateTime.now());
@@ -67,13 +76,12 @@ public class Global {
     }
 
     /*
-     * 403 FORBIDDEN
+     * 403 FORBIDDEN - EXCEPTION CUA DU AN
      */
     @ExceptionHandler(Forbidden.class)
-
-    public ResponseEntity<Map<String, Object>>
-    handleForbidden(Forbidden ex) {
-
+    public ResponseEntity<Map<String, Object>> handleForbidden(
+            Forbidden ex
+    ) {
         Map<String, Object> response = new LinkedHashMap<>();
 
         response.put("timestamp", LocalDateTime.now());
@@ -88,13 +96,34 @@ public class Global {
     }
 
     /*
+     * 403 FORBIDDEN - SPRING SECURITY
+     * Xu ly khi nguoi dung da dang nhap
+     * nhung khong co quyen truy cap.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(
+            AccessDeniedException ex
+    ) {
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", 403);
+        response.put("error", "Forbidden");
+        response.put("message", "Access Denied");
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.FORBIDDEN
+        );
+    }
+
+    /*
      * 500 INTERNAL SERVER ERROR
      */
     @ExceptionHandler(Exception.class)
-
-    public ResponseEntity<Map<String, Object>>
-    handleException(Exception ex) {
-
+    public ResponseEntity<Map<String, Object>> handleException(
+            Exception ex
+    ) {
         Map<String, Object> response = new HashMap<>();
 
         response.put("timestamp", LocalDateTime.now());
@@ -107,5 +136,4 @@ public class Global {
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
-
 }
