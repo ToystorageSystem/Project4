@@ -185,6 +185,41 @@ public class ActivityLogQueryService {
 
 
     // =========================================================
+    // USER ACTIVITY HISTORY
+    //
+    // Dùng cho Task #27:
+    //
+    // Xem toàn bộ lịch sử hoạt động
+    // của User liên quan đến cảnh báo.
+    // =========================================================
+
+    public List<ActivityLogResponse> getUserActivityHistory(
+            Long userId
+    ) {
+
+        if (userId == null) {
+
+            throw new BadRequest(
+                    "ID người dùng không được để trống"
+            );
+        }
+
+
+        return activityLogRepository
+                .findByUser_IdOrderByCreatedAtDesc(
+                        userId
+                )
+                .stream()
+
+                .map(
+                        this::toResponse
+                )
+
+                .toList();
+    }
+
+
+    // =========================================================
     // BUILD SPECIFICATION
     //
     // Dùng chung cho:
