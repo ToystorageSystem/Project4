@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import jakarta.validation.constraints.DecimalMin;
-
+import jakarta.validation.constraints.NotBlank;
 @Entity
 @Table(
         name = "purchase_order_items",
@@ -89,7 +89,7 @@ public class PurchaseOrderItems {
      * Tổng số lượng đã thực nhận từ nhà cung cấp.
      *
      * Khi mới tạo đơn:
-     * receivedQuantity = 0eceived_quantity
+     * receivedQuantity = 0
      *
      * Nếu nhà cung cấp giao thành nhiều lần,
      * giá trị này được cộng dồn sau mỗi lần nhận hàng.
@@ -109,6 +109,8 @@ public class PurchaseOrderItems {
      *
      * Purchase Order cũ phải giữ nguyên giá lịch sử.
      */
+
+    @NotNull(message = "Gia nhap khong duoc de trong")
     @DecimalMin(value = "0.0", inclusive = true)
     @Column(
             name = "unit_price",
@@ -121,13 +123,15 @@ public class PurchaseOrderItems {
     /*
      * Mã nội bộ của dòng sản phẩm trong đơn mua hàng.
      */
-    @DecimalMin(value = "0.0", inclusive = true)
+
+    @NotBlank(message = "Ma dong san pham khong duoc de trong")
     @Column(
             name = "purchase_order_items_code",
             nullable = false,
             unique = true,
             length = 50
     )
+
     private String purchaseOrderItemsCode;
     /*
      * Phản hồi của nhà cung cấp đối với sản phẩm này.
