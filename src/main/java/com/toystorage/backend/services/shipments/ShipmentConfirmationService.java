@@ -1,3 +1,4 @@
+
 package com.toystorage.backend.services.shipments;
 
 import com.toystorage.backend.dto.request.shipments.ConfirmShipmentRequest;
@@ -20,10 +21,13 @@ import com.toystorage.backend.exceptions.NotFound;
 
 import com.toystorage.backend.repository.packages.packing.PackageItemRepository;
 import com.toystorage.backend.repository.packages.packing.PackageRepository;
-
 import com.toystorage.backend.repository.deliveries.*;
 import com.toystorage.backend.repository.shipments.*;
 import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
+
+import com.toystorage.backend.entity.stores.StoreReturns;
+import com.toystorage.backend.enums.stores.StoreReturnStatus;
+import com.toystorage.backend.repository.stores.returns.StoreReturnRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,6 +44,9 @@ public class ShipmentConfirmationService {
 
     private final StockTransferRepository
             stockTransferRepository;
+
+    // Issue #19: Store Return status synchronization
+    private final StoreReturnRepository storeReturnRepository;
 
     private final PackageRepository
             packageRepository;
@@ -81,18 +88,15 @@ public class ShipmentConfirmationService {
         Users manager =
                 validationService.getCurrentUser();
 
-
         StockTransfer transfer =
                 validationService.getTransfer(
                         transferId
                 );
 
-
         validationService.validateWarehouse(
                 manager,
                 transfer
         );
-
 
         /*
          * Manifest bắt buộc phải tồn tại.
@@ -102,7 +106,6 @@ public class ShipmentConfirmationService {
                         transferId
                 );
 
-
         /*
          * Danh sách kiện thuộc manifest.
          */
@@ -111,7 +114,6 @@ public class ShipmentConfirmationService {
                         .findByManifestId(
                                 manifest.getId()
                         );
-
 
         /*
          * Delivery của manifest.
@@ -126,7 +128,6 @@ public class ShipmentConfirmationService {
                                 manifest.getId()
                         )
                         .orElse(null);
-
 
         return mapper.toResponse(
                 transfer,
@@ -187,12 +188,10 @@ public class ShipmentConfirmationService {
             );
         }
 
-
         /*
          * Kiểm tra tất cả kiện.
          */
-        for (ShipmentManifestPackage link
-                : links) {
+        for (ShipmentManifestPackage link : links) {
 
             Packages pack =
                     link.getPackageEntity();
@@ -218,7 +217,6 @@ public class ShipmentConfirmationService {
             }
         }
 
-
         /*
          * Delivery phải được tạo và có driver.
          */
@@ -232,6 +230,7 @@ public class ShipmentConfirmationService {
                 delivery,
                 transfer
         );
+
         if (
                 delivery.getManifest() == null
                         || !delivery
@@ -255,6 +254,7 @@ public class ShipmentConfirmationService {
                             + "before package handover"
             );
         }
+
         /*
          * Không bàn giao hai lần.
          */
@@ -265,12 +265,10 @@ public class ShipmentConfirmationService {
             );
         }
 
-
         /*
          * Package -> SHIPPED
          */
-        for (ShipmentManifestPackage link
-                : links) {
+        for (ShipmentManifestPackage link : links) {
 
             Packages pack =
                     link.getPackageEntity();
@@ -285,7 +283,6 @@ public class ShipmentConfirmationService {
 
             packageRepository.save(pack);
         }
-
 
         /*
          * Transfer -> SHIPPED
@@ -305,6 +302,48 @@ public class ShipmentConfirmationService {
         stockTransferRepository.save(
                 transfer
         );
+
+
+        // =====================================================
+        // ISSUE #19: STORE RETURN -> SHIPPED
+        // =====================================================
+        /*
+         * Đồng bộ trạng thái phiếu Store Return liên kết.
+         *
+         * Không tạo Store Return mới.
+         * Không trừ tồn kho lần thứ hai.
+         * Không ảnh hưởng Transfer không có Store Return.
+         *
+         * Toàn bộ chạy trong transaction hiện tại.
+         */
+
+        storeReturnRepository
+                .findByTransferIdForShipment(
+                        transfer.getId()
+                )
+                .ifPresent(storeReturn -> {
+
+                    StoreReturnStatus status =
+                            storeReturn.getStatus();
+
+                    if (status != StoreReturnStatus.APPROVED
+                            && status != StoreReturnStatus.PACKING
+                            && status != StoreReturnStatus.ISSUED) {
+
+                        throw new BadRequest(
+                                "Store Return cannot be shipped from status "
+                                        + status
+                        );
+                    }
+
+                    storeReturn.setStatus(
+                            StoreReturnStatus.SHIPPED
+                    );
+
+                    storeReturnRepository.save(
+                            storeReturn
+                    );
+                });
 
 
         /*
@@ -334,7 +373,6 @@ public class ShipmentConfirmationService {
                 delivery
         );
 
-
         /*
          * Link packages với delivery.
          */
@@ -342,7 +380,6 @@ public class ShipmentConfirmationService {
                 delivery,
                 links
         );
-
 
         return mapper.toResponse(
                 transfer,
@@ -387,8 +424,7 @@ public class ShipmentConfirmationService {
             List<ShipmentManifestPackage> links
     ) {
 
-        for (ShipmentManifestPackage link
-                : links) {
+        for (ShipmentManifestPackage link : links) {
 
             DeliveryPackages deliveryPackage =
                     new DeliveryPackages();
@@ -413,9 +449,11 @@ public class ShipmentConfirmationService {
             );
         }
     }
+
+
     // =====================================================
-// DISPATCH & HANDOVER LIST
-// =====================================================
+    // DISPATCH & HANDOVER LIST
+    // =====================================================
 
     @Transactional(readOnly = true)
     public List<DispatchHandoverListResponse>
@@ -427,7 +465,6 @@ public class ShipmentConfirmationService {
                 validationService
                         .getCurrentUser();
 
-
         if (manager.getWarehouse() == null) {
 
             throw new BadRequest(
@@ -435,12 +472,10 @@ public class ShipmentConfirmationService {
             );
         }
 
-
         Long warehouseId =
                 manager
                         .getWarehouse()
                         .getId();
-
 
         /*
          * Chỉ lấy transfer đã confirm packing
@@ -455,7 +490,6 @@ public class ShipmentConfirmationService {
                                 )
                         );
 
-
         String search =
                 keyword == null
                         ? ""
@@ -463,13 +497,10 @@ public class ShipmentConfirmationService {
                         .trim()
                         .toLowerCase();
 
-
         List<DispatchHandoverListResponse> result =
                 new ArrayList<>();
 
-
-        for (StockTransfer transfer
-                : transfers) {
+        for (StockTransfer transfer : transfers) {
 
             ShipmentManifestTransfer manifestLink =
                     shipmentManifestTransferRepository
@@ -477,7 +508,6 @@ public class ShipmentConfirmationService {
                                     transfer.getId()
                             )
                             .orElse(null);
-
 
             /*
              * Business rule:
@@ -487,18 +517,15 @@ public class ShipmentConfirmationService {
                 continue;
             }
 
-
             ShipmentManifests manifest =
                     manifestLink
                             .getManifest();
-
 
             List<ShipmentManifestPackage> packageLinks =
                     shipmentManifestPackageRepository
                             .findByManifestId(
                                     manifest.getId()
                             );
-
 
             Deliveries delivery =
                     deliveryRepository
@@ -507,14 +534,12 @@ public class ShipmentConfirmationService {
                             )
                             .orElse(null);
 
-
             String destinationName =
                     transfer.getToWarehouse() != null
                             ? transfer
                             .getToWarehouse()
                             .getName()
                             : null;
-
 
             String sourceName =
                     transfer.getFromWarehouse() != null
@@ -523,7 +548,6 @@ public class ShipmentConfirmationService {
                             .getName()
                             : null;
 
-
             String driverName =
                     delivery != null
                             && delivery.getDriver() != null
@@ -531,7 +555,6 @@ public class ShipmentConfirmationService {
                             .getDriver()
                             .getName()
                             : null;
-
 
             /*
              * Search.
@@ -556,12 +579,10 @@ public class ShipmentConfirmationService {
                                 search
                         );
 
-
                 if (!matched) {
                     continue;
                 }
             }
-
 
             result.add(
                     DispatchHandoverListResponse
@@ -633,9 +654,10 @@ public class ShipmentConfirmationService {
             );
         }
 
-
         return result;
     }
+
+
     private boolean containsIgnoreCase(
             String value,
             String search

@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -110,6 +111,37 @@ public class Global {
                 HttpStatus.FORBIDDEN
         );
     }
+    
+    /*
+     * 400 BAD REQUEST - BEAN VALIDATION
+     * Issue #19: Invalid request body
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidation(
+            MethodArgumentNotValidException ex
+    ) {
+
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getDefaultMessage())
+                .filter(msg -> msg != null && !msg.isBlank())
+                .findFirst()
+                .orElse("Invalid request body");
+
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST);
+        response.put("error", "Bad Request");
+        response.put("message", message);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
 
     /*
      * 500 INTERNAL SERVER ERROR

@@ -1,7 +1,9 @@
 package com.toystorage.backend.repository.inventories;
 
 import com.toystorage.backend.entity.inventories.InventoryBalances;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -45,5 +47,20 @@ public interface InventoryBalanceRepository
 
             @Param("locationCode")
             String locationCode
+    );
+
+    // Issue #19: Lock inventory during Store Return approval
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT b
+        FROM InventoryBalances b
+        WHERE b.warehouse.id = :warehouseId
+          AND b.location.id = :locationId
+          AND b.product.id = :productId
+    """)
+    Optional<InventoryBalances> findForStoreReturnApproval(
+            @Param("warehouseId") Long warehouseId,
+            @Param("locationId") Long locationId,
+            @Param("productId") Long productId
     );
 }

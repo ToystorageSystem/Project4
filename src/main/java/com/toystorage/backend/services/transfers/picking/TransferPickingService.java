@@ -12,6 +12,7 @@ import com.toystorage.backend.entity.inventories.InventoryBalances;
 import com.toystorage.backend.entity.transfers.StockTransferItems;
 import com.toystorage.backend.entity.transfers.StockTransfer;
 import com.toystorage.backend.entity.users.Users;
+import com.toystorage.backend.enums.transfers.TransferType;
 
 import com.toystorage.backend.enums.transfers.TransferStatus;
 
@@ -55,47 +56,39 @@ public class TransferPickingService {
             mapper;
 
 
+
     // =====================================================
     // LIST TRANSFERS
     // =====================================================
 
     @Transactional(readOnly = true)
-    public List<TransferPickingResponse>
-    getMyWarehouseTransfers() {
+    public List<TransferPickingResponse> getMyWarehouseTransfers() {
 
-        Users staff =
-                validationService
-                        .getCurrentUser();
+        Users staff = validationService.getCurrentUser();
 
         if (staff.getWarehouse() == null) {
-
             throw new BadRequest(
                     "User is not assigned to warehouse"
             );
         }
 
-
         List<StockTransfer> transfers =
                 stockTransferRepository
                         .findByFromWarehouseIdAndStatusInOrderByCreatedAtDesc(
-                                staff
-                                        .getWarehouse()
-                                        .getId(),
-
+                                staff.getWarehouse().getId(),
                                 List.of(
                                         TransferStatus.PENDING_SOURCE_CONFIRMATION,
-                                        TransferStatus.PICKING
+                                        TransferStatus.PICKING,
+                                        TransferStatus.CREATED
                                 )
                         );
 
-
-        return transfers
-                .stream()
-
-                .map(
-                        this::buildResponse
+        return transfers.stream()
+                .filter(transfer ->
+                        transfer.getStatus() != TransferStatus.CREATED
+                        || transfer.getTransferType() == TransferType.STORE_RETURN
                 )
-
+                .map(this::buildResponse)
                 .toList();
     }
 
@@ -103,6 +96,7 @@ public class TransferPickingService {
     // =====================================================
     // DETAIL
     // =====================================================
+
 
     @Transactional(readOnly = true)
     public TransferPickingResponse getTransfer(
@@ -177,8 +171,18 @@ public class TransferPickingService {
         }
 
 
-        if (transfer.getStatus()
-                != TransferStatus.PENDING_SOURCE_CONFIRMATION) {
+
+        boolean normalPicking =
+                transfer.getStatus()
+                        == TransferStatus.PENDING_SOURCE_CONFIRMATION;
+
+        boolean storeReturnPicking =
+                transfer.getTransferType()
+                        == TransferType.STORE_RETURN
+                && transfer.getStatus()
+                        == TransferStatus.CREATED;
+
+        if (!normalPicking && !storeReturnPicking) {
 
             throw new BadRequest(
                     "Transfer cannot start picking from status "
