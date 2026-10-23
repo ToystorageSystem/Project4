@@ -66,4 +66,12 @@ public interface DiscrepancyReportRepository
             Long warehouseId,
             DiscrepancyStatus status
     );
+
+
+    // Methods restored for legacy business APIs without replacing existing repository logic.
+
+    List<DiscrepancyReports>
+        findByResponsiblePartyOrderByCreatedAtDesc(
+                String responsibleParty
+        );
 }

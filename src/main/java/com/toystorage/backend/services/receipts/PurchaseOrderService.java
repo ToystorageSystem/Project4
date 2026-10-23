@@ -1028,10 +1028,10 @@ public class PurchaseOrderService {
                 "PURCHASE_ORDER_PRICE_OVERRIDE"
         )
                 || authorities.contains(
-                "ROLE_BUSINESS_MANAGER"
+                "ROLE_ROLE-BIZ-MANAGER"
         )
                 || authorities.contains(
-                "ROLE_ADMIN"
+                "ROLE_ROLE-ADMIN"
         );
     }
 

@@ -85,4 +85,19 @@ public interface GoodsReceiptRepository
             @Param("toDate") LocalDateTime toDate,
             Pageable pageable
     );
+
+
+    // Methods restored for legacy business APIs without replacing existing repository logic.
+
+    List<GoodsReceipts> findByWarehouseIdOrderByCreatedAtDesc(
+                Long warehouseId
+        );
+
+    boolean existsByReceiptCode(
+                String receiptCode
+        );
+
+    boolean existsByGoodsReceiptsCode(
+                String goodsReceiptsCode
+        );
 }

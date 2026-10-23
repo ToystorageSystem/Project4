@@ -1,6 +1,8 @@
 
 package com.toystorage.backend.repository.transfers.picking;
 
+import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import com.toystorage.backend.entity.transfers.StockTransfer;
 import com.toystorage.backend.enums.transfers.TransferStatus;
 
@@ -83,4 +85,42 @@ public interface StockTransferRepository
             @Param("toDate") LocalDateTime toDate,
             Pageable pageable
     );
+
+
+    // Methods restored for legacy business APIs without replacing existing repository logic.
+
+    // =====================================================
+        // STOCK TRANSFER DETAIL
+        // =====================================================
+
+        @EntityGraph(
+                attributePaths = {
+                        "fromWarehouse",
+                        "toWarehouse",
+                        "createdBy",
+                        "confirmedBy",
+                        "items",
+                        "items.product"
+                }
+        )
+        @Query("""
+                select distinct st
+                from StockTransfer st
+                where st.id = :id
+                """)
+        Optional<StockTransfer> findDetailedById(
+                @Param("id") Long id
+        );
+
+    // =====================================================
+        // STOCK TRANSFER CREATION
+        // =====================================================
+
+        boolean existsByTransferCode(
+                String transferCode
+        );
+
+    boolean existsByStockTransfersCode(
+                String stockTransfersCode
+        );
 }

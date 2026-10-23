@@ -1,5 +1,6 @@
 package com.toystorage.backend.repository.receipts;
 
+import java.util.Collection;
 import com.toystorage.backend.entity.receipts.PurchaseOrders;
 import com.toystorage.backend.enums.receipts.PurchaseOrderStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -67,4 +68,66 @@ public interface PurchaseOrderRepository
             @Param("createdFrom") LocalDateTime createdFrom,
             @Param("createdTo") LocalDateTime createdTo
     );
+
+
+    // Methods restored for legacy business APIs without replacing existing repository logic.
+
+    /*
+         * Lấy các Purchase Order có thể gắn với hóa đơn
+         * của một Supplier.
+         *
+         * Service sẽ truyền vào các trạng thái:
+         * ORDERED, PARTIALLY_RECEIVED, COMPLETED.
+         *
+         * DRAFT và CANCELLED không được sử dụng
+         * để tạo Supplier Invoice.
+         */
+        @EntityGraph(
+                attributePaths = {
+                        "supplier",
+                        "warehouse"
+                }
+        )
+        @Query("""
+                select po
+                from PurchaseOrders po
+                where po.supplier.id = :supplierId
+                and po.status in :statuses
+                order by po.createdAt desc
+                """)
+        List<PurchaseOrders> findInvoiceEligibleBySupplierId(
+                @Param("supplierId") Long supplierId,
+                @Param("statuses")
+                Collection<PurchaseOrderStatus> statuses
+        );
+
+    /*
+         * Kiểm tra Purchase Order được Business chọn
+         * thực sự thuộc Supplier đã chọn và có trạng thái
+         * hợp lệ để liên kết với hóa đơn.
+         */
+        @EntityGraph(
+                attributePaths = {
+                        "supplier",
+                        "warehouse"
+                }
+        )
+        @Query("""
+                select po
+                from PurchaseOrders po
+                where po.id = :purchaseOrderId
+                and po.supplier.id = :supplierId
+                and po.status in :statuses
+                """)
+        Optional<PurchaseOrders> findInvoiceEligibleById(
+                @Param("purchaseOrderId") Long purchaseOrderId,
+                @Param("supplierId") Long supplierId,
+                @Param("statuses")
+                Collection<PurchaseOrderStatus> statuses
+        );
+
+    boolean existsBySupplier_IdAndStatusNotIn(
+                Long supplierId,
+                Collection<PurchaseOrderStatus> completedStatuses
+        );
 }

@@ -16,4 +16,15 @@ public interface WarehouseRepository
             WarehouseType type,
             WarehouseStatus status
     );
+
+
+    // Methods restored for legacy business APIs without replacing existing repository logic.
+
+    // =====================================================
+        // INVENTORY REPORT
+        // =====================================================
+
+        List<Warehouses> findByStatusOrderByNameAsc(
+                WarehouseStatus status
+        );
 }

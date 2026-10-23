@@ -64,6 +64,10 @@ public class Categories {
     )
     private String name;
 
+    @Lob
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(
             name = "status",

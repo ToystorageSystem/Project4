@@ -47,4 +47,11 @@ public interface PurchaseOrderItemRepository
     void deleteByPurchaseOrder_Id(
             Long purchaseOrderId
     );
+
+
+    // Methods restored for legacy business APIs without replacing existing repository logic.
+
+    List<PurchaseOrderItems> findByPurchaseOrderId(
+                Long purchaseOrderId
+        );
 }

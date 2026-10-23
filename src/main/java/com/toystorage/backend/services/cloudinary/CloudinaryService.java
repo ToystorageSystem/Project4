@@ -59,4 +59,26 @@ public class CloudinaryService {
             );
         }
     }
+
+    /** Upload invoice PDF, XML, or image without changing the existing shortage-image upload path. */
+    public String uploadSupplierInvoiceFile(MultipartFile file) {
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "toystorage/supplier-invoices",
+                            "resource_type", "auto",
+                            "use_filename", true,
+                            "unique_filename", true
+                    )
+            );
+            Object url = result.get("secure_url");
+            if (url == null) {
+                throw new IllegalStateException("Cloudinary did not return supplier invoice file URL");
+            }
+            return url.toString();
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to upload supplier invoice file", ex);
+        }
+    }
 }

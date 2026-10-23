@@ -45,4 +45,15 @@ public interface StockTransferItemRepository
     List<StockTransferItems> findDetailsByStockTransferId(
             @Param("transferId") Long transferId
     );
+
+
+    // Methods restored for legacy business APIs without replacing existing repository logic.
+
+    // =====================================================
+        // STOCK TRANSFER CREATION
+        // =====================================================
+
+        boolean existsByStockTransferItemsCode(
+                String stockTransferItemsCode
+        );
 }

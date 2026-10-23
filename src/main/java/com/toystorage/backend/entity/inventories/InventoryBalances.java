@@ -110,6 +110,10 @@ public class InventoryBalances {
     )
     private Integer reservedQuantity;
 
+    @Builder.Default
+    @Column(name = "minimum_stock_level", nullable = false)
+    private Integer minimumStockLevel = 0;
+
     /**
      * Số lượng có thể tiếp tục sử dụng.
      *

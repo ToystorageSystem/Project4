@@ -86,7 +86,7 @@ public class TransferPickingService {
         return transfers.stream()
                 .filter(transfer ->
                         transfer.getStatus() != TransferStatus.CREATED
-                        || transfer.getTransferType() == TransferType.STORE_RETURN
+                        || isReturnTransferType(transfer.getTransferType())
                 )
                 .map(this::buildResponse)
                 .toList();
@@ -177,10 +177,8 @@ public class TransferPickingService {
                         == TransferStatus.PENDING_SOURCE_CONFIRMATION;
 
         boolean storeReturnPicking =
-                transfer.getTransferType()
-                        == TransferType.STORE_RETURN
-                && transfer.getStatus()
-                        == TransferStatus.CREATED;
+                isReturnTransferType(transfer.getTransferType())
+                && transfer.getStatus() == TransferStatus.CREATED;
 
         if (!normalPicking && !storeReturnPicking) {
 
@@ -490,5 +488,13 @@ public class TransferPickingService {
                         transfer,
                         responses
                 );
+    }
+
+    /** All return types accepted by Issue #19 must reach warehouse picking. */
+    private static boolean isReturnTransferType(TransferType type) {
+        return type == TransferType.STORE_RETURN
+                || type == TransferType.SURPLUS_RETURN
+                || type == TransferType.DAMAGED_RETURN
+                || type == TransferType.RECALL;
     }
 }

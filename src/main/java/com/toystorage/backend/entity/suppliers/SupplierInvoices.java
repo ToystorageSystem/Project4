@@ -105,6 +105,9 @@ public class SupplierInvoices {
     )
     private LocalDate invoiceDate;
 
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
     /*
      * Giá trị hàng hóa trước thuế.
      */
