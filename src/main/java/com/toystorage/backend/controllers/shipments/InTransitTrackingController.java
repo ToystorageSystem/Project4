@@ -45,8 +45,8 @@ public class InTransitTrackingController {
     @GetMapping
     @PreAuthorize("""
            hasAnyAuthority(
-            'ROLE_BS_STAFF',
-            'ROLE_BS_MANAGER',
+            'ROLE_ROLE-BIZ-STAFF',
+            'ROLE_ROLE-BIZ-MANAGER',
             'ROLE_ROLE-ADMIN'
             )
             """)
@@ -107,8 +107,8 @@ public class InTransitTrackingController {
     @GetMapping("/{deliveryId}")
     @PreAuthorize("""
            hasAnyAuthority(
-                        'ROLE_BS_STAFF',
-                        'ROLE_BS_MANAGER',
+                        'ROLE_ROLE-BIZ-STAFF',
+                        'ROLE_ROLE-BIZ-MANAGER',
                         'ROLE_ROLE-ADMIN'
                         )
             """)
