@@ -107,8 +107,8 @@ public class GoodsReceiptCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'GOODS_RECEIPT_VIEW',
-                'ROLE_WH_MANAGER',
-                'ROLE_STAFF',
+                'ROLE_ROLE-WH-MANAGER',
+                'ROLE_ROLE-WH-STAFF',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -136,8 +136,8 @@ public class GoodsReceiptCreationController {
             hasAnyAuthority(
                 'GOODS_RECEIPT_VIEW',
                 'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_WH_MANAGER',
-                'ROLE_STAFF',
+                'ROLE_ROLE-WH-MANAGER',
+                'ROLE_ROLE-WH-STAFF',
                 'ROLE_ROLE-ADMIN'
             )
             """)
