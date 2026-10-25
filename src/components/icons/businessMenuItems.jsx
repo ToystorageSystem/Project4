@@ -6,13 +6,41 @@ function DashboardIcon() {
     );
 }
 
-// More menu items will be added only after their routes and pages exist.
+function SupplierIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-5 w-5" aria-hidden="true">
+            <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M3 7h18v13H3zM6 7V4h12v3M7 11h10M7 15h6" />
+        </svg>
+    );
+}
+
+function ProductIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-5 w-5" aria-hidden="true">
+            <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M4 7 12 3l8 4v10l-8 4-8-4V7Zm0 0 8 4 8-4M12 11v10" />
+        </svg>
+    );
+}
+
+// Only add entries once their pages exist.
 export const businessStaffMenuItems = [
     {
         key: "business-staff-dashboard",
         label: "Dashboard",
         path: "/business-staff/dashboard",
         icon: <DashboardIcon />,
+    },
+    {
+        key: "business-staff-suppliers",
+        label: "Quản lý nhà cung cấp",
+        path: "/business-staff/suppliers",
+        icon: <SupplierIcon />,
+    },
+    {
+        key: "business-staff-products",
+        label: "Quản lý sản phẩm",
+        path: "/business-staff/products",
+        icon: <ProductIcon />,
     },
 ];
 

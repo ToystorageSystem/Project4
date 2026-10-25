@@ -10,6 +10,14 @@ import RequireRole from "./auth/RequireRole";
 import { getHomePath, ROLE } from "./auth/roleRouting";
 import BusinessStaffDashboardPage from "./pages/businessstaff/BusinessStaffDashboardPage";
 import BusinessManagerDashboardPage from "./pages/businessmanager/BusinessManagerDashboardPage";
+import SupplierListPage from "./pages/businessstaff/suppliers/SupplierListPage";
+import SupplierDetailPage from "./pages/businessstaff/suppliers/SupplierDetailPage";
+import SupplierFormPage from "./pages/businessstaff/suppliers/SupplierFormPage";
+import ProductListPage from "./pages/businessstaff/products/ProductListPage";
+import ProductDetailPage from "./pages/businessstaff/products/ProductDetailPage";
+import ProductFormPage from "./pages/businessstaff/products/ProductFormPage";
+import ProductImportPage from "./pages/businessstaff/products/ProductImportPage";
+import ProductRequestsPage from "./pages/businessstaff/products/ProductRequestsPage";
 
 import Login from "./pages/auth/Login";
 import ReceivingMonitorPage from "./pages/warehouses/receiving/ReceivingMonitorPage";
@@ -46,6 +54,16 @@ export default function App() {
                     {/* Business routes are checked in the FE and enforced by BE @PreAuthorize. */}
                     <Route element={<RequireRole authority={ROLE.BUSINESS_STAFF} />}>
                         <Route path="/business-staff/dashboard" element={<BusinessStaffDashboardPage />} />
+                        <Route path="/business-staff/suppliers" element={<SupplierListPage />} />
+                        <Route path="/business-staff/suppliers/new" element={<SupplierFormPage />} />
+                        <Route path="/business-staff/suppliers/:supplierId/edit" element={<SupplierFormPage />} />
+                        <Route path="/business-staff/suppliers/:supplierId" element={<SupplierDetailPage />} />
+                        <Route path="/business-staff/products" element={<ProductListPage />} />
+                        <Route path="/business-staff/products/new" element={<ProductFormPage />} />
+                        <Route path="/business-staff/products/import" element={<ProductImportPage />} />
+                        <Route path="/business-staff/products/requests" element={<ProductRequestsPage />} />
+                        <Route path="/business-staff/products/:productId/edit" element={<ProductFormPage />} />
+                        <Route path="/business-staff/products/:productId" element={<ProductDetailPage />} />
                     </Route>
                     <Route element={<RequireRole authority={ROLE.BUSINESS_MANAGER} />}>
                         <Route path="/business-manager/dashboard" element={<BusinessManagerDashboardPage />} />

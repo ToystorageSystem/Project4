@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
 import PageHeader from "../../components/layout/PageHeader";
 import MetricCard, { formatCount } from "../../components/business/MetricCard";
@@ -52,7 +53,10 @@ export default function BusinessStaffDashboardPage() {
                         </div>
                         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                             <div className="border-b border-slate-200 p-5">
-                                <h2 className="font-semibold text-slate-900">Nhà cung cấp (5 bản ghi đầu)</h2>
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <h2 className="font-semibold text-slate-900">Nhà cung cấp (5 bản ghi đầu)</h2>
+                                    <Link to="/business-staff/suppliers" className="text-sm font-semibold text-[#c94810] hover:underline">Xem tất cả →</Link>
+                                </div>
                                 <p className="mt-1 text-sm text-slate-500">Nguồn: GET /api/business-staff/suppliers</p>
                             </div>
                             {suppliers.length === 0 ? (
