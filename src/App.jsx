@@ -18,8 +18,11 @@ import ProductDetailPage from "./pages/businessstaff/products/ProductDetailPage"
 import ProductFormPage from "./pages/businessstaff/products/ProductFormPage";
 import ProductImportPage from "./pages/businessstaff/products/ProductImportPage";
 import ProductRequestsPage from "./pages/businessstaff/products/ProductRequestsPage";
+import GoodsReceiptCreatePage from "./pages/businessstaff/goodsreceipts/GoodsReceiptCreatePage";
+import GoodsReceiptDetailPage from "./pages/businessstaff/goodsreceipts/GoodsReceiptDetailPage";
 
 import Login from "./pages/auth/Login";
+import ReceivingPendingPage from "./pages/warehouses/receiving/ReceivingPendingPage";
 import ReceivingMonitorPage from "./pages/warehouses/receiving/ReceivingMonitorPage";
 import ReceivingWaitingReviewPage from "./pages/warehouses/receiving/ReceivingWaitingReviewPage";
 import ReceivingCompletedPage from "./pages/warehouses/receiving/ReceivingCompletedPage";
@@ -64,10 +67,14 @@ export default function App() {
                         <Route path="/business-staff/products/requests" element={<ProductRequestsPage />} />
                         <Route path="/business-staff/products/:productId/edit" element={<ProductFormPage />} />
                         <Route path="/business-staff/products/:productId" element={<ProductDetailPage />} />
+                        <Route path="/business-staff/goods-receipts" element={<GoodsReceiptCreatePage />} />
+                        <Route path="/business-staff/goods-receipts/:receiptId" element={<GoodsReceiptDetailPage />} />
                     </Route>
                     <Route element={<RequireRole authority={ROLE.BUSINESS_MANAGER} />}>
                         <Route path="/business-manager/dashboard" element={<BusinessManagerDashboardPage />} />
                     </Route>
+
+                    <Route path="/warehouse/receiving/pending" element={<ReceivingPendingPage />} />
 
                     <Route
                         path="/warehouse/receiving/in-progress"

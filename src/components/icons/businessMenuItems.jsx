@@ -22,6 +22,14 @@ function ProductIcon() {
     );
 }
 
+function GoodsReceiptIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-5 w-5" aria-hidden="true">
+            <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M3 8h18v12H3V8ZM6 8V4h12v4M8 13h8M12 10v6M7 17h10" />
+        </svg>
+    );
+}
+
 // Only add entries once their pages exist.
 export const businessStaffMenuItems = [
     {
@@ -41,6 +49,12 @@ export const businessStaffMenuItems = [
         label: "Quản lý sản phẩm",
         path: "/business-staff/products",
         icon: <ProductIcon />,
+    },
+    {
+        key: "business-staff-goods-receipt",
+        label: "Tạo phiếu nhập kho tổng",
+        path: "/business-staff/goods-receipts",
+        icon: <GoodsReceiptIcon />,
     },
 ];
 

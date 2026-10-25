@@ -95,6 +95,12 @@ export const warehouseMenuItems = [
         icon: <DashboardIcon />,
     },
     {
+        key: "receiving-pending",
+        label: "Pending Goods Receipts",
+        path: "/warehouse/receiving/pending",
+        icon: <ReceivingIcon />,
+    },
+    {
         key: "receiving-in-progress",
         label: "Receiving - In Progress",
         path: "/warehouse/receiving/in-progress",
