@@ -5,7 +5,11 @@ import {
     Routes,
 } from "react-router-dom";
 
-import { AuthProvider } from "./auth/AuthContext";
+import { AuthProvider, useAuth } from "./auth/AuthContext";
+import RequireRole from "./auth/RequireRole";
+import { getHomePath, ROLE } from "./auth/roleRouting";
+import BusinessStaffDashboardPage from "./pages/businessstaff/BusinessStaffDashboardPage";
+import BusinessManagerDashboardPage from "./pages/businessmanager/BusinessManagerDashboardPage";
 
 import Login from "./pages/auth/Login";
 import ReceivingMonitorPage from "./pages/warehouses/receiving/ReceivingMonitorPage";
@@ -27,12 +31,25 @@ import DispatchHandoverPage from "./pages/warehouses/dispatch/DispatchHandoverPa
 import DamagedGoodsPage from "./pages/warehouses/damagedgoods/DamagedGoodsPage.jsx";
 import DamagedGoodsDetailPage from "./pages/warehouses/damagedgoods/DamagedGoodsDetailPage.jsx";
 
+function HomeRedirect() {
+    const { user } = useAuth();
+    return <Navigate to={user ? getHomePath(user) : "/login"} replace />;
+}
+
 export default function App() {
     return (
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
                     <Route path="/login" element={<Login />} />
+
+                    {/* Business routes are checked in the FE and enforced by BE @PreAuthorize. */}
+                    <Route element={<RequireRole authority={ROLE.BUSINESS_STAFF} />}>
+                        <Route path="/business-staff/dashboard" element={<BusinessStaffDashboardPage />} />
+                    </Route>
+                    <Route element={<RequireRole authority={ROLE.BUSINESS_MANAGER} />}>
+                        <Route path="/business-manager/dashboard" element={<BusinessManagerDashboardPage />} />
+                    </Route>
 
                     <Route
                         path="/warehouse/receiving/in-progress"
@@ -144,10 +161,7 @@ export default function App() {
                         }
                     />
 
-                    <Route
-                        path="/"
-                        element={<Navigate to="/login" replace />}
-                    />
+                    <Route path="/" element={<HomeRedirect />} />
 
                     <Route
                         path="*"

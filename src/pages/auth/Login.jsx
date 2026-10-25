@@ -18,6 +18,7 @@ import {
 import {
     useAuth,
 } from "../../auth/AuthContext";
+import { getHomePath } from "../../auth/roleRouting";
 
 
 export default function Login() {
@@ -159,7 +160,7 @@ export default function Login() {
 
 
                 navigate(
-                    "/warehouse/dashboard",
+                    getHomePath(response),
                     {
                         replace: true,
                     }

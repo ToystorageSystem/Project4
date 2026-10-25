@@ -20,6 +20,7 @@ import {
 import {
     useAuth,
 } from "../../auth/AuthContext.jsx";
+import { getBusinessRoleLabel } from "../../auth/roleRouting";
 
 
 function formatRole(role) {
@@ -363,6 +364,7 @@ function WorkspaceHeader() {
 
 
     const role =
+        getBusinessRoleLabel(user) ??
         formatRole(
             user?.roleName ??
             user?.role ??
@@ -527,19 +529,16 @@ function WorkspaceHeader() {
 
 
 export default function MainLayout({
-                                       children,
-                                   }) {
+    children,
+    title = "Warehouse",
+    items = warehouseMenuItems,
+}) {
     return (
         <div className="min-h-screen bg-slate-50">
 
             <div className="flex min-h-screen">
 
-                <Sidebar
-                    title="Warehouse"
-                    items={
-                        warehouseMenuItems
-                    }
-                />
+                <Sidebar title={title} items={items} />
 
 
                 <div className="flex min-w-0 flex-1 flex-col">
