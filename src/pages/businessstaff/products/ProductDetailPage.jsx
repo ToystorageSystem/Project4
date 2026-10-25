@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getProduct, productErrorMessage } from "../../../api/business/products";
 import ProductStatusBadge, { formatProductDate, formatProductPrice } from "../../../components/business/products/ProductStatusBadge";
+import SupplierProductLinksPanel from "../../../components/business/supplierProducts/SupplierProductLinksPanel";
 import { businessStaffMenuItems } from "../../../components/icons/businessMenuItems";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -91,6 +92,7 @@ export default function ProductDetailPage() {
                                 </div>
                             )}
                         </Card>
+                        <SupplierProductLinksPanel productId={productId} productStatus={product.status} />
                         <Card>
                             <p className="text-sm text-slate-600">Đề nghị sửa sản phẩm được lưu riêng và chỉ áp dụng lên sản phẩm khi được Business Manager phê duyệt. Để kiểm tra trạng thái yêu cầu, mở <button type="button" onClick={() => navigate(`${ROOT}/requests`)} className="font-semibold text-[#c94810] hover:underline">Yêu cầu của tôi</button>.</p>
                         </Card>
