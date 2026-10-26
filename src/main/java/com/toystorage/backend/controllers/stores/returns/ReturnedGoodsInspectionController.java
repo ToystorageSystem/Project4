@@ -112,9 +112,9 @@ public class ReturnedGoodsInspectionController {
     @PostMapping(
             "/{returnId}/scan-package"
     )
-    @PreAuthorize(
-            "hasAuthority('STORE_RETURN_RECEIVE')"
-    )
+//    @PreAuthorize(
+//            "hasAuthority('STORE_RETURN_RECEIVE')"
+//    )
     public ResponseEntity<ReturnedPackageResponse>
     scanPackage(
             @PathVariable Long returnId,
@@ -140,9 +140,9 @@ public class ReturnedGoodsInspectionController {
     @PutMapping(
             "/{returnId}/items"
     )
-    @PreAuthorize(
-            "hasAuthority('STORE_RETURN_RECEIVE')"
-    )
+//    @PreAuthorize(
+//            "hasAuthority('STORE_RETURN_RECEIVE')"
+//    )
     public ResponseEntity<ReturnedGoodsDetailResponse>
     inspectItem(
             @PathVariable Long returnId,
@@ -169,9 +169,9 @@ public class ReturnedGoodsInspectionController {
             value = "/{returnId}/items/{itemId}/evidence",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    @PreAuthorize(
-            "hasAuthority('STORE_RETURN_RECEIVE')"
-    )
+//    @PreAuthorize(
+//            "hasAuthority('STORE_RETURN_RECEIVE')"
+//    )
     public ResponseEntity<Map<String, String>>
     uploadEvidence(
             @PathVariable Long returnId,
@@ -206,9 +206,9 @@ public class ReturnedGoodsInspectionController {
     @PatchMapping(
             "/{returnId}/submit"
     )
-    @PreAuthorize(
-            "hasAuthority('STORE_RETURN_RECEIVE')"
-    )
+//    @PreAuthorize(
+//            "hasAuthority('STORE_RETURN_RECEIVE')"
+//    )
     public ResponseEntity<ReturnedGoodsDetailResponse>
     submitInspection(
             @PathVariable Long returnId

@@ -12,18 +12,22 @@ import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.enums.inventories.DiscrepancyReferenceType;
 import com.toystorage.backend.enums.inventories.DiscrepancyStatus;
 import com.toystorage.backend.enums.inventories.DiscrepancyType;
+import com.toystorage.backend.enums.inventories.DiscrepancySeverity;
+import com.toystorage.backend.services.inventories.discrepancy.DiscrepancySeverityPolicy;
 
 import com.toystorage.backend.enums.stores.ReturnItemCondition;
 import com.toystorage.backend.enums.stores.StoreReturnStatus;
 
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
+import com.toystorage.backend.exceptions.Forbidden;
 
 import com.toystorage.backend.mapper.stores.returns.StoreReturnInspectionMapper;
 
 import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyReportRepository;
 import com.toystorage.backend.repository.stores.returns.StoreReturnItemRepository;
 import com.toystorage.backend.repository.stores.returns.StoreReturnRepository;
+import com.toystorage.backend.repository.auth.UserRoleRepository;
 
 import com.toystorage.backend.entity.warehouses.DamagedGoodsItems;
 import com.toystorage.backend.entity.warehouses.DamagedGoodsReports;
@@ -65,6 +69,12 @@ public class StoreReturnInspectionService {
 
     private final DiscrepancyReportRepository
             discrepancyReportRepository;
+
+    private final DiscrepancySeverityPolicy
+            discrepancySeverityPolicy;
+
+    private final UserRoleRepository
+            userRoleRepository;
 
     private final StoreReturnLocationService
             locationService;
@@ -331,16 +341,6 @@ public class StoreReturnInspectionService {
         }
 
 
-        if (
-                receivedQuantity
-                        > issuedQuantity
-        ) {
-
-            throw new BadRequest(
-                    "Received quantity cannot exceed issued quantity"
-            );
-        }
-
 
         // =================================================
         // CONDITION
@@ -599,6 +599,27 @@ public class StoreReturnInspectionService {
 
 
         // =================================================
+        // SURPLUS
+        // =================================================
+
+        if (received > issued) {
+
+            createDiscrepancyIfNotExists(
+                    storeReturn,
+                    item,
+                    currentUser,
+                    DiscrepancyType.SURPLUS,
+                    "Store return surplus. Issued: "
+                            + issued
+                            + ", received: "
+                            + received
+                            + ", surplus: "
+                            + (received - issued)
+            );
+        }
+
+
+        // =================================================
         // DAMAGED
         // =================================================
 
@@ -682,6 +703,24 @@ public class StoreReturnInspectionService {
         String reportCode =
                 generateDiscrepancyCode();
 
+        int issued = item.getIssuedQuantity() != null
+                ? item.getIssuedQuantity()
+                : 0;
+
+        int received = item.getReceivedQuantity() != null
+                ? item.getReceivedQuantity()
+                : 0;
+
+        int abnormal = item.getConditionStatus() == ReturnItemCondition.NORMAL
+                ? 0
+                : received;
+
+        DiscrepancySeverity severity =
+                discrepancySeverityPolicy.determine(
+                        issued,
+                        received,
+                        abnormal
+                );
 
         DiscrepancyReports report =
                 DiscrepancyReports
@@ -714,6 +753,14 @@ public class StoreReturnInspectionService {
 
                         .discrepancyType(
                                 discrepancyType
+                        )
+
+                        .severity(
+                                severity
+                        )
+
+                        .blocking(
+                                discrepancySeverityPolicy.isBlocking(severity)
                         )
 
                         .status(
@@ -760,75 +807,118 @@ public class StoreReturnInspectionService {
 
         List<StoreReturnItems> items =
                 storeReturnItemRepository
-                        .findByStoreReturnId(
-                                storeReturn.getId()
-                        );
-
-
-        // =================================================
-        // ALL ITEMS MUST BE INSPECTED
-        // =================================================
+                        .findByStoreReturnId(storeReturn.getId());
 
         boolean allInspected =
                 !items.isEmpty()
-
-                        &&
-
-                        items.stream()
-                                .allMatch(
-                                        item ->
-                                                Boolean.TRUE.equals(
-                                                        item.getInspected()
-                                                )
-                                );
-
+                        && items.stream()
+                        .allMatch(item ->
+                                Boolean.TRUE.equals(item.getInspected())
+                        );
 
         if (!allInspected) {
-
             return;
         }
 
+        List<DiscrepancyReports> reports =
+                discrepancyReportRepository
+                        .findByReferenceTypeAndReferenceId(
+                                DiscrepancyReferenceType.STORE_RETURN,
+                                storeReturn.getId()
+                        );
 
-        // =================================================
-        // INSPECTION FINISHED
-        //
-        // IMPORTANT:
-        //
-        // Không cộng inventory ở đây.
-        // Không set RECEIVED ở đây.
-        //
-        // Warehouse Manager phải review trước.
-        // =================================================
+        for (StoreReturnItems item : items) {
+            boolean blocked = reports.stream()
+                    .filter(r -> r.getProductId() != null)
+                    .filter(r -> r.getProductId().equals(item.getProduct().getId()))
+                    .anyMatch(r ->
+                            Boolean.TRUE.equals(r.getBlocking())
+                                    && (r.getStatus() == DiscrepancyStatus.OPEN
+                                    || r.getStatus() == DiscrepancyStatus.INVESTIGATING)
+                    );
 
-        storeReturn.setStatus(
-                StoreReturnStatus.PENDING_CONFIRMATION
-        );
+            if (!blocked) {
+                postInventoryIfNeeded(storeReturn, item, currentUser);
+            }
+        }
 
+        boolean hasBlockingUnresolved = reports.stream()
+                .anyMatch(r ->
+                        Boolean.TRUE.equals(r.getBlocking())
+                                && (r.getStatus() == DiscrepancyStatus.OPEN
+                                || r.getStatus() == DiscrepancyStatus.INVESTIGATING)
+                );
 
-        storeReturn.setInspectionSubmittedAt(
-                LocalDateTime.now()
-        );
+        LocalDateTime now = LocalDateTime.now();
 
+        storeReturn.setInspectionSubmittedAt(now);
+        storeReturn.setInspectedBy(currentUser);
+        storeReturn.setUpdatedAt(now);
 
-        /*
-         * Nếu entity StoreReturns của bạn có inspectedBy
-         * thì lưu người hoàn thành inspection.
-         */
-        storeReturn.setInspectedBy(
-                currentUser
-        );
+        if (hasBlockingUnresolved) {
+            storeReturn.setStatus(StoreReturnStatus.PENDING_CONFIRMATION);
+        } else {
+            storeReturn.setStatus(StoreReturnStatus.RECEIVED);
+            storeReturn.setReceivedAt(now);
+        }
 
-
-        storeReturn.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-
-        storeReturnRepository.save(
-                storeReturn
-        );
+        storeReturnRepository.save(storeReturn);
     }
 
+    private void postInventoryIfNeeded(
+            StoreReturns storeReturn,
+            StoreReturnItems item,
+            Users user
+    ) {
+        if (Boolean.TRUE.equals(item.getInventoryPosted())) {
+            return;
+        }
+
+        int quantity = item.getReceivedQuantity() != null
+                ? item.getReceivedQuantity()
+                : 0;
+
+        if (quantity <= 0) {
+            item.setInventoryPosted(true);
+            storeReturnItemRepository.save(item);
+            return;
+        }
+
+        switch (item.getConditionStatus()) {
+            case NORMAL -> {
+                WarehouseLocations normalLocation =
+                        locationService.getNormalLocation(
+                                storeReturn.getWarehouse().getId()
+                        );
+
+                inventoryService.addAvailableInventory(
+                        storeReturn,
+                        item,
+                        normalLocation,
+                        quantity,
+                        user
+                );
+            }
+
+            case QUARANTINE, DAMAGED, EXPIRED -> {
+                WarehouseLocations quarantine =
+                        locationService.getQuarantineLocation(
+                                storeReturn.getWarehouse().getId()
+                        );
+
+                inventoryService.addQuarantineInventory(
+                        storeReturn,
+                        item,
+                        quarantine,
+                        quantity,
+                        user
+                );
+            }
+        }
+
+        item.setInventoryPosted(true);
+        storeReturnItemRepository.save(item);
+    }
 
     // =====================================================
     // GENERATE DISCREPANCY CODE
@@ -914,6 +1004,8 @@ public class StoreReturnInspectionService {
                 manager,
                 storeReturn
         );
+
+        requireRole(manager, "WAREHOUSE_MANAGER");
 
         DiscrepancyReports report =
                 discrepancyReportRepository
@@ -1005,6 +1097,8 @@ public class StoreReturnInspectionService {
                 storeReturn
         );
 
+        requireRole(manager, "WAREHOUSE_MANAGER");
+
         DiscrepancyReports report =
                 discrepancyReportRepository
                         .findById(discrepancyId)
@@ -1054,6 +1148,135 @@ public class StoreReturnInspectionService {
                 report
         );
     }
+    @Transactional
+    public void confirmByStore(
+            Long returnId,
+            Long discrepancyId,
+            String note
+    ) {
+        StoreReturns storeReturn = validationService.getReturn(returnId);
+        Users storeManager = validationService.getCurrentUser();
+
+        requireRole(storeManager, "STORE_MANAGER");
+        validateStoreUser(storeManager, storeReturn);
+
+        DiscrepancyReports report = discrepancyReportRepository
+                .findById(discrepancyId)
+                .orElseThrow(() -> new NotFound(
+                        "Discrepancy not found: " + discrepancyId
+                ));
+
+        validateStoreReturnDiscrepancy(storeReturn, report);
+
+        if (!"STORE_MANAGER".equals(report.getResponsibleParty())) {
+            throw new BadRequest(
+                    "This discrepancy is not waiting for Store Manager confirmation"
+            );
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        report.setStatus(DiscrepancyStatus.RESOLVED);
+        report.setResolvedBy(storeManager);
+        report.setResolvedAt(now);
+        report.setResolutionNote(note);
+        discrepancyReportRepository.save(report);
+    }
+
+    @Transactional
+    public void rejectAndEscalateToBusiness(
+            Long returnId,
+            Long discrepancyId,
+            String reason
+    ) {
+        StoreReturns storeReturn = validationService.getReturn(returnId);
+        Users storeManager = validationService.getCurrentUser();
+
+        requireRole(storeManager, "STORE_MANAGER");
+        validateStoreUser(storeManager, storeReturn);
+
+        DiscrepancyReports report = discrepancyReportRepository
+                .findById(discrepancyId)
+                .orElseThrow(() -> new NotFound(
+                        "Discrepancy not found: " + discrepancyId
+                ));
+
+        validateStoreReturnDiscrepancy(storeReturn, report);
+
+        report.setResponsibleParty("BUSINESS_MANAGER");
+        report.setStatus(DiscrepancyStatus.INVESTIGATING);
+        report.setReviewedBy(storeManager);
+        report.setReviewedAt(LocalDateTime.now());
+        report.setResolutionNote(reason);
+        discrepancyReportRepository.save(report);
+    }
+
+    @Transactional
+    public void resolveAsBusiness(
+            Long returnId,
+            Long discrepancyId,
+            String decision
+    ) {
+        StoreReturns storeReturn = validationService.getReturn(returnId);
+        Users businessManager = validationService.getCurrentUser();
+
+        requireRole(businessManager, "BUSINESS_MANAGER");
+
+        DiscrepancyReports report = discrepancyReportRepository
+                .findById(discrepancyId)
+                .orElseThrow(() -> new NotFound(
+                        "Discrepancy not found: " + discrepancyId
+                ));
+
+        validateStoreReturnDiscrepancy(storeReturn, report);
+
+        if (!"BUSINESS_MANAGER".equals(report.getResponsibleParty())) {
+            throw new BadRequest(
+                    "This discrepancy has not been escalated to Business Manager"
+            );
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        report.setStatus(DiscrepancyStatus.RESOLVED);
+        report.setReviewedBy(businessManager);
+        report.setReviewedAt(now);
+        report.setResolvedBy(businessManager);
+        report.setResolvedAt(now);
+        report.setResolutionNote(decision);
+        discrepancyReportRepository.save(report);
+    }
+
+    private void validateStoreUser(
+            Users storeUser,
+            StoreReturns storeReturn
+    ) {
+        if (storeUser.getWarehouse() == null
+                || storeReturn.getStore() == null
+                || !storeUser.getWarehouse().getId()
+                .equals(storeReturn.getStore().getId())) {
+            throw new Forbidden(
+                    "Store Return does not belong to your store"
+            );
+        }
+    }
+
+    private void requireRole(Users user, String roleName) {
+        boolean matched = userRoleRepository
+                .findByUser_Id(user.getId())
+                .stream()
+                .anyMatch(userRole ->
+                        userRole.getRole() != null
+                                && roleName.equals(
+                                userRole.getRole().getRoleName()
+                        )
+                );
+
+        if (!matched) {
+            throw new Forbidden(
+                    "Required role: " + roleName
+            );
+        }
+    }
+
     private void validateStoreReturnDiscrepancy(
             StoreReturns storeReturn,
             DiscrepancyReports report
@@ -1270,6 +1493,8 @@ public class StoreReturnInspectionService {
                         storeReturn
                 );
 
+        requireRole(manager, "WAREHOUSE_MANAGER");
+
         if (
                 storeReturn.getStatus()
                         != StoreReturnStatus.PENDING_CONFIRMATION
@@ -1290,19 +1515,15 @@ public class StoreReturnInspectionService {
         boolean hasUnresolved =
                 reports.stream()
                         .anyMatch(report ->
-                                report.getStatus()
-                                        == DiscrepancyStatus.OPEN
-
-                                        ||
-
-                                        report.getStatus()
-                                                == DiscrepancyStatus.INVESTIGATING
+                                Boolean.TRUE.equals(report.getBlocking())
+                                        && (report.getStatus() == DiscrepancyStatus.OPEN
+                                        || report.getStatus() == DiscrepancyStatus.INVESTIGATING)
                         );
 
         if (hasUnresolved) {
 
             throw new BadRequest(
-                    "Store return still has unresolved discrepancies"
+                    "Store return still has unresolved MAJOR discrepancies"
             );
         }
 
@@ -1312,58 +1533,12 @@ public class StoreReturnInspectionService {
                                 returnId
                         );
 
-        for (
-                StoreReturnItems item
-                : items
-        ) {
-
-            switch (
-                    item.getConditionStatus()
-            ) {
-
-                case NORMAL -> {
-
-                    WarehouseLocations normalLocation =
-                            locationService
-                                    .getNormalLocation(
-                                            storeReturn
-                                                    .getWarehouse()
-                                                    .getId()
-                                    );
-
-                    inventoryService
-                            .addAvailableInventory(
-                                    storeReturn,
-                                    item,
-                                    normalLocation,
-                                    item.getReceivedQuantity(),
-                                    manager
-                            );
-                }
-
-
-                case QUARANTINE,
-                     DAMAGED,
-                     EXPIRED -> {
-
-                    WarehouseLocations quarantine =
-                            locationService
-                                    .getQuarantineLocation(
-                                            storeReturn
-                                                    .getWarehouse()
-                                                    .getId()
-                                    );
-
-                    inventoryService
-                            .addQuarantineInventory(
-                                    storeReturn,
-                                    item,
-                                    quarantine,
-                                    item.getReceivedQuantity(),
-                                    manager
-                            );
-                }
-            }
+        for (StoreReturnItems item : items) {
+            postInventoryIfNeeded(
+                    storeReturn,
+                    item,
+                    manager
+            );
         }
 
         storeReturn.setStatus(

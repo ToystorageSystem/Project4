@@ -1,7 +1,7 @@
 package com.toystorage.backend.entity.receipts;
 
-import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.entity.products.Products;
+import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.enums.inventories.DiscrepancyType;
 import jakarta.persistence.*;
 import lombok.*;

@@ -2,11 +2,10 @@ package com.toystorage.backend.services.stores.returns;
 
 import com.toystorage.backend.dto.request.stores.returns.InspectReturnedItemRequest;
 import com.toystorage.backend.dto.request.stores.returns.ReturnedPackageScanRequest;
-
+import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.dto.response.stores.returns.ReturnedGoodsDetailResponse;
 import com.toystorage.backend.dto.response.stores.returns.ReturnedPackageResponse;
 
-import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.entity.packages.Packages;
 import com.toystorage.backend.entity.stores.StoreReturnItems;
 import com.toystorage.backend.entity.stores.StoreReturns;
@@ -912,8 +911,8 @@ public class ReturnedGoodsInspectionService {
                 );
 
 
-        DiscrepancyReports report =
-                DiscrepancyReports
+        com.toystorage.backend.entity.inventories.DiscrepancyReports report =
+                com.toystorage.backend.entity.inventories.DiscrepancyReports
                         .builder()
 
                         .reportCode(

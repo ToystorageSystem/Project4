@@ -2,26 +2,26 @@ package com.toystorage.backend.services.inventories.discrepancy;
 
 import com.toystorage.backend.dto.request.inventories.discrepancy.EscalateDiscrepancyRequest;
 import com.toystorage.backend.dto.request.inventories.discrepancy.ResolveDiscrepancyRequest;
+import com.toystorage.backend.dto.request.inventories.discrepancy.UpdateAcceptedQuantityRequest;
 import com.toystorage.backend.dto.response.inventories.discrepancy.DiscrepancyItemResponse;
 import com.toystorage.backend.dto.response.inventories.discrepancy.DiscrepancyReportResponse;
-import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository;
-import com.toystorage.backend.services.receipts.incidents.ReceivingIncidentReportService;
-import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import com.toystorage.backend.entity.inventories.DiscrepancyReports;
+import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.receipts.ReceiptInspections;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.WarehouseTaskClaim;
 import com.toystorage.backend.enums.inventories.DiscrepancyReferenceType;
+import com.toystorage.backend.enums.inventories.DiscrepancySeverity;
 import com.toystorage.backend.enums.inventories.DiscrepancyStatus;
 import com.toystorage.backend.enums.inventories.DiscrepancyType;
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.mapper.inventories.discrepancy.DiscrepancyReportMapper;
 import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyReportRepository;
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository;
 import com.toystorage.backend.repository.receipts.receiving.ReceiptInspectionRepository;
-import com.toystorage.backend.dto.request.inventories.discrepancy.UpdateAcceptedQuantityRequest;
-
+import com.toystorage.backend.services.receipts.incidents.ReceivingIncidentReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,29 +41,13 @@ public class ReceivingDiscrepancyService {
     private final DiscrepancyResolutionService resolutionService;
     private final GoodsReceiptItemRepository goodsReceiptItemRepository;
     private final ReceivingIncidentReportService receivingIncidentReportService;
+    private final DiscrepancySeverityPolicy discrepancySeverityPolicy;
 
     @Transactional(readOnly = true)
-    public List<DiscrepancyReportResponse>
-    getReceivingDiscrepancies() {
+    public List<DiscrepancyReportResponse> getReceivingDiscrepancies() {
+        Users manager = validationService.getCurrentUser();
+        Long warehouseId = validationService.getWarehouseId(manager);
 
-        Users manager =
-                validationService.getCurrentUser();
-
-        Long warehouseId =
-                validationService.getWarehouseId(
-                        manager
-                );
-
-        /*
-         * Warehouse Manager cần thấy:
-         *
-         * OPEN
-         * INVESTIGATING
-         * RESOLVED
-         *
-         * để frontend không hiểu nhầm
-         * RESOLVED thành "report missing".
-         */
         return discrepancyReportRepository
                 .findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
                         warehouseId,
@@ -74,27 +58,16 @@ public class ReceivingDiscrepancyService {
                         )
                 )
                 .stream()
-                .filter(
-                        report ->
-                                report.getReferenceType()
-                                        == DiscrepancyReferenceType.GOODS_RECEIPT
-                )
+                .filter(report -> report.getReferenceType()
+                        == DiscrepancyReferenceType.GOODS_RECEIPT)
                 .map(this::buildResponse)
                 .toList();
     }
+
     @Transactional(readOnly = true)
-    public List<DiscrepancyReportResponse>
-    getByReceipt(
-            Long receiptId
-    ) {
-
-        Users manager =
-                validationService.getCurrentUser();
-
-        Long warehouseId =
-                validationService.getWarehouseId(
-                        manager
-                );
+    public List<DiscrepancyReportResponse> getByReceipt(Long receiptId) {
+        Users manager = validationService.getCurrentUser();
+        Long warehouseId = validationService.getWarehouseId(manager);
 
         return discrepancyReportRepository
                 .findByReferenceTypeAndReferenceId(
@@ -102,30 +75,16 @@ public class ReceivingDiscrepancyService {
                         receiptId
                 )
                 .stream()
-                .filter(
-                        report ->
-                                report.getWarehouse() != null
-                                        &&
-                                        report.getWarehouse()
-                                                .getId()
-                                                .equals(
-                                                        warehouseId
-                                                )
-                )
+                .filter(report -> report.getWarehouse() != null
+                        && report.getWarehouse().getId().equals(warehouseId))
                 .map(this::buildResponse)
                 .toList();
     }
+
     @Transactional(readOnly = true)
-    public List<DiscrepancyReportResponse>
-    getBusinessQueue() {
-
-        Users user =
-                validationService.getCurrentUser();
-
-        Long warehouseId =
-                validationService.getWarehouseId(
-                        user
-                );
+    public List<DiscrepancyReportResponse> getBusinessQueue() {
+        Users user = validationService.getCurrentUser();
+        Long warehouseId = validationService.getWarehouseId(user);
 
         return discrepancyReportRepository
                 .findByWarehouseIdAndResponsiblePartyAndStatusOrderByCreatedAtDesc(
@@ -134,25 +93,16 @@ public class ReceivingDiscrepancyService {
                         DiscrepancyStatus.INVESTIGATING
                 )
                 .stream()
-                .filter(
-                        report ->
-                                report.getReferenceType()
-                                        == DiscrepancyReferenceType.GOODS_RECEIPT
-                )
+                .filter(report -> report.getReferenceType()
+                        == DiscrepancyReferenceType.GOODS_RECEIPT)
                 .map(this::buildResponse)
                 .toList();
     }
+
     @Transactional(readOnly = true)
-    public List<DiscrepancyReportResponse>
-    getResolvedReports() {
-
-        Users user =
-                validationService.getCurrentUser();
-
-        Long warehouseId =
-                validationService.getWarehouseId(
-                        user
-                );
+    public List<DiscrepancyReportResponse> getResolvedReports() {
+        Users user = validationService.getCurrentUser();
+        Long warehouseId = validationService.getWarehouseId(user);
 
         return discrepancyReportRepository
                 .findByWarehouseIdAndStatusOrderByCreatedAtDesc(
@@ -160,14 +110,12 @@ public class ReceivingDiscrepancyService {
                         DiscrepancyStatus.RESOLVED
                 )
                 .stream()
-                .filter(
-                        report ->
-                                report.getReferenceType()
-                                        == DiscrepancyReferenceType.GOODS_RECEIPT
-                )
+                .filter(report -> report.getReferenceType()
+                        == DiscrepancyReferenceType.GOODS_RECEIPT)
                 .map(this::buildResponse)
                 .toList();
     }
+
     @Transactional(readOnly = true)
     public DiscrepancyReportResponse getDiscrepancy(Long discrepancyId) {
         DiscrepancyReports report = getReport(discrepancyId);
@@ -192,42 +140,53 @@ public class ReceivingDiscrepancyService {
         report.setReviewedBy(manager);
         report.setReviewedAt(LocalDateTime.now());
         report.setResponsibleParty("WAREHOUSE_MANAGER");
+
         return buildResponse(discrepancyReportRepository.save(report));
     }
 
     @Transactional
     public DiscrepancyReportResponse acceptActualQuantity(
             Long discrepancyId,
-            ResolveDiscrepancyRequest request) {
-
+            ResolveDiscrepancyRequest request
+    ) {
         DiscrepancyReports report = getReport(discrepancyId);
         Users manager = validationService.getCurrentUser();
         validationService.validateSameWarehouse(manager, report);
         validationService.validateGoodsReceipt(report);
 
-        return buildResponse(resolutionService.acceptActualQuantity(
-                report, manager, request.getResolutionNote()));
+        return buildResponse(
+                resolutionService.acceptActualQuantity(
+                        report,
+                        manager,
+                        request.getResolutionNote()
+                )
+        );
     }
 
     @Transactional
     public DiscrepancyReportResponse requestRecount(
             Long discrepancyId,
-            ResolveDiscrepancyRequest request) {
-
+            ResolveDiscrepancyRequest request
+    ) {
         DiscrepancyReports report = getReport(discrepancyId);
         Users manager = validationService.getCurrentUser();
         validationService.validateSameWarehouse(manager, report);
         validationService.validateGoodsReceipt(report);
 
-        return buildResponse(resolutionService.requestRecount(
-                report, manager, request.getResolutionNote()));
+        return buildResponse(
+                resolutionService.requestRecount(
+                        report,
+                        manager,
+                        request.getResolutionNote()
+                )
+        );
     }
 
     @Transactional
     public DiscrepancyReportResponse escalateToBusinessManager(
             Long discrepancyId,
-            EscalateDiscrepancyRequest request) {
-
+            EscalateDiscrepancyRequest request
+    ) {
         DiscrepancyReports report = getReport(discrepancyId);
         Users manager = validationService.getCurrentUser();
         validationService.validateSameWarehouse(manager, report);
@@ -247,12 +206,16 @@ public class ReceivingDiscrepancyService {
         return buildResponse(discrepancyReportRepository.save(report));
     }
 
+    /**
+     * Synchronize discrepancy reports from the latest completed inspection.
+     * A newer attempt supersedes unresolved reports from the previous attempt.
+     */
     @Transactional
     public void syncFromFinishedInspection(
             GoodsReceipts receipt,
             WarehouseTaskClaim taskClaim,
-            Users staff) {
-
+            Users staff
+    ) {
         if (receipt == null || receipt.getId() == null) {
             throw new BadRequest("Goods receipt is required");
         }
@@ -267,17 +230,20 @@ public class ReceivingDiscrepancyService {
                                 && !"MATCHED".equals(i.getInspectedResult().name()))
                         .toList();
 
-        // A new attempt supersedes unresolved reports from the previous attempt.
         List<DiscrepancyReports> previous =
                 discrepancyReportRepository.findByReferenceTypeAndReferenceId(
-                        DiscrepancyReferenceType.GOODS_RECEIPT, receipt.getId());
+                        DiscrepancyReferenceType.GOODS_RECEIPT,
+                        receipt.getId()
+                );
 
         for (DiscrepancyReports old : previous) {
             if (old.getStatus() == DiscrepancyStatus.OPEN
                     || old.getStatus() == DiscrepancyStatus.INVESTIGATING) {
                 old.setStatus(DiscrepancyStatus.RESOLVED);
                 old.setResponsibleParty("SYSTEM");
-                old.setResolutionNote("Superseded by a newer receiving inspection attempt");
+                old.setResolutionNote(
+                        "Superseded by a newer receiving inspection attempt"
+                );
                 old.setResolvedBy(staff);
                 old.setResolvedAt(LocalDateTime.now());
                 discrepancyReportRepository.save(old);
@@ -285,123 +251,136 @@ public class ReceivingDiscrepancyService {
         }
 
         for (ReceiptInspections inspection : problems) {
-            DiscrepancyType type = toDiscrepancyType(
-                    inspection.getInspectedResult().name());
-
-            Long productId =
-                    inspection.getProduct() != null
-                            ? inspection.getProduct().getId()
-                            : null;
+            Long productId = inspection.getProduct() != null
+                    ? inspection.getProduct().getId()
+                    : null;
 
             if (productId == null) {
-                throw new BadRequest(
-                        "Inspection product is required"
-                );
+                throw new BadRequest("Inspection product is required");
             }
 
-            boolean exists =
-                    discrepancyReportRepository
-                            .existsByReferenceTypeAndReferenceIdAndProductIdAndDiscrepancyTypeAndStatusIn(
-                                    DiscrepancyReferenceType.GOODS_RECEIPT,
-                                    receipt.getId(),
-                                    productId,
-                                    type,
-                                    List.of(
-                                            DiscrepancyStatus.OPEN,
-                                            DiscrepancyStatus.INVESTIGATING
-                                    )
-                            );
+            GoodsReceiptItems receiptItem = goodsReceiptItemRepository
+                    .findByGoodsReceiptIdAndProductId(
+                            receipt.getId(),
+                            productId
+                    )
+                    .orElseThrow(() -> new NotFound(
+                            "Goods receipt item not found for product " + productId
+                    ));
+
+            DiscrepancyType type = toDiscrepancyType(
+                    inspection.getInspectedResult().name()
+            );
+
+            boolean exists = discrepancyReportRepository
+                    .existsByReferenceTypeAndReferenceIdAndProductIdAndDiscrepancyTypeAndStatusIn(
+                            DiscrepancyReferenceType.GOODS_RECEIPT,
+                            receipt.getId(),
+                            productId,
+                            type,
+                            List.of(
+                                    DiscrepancyStatus.OPEN,
+                                    DiscrepancyStatus.INVESTIGATING
+                            )
+                    );
 
             if (exists) {
                 continue;
             }
 
+            int damaged = receiptItem.getDamagedQuantity() != null
+                    ? receiptItem.getDamagedQuantity()
+                    : 0;
+
+            DiscrepancySeverity severity = discrepancySeverityPolicy.determine(
+                    inspection.getExpectedQuantity(),
+                    inspection.getActualQuantity(),
+                    damaged
+            );
+
             String code = generateReportCode();
 
-            DiscrepancyReports report =
-                    DiscrepancyReports.builder()
-                            .reportCode(code)
-                            .discrepancyReportsCode(code)
-
-                            .referenceType(
-                                    DiscrepancyReferenceType.GOODS_RECEIPT
-                            )
-
-                            .referenceId(
-                                    receipt.getId()
-                            )
-
-                            .productId(
-                                    productId
-                            )
-
-                            .warehouse(
-                                    receipt.getWarehouse()
-                            )
-
-                            .discrepancyType(
-                                    type
-                            )
-
-                            .status(
-                                    DiscrepancyStatus.OPEN
-                            )
-
-                            .reportedBy(
-                                    staff
-                            )
-
-                            .responsibleParty(
-                                    "WAREHOUSE_MANAGER"
-                            )
-
-                            .description(
-                                    buildDescription(
-                                            inspection
-                                    )
-                            )
-
-                            .build();
+            DiscrepancyReports report = DiscrepancyReports.builder()
+                    .reportCode(code)
+                    .discrepancyReportsCode(code)
+                    .referenceType(DiscrepancyReferenceType.GOODS_RECEIPT)
+                    .referenceId(receipt.getId())
+                    .productId(productId)
+                    .warehouse(receipt.getWarehouse())
+                    .discrepancyType(type)
+                    .severity(severity)
+                    .blocking(discrepancySeverityPolicy.isBlocking(severity))
+                    .status(DiscrepancyStatus.OPEN)
+                    .reportedBy(staff)
+                    .responsibleParty("WAREHOUSE_MANAGER")
+                    .description(buildDescription(inspection))
+                    .build();
 
             discrepancyReportRepository.save(report);
         }
     }
 
+    /**
+     * Only unresolved MAJOR reports block receiving confirmation.
+     * MINOR reports stay open for later manager review.
+     */
     @Transactional(readOnly = true)
     public void assertCanConfirm(Long receiptId) {
-        boolean unresolved =
+        boolean blockingUnresolved =
                 discrepancyReportRepository
                         .findByReferenceTypeAndReferenceId(
                                 DiscrepancyReferenceType.GOODS_RECEIPT,
-                                receiptId)
+                                receiptId
+                        )
                         .stream()
                         .anyMatch(r ->
-                                r.getStatus() == DiscrepancyStatus.OPEN
-                                        || r.getStatus() == DiscrepancyStatus.INVESTIGATING);
+                                Boolean.TRUE.equals(r.getBlocking())
+                                        && (r.getStatus() == DiscrepancyStatus.OPEN
+                                        || r.getStatus() == DiscrepancyStatus.INVESTIGATING)
+                        );
 
-        if (unresolved) {
+        if (blockingUnresolved) {
             throw new BadRequest(
-                    "Receiving cannot be confirmed while discrepancy is unresolved");
+                    "Receiving cannot be confirmed while MAJOR discrepancy is unresolved"
+            );
         }
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasBlockingUnresolved(Long receiptId) {
+        return discrepancyReportRepository
+                .findByReferenceTypeAndReferenceId(
+                        DiscrepancyReferenceType.GOODS_RECEIPT,
+                        receiptId
+                )
+                .stream()
+                .anyMatch(r ->
+                        Boolean.TRUE.equals(r.getBlocking())
+                                && (r.getStatus() == DiscrepancyStatus.OPEN
+                                || r.getStatus() == DiscrepancyStatus.INVESTIGATING)
+                );
     }
 
     @Transactional
     public void markReinspectionRequested(
             Long receiptId,
             Users manager,
-            String reason) {
-
+            String reason
+    ) {
         if (reason == null || reason.isBlank()) {
             throw new BadRequest("Re-inspection reason is required");
         }
 
         List<DiscrepancyReports> reports =
                 discrepancyReportRepository.findByReferenceTypeAndReferenceId(
-                        DiscrepancyReferenceType.GOODS_RECEIPT, receiptId);
+                        DiscrepancyReferenceType.GOODS_RECEIPT,
+                        receiptId
+                );
 
         for (DiscrepancyReports report : reports) {
-            if (report.getStatus() == DiscrepancyStatus.OPEN
-                    || report.getStatus() == DiscrepancyStatus.INVESTIGATING) {
+            if (Boolean.TRUE.equals(report.getBlocking())
+                    && (report.getStatus() == DiscrepancyStatus.OPEN
+                    || report.getStatus() == DiscrepancyStatus.INVESTIGATING)) {
 
                 validationService.validateSameWarehouse(manager, report);
                 validationService.validateGoodsReceipt(report);
@@ -414,6 +393,81 @@ public class ReceivingDiscrepancyService {
                 discrepancyReportRepository.save(report);
             }
         }
+    }
+
+    @Transactional
+    public DiscrepancyReportResponse updateAcceptedQuantity(
+            Long discrepancyId,
+            Long productId,
+            UpdateAcceptedQuantityRequest request
+    ) {
+        DiscrepancyReports report = getReport(discrepancyId);
+        Users manager = validationService.getCurrentUser();
+
+        validationService.validateSameWarehouse(manager, report);
+        validationService.validateGoodsReceipt(report);
+
+        if (report.getStatus() == DiscrepancyStatus.RESOLVED
+                || report.getStatus() == DiscrepancyStatus.CANCELLED) {
+            throw new BadRequest("Resolved discrepancy cannot be modified");
+        }
+
+        if (!productId.equals(report.getProductId())) {
+            throw new BadRequest(
+                    "Product does not belong to this discrepancy report"
+            );
+        }
+
+        Integer acceptedQuantity = request.getAcceptedQuantity();
+        if (acceptedQuantity == null || acceptedQuantity < 0) {
+            throw new BadRequest("Accepted quantity cannot be negative");
+        }
+
+        String reason = request.getReason() == null
+                ? ""
+                : request.getReason().trim();
+        if (reason.isEmpty()) {
+            throw new BadRequest("Resolution reason is required");
+        }
+
+        Long receiptId = report.getReferenceId();
+
+        GoodsReceiptItems receiptItem = goodsReceiptItemRepository
+                .findByGoodsReceiptIdAndProductId(
+                        receiptId,
+                        productId
+                )
+                .orElseThrow(() -> new NotFound(
+                        "Goods receipt item not found for receipt "
+                                + receiptId
+                                + " and product "
+                                + productId
+                ));
+
+        receiptItem.setAcceptedQuantity(acceptedQuantity);
+        goodsReceiptItemRepository.save(receiptItem);
+
+        LocalDateTime now = LocalDateTime.now();
+        report.setReviewedBy(manager);
+        if (report.getReviewedAt() == null) {
+            report.setReviewedAt(now);
+        }
+        report.setResolvedBy(manager);
+        report.setResolvedAt(now);
+        report.setResolutionNote(reason);
+        report.setResponsibleParty("WAREHOUSE_MANAGER");
+        report.setStatus(DiscrepancyStatus.RESOLVED);
+
+        DiscrepancyReports saved = discrepancyReportRepository.save(report);
+
+        receivingIncidentReportService.generateFromWarehouseAccept(
+                saved,
+                receiptItem,
+                manager,
+                request
+        );
+
+        return buildResponse(saved);
     }
 
     private DiscrepancyType toDiscrepancyType(String result) {
@@ -436,43 +490,31 @@ public class ReceivingDiscrepancyService {
     }
 
     private String generateReportCode() {
-        return "DR-" + UUID.randomUUID()
+        return "DR-GR-" + UUID.randomUUID()
                 .toString()
                 .replace("-", "")
-                .substring(0, 12)
+                .substring(0, 10)
                 .toUpperCase();
     }
 
-    private DiscrepancyReportResponse buildResponse(DiscrepancyReports report) {
+    private DiscrepancyReportResponse buildResponse(
+            DiscrepancyReports report
+    ) {
         List<DiscrepancyItemResponse> items = List.of();
 
-        if (
-                report.getReferenceType()
-                        == DiscrepancyReferenceType.GOODS_RECEIPT
-        ) {
-
-            items =
-                    getProblemInspections(
-                            report.getReferenceId()
+        if (report.getReferenceType()
+                == DiscrepancyReferenceType.GOODS_RECEIPT) {
+            items = getProblemInspections(report.getReferenceId())
+                    .stream()
+                    .filter(inspection ->
+                            report.getProductId() != null
+                                    && inspection.getProduct() != null
+                                    && report.getProductId().equals(
+                                    inspection.getProduct().getId()
+                            )
                     )
-                            .stream()
-                            .filter(
-                                    inspection ->
-                                            report.getProductId() != null
-                                                    &&
-                                                    inspection.getProduct() != null
-                                                    &&
-                                                    report.getProductId()
-                                                            .equals(
-                                                                    inspection
-                                                                            .getProduct()
-                                                                            .getId()
-                                                            )
-                            )
-                            .map(
-                                    discrepancyReportMapper::toItemResponse
-                            )
-                            .toList();
+                    .map(discrepancyReportMapper::toItemResponse)
+                    .toList();
         }
 
         Users reviewedBy = report.getReviewedBy();
@@ -481,17 +523,42 @@ public class ReceivingDiscrepancyService {
         return DiscrepancyReportResponse.builder()
                 .id(report.getId())
                 .reportCode(report.getReportCode())
-                .discrepancyType(report.getDiscrepancyType().name())
-                .status(report.getStatus().name())
-                .description(report.getDescription())
-                .goodsReceiptId(report.getReferenceId())
-                .productId(
-                        report.getProductId()
+                .referenceType(
+                        report.getReferenceType() != null
+                                ? report.getReferenceType().name()
+                                : null
                 )
-                .warehouseId(report.getWarehouse().getId())
+                .referenceId(report.getReferenceId())
+                .goodsReceiptId(report.getReferenceId())
+                .discrepancyType(
+                        report.getDiscrepancyType() != null
+                                ? report.getDiscrepancyType().name()
+                                : null
+                )
+                .severity(
+                        report.getSeverity() != null
+                                ? report.getSeverity().name()
+                                : "MINOR"
+                )
+                .blocking(Boolean.TRUE.equals(report.getBlocking()))
+                .status(
+                        report.getStatus() != null
+                                ? report.getStatus().name()
+                                : null
+                )
+                .description(report.getDescription())
+                .productId(report.getProductId())
+                .warehouseId(
+                        report.getWarehouse() != null
+                                ? report.getWarehouse().getId()
+                                : null
+                )
                 .responsibleParty(report.getResponsibleParty())
-                .resolutionAction(report.getResolutionAction() != null
-                        ? report.getResolutionAction().name() : null)
+                .resolutionAction(
+                        report.getResolutionAction() != null
+                                ? report.getResolutionAction().name()
+                                : null
+                )
                 .resolutionNote(report.getResolutionNote())
                 .reviewedBy(reviewedBy != null ? reviewedBy.getId() : null)
                 .reviewedByName(reviewedBy != null ? reviewedBy.getName() : null)
@@ -514,144 +581,8 @@ public class ReceivingDiscrepancyService {
 
     private DiscrepancyReports getReport(Long discrepancyId) {
         return discrepancyReportRepository.findById(discrepancyId)
-                .orElseThrow(() ->
-                        new NotFound("Discrepancy report not found: " + discrepancyId));
-    }
-    @Transactional
-    public DiscrepancyReportResponse updateAcceptedQuantity(
-            Long discrepancyId,
-            Long productId,
-            UpdateAcceptedQuantityRequest request
-    ) {
-
-        DiscrepancyReports report =
-                getReport(discrepancyId);
-
-        Users manager =
-                validationService.getCurrentUser();
-
-        validationService.validateSameWarehouse(
-                manager,
-                report
-        );
-
-        validationService.validateGoodsReceipt(
-                report
-        );
-
-        if (report.getStatus() == DiscrepancyStatus.RESOLVED
-                || report.getStatus() == DiscrepancyStatus.CANCELLED) {
-
-            throw new BadRequest(
-                    "Resolved discrepancy cannot be modified"
-            );
-        }
-
-        if (report.getReferenceType()
-                != DiscrepancyReferenceType.GOODS_RECEIPT) {
-
-            throw new BadRequest(
-                    "Discrepancy is not associated with a goods receipt"
-            );
-        }
-
-        Integer acceptedQuantity =
-                request.getAcceptedQuantity();
-
-        if (acceptedQuantity == null
-                || acceptedQuantity < 0) {
-
-            throw new BadRequest(
-                    "Accepted quantity cannot be negative"
-            );
-        }
-
-        String reason =
-                request.getReason() == null
-                        ? ""
-                        : request.getReason().trim();
-
-        if (reason.isEmpty()) {
-            throw new BadRequest(
-                    "Resolution reason is required"
-            );
-        }
-
-        Long receiptId =
-                report.getReferenceId();
-
-        GoodsReceiptItems receiptItem =
-                goodsReceiptItemRepository
-                        .findByGoodsReceiptIdAndProductId(
-                                receiptId,
-                                productId
-                        )
-                        .orElseThrow(
-                                () -> new NotFound(
-                                        "Goods receipt item not found"
-                                                + " for receipt "
-                                                + receiptId
-                                                + " and product "
-                                                + productId
-                                )
-                        );
-
-        /*
-         * IMPORTANT:
-         *
-         * actualQuantity:
-         * Staff inspection result.
-         * DO NOT CHANGE.
-         *
-         * acceptedQuantity:
-         * Manager decision.
-         */
-        receiptItem.setAcceptedQuantity(
-                acceptedQuantity
-        );
-
-        goodsReceiptItemRepository.save(
-                receiptItem
-        );
-
-        LocalDateTime now =
-                LocalDateTime.now();
-
-        /*
-         * Manager has reviewed and resolved
-         * this discrepancy.
-         */
-        report.setReviewedBy(manager);
-
-        if (report.getReviewedAt() == null) {
-            report.setReviewedAt(now);
-        }
-
-        report.setResolvedBy(manager);
-        report.setResolvedAt(now);
-
-        report.setResolutionNote(reason);
-
-        report.setResponsibleParty(
-                "WAREHOUSE_MANAGER"
-        );
-
-        report.setStatus(
-                DiscrepancyStatus.RESOLVED
-        );
-
-        DiscrepancyReports saved =
-                discrepancyReportRepository.save(
-                        report
-                );
-        receivingIncidentReportService
-                .generateFromWarehouseAccept(
-                        saved,
-                        receiptItem,
-                        manager,
-                        request
-                );
-
-        return buildResponse(saved);
+                .orElseThrow(() -> new NotFound(
+                        "Discrepancy report not found: " + discrepancyId
+                ));
     }
 }

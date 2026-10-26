@@ -13,37 +13,40 @@ import java.util.List;
 public class DiscrepancyReportResponse {
 
     private Long id;
-
     private String reportCode;
 
-    private String discrepancyType;
+    /*
+     * GOODS_RECEIPT = receiving from supplier
+     * STORE_RETURN  = store returns to warehouse
+     */
+    private String referenceType;
+    private Long referenceId;
 
-    private String status;
-
-    private String description;
-
+    /*
+     * Backward compatibility for existing Receiving frontend/API.
+     * For STORE_RETURN this is null.
+     */
     private Long goodsReceiptId;
 
-    private Long productId;
+    private String discrepancyType;
+    private String severity;
+    private Boolean blocking;
+    private String status;
+    private String description;
 
+    private Long productId;
     private Long warehouseId;
 
     private String responsibleParty;
-
     private String resolutionAction;
-
     private String resolutionNote;
 
     private Long reviewedBy;
-
     private String reviewedByName;
-
     private LocalDateTime reviewedAt;
 
     private Long resolvedBy;
-
     private String resolvedByName;
-
     private LocalDateTime resolvedAt;
 
     private LocalDateTime createdAt;

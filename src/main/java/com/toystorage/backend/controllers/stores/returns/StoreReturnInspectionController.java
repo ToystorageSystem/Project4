@@ -1,15 +1,11 @@
 package com.toystorage.backend.controllers.stores.returns;
 
-
 import com.toystorage.backend.dto.request.stores.returns.InspectStoreReturnItemRequest;
-import com.toystorage.backend.dto.response.stores.returns.StoreReturnInspectionResponse;
 import com.toystorage.backend.dto.request.stores.returns.ResolveStoreReturnDiscrepancyRequest;
+import com.toystorage.backend.dto.response.stores.returns.StoreReturnInspectionResponse;
 import com.toystorage.backend.services.stores.returns.StoreReturnInspectionService;
-
 import jakarta.validation.Valid;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,128 +16,115 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StoreReturnInspectionController {
 
-    private final StoreReturnInspectionService
-            storeReturnInspectionService;
-
+    private final StoreReturnInspectionService storeReturnInspectionService;
 
     @GetMapping
-//    @PreAuthorize(
-//            "hasAuthority('STORE_RETURN_INSPECTION_VIEW')"
-//    )
-    public ResponseEntity<List<StoreReturnInspectionResponse>>
-    getStoreReturns() {
-
+    public ResponseEntity<List<StoreReturnInspectionResponse>> getStoreReturns() {
         return ResponseEntity.ok(
-                storeReturnInspectionService
-                        .getStoreReturns()
+                storeReturnInspectionService.getStoreReturns()
         );
     }
-
 
     @GetMapping("/{returnId}")
-//    @PreAuthorize(
-//            "hasAuthority('STORE_RETURN_INSPECTION_VIEW')"
-//    )
-    public ResponseEntity<StoreReturnInspectionResponse>
-    getStoreReturn(
+    public ResponseEntity<StoreReturnInspectionResponse> getStoreReturn(
             @PathVariable Long returnId
     ) {
-
         return ResponseEntity.ok(
-                storeReturnInspectionService
-                        .getStoreReturn(
-                                returnId
-                        )
+                storeReturnInspectionService.getStoreReturn(returnId)
         );
     }
 
-
-    @PatchMapping(
-            "/{returnId}/items/{itemId}/inspect"
-    )
-//    @PreAuthorize(
-//            "hasAuthority('STORE_RETURN_INSPECTION_HANDLE')"
-//    )
-    public ResponseEntity<StoreReturnInspectionResponse>
-    inspectItem(
+    @PatchMapping("/{returnId}/items/{itemId}/inspect")
+    public ResponseEntity<StoreReturnInspectionResponse> inspectItem(
             @PathVariable Long returnId,
             @PathVariable Long itemId,
-
-            @Valid
-            @RequestBody
-            InspectStoreReturnItemRequest request
+            @Valid @RequestBody InspectStoreReturnItemRequest request
     ) {
-
         return ResponseEntity.ok(
-                storeReturnInspectionService
-                        .inspectItem(
-                                returnId,
-                                itemId,
-                                request
-                        )
+                storeReturnInspectionService.inspectItem(
+                        returnId,
+                        itemId,
+                        request
+                )
         );
     }
-    @PatchMapping(
-            "/{returnId}/discrepancies/{discrepancyId}/warehouse"
-    )
-    public ResponseEntity<Void>
-    resolveAsWarehouse(
+
+    @PatchMapping("/{returnId}/discrepancies/{discrepancyId}/warehouse")
+    public ResponseEntity<Void> resolveAsWarehouse(
             @PathVariable Long returnId,
             @PathVariable Long discrepancyId,
-
-            @Valid
-            @RequestBody
-            ResolveStoreReturnDiscrepancyRequest request
+            @Valid @RequestBody ResolveStoreReturnDiscrepancyRequest request
     ) {
-
-        storeReturnInspectionService
-                .resolveAsWarehouse(
-                        returnId,
-                        discrepancyId,
-                        request.getReason()
-                );
-
-        return ResponseEntity
-                .noContent()
-                .build();
+        storeReturnInspectionService.resolveAsWarehouse(
+                returnId,
+                discrepancyId,
+                request.getReason()
+        );
+        return ResponseEntity.noContent().build();
     }
-    @PatchMapping(
-            "/{returnId}/discrepancies/{discrepancyId}/send-store"
-    )
-    public ResponseEntity<Void>
-    sendToStoreManager(
+
+    @PatchMapping("/{returnId}/discrepancies/{discrepancyId}/send-store")
+    public ResponseEntity<Void> sendToStoreManager(
             @PathVariable Long returnId,
             @PathVariable Long discrepancyId,
-
-            @Valid
-            @RequestBody
-            ResolveStoreReturnDiscrepancyRequest request
+            @Valid @RequestBody ResolveStoreReturnDiscrepancyRequest request
     ) {
-
-        storeReturnInspectionService
-                .sendToStoreManager(
-                        returnId,
-                        discrepancyId,
-                        request.getReason()
-                );
-
-        return ResponseEntity
-                .noContent()
-                .build();
+        storeReturnInspectionService.sendToStoreManager(
+                returnId,
+                discrepancyId,
+                request.getReason()
+        );
+        return ResponseEntity.noContent().build();
     }
-    @PatchMapping(
-            "/{returnId}/confirm"
-    )
-    public ResponseEntity<StoreReturnInspectionResponse>
-    confirmStoreReturn(
+
+    @PatchMapping("/{returnId}/discrepancies/{discrepancyId}/store-confirm")
+    public ResponseEntity<Void> confirmByStore(
+            @PathVariable Long returnId,
+            @PathVariable Long discrepancyId,
+            @Valid @RequestBody ResolveStoreReturnDiscrepancyRequest request
+    ) {
+        storeReturnInspectionService.confirmByStore(
+                returnId,
+                discrepancyId,
+                request.getReason()
+        );
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{returnId}/discrepancies/{discrepancyId}/store-reject")
+    public ResponseEntity<Void> rejectAndEscalateToBusiness(
+            @PathVariable Long returnId,
+            @PathVariable Long discrepancyId,
+            @Valid @RequestBody ResolveStoreReturnDiscrepancyRequest request
+    ) {
+        storeReturnInspectionService.rejectAndEscalateToBusiness(
+                returnId,
+                discrepancyId,
+                request.getReason()
+        );
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{returnId}/discrepancies/{discrepancyId}/business-resolve")
+    public ResponseEntity<Void> resolveAsBusiness(
+            @PathVariable Long returnId,
+            @PathVariable Long discrepancyId,
+            @Valid @RequestBody ResolveStoreReturnDiscrepancyRequest request
+    ) {
+        storeReturnInspectionService.resolveAsBusiness(
+                returnId,
+                discrepancyId,
+                request.getReason()
+        );
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{returnId}/confirm")
+    public ResponseEntity<StoreReturnInspectionResponse> confirmStoreReturn(
             @PathVariable Long returnId
     ) {
-
         return ResponseEntity.ok(
-                storeReturnInspectionService
-                        .confirmStoreReturn(
-                                returnId
-                        )
+                storeReturnInspectionService.confirmStoreReturn(returnId)
         );
     }
 }

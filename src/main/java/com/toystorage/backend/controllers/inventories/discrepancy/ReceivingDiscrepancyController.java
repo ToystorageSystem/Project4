@@ -3,9 +3,9 @@ package com.toystorage.backend.controllers.inventories.discrepancy;
 
 import com.toystorage.backend.dto.request.inventories.discrepancy.EscalateDiscrepancyRequest;
 import com.toystorage.backend.dto.request.inventories.discrepancy.ResolveDiscrepancyRequest;
-import com.toystorage.backend.dto.response.inventories.discrepancy.DiscrepancyReportResponse;
 import com.toystorage.backend.services.inventories.discrepancy.ReceivingDiscrepancyService;
 import com.toystorage.backend.dto.request.inventories.discrepancy.UpdateAcceptedQuantityRequest;
+import com.toystorage.backend.dto.response.inventories.discrepancy.DiscrepancyReportResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

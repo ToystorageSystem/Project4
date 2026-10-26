@@ -155,7 +155,7 @@ public class ReceivingIncidentReportService {
                 .map(report -> {
                     if (
                             report.getWarehouse() == null ||
-                            !warehouseId.equals(report.getWarehouse().getId())
+                                    !warehouseId.equals(report.getWarehouse().getId())
                     ) {
                         throw new Forbidden(
                                 "You cannot view incident reports from another warehouse"
@@ -268,9 +268,9 @@ public class ReceivingIncidentReportService {
                         .filter(
                                 inspection ->
                                         inspection.getProduct() != null &&
-                                        inspection.getProduct()
-                                                .getId()
-                                                .equals(productId)
+                                                inspection.getProduct()
+                                                        .getId()
+                                                        .equals(productId)
                         )
                         .sorted(
                                 Comparator.comparing(
@@ -281,7 +281,7 @@ public class ReceivingIncidentReportService {
 
         if (
                 inspections.isEmpty() ||
-                inspections.get(0).getInspectedBy() == null
+                        inspections.get(0).getInspectedBy() == null
         ) {
             throw new ReceivingIncidentReportNotFound(
                     "Inspection staff could not be determined for receipt "
@@ -312,8 +312,8 @@ public class ReceivingIncidentReportService {
 
         if (
                 authentication == null ||
-                !authentication.isAuthenticated() ||
-                "anonymousUser".equals(authentication.getPrincipal())
+                        !authentication.isAuthenticated() ||
+                        "anonymousUser".equals(authentication.getPrincipal())
         ) {
             throw new Forbidden("User is not authenticated");
         }
@@ -347,7 +347,7 @@ public class ReceivingIncidentReportService {
 
         if (
                 report.getWarehouse() == null ||
-                !warehouseId.equals(report.getWarehouse().getId())
+                        !warehouseId.equals(report.getWarehouse().getId())
         ) {
             throw new Forbidden(
                     "You cannot access an incident report from another warehouse"

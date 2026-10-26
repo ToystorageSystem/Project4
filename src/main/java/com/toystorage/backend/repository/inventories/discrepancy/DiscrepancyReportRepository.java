@@ -1,30 +1,29 @@
 package com.toystorage.backend.repository.inventories.discrepancy;
 
-import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.enums.inventories.DiscrepancyReferenceType;
 import com.toystorage.backend.enums.inventories.DiscrepancyStatus;
 import com.toystorage.backend.enums.inventories.DiscrepancyType;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 public interface DiscrepancyReportRepository
-        extends JpaRepository<DiscrepancyReports, Long> {
+        extends JpaRepository<
+        com.toystorage.backend.entity.inventories.DiscrepancyReports,
+        Long
+        > {
 
-    List<DiscrepancyReports>
+    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
     findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
             Long warehouseId,
             List<DiscrepancyStatus> statuses
     );
 
-
-    List<DiscrepancyReports>
+    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
     findByReferenceTypeAndReferenceId(
             DiscrepancyReferenceType referenceType,
             Long referenceId
     );
-
 
     boolean existsByReferenceTypeAndReferenceIdAndDiscrepancyTypeAndStatusIn(
             DiscrepancyReferenceType referenceType,
@@ -40,28 +39,20 @@ public interface DiscrepancyReportRepository
             DiscrepancyType discrepancyType,
             List<DiscrepancyStatus> statuses
     );
-    List<DiscrepancyReports>
+
+    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
     findByReportedByIdOrderByCreatedAtDesc(
             Long userId
     );
 
-
-    /*
-     * Các case đã được Warehouse Manager
-     * chuyển cho Business Manager.
-     */
-    List<DiscrepancyReports>
+    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
     findByWarehouseIdAndResponsiblePartyAndStatusOrderByCreatedAtDesc(
             Long warehouseId,
             String responsibleParty,
             DiscrepancyStatus status
     );
 
-
-    /*
-     * History / Done.
-     */
-    List<DiscrepancyReports>
+    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
     findByWarehouseIdAndStatusOrderByCreatedAtDesc(
             Long warehouseId,
             DiscrepancyStatus status
