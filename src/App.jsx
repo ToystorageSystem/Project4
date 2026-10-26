@@ -20,6 +20,9 @@ import ProductImportPage from "./pages/businessstaff/products/ProductImportPage"
 import ProductRequestsPage from "./pages/businessstaff/products/ProductRequestsPage";
 import GoodsReceiptCreatePage from "./pages/businessstaff/goodsreceipts/GoodsReceiptCreatePage";
 import GoodsReceiptDetailPage from "./pages/businessstaff/goodsreceipts/GoodsReceiptDetailPage";
+import PurchaseOrderListPage from "./pages/businessstaff/purchaseorders/PurchaseOrderListPage";
+import PurchaseOrderDetailPage from "./pages/businessstaff/purchaseorders/PurchaseOrderDetailPage";
+import PurchaseOrderFormPage from "./pages/businessstaff/purchaseorders/PurchaseOrderFormPage";
 
 import Login from "./pages/auth/Login";
 import ReceivingPendingPage from "./pages/warehouses/receiving/ReceivingPendingPage";
@@ -69,6 +72,10 @@ export default function App() {
                         <Route path="/business-staff/products/:productId" element={<ProductDetailPage />} />
                         <Route path="/business-staff/goods-receipts" element={<GoodsReceiptCreatePage />} />
                         <Route path="/business-staff/goods-receipts/:receiptId" element={<GoodsReceiptDetailPage />} />
+                        <Route path="/business-staff/purchase-orders" element={<PurchaseOrderListPage />} />
+                        <Route path="/business-staff/purchase-orders/new" element={<PurchaseOrderFormPage />} />
+                        <Route path="/business-staff/purchase-orders/:orderId/edit" element={<PurchaseOrderFormPage />} />
+                        <Route path="/business-staff/purchase-orders/:orderId" element={<PurchaseOrderDetailPage />} />
                     </Route>
                     <Route element={<RequireRole authority={ROLE.BUSINESS_MANAGER} />}>
                         <Route path="/business-manager/dashboard" element={<BusinessManagerDashboardPage />} />
