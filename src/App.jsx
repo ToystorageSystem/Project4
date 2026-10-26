@@ -26,6 +26,8 @@ import PurchaseOrderFormPage from "./pages/businessstaff/purchaseorders/Purchase
 import SupplierInvoiceListPage from "./pages/businessstaff/supplierinvoices/SupplierInvoiceListPage";
 import SupplierInvoiceDetailPage from "./pages/businessstaff/supplierinvoices/SupplierInvoiceDetailPage";
 import SupplierInvoiceFormPage from "./pages/businessstaff/supplierinvoices/SupplierInvoiceFormPage";
+import StockTransferCreatePage from "./pages/businessstaff/stocktransfers/StockTransferCreatePage";
+import StockTransferDetailPage from "./pages/businessstaff/stocktransfers/StockTransferDetailPage";
 
 import Login from "./pages/auth/Login";
 import ReceivingPendingPage from "./pages/warehouses/receiving/ReceivingPendingPage";
@@ -83,6 +85,9 @@ export default function App() {
                         <Route path="/business-staff/supplier-invoices/new" element={<SupplierInvoiceFormPage />} />
                         <Route path="/business-staff/supplier-invoices/:invoiceId/edit" element={<SupplierInvoiceFormPage />} />
                         <Route path="/business-staff/supplier-invoices/:invoiceId" element={<SupplierInvoiceDetailPage />} />
+                        <Route path="/business-staff/stock-transfers/new" element={<StockTransferCreatePage />} />
+                        <Route path="/business-staff/stock-transfers/:transferId/edit" element={<StockTransferCreatePage />} />
+                        <Route path="/business-staff/stock-transfers/:transferId" element={<StockTransferDetailPage />} />
                     </Route>
                     <Route element={<RequireRole authority={ROLE.BUSINESS_MANAGER} />}>
                         <Route path="/business-manager/dashboard" element={<BusinessManagerDashboardPage />} />

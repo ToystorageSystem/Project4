@@ -46,6 +46,14 @@ function SupplierInvoiceIcon() {
     );
 }
 
+function StockTransferIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-5 w-5" aria-hidden="true">
+            <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M4 7h10l-2.5-2.5M14 7l-2.5 2.5M20 17H10l2.5-2.5M10 17l2.5 2.5M4 11v9h7M20 13V4h-7" />
+        </svg>
+    );
+}
+
 // Only add entries once their pages exist.
 export const businessStaffMenuItems = [
     {
@@ -77,6 +85,12 @@ export const businessStaffMenuItems = [
         label: "Quản lý hóa đơn NCC",
         path: "/business-staff/supplier-invoices",
         icon: <SupplierInvoiceIcon />,
+    },
+    {
+        key: "business-staff-stock-transfer-create",
+        label: "Tạo phiếu điều chuyển",
+        path: "/business-staff/stock-transfers/new",
+        icon: <StockTransferIcon />,
     },
     {
         key: "business-staff-goods-receipt",
