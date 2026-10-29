@@ -123,6 +123,12 @@ export const businessStaffMenuItems = [
     icon: <StockTransferIcon />,
     },
     {
+        key: "business-staff-in-transit-shipments",
+        label: "Xem hàng đang vận chuyển",
+        path: "/business-staff/in-transit-shipments",
+        icon: <StockTransferIcon />,
+    },
+    {
         key: "business-staff-goods-receipt",
         label: "Tạo phiếu nhập kho tổng",
         path: "/business-staff/goods-receipts",

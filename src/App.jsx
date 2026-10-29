@@ -31,6 +31,9 @@ import StockTransferDetailPage from "./pages/businessstaff/stocktransfers/StockT
 import InventoryReportPage from "./pages/businessstaff/inventoryreport/InventoryReportPage";
 import ShipmentManifestListPage from "./pages/businessstaff/shipments/ShipmentManifestListPage";
 import ShipmentManifestDetailPage from "./pages/businessstaff/shipments/ShipmentManifestDetailPage";
+import InTransitShipmentListPage from "./pages/businessstaff/shipments/InTransitShipmentListPage";
+import InTransitShipmentDetailPage from "./pages/businessstaff/shipments/InTransitShipmentDetailPage";
+
 
 import Login from "./pages/auth/Login";
 import ReceivingPendingPage from "./pages/warehouses/receiving/ReceivingPendingPage";
@@ -91,6 +94,15 @@ export default function App() {
                         <Route path="/business-staff/stock-transfers/new" element={<StockTransferCreatePage />} />
                         <Route path="/business-staff/stock-transfers/:transferId/edit" element={<StockTransferCreatePage />} />
                         <Route path="/business-staff/stock-transfers/:transferId" element={<StockTransferDetailPage />} />
+                        {/* Issue #13 - In-Transit Shipment Tracking */}
+                        <Route
+                            path="/business-staff/in-transit-shipments"
+                            element={<InTransitShipmentListPage />}
+                        />
+                        <Route
+                            path="/business-staff/in-transit-shipments/:deliveryId"
+                            element={<InTransitShipmentDetailPage />}
+                        />
                         {/* Issue #14 - Shipment Manifests */}
                         <Route
                             path="/business-staff/shipment-manifests"
