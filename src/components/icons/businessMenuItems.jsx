@@ -117,6 +117,12 @@ export const businessStaffMenuItems = [
     icon: <InventoryReportIcon />,
     },
     {
+    key: "business-staff-shipment-manifests",
+    label: "Danh sách bảng kê đi hàng",
+    path: "/business-staff/shipment-manifests",
+    icon: <StockTransferIcon />,
+    },
+    {
         key: "business-staff-goods-receipt",
         label: "Tạo phiếu nhập kho tổng",
         path: "/business-staff/goods-receipts",

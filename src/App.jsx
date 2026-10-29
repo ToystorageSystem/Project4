@@ -29,6 +29,8 @@ import SupplierInvoiceFormPage from "./pages/businessstaff/supplierinvoices/Supp
 import StockTransferCreatePage from "./pages/businessstaff/stocktransfers/StockTransferCreatePage";
 import StockTransferDetailPage from "./pages/businessstaff/stocktransfers/StockTransferDetailPage";
 import InventoryReportPage from "./pages/businessstaff/inventoryreport/InventoryReportPage";
+import ShipmentManifestListPage from "./pages/businessstaff/shipments/ShipmentManifestListPage";
+import ShipmentManifestDetailPage from "./pages/businessstaff/shipments/ShipmentManifestDetailPage";
 
 import Login from "./pages/auth/Login";
 import ReceivingPendingPage from "./pages/warehouses/receiving/ReceivingPendingPage";
@@ -89,6 +91,15 @@ export default function App() {
                         <Route path="/business-staff/stock-transfers/new" element={<StockTransferCreatePage />} />
                         <Route path="/business-staff/stock-transfers/:transferId/edit" element={<StockTransferCreatePage />} />
                         <Route path="/business-staff/stock-transfers/:transferId" element={<StockTransferDetailPage />} />
+                        {/* Issue #14 - Shipment Manifests */}
+                        <Route
+                            path="/business-staff/shipment-manifests"
+                            element={<ShipmentManifestListPage />}
+                        />
+                        <Route
+                            path="/business-staff/shipment-manifests/:manifestId"
+                            element={<ShipmentManifestDetailPage />}
+                        />
                         {/* Issue #15 - Inventory Report */}
                         <Route
                             path="/business-staff/inventory-report"
