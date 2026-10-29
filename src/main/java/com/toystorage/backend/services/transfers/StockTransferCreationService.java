@@ -670,6 +670,11 @@ public class StockTransferCreationService {
         );
 
 
+        // A change to transfer items alone does not make StockTransfer dirty.
+        // Explicitly update the parent to persist updated_at and trigger @PreUpdate.
+        transfer.setUpdatedAt(LocalDateTime.now());
+
+
         transfer =
                 stockTransferRepository.save(
                         transfer
