@@ -13,7 +13,7 @@ import Alert from "../../../components/ui/Alert";
 import Button from "../../../components/ui/Button";
 import Card from "../../../components/ui/Card";
 import Spinner from "../../../components/ui/Spinner";
-import { TRANSFER_REASONS } from "./stockTransferDraft";
+import { TRANSFER_REASONS, canEditStockTransfer } from "./stockTransferDraft";
 import StockTransferActionDialog from "./StockTransferActionDialog";
 
 const ROOT = "/business-staff/stock-transfers";
@@ -156,13 +156,13 @@ export default function StockTransferDetailPage() {
             <div className="space-y-6">
                 <PageHeader
                     title="Chi tiết phiếu điều chuyển hàng"
-                    description="Xem trạng thái thực tế từ Backend. Sửa DRAFT, gửi CREATED hoặc hủy đều yêu cầu xác nhận riêng."
+                    description="Xem trạng thái thực tế từ Backend. Chỉ sửa/hủy trước khi kho lấy hàng, theo quyền và trạng thái được Backend cho phép."
                     actions={<div className="flex flex-wrap items-center gap-2">
                         <Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/new`)}>← Tạo phiếu khác</Button>
-                        {detail?.status === "DRAFT" && <>
-                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => navigate(`${ROOT}/${detail.id}/edit`)}>Sửa DRAFT</Button>
-                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => openAction("submit")}>Gửi phiếu (CREATED)</Button>
-                        </>}
+                        {detail && canEditStockTransfer(detail.status) &&
+                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => navigate(`${ROOT}/${detail.id}/edit`)}>Sửa phiếu</Button>}
+                        {detail?.status === "DRAFT" &&
+                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => openAction("submit")}>Gửi phiếu (CREATED)</Button>}
                         {detail && CANCELLABLE_STATUSES.has(detail.status) && <Button type="button" variant="outline" disabled={actionBusy || actionUncertain} onClick={() => openAction("cancel")}>Hủy phiếu</Button>}
                         <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Làm mới</Button>
                     </div>}
@@ -192,9 +192,12 @@ export default function StockTransferDetailPage() {
                             <InfoField label="Số sản phẩm" value={quantity(detail.totalProducts)} />
                             <InfoField label="Tổng số lượng yêu cầu" value={quantity(detail.totalRequestedQuantity)} />
                             <InfoField label="Người xác nhận" value={detail.confirmedByName || "—"} />
+                            <InfoField label="Ngày xác nhận" value={dateText(detail.confirmedAt)} />
                         </div>
                         {detail.reasonNote && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Diễn giải:</strong> {detail.reasonNote}</p>}
                         {detail.notes && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Ghi chú:</strong> {detail.notes}</p>}
+                        {detail.status === "CANCELLED" && (detail.cancelReason || detail.rejectionReason) &&
+                            <p className="rounded-xl bg-orange-50 p-4 text-sm text-slate-800"><strong>Lý do hủy:</strong> {detail.cancelReason || detail.rejectionReason}</p>}
                     </Card>
                     <Card className="space-y-4">
                         <h2 className="text-lg font-semibold text-slate-900">Sản phẩm điều chuyển ({detail.items.length})</h2>
@@ -225,7 +228,7 @@ export default function StockTransferDetailPage() {
                         {detail.status === "DRAFT"
                             ? "Phiếu DRAFT chưa giữ chỗ tồn kho. Có thể sửa, gửi hoặc hủy nếu có quyền theo Backend."
                             : detail.status === "CREATED" || detail.status === "PENDING_SOURCE_CONFIRMATION"
-                                ? "Phiếu đã qua DRAFT. Chỉ được hủy theo quyền và trạng thái Backend; thao tác hủy có thể hoàn phần tồn giữ chỗ."
+                                ? "Phiếu đã gửi nhưng kho chưa bắt đầu lấy hàng. Có thể sửa (không đổi điểm nhận) hoặc hủy nếu Backend cho phép. Sửa/hủy có thể điều chỉnh phần tồn đang giữ chỗ."
                                 : "Phiếu đang ở giai đoạn xử lý khác; không thể sửa hoặc hủy tại trang này."}
                         {" "}Chỉ người tạo hoặc Business Manager/Admin có quyền sửa và hủy theo Service.
                     </Alert>

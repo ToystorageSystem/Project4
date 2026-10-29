@@ -10,6 +10,48 @@ export const TRANSFER_REASONS = [
     { value: "OTHER", label: "Lý do khác" },
 ];
 
+// The Backend permits editing until the warehouse starts picking.
+// The issuing warehouse cannot be changed; the destination can change in DRAFT only.
+export const TRANSFER_EDITABLE_STATUSES = ["DRAFT", "CREATED", "PENDING_SOURCE_CONFIRMATION"];
+
+export function canEditStockTransfer(status) {
+    return TRANSFER_EDITABLE_STATUSES.includes(status);
+}
+
+// The source products API returns current available stock (not stock already
+// reserved for this transfer). During a submitted transfer update, the Backend
+// releases this transfer's reservations, validates, then reserves the new items
+// in one transaction. Include this transfer's approved quantity in the form's
+// *estimated* editable capacity so an unchanged item is not falsely rejected.
+// Server-side validation is authoritative, especially if stock/status changes.
+export function productsWithCurrentReservation(sourceProducts, detail) {
+    const products = new Map((Array.isArray(sourceProducts) ? sourceProducts : [])
+        .map((product) => [String(product.productId), { ...product }]));
+    if (!["CREATED", "PENDING_SOURCE_CONFIRMATION"].includes(detail?.status)) {
+        return Array.from(products.values());
+    }
+    for (const item of detail.items || []) {
+        if (item.productId == null) continue;
+        const key = String(item.productId);
+        const existing = products.get(key);
+        const available = Number(existing?.availableQuantity);
+        const approved = Number(item.approvedQuantity);
+        const free = Number.isSafeInteger(available) && available > 0 ? available : 0;
+        const ownReservation = Number.isSafeInteger(approved) && approved > 0 ? approved : 0;
+        products.set(key, {
+            ...existing,
+            productId: item.productId,
+            productCode: existing?.productCode || item.productCode,
+            productName: existing?.productName || item.productName,
+            barcode: existing?.barcode || item.barcode,
+            baseUnit: existing?.baseUnit || item.baseUnit,
+            availableQuantity: free + ownReservation,
+            ownReservation,
+        });
+    }
+    return Array.from(products.values());
+}
+
 export const blankTransferRow = (clientKey) => ({ clientKey, productId: "", requestedQuantity: "" });
 
 export function blankStockTransferForm() {

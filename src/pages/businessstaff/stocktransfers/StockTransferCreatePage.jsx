@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
     createStockTransferDraft,
     getStockTransferDetail,
-    updateStockTransferDraft,
+    updateStockTransfer,
     getStockTransferDestinations,
     getStockTransferSourceProducts,
     getStockTransferSources,
@@ -23,6 +23,8 @@ import {
     TRANSFER_REASONS,
     blankStockTransferForm,
     blankTransferRow,
+    canEditStockTransfer,
+    productsWithCurrentReservation,
     stockTransferFormFromDetail,
     toUpdateStockTransferPayload,
     todayLocalIso,
@@ -57,7 +59,7 @@ export default function StockTransferCreatePage() {
     const [loadingExisting, setLoadingExisting] = useState(isEditMode);
     const [existingError, setExistingError] = useState("");
 
-    // A separate GET initializes editing from an existing DRAFT only.
+    // Load the current state: Backend permits editing until picking begins.
     useEffect(() => {
         if (!isEditMode) return;
         const controller = new AbortController();
@@ -76,8 +78,8 @@ export default function StockTransferCreatePage() {
                 if (!data || Number(data.id) !== id || !Array.isArray(data.items)) {
                     throw new Error("Dữ liệu phiếu không đúng định dạng.");
                 }
-                if (data.status !== "DRAFT") {
-                    throw new Error("Chỉ phiếu DRAFT mới được sửa tại trang này. Hãy quay lại chi tiết.");
+                if (!canEditStockTransfer(data.status)) {
+                    throw new Error("Kho đã bắt đầu xử lý hoặc phiếu đã kết thúc nên không thể sửa. Hãy quay lại chi tiết.");
                 }
                 const loadedForm = stockTransferFormFromDetail(data);
                 if (!loadedForm.items.length) throw new Error("Phiếu không có sản phẩm.");
@@ -153,15 +155,22 @@ export default function StockTransferCreatePage() {
         })),
     ];
 
+    const editingReservedTransfer = isEditMode
+        && ["CREATED", "PENDING_SOURCE_CONFIRMATION"].includes(originalDetail?.status);
+    const canChangeDestination = !isEditMode || originalDetail?.status === "DRAFT";
+    const editableProducts = useMemo(
+        () => productsWithCurrentReservation(products, originalDetail),
+        [products, originalDetail],
+    );
     const productById = useMemo(
-        () => new Map(products.map((item) => [String(item.productId), item])),
-        [products],
+        () => new Map(editableProducts.map((item) => [String(item.productId), item])),
+        [editableProducts],
     );
     const totalQuantity = useMemo(() => form.items.reduce((sum, row) => {
         const value = Number(row.requestedQuantity);
         return sum + (Number.isSafeInteger(value) && value > 0 ? value : 0);
     }, 0), [form.items]);
-    const errors = useMemo(() => validateStockTransferDraft(form, sources, destinations, products), [form, sources, destinations, products]);
+    const errors = useMemo(() => validateStockTransferDraft(form, sources, destinations, editableProducts), [form, sources, destinations, editableProducts]);
     const previewReady = previewRequested && !loading && !loadingExisting && !loadingProducts
         && !loadError && !existingError && !productsError && errors.length === 0;
     const payload = useMemo(() => previewReady ? toStockTransferPayload(form) : null, [form, previewReady]);
@@ -221,7 +230,8 @@ export default function StockTransferCreatePage() {
             setSaving(false);
             return;
         }
-        const freshProblems = validateStockTransferDraft(form, sources, destinations, latestProducts);
+        const freshOptions = productsWithCurrentReservation(latestProducts, originalDetail);
+        const freshProblems = validateStockTransferDraft(form, sources, destinations, freshOptions);
         if (freshProblems.length) {
             setProducts(latestProducts);
             setPreviewRequested(true);
@@ -234,8 +244,10 @@ export default function StockTransferCreatePage() {
             // Avoid overwriting a transfer that another session has modified.
             try {
                 const latest = await getStockTransferDetail(transferId);
-                if (latest?.status !== "DRAFT" || Number(latest.id) !== Number(transferId)) {
-                    setSaveError("Phiếu không còn ở trạng thái DRAFT. Hãy quay lại chi tiết và làm mới.");
+                if (!canEditStockTransfer(latest?.status)
+                    || latest.status !== originalDetail?.status
+                    || Number(latest.id) !== Number(transferId)) {
+                    setSaveError("Trạng thái phiếu đã thay đổi hoặc kho đã bắt đầu xử lý. Hãy quay lại chi tiết và làm mới.");
                     setSaving(false);
                     return;
                 }
@@ -252,10 +264,11 @@ export default function StockTransferCreatePage() {
         }
         try {
             const saved = isEditMode
-                ? await updateStockTransferDraft(transferId, toUpdateStockTransferPayload(form))
+                ? await updateStockTransfer(transferId, toUpdateStockTransferPayload(form))
                 : await createStockTransferDraft(toStockTransferPayload(form));
             const expectedId = isEditMode ? Number(transferId) : Number(saved?.id);
-            if (!Number.isSafeInteger(Number(saved?.id)) || Number(saved.id) !== expectedId || saved.status !== "DRAFT") {
+            const expectedStatus = isEditMode ? originalDetail?.status : "DRAFT";
+            if (!Number.isSafeInteger(Number(saved?.id)) || Number(saved.id) !== expectedId || saved.status !== expectedStatus) {
                 // A successful POST/PUT may have changed data despite an unexpected response.
                 setUncertainSave(true);
                 setSaveError("Backend phản hồi không như dự kiến. Không bấm lưu lại; hãy kiểm tra chi tiết phiếu với nhóm.");
@@ -267,7 +280,7 @@ export default function StockTransferCreatePage() {
                 setUncertainSave(true);
                 setSaveError("Mất kết nối lúc lưu. Dữ liệu có thể đã được ghi; KHÔNG bấm lại trước khi kiểm tra chi tiết phiếu.");
             } else {
-                setSaveError(stockTransferErrorMessage(error, "Backend không thể lưu thay đổi DRAFT."));
+                setSaveError(stockTransferErrorMessage(error, "Backend không thể lưu thay đổi phiếu."));
             }
         } finally {
             setConfirmedDbWrite(false);
@@ -280,14 +293,18 @@ export default function StockTransferCreatePage() {
             <div className="space-y-6">
                 <PageHeader
                     title={isEditMode ? `Sửa phiếu điều chuyển ${originalDetail?.transferCode || `#${transferId}`}` : "Tạo phiếu điều chuyển hàng"}
-                    description="Issue #11 — Kho tổng → Cửa hàng hoặc Cửa hàng → Cửa hàng. Backend kiểm tra lại tồn khả dụng khi ghi phiếu."
+                    description={isEditMode
+                        ? "Issue #12 — Sửa phiếu trước khi kho bắt đầu lấy hàng. Backend quyết định quyền sửa và kiểm tra lại tồn kho."
+                        : "Issue #11 — Kho tổng → Cửa hàng hoặc Cửa hàng → Cửa hàng. Backend kiểm tra lại tồn khả dụng khi ghi phiếu."}
                     actions={<Button type="button" variant="outline" onClick={() => navigate(isEditMode ? `${ROOT}/${transferId}` : "/business-staff/dashboard")}>← {isEditMode ? "Chi tiết" : "Dashboard"}</Button>}
                 />
                 <Alert type="info">
-                    <strong>{isEditMode ? "Sửa phiếu DRAFT" : "Tạo phiếu DRAFT"}:</strong> Xem trước chỉ kiểm tra trên giao diện.
-                    Thao tác lưu ghi dữ liệu thật vào MySQL chung, chưa giữ chỗ tồn kho.
-                    Gửi phiếu từ trang chi tiết mới chuyển sang CREATED và giữ chỗ tồn kho.
-                    {isEditMode && " Điểm xuất của phiếu đã tạo không thể thay đổi."}
+                    <strong>{isEditMode ? `Sửa phiếu ${originalDetail?.status || "đã tạo"}` : "Tạo phiếu DRAFT"}:</strong> Xem trước chỉ kiểm tra trên giao diện.
+                    Lưu thay đổi sẽ ghi dữ liệu thật vào MySQL chung.
+                    {editingReservedTransfer
+                        ? " Phiếu đã gửi có thể đang giữ chỗ tồn kho; Backend sẽ hoàn và giữ chỗ lại trong cùng giao dịch khi sửa."
+                        : " Phiếu DRAFT chưa giữ chỗ; chỉ khi Gửi phiếu từ trang chi tiết mới giữ chỗ hàng hóa."}
+                    {isEditMode && ` Điểm xuất không đổi${!canChangeDestination ? ", điểm nhận cũng không thể đổi sau khi gửi." : "."}`}
                 </Alert>
                 {loadError && <div role="alert"><Alert type="danger">{loadError} <Button type="button" variant="outline" size="sm" onClick={() => setRefresh((count) => count + 1)}>Thử lại</Button></Alert></div>}
                 {productsError && <div role="alert"><Alert type="danger">{productsError}</Alert></div>}
@@ -299,7 +316,7 @@ export default function StockTransferCreatePage() {
                             <h2 className="text-lg font-semibold text-slate-900">Điểm xuất và điểm nhận</h2>
                             <div className="grid gap-4 md:grid-cols-2">
                                 <Select label="Kho / cửa hàng xuất *" disabled={saving || isEditMode} value={form.fromWarehouseId} options={sourceOptions} onChange={(event) => changeSource(event.target.value)} />
-                                <Select label="Cửa hàng nhận *" disabled={saving} value={form.toWarehouseId} options={destinationOptions} onChange={(event) => setField("toWarehouseId", event.target.value)} />
+                                <Select label="Cửa hàng nhận *" disabled={saving || !canChangeDestination} value={form.toWarehouseId} options={destinationOptions} onChange={(event) => setField("toWarehouseId", event.target.value)} />
                             </div>
                             {source && <p className="text-sm text-slate-500">Điểm xuất: {source.address || source.name} · Loại: {source.type}</p>}
                             {destination && <p className="text-sm text-slate-500">Điểm nhận: {destination.address || destination.name}</p>}
@@ -316,16 +333,18 @@ export default function StockTransferCreatePage() {
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
                                     <h2 className="text-lg font-semibold text-slate-900">Sản phẩm điều chuyển</h2>
-                                    <p className="mt-1 text-sm text-slate-500">Tồn khả dụng được tải từ Backend theo kho/cửa hàng xuất, không phải tồn của cửa hàng nhận.</p>
+                                    <p className="mt-1 text-sm text-slate-500">{editingReservedTransfer
+                                        ? "Số lượng có thể sử dụng được ước tính bằng tồn khả dụng hiện tại cộng phần phiếu này đang giữ chỗ. Backend sẽ kiểm tra lại khi lưu."
+                                        : "Tồn khả dụng được tải từ Backend theo kho/cửa hàng xuất, không phải tồn của cửa hàng nhận."}</p>
                                 </div>
                                 <Button type="button" variant="outline" disabled={saving || !form.fromWarehouseId || loadingProducts || products.length === 0} onClick={addRow}>+ Thêm sản phẩm</Button>
                             </div>
                             {loadingProducts && <p className="flex items-center gap-2 text-sm text-slate-500"><Spinner /> Đang tải tồn khả dụng...</p>}
-                            {form.fromWarehouseId && !loadingProducts && !productsError && products.length === 0 && <Alert type="warning">Điểm xuất chưa có sản phẩm khả dụng. Hãy kiểm tra tồn kho hoặc chọn điểm xuất khác.</Alert>}
+                            {form.fromWarehouseId && !loadingProducts && !productsError && editableProducts.length === 0 && <Alert type="warning">Điểm xuất chưa có sản phẩm khả dụng. Hãy kiểm tra tồn kho hoặc chọn điểm xuất khác.</Alert>}
                             {form.items.map((row, index) => {
                                 const selectedProduct = productById.get(row.productId);
                                 const otherSelected = new Set(form.items.filter((item) => item.clientKey !== row.clientKey).map((item) => item.productId));
-                                const eligible = products.filter((item) => !otherSelected.has(String(item.productId)) && Number(item.availableQuantity) > 0);
+                                const eligible = editableProducts.filter((item) => !otherSelected.has(String(item.productId)) && Number(item.availableQuantity) > 0);
                                 const options = [
                                     { value: "", label: "-- Chọn sản phẩm --" },
                                     ...eligible.map((item) => ({
@@ -345,7 +364,7 @@ export default function StockTransferCreatePage() {
                                             <Select label="Sản phẩm *" value={row.productId} disabled={saving || !form.fromWarehouseId || loadingProducts} options={options} onChange={(event) => changeRow(row.clientKey, "productId", event.target.value)} />
                                             <Input label="Số lượng yêu cầu *" type="number" min="1" step="1" max={selectedProduct?.availableQuantity ?? undefined} disabled={saving || !selectedProduct || loadingProducts} value={row.requestedQuantity} onChange={(event) => changeRow(row.clientKey, "requestedQuantity", event.target.value)} />
                                             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                                                <span className="block text-slate-500">Tồn khả dụng tại điểm xuất</span>
+                                                <span className="block text-slate-500">{editingReservedTransfer ? "Có thể dùng sau khi tính phần phiếu đã giữ chỗ (ước tính)" : "Tồn khả dụng tại điểm xuất"}</span>
                                                 <strong className="mt-1 block text-xl text-slate-900">{selectedProduct ? displayQuantity(selectedProduct.availableQuantity) : "—"}</strong>
                                             </div>
                                         </div>
@@ -377,7 +396,9 @@ export default function StockTransferCreatePage() {
                             {saveError && <div role="alert"><Alert type="danger">{saveError}</Alert></div>}
                             {previewReady && !uncertainSave && <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-slate-700">
                                 <input type="checkbox" className="mt-1 accent-orange-600" checked={confirmedDbWrite} disabled={saving} onChange={(event) => setConfirmedDbWrite(event.target.checked)} />
-                                <span>Tôi xác nhận {isEditMode ? "cập nhật phiếu DRAFT" : "tạo phiếu DRAFT"} trên <strong>MySQL chung của nhóm</strong>. Thao tác ghi dữ liệu thật, chưa giữ chỗ tồn kho.</span>
+                                <span>Tôi xác nhận {isEditMode ? `cập nhật phiếu ${originalDetail?.status}` : "tạo phiếu DRAFT"} trên <strong>MySQL chung của nhóm</strong>. {editingReservedTransfer
+                                    ? "Backend sẽ điều chỉnh phần hàng đang giữ chỗ theo nội dung mới."
+                                    : "Thao tác này chưa giữ chỗ tồn kho."}</span>
                             </label>}
                             <div className="flex flex-wrap justify-end gap-3">
                                 <Button type="button" variant="outline" disabled={saving || uncertainSave} onClick={() => {
@@ -390,10 +411,10 @@ export default function StockTransferCreatePage() {
                                 }}>{isEditMode ? "Khôi phục dữ liệu" : "Làm lại form"}</Button>
                                 <Button type="button" disabled={saving || loadingProducts || !!productsError || uncertainSave} onClick={() => setPreviewRequested(true)}>Kiểm tra / Xem trước</Button>
                                 <Button type="button" disabled={!previewReady || !confirmedDbWrite || saving || uncertainSave} onClick={handleSaveDraft}>
-                                    {saving ? "Đang lưu..." : (isEditMode ? "Lưu thay đổi DRAFT" : "Lưu phiếu DRAFT")}
+                                    {saving ? "Đang lưu..." : (isEditMode ? "Lưu thay đổi phiếu" : "Lưu phiếu DRAFT")}
                                 </Button>
                             </div>
-                            <p className="text-xs text-slate-500">Gửi CREATED và Hủy phiếu được thực hiện riêng tại trang chi tiết, với xác nhận trước khi thay đổi MySQL. Không bật Seeder.</p>
+                            <p className="text-xs text-slate-500">Gửi phiếu và Hủy phiếu được thực hiện riêng tại trang chi tiết, với xác nhận trước khi thay đổi MySQL. Không bật Seeder.</p>
                         </Card>
                     </>
                 )}

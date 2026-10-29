@@ -30,11 +30,16 @@ export async function getStockTransferDetail(transferId, signal) {
     return response.data;
 }
 
-// PUT modifies an existing DRAFT transfer; the source warehouse is immutable.
-export async function updateStockTransferDraft(transferId, payload) {
+// PUT modifies DRAFT / CREATED / PENDING_SOURCE_CONFIRMATION, subject to Backend
+// ownership/status rules. Source is immutable; destination changes only in DRAFT.
+// For an existing reservation, Backend recalculates reserved stock transactionally.
+export async function updateStockTransfer(transferId, payload) {
     const response = await api.put(`/stock-transfers/${encodeURIComponent(transferId)}`, payload);
     return response.data;
 }
+
+// Keep the Issue #11 export for any older consumers.
+export const updateStockTransferDraft = updateStockTransfer;
 
 // PATCH DRAFT -> CREATED. Backend reserves source inventory inside a transaction.
 export async function submitStockTransfer(transferId) {
