@@ -28,6 +28,7 @@ import SupplierInvoiceDetailPage from "./pages/businessstaff/supplierinvoices/Su
 import SupplierInvoiceFormPage from "./pages/businessstaff/supplierinvoices/SupplierInvoiceFormPage";
 import StockTransferCreatePage from "./pages/businessstaff/stocktransfers/StockTransferCreatePage";
 import StockTransferDetailPage from "./pages/businessstaff/stocktransfers/StockTransferDetailPage";
+import InventoryReportPage from "./pages/businessstaff/inventoryreport/InventoryReportPage";
 
 import Login from "./pages/auth/Login";
 import ReceivingPendingPage from "./pages/warehouses/receiving/ReceivingPendingPage";
@@ -88,6 +89,11 @@ export default function App() {
                         <Route path="/business-staff/stock-transfers/new" element={<StockTransferCreatePage />} />
                         <Route path="/business-staff/stock-transfers/:transferId/edit" element={<StockTransferCreatePage />} />
                         <Route path="/business-staff/stock-transfers/:transferId" element={<StockTransferDetailPage />} />
+                        {/* Issue #15 - Inventory Report */}
+                        <Route
+                            path="/business-staff/inventory-report"
+                            element={<InventoryReportPage />}
+                        />
                     </Route>
                     <Route element={<RequireRole authority={ROLE.BUSINESS_MANAGER} />}>
                         <Route path="/business-manager/dashboard" element={<BusinessManagerDashboardPage />} />

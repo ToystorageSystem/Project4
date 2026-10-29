@@ -53,6 +53,24 @@ function StockTransferIcon() {
         </svg>
     );
 }
+function InventoryReportIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            className="h-5 w-5"
+            aria-hidden="true"
+        >
+            <path
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 20V10h4v10M10 20V5h4v15M16 20v-8h4v8M3 20h18"
+            />
+        </svg>
+    );
+}
 
 // Only add entries once their pages exist.
 export const businessStaffMenuItems = [
@@ -91,6 +109,12 @@ export const businessStaffMenuItems = [
         label: "Tạo phiếu điều chuyển",
         path: "/business-staff/stock-transfers/new",
         icon: <StockTransferIcon />,
+    },
+    {
+    key: "business-staff-inventory-report",
+    label: "Báo cáo tồn kho",
+    path: "/business-staff/inventory-report",
+    icon: <InventoryReportIcon />,
     },
     {
         key: "business-staff-goods-receipt",
