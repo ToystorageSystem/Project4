@@ -56,10 +56,9 @@ public class InventoryReportMapper {
                         balance.getReservedQuantity()
                 );
 
-        int available =
-                calculateAvailable(
-                        onHand,
-                        reserved
+        int available = Math.max(
+                valueOrZero(balance.getAvailableQuantity()),
+                0
                 );
 
         int minimumStock =
@@ -287,10 +286,9 @@ public class InventoryReportMapper {
                         balance.getReservedQuantity()
                 );
 
-        int available =
-                calculateAvailable(
-                        onHand,
-                        reserved
+        int available = Math.max(
+                valueOrZero(balance.getAvailableQuantity()),
+                0
                 );
 
         int minimumStock =
