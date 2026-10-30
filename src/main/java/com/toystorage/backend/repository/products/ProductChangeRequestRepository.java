@@ -154,4 +154,29 @@ public interface ProductChangeRequestRepository
 
     @EntityGraph(attributePaths = {"product", "product.category", "product.brand", "createdBy", "approvedBy"})
     Optional<ProductChangeRequests> findByIdAndStatus(Long id, ProductChangeRequestStatus status);
+    // Kiem tra danh muc hien tai co san pham
+    // dang cho phe duyet hay khong.
+    boolean existsByProduct_Category_IdAndStatus(
+            Long categoryId,
+            ProductChangeRequestStatus status
+    );
+    // Kiem tra danh muc duoc de xuat trong JSON new_value.
+    // JSON_VALID giup tranh loi voi du lieu JSON khong hop le.
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM product_change_requests r
+            WHERE r.status = 'PENDING'
+              AND CAST(
+                  JSON_UNQUOTE(
+                      JSON_EXTRACT(
+                          IF(JSON_VALID(r.new_value),
+                             r.new_value, '{}'),
+                          '$.categoryId'
+                      )
+                  ) AS UNSIGNED
+              ) = :categoryId
+            """, nativeQuery = true)
+    long countPendingRequestsProposingCategory(
+            @Param("categoryId") Long categoryId
+    );
 }

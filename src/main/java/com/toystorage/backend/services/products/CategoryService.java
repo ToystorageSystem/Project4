@@ -12,6 +12,8 @@ import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.mapper.products.CategoryMapper;
 import com.toystorage.backend.repository.products.CategoryRepository;
 import com.toystorage.backend.repository.products.ProductRepository;
+import com.toystorage.backend.enums.products.ProductChangeRequestStatus;
+import com.toystorage.backend.repository.products.ProductChangeRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.List;
 import java.util.Locale;
@@ -32,6 +35,7 @@ public class CategoryService {
     private final ProductRepository productRepository;
     private final CategoryMapper categoryMapper;
     private final CategoryAuditService categoryAuditService;
+    private final ProductChangeRequestRepository productChangeRequestRepository;
 
     @Transactional(readOnly = true)
     public CategoryPageResponse getCategories(
@@ -231,19 +235,44 @@ public class CategoryService {
             );
         }
 
+
+        // 1. Kiem tra san pham dang cho xu ly
         boolean hasPendingProducts =
-                productRepository
-                        .existsByCategory_IdAndStatus(
+                productRepository.existsByCategory_IdAndStatusIn(
+                        categoryId,
+                        List.of(
+                                ProductStatus.PENDING,
+                                ProductStatus.PENDING_CREATE,
+                                ProductStatus.PENDING_UPDATE
+                        )
+                );
+
+        // 2. Kiem tra yeu cau PENDING cua san pham
+        // dang thuoc danh muc hien tai
+        boolean hasPendingCurrentRequests =
+                productChangeRequestRepository
+                        .existsByProduct_Category_IdAndStatus(
                                 categoryId,
-                                ProductStatus.PENDING
+                                ProductChangeRequestStatus.PENDING
                         );
 
-        if (hasPendingProducts) {
+        // 3. Kiem tra yeu cau PENDING de xuat
+        // chuyen san pham vao danh muc nay
+        boolean hasPendingProposedRequests =
+                productChangeRequestRepository
+                        .countPendingRequestsProposingCategory(
+                                categoryId
+                        ) > 0;
+
+        // 4. Tu choi an khi co du lieu dang xu ly
+        if (hasPendingProducts
+                || hasPendingCurrentRequests
+                || hasPendingProposedRequests) {
 
             throw new BadRequest(
                     "Category cannot be deactivated "
-                    + "because it is being used by "
-                    + "products that are still pending"
+                    + "because it is related to "
+                    + "pending products or approval requests"
             );
         }
 

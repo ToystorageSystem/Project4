@@ -18,7 +18,7 @@ import java.util.List;
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
 @PreAuthorize(
-        "hasAnyRole('BS_STAFF', 'ADMIN')"
+        "hasAnyAuthority('ROLE_ROLE-BIZ-STAFF', 'ROLE_ROLE-ADMIN')"
 )
 public class CategoryController {
 

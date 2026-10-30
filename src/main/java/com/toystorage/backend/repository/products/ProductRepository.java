@@ -78,8 +78,17 @@ public interface ProductRepository extends JpaRepository<Products, Long> {
                 String barcode
         );
 
+
+    // Kiem tra mot trang thai
     boolean existsByCategory_IdAndStatus(
-                Long categoryId,
-                ProductStatus status
-        );
+            Long categoryId,
+            ProductStatus status
+    );
+
+    // Kiem tra nhieu trang thai
+    boolean existsByCategory_IdAndStatusIn(
+            Long categoryId,
+            java.util.Collection<ProductStatus> statuses
+    );
+
 }
