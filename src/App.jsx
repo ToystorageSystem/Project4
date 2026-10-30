@@ -14,6 +14,7 @@ import SupplierListPage from "./pages/businessstaff/suppliers/SupplierListPage";
 import SupplierDetailPage from "./pages/businessstaff/suppliers/SupplierDetailPage";
 import SupplierFormPage from "./pages/businessstaff/suppliers/SupplierFormPage";
 import ProductListPage from "./pages/businessstaff/products/ProductListPage";
+import CategoryListPage from "./pages/businessstaff/categories/CategoryListPage";
 import ProductDetailPage from "./pages/businessstaff/products/ProductDetailPage";
 import ProductFormPage from "./pages/businessstaff/products/ProductFormPage";
 import ProductImportPage from "./pages/businessstaff/products/ProductImportPage";
@@ -76,6 +77,10 @@ export default function App() {
                         <Route path="/business-staff/suppliers/:supplierId/edit" element={<SupplierFormPage />} />
                         <Route path="/business-staff/suppliers/:supplierId" element={<SupplierDetailPage />} />
                         <Route path="/business-staff/products" element={<ProductListPage />} />
+                        <Route
+                            path="/business-staff/categories"
+                            element={<CategoryListPage />}
+                        />
                         <Route path="/business-staff/products/new" element={<ProductFormPage />} />
                         <Route path="/business-staff/products/import" element={<ProductImportPage />} />
                         <Route path="/business-staff/products/requests" element={<ProductRequestsPage />} />

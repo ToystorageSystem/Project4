@@ -93,6 +93,12 @@ export const businessStaffMenuItems = [
         icon: <ProductIcon />,
     },
     {
+        key: "business-staff-categories",
+        label: "Quản lý danh mục sản phẩm",
+        path: "/business-staff/categories",
+        icon: <ProductIcon />,
+    },
+    {
         key: "business-staff-purchase-orders",
         label: "Quản lý đơn hàng nhập",
         path: "/business-staff/purchase-orders",
