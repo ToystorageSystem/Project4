@@ -19,6 +19,7 @@ import ProductDetailPage from "./pages/businessstaff/products/ProductDetailPage"
 import ProductFormPage from "./pages/businessstaff/products/ProductFormPage";
 import ProductImportPage from "./pages/businessstaff/products/ProductImportPage";
 import ProductRequestsPage from "./pages/businessstaff/products/ProductRequestsPage";
+import RejectedProductsPage from "./pages/businessstaff/products/RejectedProductsPage";
 import GoodsReceiptCreatePage from "./pages/businessstaff/goodsreceipts/GoodsReceiptCreatePage";
 import GoodsReceiptDetailPage from "./pages/businessstaff/goodsreceipts/GoodsReceiptDetailPage";
 import PurchaseOrderListPage from "./pages/businessstaff/purchaseorders/PurchaseOrderListPage";
@@ -84,6 +85,7 @@ export default function App() {
                         <Route path="/business-staff/products/new" element={<ProductFormPage />} />
                         <Route path="/business-staff/products/import" element={<ProductImportPage />} />
                         <Route path="/business-staff/products/requests" element={<ProductRequestsPage />} />
+                        <Route path="/business-staff/products/rejected" element={<RejectedProductsPage />} />
                         <Route path="/business-staff/products/:productId/edit" element={<ProductFormPage />} />
                         <Route path="/business-staff/products/:productId" element={<ProductDetailPage />} />
                         <Route path="/business-staff/goods-receipts" element={<GoodsReceiptCreatePage />} />
