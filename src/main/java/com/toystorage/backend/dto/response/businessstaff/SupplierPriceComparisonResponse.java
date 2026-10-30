@@ -26,7 +26,8 @@ public record SupplierPriceComparisonResponse(
             BigDecimal differencePerUnit,
             BigDecimal differencePercent,
             BigDecimal estimatedOrderDifference,
-            String priceChange
+            String priceChange,
+            String priceDecision
     ) {
     }
 }

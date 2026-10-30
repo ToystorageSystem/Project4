@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
 @Repository
 public interface BusinessSupplierPriceDecisionAuditRepository
@@ -86,4 +87,53 @@ public interface BusinessSupplierPriceDecisionAuditRepository
             @Param("oldValue") String oldValue,
             @Param("newValue") String newValue
     );
+    @Query(value = """
+            SELECT
+                CASE WHEN JSON_VALID(al.new_value)
+                THEN JSON_UNQUOTE(
+                    JSON_EXTRACT(al.new_value, '$.decision')
+                )
+                ELSE NULL END
+            FROM activity_logs al
+            WHERE al.entity_type = 'PURCHASE_ORDER'
+              AND al.entity_id = :purchaseOrderId
+              AND al.action IN ('APPROVE', 'REJECT')
+              AND (
+                  CASE WHEN JSON_VALID(al.new_value)
+                  THEN JSON_UNQUOTE(
+                      JSON_EXTRACT(al.new_value, '$.eventType')
+                  )
+                  ELSE NULL END
+              ) = 'SUPPLIER_PRICE_DECISION'
+              AND (
+                  CASE WHEN JSON_VALID(al.new_value)
+                  THEN CAST(
+                      JSON_UNQUOTE(
+                          JSON_EXTRACT(
+                              al.new_value,
+                              '$.purchaseOrderItemId'
+                          )
+                      ) AS UNSIGNED
+                  )
+                  ELSE NULL END
+              ) = :purchaseOrderItemId
+              AND (
+                  CASE WHEN JSON_VALID(al.new_value)
+                  THEN JSON_UNQUOTE(
+                      JSON_EXTRACT(
+                          al.new_value,
+                          '$.confirmedUnitPrice'
+                      )
+                  )
+                  ELSE NULL END
+              ) = :confirmedUnitPrice
+            ORDER BY al.created_at DESC
+            LIMIT 1
+            """, nativeQuery = true)
+    Optional<String> findLatestDecisionForItemAndPrice(
+            @Param("purchaseOrderId") Long purchaseOrderId,
+            @Param("purchaseOrderItemId") Long purchaseOrderItemId,
+            @Param("confirmedUnitPrice") String confirmedUnitPrice
+    );
+
 }

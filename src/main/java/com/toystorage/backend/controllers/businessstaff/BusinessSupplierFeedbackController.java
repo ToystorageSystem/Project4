@@ -24,6 +24,16 @@ public class BusinessSupplierFeedbackController {
 
     private final BusinessSupplierFeedbackService feedbackService;
 
+    @GetMapping("/{purchaseOrderId}/supplier-feedback")
+    public ResponseEntity<SupplierFeedbackResponse> getFeedback(
+            @PathVariable Long purchaseOrderId
+    ) {
+        return ResponseEntity.ok(
+                feedbackService.getFeedback(purchaseOrderId)
+        );
+    }
+
+
     @PutMapping("/{purchaseOrderId}/supplier-feedback")
     public ResponseEntity<SupplierFeedbackResponse> recordFeedback(
             @PathVariable Long purchaseOrderId,

@@ -7,6 +7,7 @@ import com.toystorage.backend.entity.receipts.PurchaseOrders;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.repository.businessstaff.BusinessPurchaseOrderRepository;
 import com.toystorage.backend.repository.businessstaff.BusinessPurchaseOrderItemRepository;
+import com.toystorage.backend.repository.businessstaff.BusinessSupplierPriceDecisionAuditRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +26,8 @@ public class BusinessSupplierPriceComparisonService {
 
     private final BusinessPurchaseOrderItemRepository itemRepository;
 
+    private final BusinessSupplierPriceDecisionAuditRepository auditRepository;
+
     @Transactional(readOnly = true)
     public SupplierPriceComparisonResponse getPriceComparison(
             Long purchaseOrderId
@@ -42,7 +45,7 @@ public class BusinessSupplierPriceComparisonService {
 
         List<SupplierPriceComparisonResponse.ItemResponse> results =
                 orderItems.stream()
-                        .map(this::toItemResponse)
+                        .map(item -> toItemResponse(purchaseOrderId, item))
                         .toList();
 
         return new SupplierPriceComparisonResponse(
@@ -55,6 +58,7 @@ public class BusinessSupplierPriceComparisonService {
     }
 
     private SupplierPriceComparisonResponse.ItemResponse toItemResponse(
+            Long purchaseOrderId,
             PurchaseOrderItems item
     ) {
 
@@ -99,6 +103,22 @@ public class BusinessSupplierPriceComparisonService {
             );
         }
 
+        String priceDecision = null;
+
+        if (confirmedPrice != null) {
+            String normalizedQuotedPrice = confirmedPrice
+                    .setScale(2, RoundingMode.UNNECESSARY)
+                    .toPlainString();
+
+            priceDecision = auditRepository
+                    .findLatestDecisionForItemAndPrice(
+                            purchaseOrderId,
+                            item.getId(),
+                            normalizedQuotedPrice
+                    )
+                    .orElse(null);
+        }
+
         return new SupplierPriceComparisonResponse.ItemResponse(
                 item.getId(),
                 item.getProduct().getId(),
@@ -112,7 +132,8 @@ public class BusinessSupplierPriceComparisonService {
                 difference,
                 differencePercent,
                 estimatedOrderDifference,
-                priceChange
-        );
+                priceChange,
+		priceDecision
+            );
     }
 }

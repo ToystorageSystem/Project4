@@ -38,6 +38,28 @@ public class BusinessSupplierFeedbackService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
+    @Transactional(readOnly = true)
+    public SupplierFeedbackResponse getFeedback(
+            Long purchaseOrderId
+    ) {
+        PurchaseOrders order = orderRepository
+                .findById(purchaseOrderId)
+                .orElseThrow(() ->
+                        new NotFound(
+                                "Purchase Order not found: "
+                                        + purchaseOrderId
+                        )
+                );
+
+        List<PurchaseOrderItems> orderItems =
+                itemRepository
+                        .findByPurchaseOrder_IdOrderByIdAsc(
+                                purchaseOrderId
+                        );
+
+        return toResponse(order, orderItems);
+    }
+
     @Transactional
     public SupplierFeedbackResponse recordFeedback(
             Long purchaseOrderId,
