@@ -24,6 +24,9 @@ import {
     formatPurchaseOrderMoney,
     PurchaseOrderStatusBadge,
 } from "./purchaseOrderFormat";
+import SupplierPriceComparisonPanel from "./SupplierPriceComparisonPanel";
+import SupplierFeedbackPanel from "./SupplierFeedbackPanel";
+
 
 const ROOT = "/business-staff/purchase-orders";
 
@@ -201,6 +204,15 @@ export default function PurchaseOrderDetailPage() {
                                 </div>
                             </div>
                         </Card>
+
+
+                        {/* Issue #16 - Supplier Price Comparison */}
+                        <SupplierFeedbackPanel purchaseOrder={detail} />
+                        <SupplierPriceComparisonPanel
+                            purchaseOrderId={detail.id}
+                            purchaseOrderStatus={detail.status}
+                        />
+
                         <Alert type="info">Chỉ sửa/gửi đơn DRAFT. Hủy đơn hiện chỉ mở cho DRAFT để tránh ảnh hưởng các đơn đã phát sinh nhận hàng. Gửi đơn không cộng tồn kho; việc nhận hàng thuộc Warehouse.</Alert>
                     </>
                 ) : !error ? (
