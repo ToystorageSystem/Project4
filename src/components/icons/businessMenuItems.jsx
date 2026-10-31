@@ -173,4 +173,10 @@ export const businessManagerMenuItems = [
         path: "/business-manager/activity-reports",
         icon: <InventoryReportIcon />,
     },
+    {
+        key: "business-manager-purchase-orders",
+        label: "Danh sách đơn mua hàng",
+        path: "/business-manager/purchase-orders",
+        icon: <PurchaseOrderIcon />,
+    },
 ];
