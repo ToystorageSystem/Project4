@@ -67,8 +67,7 @@ public class ReceivingConfirmationController {
      * Putaway chỉ được tạo tại đây.
      * =====================================================
      */
-
-//    @PreAuthorize("hasAuthority('GOODS_RECEIVING_CONFIRM')")
+    @PreAuthorize("hasAuthority('ROLE_ROLE-WH-MANAGER')")
     @PatchMapping("/{receiptId}/confirm-receiving")
     public ResponseEntity<ReceivingConfirmationResponse> confirmReceiving(
             @PathVariable Long receiptId
@@ -79,6 +78,7 @@ public class ReceivingConfirmationController {
                         .confirmInspectionResult(receiptId)
         );
     }
+
 
 
     /*

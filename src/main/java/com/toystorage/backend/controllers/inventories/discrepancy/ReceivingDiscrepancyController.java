@@ -6,6 +6,7 @@ import com.toystorage.backend.dto.request.inventories.discrepancy.ResolveDiscrep
 import com.toystorage.backend.dto.response.inventories.discrepancy.DiscrepancyReportResponse;
 import com.toystorage.backend.services.inventories.discrepancy.ReceivingDiscrepancyService;
 import com.toystorage.backend.dto.request.inventories.discrepancy.UpdateAcceptedQuantityRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -142,9 +143,7 @@ public class ReceivingDiscrepancyController {
      */
 
     @PatchMapping("/{discrepancyId}/escalate")
-//    @PreAuthorize(
-//            "hasAuthority('RECEIVING_DISCREPANCY_ESCALATE')"
-//    )
+    @PreAuthorize("hasAuthority('ROLE_ROLE-WH-MANAGER')")
     public ResponseEntity<DiscrepancyReportResponse>
     escalate(
             @PathVariable Long discrepancyId,

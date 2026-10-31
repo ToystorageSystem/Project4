@@ -1,5 +1,8 @@
 package com.toystorage.backend.services.inventories.discrepancy;
 
+import com.toystorage.backend.entity.inventories.DiscrepancyItems;
+import com.toystorage.backend.enums.inventories.DiscrepancySeverity;
+import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyItemRepository;
 import com.toystorage.backend.dto.request.inventories.discrepancy.EscalateDiscrepancyRequest;
 import com.toystorage.backend.dto.request.inventories.discrepancy.ResolveDiscrepancyRequest;
 import com.toystorage.backend.dto.response.inventories.discrepancy.DiscrepancyItemResponse;
@@ -35,6 +38,7 @@ import java.util.UUID;
 public class ReceivingDiscrepancyService {
 
     private final DiscrepancyReportRepository discrepancyReportRepository;
+    private final DiscrepancyItemRepository discrepancyItemRepository;
     private final ReceiptInspectionRepository receiptInspectionRepository;
     private final DiscrepancyReportMapper discrepancyReportMapper;
     private final DiscrepancyValidationService validationService;
@@ -342,7 +346,8 @@ public class ReceivingDiscrepancyService {
                             .discrepancyType(
                                     type
                             )
-
+                            .blocking(true)
+                            .severity(DiscrepancySeverity.MINOR)
                             .status(
                                     DiscrepancyStatus.OPEN
                             )
@@ -363,7 +368,36 @@ public class ReceivingDiscrepancyService {
 
                             .build();
 
-            discrepancyReportRepository.save(report);
+
+            DiscrepancyReports savedReport =
+                    discrepancyReportRepository.save(report);
+
+            DiscrepancyItems detail =
+                    DiscrepancyItems.builder()
+                            .discrepancyReport(savedReport)
+                            .product(inspection.getProduct())
+                            .expectedQuantity(
+                                    inspection.getExpectedQuantity()
+                            )
+                            .actualQuantity(
+                                    inspection.getActualQuantity()
+                            )
+                            .differenceQuantity(
+                                    inspection.getActualQuantity()
+                                            - inspection.getExpectedQuantity()
+                            )
+                            .discrepancyItemsCode(
+                                    "DI-" + UUID.randomUUID()
+                                            .toString()
+                                            .replace("-", "")
+                                            .substring(0, 12)
+                                            .toUpperCase()
+                            )
+                            .build();
+
+            discrepancyItemRepository.save(detail);
+
+
         }
     }
 

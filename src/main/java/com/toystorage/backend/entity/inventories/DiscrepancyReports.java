@@ -6,6 +6,7 @@ import com.toystorage.backend.enums.inventories.DiscrepancyStatus;
 import com.toystorage.backend.enums.inventories.DiscrepancyType;
 import com.toystorage.backend.enums.inventories.DiscrepancyReferenceType;
 import com.toystorage.backend.enums.inventories.ResolutionAction;
+import com.toystorage.backend.enums.inventories.DiscrepancySeverity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -52,6 +53,22 @@ public class DiscrepancyReports {
     @Enumerated(EnumType.STRING)
     @Column(name = "discrepancy_type", nullable = false, length = 30)
     private DiscrepancyType discrepancyType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(
+        name = "severity",
+        nullable = false,
+        columnDefinition = "enum('MAJOR','MINOR')"
+    )
+    private DiscrepancySeverity severity;
+
+    @Column(
+        name = "blocking",
+        nullable = false,
+        columnDefinition = "bit(1)"
+    )
+    private Boolean blocking;
+
 
     /** OPEN, UNDER_REVIEW, RESOLVED, REJECTED. */
     @Enumerated(EnumType.STRING)

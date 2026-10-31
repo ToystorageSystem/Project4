@@ -334,6 +334,7 @@ public class BusinessManagerDiscrepancyService {
                 DiscrepancyStatus.RESOLVED
         );
 
+        report.setBlocking(false);
 
         report.setUpdatedAt(
                 LocalDateTime.now()

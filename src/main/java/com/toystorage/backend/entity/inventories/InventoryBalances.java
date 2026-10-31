@@ -170,19 +170,21 @@ public class InventoryBalances {
          */
         if (
                 location != null
-                        && (
-                        location.getLocationType()
-                                == WarehouseLocationType.QUARANTINE
-
-                                || location.getLocationType()
-                                == WarehouseLocationType.DAMAGED
+                && (
+                    location.getLocationType()
+                            == WarehouseLocationType.QUARANTINE
+                    ||
+                    location.getLocationType()
+                            == WarehouseLocationType.DAMAGED
+                    ||
+                    location.getLocationType()
+                            == WarehouseLocationType.RECEIVING
                 )
         ) {
-
             availableQuantity = 0;
-
             return;
         }
+
 
 
         availableQuantity =
