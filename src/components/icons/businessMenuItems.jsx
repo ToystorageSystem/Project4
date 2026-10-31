@@ -179,4 +179,12 @@ export const businessManagerMenuItems = [
         path: "/business-manager/purchase-orders",
         icon: <PurchaseOrderIcon />,
     },
+    
+    {
+        key: "business-manager-discrepancies",
+        label: "Xử lý chênh lệch hàng hóa",
+        path: "/business-manager/discrepancies",
+        icon: <StockTransferIcon />,
+    },
+
 ];
