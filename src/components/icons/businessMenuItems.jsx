@@ -161,4 +161,10 @@ export const businessManagerMenuItems = [
         path: "/business-manager/product-approvals",
         icon: <ProductIcon />,
     },
+    {
+        key: "business-manager-stock-transactions",
+        label: "Theo dõi phiếu xuất / phiếu nhập",
+        path: "/business-manager/stock-transactions",
+        icon: <StockTransferIcon />,
+    },
 ];
