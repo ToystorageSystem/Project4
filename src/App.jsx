@@ -10,6 +10,7 @@ import RequireRole from "./auth/RequireRole";
 import { getHomePath, ROLE } from "./auth/roleRouting";
 import BusinessStaffDashboardPage from "./pages/businessstaff/BusinessStaffDashboardPage";
 import BusinessManagerDashboardPage from "./pages/businessmanager/BusinessManagerDashboardPage";
+import ProductApprovalsPage from "./pages/businessmanager/ProductApprovalsPage";
 import SupplierListPage from "./pages/businessstaff/suppliers/SupplierListPage";
 import SupplierDetailPage from "./pages/businessstaff/suppliers/SupplierDetailPage";
 import SupplierFormPage from "./pages/businessstaff/suppliers/SupplierFormPage";
@@ -127,6 +128,7 @@ export default function App() {
                     </Route>
                     <Route element={<RequireRole authority={ROLE.BUSINESS_MANAGER} />}>
                         <Route path="/business-manager/dashboard" element={<BusinessManagerDashboardPage />} />
+                        <Route path="/business-manager/product-approvals" element={<ProductApprovalsPage />} />
                     </Route>
 
                     <Route path="/warehouse/receiving/pending" element={<ReceivingPendingPage />} />

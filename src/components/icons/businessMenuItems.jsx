@@ -155,4 +155,10 @@ export const businessManagerMenuItems = [
         path: "/business-manager/dashboard",
         icon: <DashboardIcon />,
     },
+    {
+        key: "business-manager-product-approvals",
+        label: "Duyệt sản phẩm",
+        path: "/business-manager/product-approvals",
+        icon: <ProductIcon />,
+    },
 ];
