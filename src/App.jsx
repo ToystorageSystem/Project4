@@ -12,6 +12,7 @@ import BusinessStaffDashboardPage from "./pages/businessstaff/BusinessStaffDashb
 import BusinessManagerDashboardPage from "./pages/businessmanager/BusinessManagerDashboardPage";
 import ProductApprovalsPage from "./pages/businessmanager/ProductApprovalsPage";
 import StockTransactionsPage from "./pages/businessmanager/StockTransactionsPage";
+import BusinessActivityReportsPage from "./pages/businessmanager/BusinessActivityReportsPage";
 import SupplierListPage from "./pages/businessstaff/suppliers/SupplierListPage";
 import SupplierDetailPage from "./pages/businessstaff/suppliers/SupplierDetailPage";
 import SupplierFormPage from "./pages/businessstaff/suppliers/SupplierFormPage";
@@ -131,6 +132,7 @@ export default function App() {
                         <Route path="/business-manager/dashboard" element={<BusinessManagerDashboardPage />} />
                         <Route path="/business-manager/product-approvals" element={<ProductApprovalsPage />} />
                         <Route path="/business-manager/stock-transactions" element={<StockTransactionsPage />} />
+                        <Route path="/business-manager/activity-reports" element={<BusinessActivityReportsPage />} />
                     </Route>
 
                     <Route path="/warehouse/receiving/pending" element={<ReceivingPendingPage />} />

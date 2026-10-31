@@ -167,4 +167,10 @@ export const businessManagerMenuItems = [
         path: "/business-manager/stock-transactions",
         icon: <StockTransferIcon />,
     },
+    {
+        key: "business-manager-activity-reports",
+        label: "Xem báo cáo hoạt động",
+        path: "/business-manager/activity-reports",
+        icon: <InventoryReportIcon />,
+    },
 ];
