@@ -1,15 +1,16 @@
+
 package com.toystorage.backend.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import org.springframework.security.access.AccessDeniedException;
 
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -18,16 +19,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class Global {
 
-
-    // =========================================================
+    // =====================================================
     // 400 - BAD REQUEST
-    // =========================================================
+    // Xu ly exception BadRequest do project tu tao.
+    // =====================================================
 
-    /*
-     * Dùng cho exception tự tạo:
-     *
-     * throw new BadRequest("...");
-     */
     @ExceptionHandler(BadRequest.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(
             BadRequest ex
@@ -40,48 +36,29 @@ public class Global {
         );
     }
 
-
-    // =========================================================
+    // =====================================================
     // 400 - VALIDATION ERROR
-    // =========================================================
+    // Xu ly cac loi @Valid cua request.
+    // =====================================================
 
-    /*
-     * Xử lý lỗi từ @Valid.
-     *
-     * Ví dụ:
-     *
-     * @NotBlank
-     * @Email
-     * @Size
-     *
-     * Nếu frontend gửi:
-     *
-     * email = "abc"
-     *
-     * thì trả 400 thay vì 500.
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(
             MethodArgumentNotValidException ex
     ) {
 
-        Map<String, String> errors =
-                new LinkedHashMap<>();
-
+        // Luu loi chi tiet theo ten truong.
+        Map<String, String> errors = new LinkedHashMap<>();
 
         ex.getBindingResult()
                 .getFieldErrors()
                 .forEach(error ->
-
                         errors.put(
                                 error.getField(),
                                 error.getDefaultMessage()
                         )
                 );
 
-
-        Map<String, Object> response =
-                new LinkedHashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
 
         response.put(
                 "timestamp",
@@ -100,7 +77,7 @@ public class Global {
 
         response.put(
                 "message",
-                "Dữ liệu không hợp lệ"
+                "The request data is invalid."
         );
 
         response.put(
@@ -108,26 +85,16 @@ public class Global {
                 errors
         );
 
-
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(response);
     }
 
+    // =====================================================
+    // 400 - INVALID JSON BODY
+    // Xu ly JSON sai cu phap hoac body bi thieu.
+    // =====================================================
 
-    // =========================================================
-    // 400 - JSON BODY ERROR
-    // =========================================================
-
-    /*
-     * Xử lý:
-     *
-     * - Không gửi request body
-     * - JSON sai cú pháp
-     * - JSON parse lỗi
-     *
-     * Trước đây trường hợp này đang bị trả 500.
-     */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleUnreadableBody(
             HttpMessageNotReadableException ex
@@ -136,25 +103,43 @@ public class Global {
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "Bad Request",
-                "Request body bị thiếu hoặc JSON không đúng định dạng"
+                "Request body is missing or contains invalid JSON."
         );
     }
 
+    // =====================================================
+    // 400 - INVALID URL PARAMETER
+    // Xu ly tham so URL khong dung kieu du lieu.
+    // =====================================================
 
-    // =========================================================
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex
+    ) {
+
+        // Xu ly rieng conversationId cua AI Chat.
+        if ("conversationId".equals(ex.getName())) {
+
+            return buildResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "Bad Request",
+                    "Conversation ID must be a valid number."
+            );
+        }
+
+        // Cac tham so khac khong dung kieu du lieu.
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "Bad Request",
+                "Invalid value for parameter: " + ex.getName()
+        );
+    }
+
+    // =====================================================
     // 401 - UNAUTHORIZED
-    // =========================================================
+    // Xu ly exception Unauthorized cua project.
+    // =====================================================
 
-    /*
-     * Dùng cho exception Unauthorized
-     * của project.
-     *
-     * Ví dụ:
-     *
-     * - Sai email
-     * - Sai password
-     * - Account không hoạt động
-     */
     @ExceptionHandler(Unauthorized.class)
     public ResponseEntity<Map<String, Object>> handleUnauthorized(
             Unauthorized ex
@@ -167,16 +152,11 @@ public class Global {
         );
     }
 
-
-    // =========================================================
+    // =====================================================
     // 403 - CUSTOM FORBIDDEN
-    // =========================================================
+    // Xu ly exception Forbidden cua project.
+    // =====================================================
 
-    /*
-     * Dùng khi code của mình chủ động:
-     *
-     * throw new Forbidden("...");
-     */
     @ExceptionHandler(Forbidden.class)
     public ResponseEntity<Map<String, Object>> handleForbidden(
             Forbidden ex
@@ -189,61 +169,27 @@ public class Global {
         );
     }
 
-
-    // =========================================================
+    // =====================================================
     // 403 - SPRING SECURITY ACCESS DENIED
-    // =========================================================
+    // Xu ly loi phan quyen tu @PreAuthorize.
+    // =====================================================
 
-    /*
-     * QUAN TRỌNG.
-     *
-     * Đây là lỗi mình vừa gặp.
-     *
-     * Ví dụ:
-     *
-     * BUSINESS_STAFF đã login
-     *
-     * nhưng gọi:
-     *
-     * /api/admin/users
-     *
-     * Controller có:
-     *
-     * @PreAuthorize("hasRole('ADMIN')")
-     *
-     * Spring sẽ throw AccessDeniedException.
-     *
-     * Nếu không có handler này:
-     *
-     * AccessDeniedException
-     *      ↓
-     * Exception.class
-     *      ↓
-     * 500
-     *
-     * Sau khi thêm:
-     *
-     * AccessDeniedException
-     *      ↓
-     * 403 Forbidden
-     */
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>>
-    handleAccessDenied(
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(
             AccessDeniedException ex
     ) {
 
         return buildResponse(
                 HttpStatus.FORBIDDEN,
                 "Forbidden",
-                "Bạn không có quyền thực hiện chức năng này"
+                "You do not have permission to perform this action."
         );
     }
 
-
-    // =========================================================
+    // =====================================================
     // 404 - NOT FOUND
-    // =========================================================
+    // Xu ly tai nguyen khong ton tai hoac khong thuoc user.
+    // =====================================================
 
     @ExceptionHandler(NotFound.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(
@@ -257,17 +203,11 @@ public class Global {
         );
     }
 
-
-    // =========================================================
+    // =====================================================
     // 500 - INTERNAL SERVER ERROR
-    // =========================================================
+    // Khong lam lo chi tiet loi noi bo ra Frontend.
+    // =====================================================
 
-    /*
-     * Handler cuối cùng.
-     *
-     * Chỉ những lỗi thật sự chưa được xử lý
-     * mới rơi xuống đây.
-     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(
             Exception ex
@@ -276,51 +216,42 @@ public class Global {
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
-                ex.getMessage()
+                "An unexpected server error occurred."
         );
     }
 
+    // =====================================================
+    // BUILD ERROR RESPONSE
+    // Tao cau truc JSON response thong nhat.
+    // =====================================================
 
-    // =========================================================
-    // BUILD RESPONSE
-    // =========================================================
-
-    /*
-     * Hàm dùng chung để tránh lặp code.
-     */
     private ResponseEntity<Map<String, Object>> buildResponse(
             HttpStatus status,
             String error,
             String message
     ) {
 
-        Map<String, Object> response =
-                new LinkedHashMap<>();
-
+        Map<String, Object> response = new LinkedHashMap<>();
 
         response.put(
                 "timestamp",
                 LocalDateTime.now()
         );
 
-
         response.put(
                 "status",
                 status.value()
         );
-
 
         response.put(
                 "error",
                 error
         );
 
-
         response.put(
                 "message",
                 message
         );
-
 
         return ResponseEntity
                 .status(status)

@@ -1,3 +1,4 @@
+
 package com.toystorage.backend.config;
 
 import com.toystorage.backend.config.security.CustomUserDetailsService;
@@ -6,7 +7,6 @@ import com.toystorage.backend.config.security.MustChangePasswordFilter;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,9 +26,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.security.web.SecurityFilterChain;
-
 import org.springframework.security.web.context.SecurityContextHolderFilter;
-
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
@@ -36,89 +34,46 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    /*
-     * Load user, role, permission khi login.
-     */
     private final CustomUserDetailsService customUserDetailsService;
-
-
-    /*
-     * Filter kiểm tra:
-     *
-     * mustChangePassword = true
-     *
-     * thì user chỉ được:
-     *
-     * - login
-     * - change-password
-     * - logout
-     *
-     * và bị chặn những API khác.
-     */
     private final MustChangePasswordFilter mustChangePasswordFilter;
 
-
-    // =========================================================
+    // =====================================================
     // PASSWORD ENCODER
-    // =========================================================
+    // =====================================================
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 
-
-    // =========================================================
+    // =====================================================
     // SESSION REGISTRY
-    // =========================================================
+    // Theo doi cac phien dang nhap dang hoat dong.
+    // =====================================================
 
-    /*
-     * Theo dõi những session đang hoạt động.
-     *
-     * Ví dụ:
-     *
-     * User 15
-     *      ↓
-     * JSESSIONID ABC123
-     *
-     * Khi Admin khóa User 15,
-     * UserSessionService tìm được session này
-     * và expire nó.
-     */
     @Bean
     public SessionRegistry sessionRegistry() {
-
         return new SessionRegistryImpl();
     }
 
-
-    // =========================================================
+    // =====================================================
     // HTTP SESSION EVENT
-    // =========================================================
+    // Dong bo trang thai session voi SessionRegistry.
+    // =====================================================
 
-    /*
-     * Giúp SessionRegistry nhận biết session:
-     *
-     * - timeout
-     * - invalidate
-     * - destroy
-     *
-     * để loại session khỏi registry đúng cách.
-     */
     @Bean
     public ServletListenerRegistrationBean<HttpSessionEventPublisher>
-    httpSessionEventPublisher() {
+            httpSessionEventPublisher() {
 
         return new ServletListenerRegistrationBean<>(
                 new HttpSessionEventPublisher()
         );
     }
 
-
-    // =========================================================
+    // =====================================================
     // AUTHENTICATION PROVIDER
-    // =========================================================
+    // Xac thuc tai khoan bang UserDetailsService va BCrypt.
+    // =====================================================
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
@@ -126,45 +81,32 @@ public class SecurityConfig {
         DaoAuthenticationProvider provider =
                 new DaoAuthenticationProvider();
 
-
-        /*
-         * Spring Security lấy user
-         * từ CustomUserDetailsService.
-         */
         provider.setUserDetailsService(
                 customUserDetailsService
         );
 
-
-        /*
-         * Password trong DB sử dụng BCrypt.
-         */
         provider.setPasswordEncoder(
                 passwordEncoder()
         );
 
-
         return provider;
     }
 
-
-    // =========================================================
+    // =====================================================
     // AUTHENTICATION MANAGER
-    // =========================================================
+    // =====================================================
 
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
 
-        return configuration
-                .getAuthenticationManager();
+        return configuration.getAuthenticationManager();
     }
 
-
-    // =========================================================
+    // =====================================================
     // SECURITY FILTER CHAIN
-    // =========================================================
+    // =====================================================
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -173,239 +115,143 @@ public class SecurityConfig {
 
         http
 
-                // =================================================
-                // CSRF
-                // =================================================
+                // Giu nguyen cau hinh CSRF cua project.
+                .csrf(csrf -> csrf.disable())
 
-                /*
-                 * Hiện project dùng REST API + session.
-                 *
-                 * Giai đoạn phát triển hiện tại đang disable CSRF.
-                 */
-                .csrf(csrf ->
-                        csrf.disable()
-                )
-
-
-                // =================================================
-                // AUTHENTICATION PROVIDER
-                // =================================================
-
+                // Su dung AuthenticationProvider hien tai.
                 .authenticationProvider(
                         authenticationProvider()
                 )
-
 
                 // =================================================
                 // AUTHORIZATION
                 // =================================================
 
-                .authorizeHttpRequests(auth ->
+                .authorizeHttpRequests(auth -> auth
 
-                        auth
+                        // Cac endpoint khong can dang nhap.
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/swagger",
+                                "/swagger/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        )
+                        .permitAll()
 
-                                /*
-                                 * Các endpoint public.
-                                 */
-                                .requestMatchers(
-
-                                        "/api/auth/login",
-
-                                        "/swagger",
-
-                                        "/swagger/**",
-
-                                        "/swagger-ui/**",
-
-                                        "/v3/api-docs/**"
-                                )
-
-                                .permitAll()
-
-
-                                /*
-                                 * Mọi endpoint khác
-                                 * phải đăng nhập.
-                                 */
-                                .anyRequest()
-                                .authenticated()
+                        // Cac endpoint con lai phai dang nhap.
+                        .anyRequest()
+                        .authenticated()
                 )
-
 
                 // =================================================
                 // SESSION MANAGEMENT
                 // =================================================
 
-                .sessionManagement(session ->
+                .sessionManagement(session -> session
 
-                        session
+                        .sessionCreationPolicy(
+                                SessionCreationPolicy.IF_REQUIRED
+                        )
 
-                                /*
-                                 * Chỉ tạo HttpSession
-                                 * khi thực sự cần.
-                                 */
-                                .sessionCreationPolicy(
-                                        SessionCreationPolicy.IF_REQUIRED
-                                )
+                        // Moi tai khoan toi da mot session.
+                        .maximumSessions(1)
 
+                        .sessionRegistry(
+                                sessionRegistry()
+                        )
 
-                                /*
-                                 * Một user chỉ có tối đa
-                                 * một session hoạt động.
-                                 */
-                                .maximumSessions(1)
+                        // Tra HTTP 401 khi session bi thu hoi.
+                        .expiredSessionStrategy(event -> {
 
+                            var response = event.getResponse();
 
-                                /*
-                                 * Đăng ký session với
-                                 * SessionRegistry.
-                                 */
-                                .sessionRegistry(
-                                        sessionRegistry()
-                                )
+                            response.setStatus(401);
+                            response.setContentType(
+                                    "application/json"
+                            );
+                            response.setCharacterEncoding(
+                                    "UTF-8"
+                            );
 
-
-                                /*
-                                 * Khi session đã bị Admin revoke
-                                 * mà client vẫn dùng JSESSIONID cũ:
-                                 *
-                                 * trả 401.
-                                 */
-                                .expiredSessionStrategy(event -> {
-
-                                    var response =
-                                            event.getResponse();
-
-
-                                    response.setStatus(
-                                            401
-                                    );
-
-
-                                    response.setContentType(
-                                            "application/json"
-                                    );
-
-
-                                    response.setCharacterEncoding(
-                                            "UTF-8"
-                                    );
-
-
-                                    response.getWriter().write(
-
-                                            "{"
-                                                    + "\"status\":401,"
-                                                    + "\"error\":\"Unauthorized\","
-                                                    + "\"message\":\"Phiên đăng nhập đã bị thu hồi\""
-                                                    + "}"
-                                    );
-                                })
-
+                            response.getWriter().write(
+                                    "{"
+                                    + "\"status\":401,"
+                                    + "\"error\":\"Unauthorized\","
+                                    + "\"message\":\"Your session has been revoked.\""
+                                    + "}"
+                            );
+                        })
                 )
-
 
                 // =================================================
                 // MUST CHANGE PASSWORD FILTER
+                // Giu nguyen thu tu filter.
                 // =================================================
 
-                /*
-                 * SecurityContext phải được load trước.
-                 *
-                 * Sau đó filter của mình mới đọc được:
-                 *
-                 * SecurityContextHolder
-                 *      ↓
-                 * Authentication
-                 *      ↓
-                 * CustomUserDetails
-                 *
-                 * Nếu:
-                 *
-                 * mustChangePassword = true
-                 *
-                 * thì các API nghiệp vụ sẽ bị chặn.
-                 */
                 .addFilterAfter(
                         mustChangePasswordFilter,
                         SecurityContextHolderFilter.class
                 )
 
-
                 // =================================================
-                // SECURITY EXCEPTION
+                // SECURITY EXCEPTION HANDLING
                 // =================================================
 
-                .exceptionHandling(exception ->
+                .exceptionHandling(exception -> exception
 
-                        exception
+                        // -----------------------------------------
+                        // 401 - UNAUTHORIZED
+                        // Chua dang nhap hoac session khong hop le.
+                        // -----------------------------------------
 
-                                /*
-                                 * Chưa login /
-                                 * session không hợp lệ.
-                                 */
-                                .authenticationEntryPoint(
-                                        (request, response, ex) -> {
+                        .authenticationEntryPoint(
+                                (request, response, ex) -> {
 
-                                            response.setStatus(
-                                                    401
-                                            );
+                                    response.setStatus(401);
+                                    response.setContentType(
+                                            "application/json"
+                                    );
+                                    response.setCharacterEncoding(
+                                            "UTF-8"
+                                    );
 
-                                            response.setContentType(
-                                                    "application/json"
-                                            );
+                                    response.getWriter().write(
+                                            "{"
+                                            + "\"status\":401,"
+                                            + "\"error\":\"Unauthorized\","
+                                            + "\"message\":\"You are not authenticated or your session is invalid.\""
+                                            + "}"
+                                    );
+                                }
+                        )
 
-                                            response.setCharacterEncoding(
-                                                    "UTF-8"
-                                            );
+                        // -----------------------------------------
+                        // 403 - FORBIDDEN
+                        // Da dang nhap nhung khong du quyen.
+                        // -----------------------------------------
 
-                                            response.getWriter().write(
+                        .accessDeniedHandler(
+                                (request, response, ex) -> {
 
-                                                    "{"
-                                                            + "\"status\":401,"
-                                                            + "\"error\":\"Unauthorized\","
-                                                            + "\"message\":\"Bạn chưa đăng nhập hoặc phiên đăng nhập không hợp lệ\""
-                                                            + "}"
-                                            );
-                                        }
-                                )
+                                    response.setStatus(403);
+                                    response.setContentType(
+                                            "application/json"
+                                    );
+                                    response.setCharacterEncoding(
+                                            "UTF-8"
+                                    );
 
-
-                                /*
-                                 * Đã login nhưng không có quyền.
-                                 *
-                                 * Ví dụ:
-                                 *
-                                 * BUSINESS_STAFF
-                                 * gọi /api/admin/users
-                                 */
-                                .accessDeniedHandler(
-                                        (request, response, ex) -> {
-
-                                            response.setStatus(
-                                                    403
-                                            );
-
-                                            response.setContentType(
-                                                    "application/json"
-                                            );
-
-                                            response.setCharacterEncoding(
-                                                    "UTF-8"
-                                            );
-
-                                            response.getWriter().write(
-
-                                                    "{"
-                                                            + "\"status\":403,"
-                                                            + "\"error\":\"Forbidden\","
-                                                            + "\"message\":\"Bạn không có quyền thực hiện chức năng này\""
-                                                            + "}"
-                                            );
-                                        }
-                                )
+                                    response.getWriter().write(
+                                            "{"
+                                            + "\"status\":403,"
+                                            + "\"error\":\"Forbidden\","
+                                            + "\"message\":\"You do not have permission to perform this action.\""
+                                            + "}"
+                                    );
+                                }
+                        )
                 );
-
 
         return http.build();
     }
