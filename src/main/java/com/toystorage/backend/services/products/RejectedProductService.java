@@ -18,6 +18,7 @@ import com.toystorage.backend.enums.products.ProductStatus;
 import com.toystorage.backend.enums.users.ActivityAction;
 import com.toystorage.backend.enums.users.ActivityEntityType;
 import com.toystorage.backend.exceptions.BadRequest;
+import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.mapper.products.ProductApprovalMapper;
@@ -36,6 +37,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +82,8 @@ public class RejectedProductService {
     @Transactional(readOnly = true)
     public ProductApprovalPageResponse getRejectedProducts(
             Integer page,
-            Integer size
+            Integer size,
+            boolean closed
     ) {
 
         Pageable pageable =
@@ -89,12 +92,17 @@ public class RejectedProductService {
                         size
                 );
 
-        Page<ProductChangeRequests> result =
-                productChangeRequestRepository
-                        .findLatestRequestsByStatus(
-                                ProductChangeRequestStatus.REJECTED,
-                                pageable
-                        );
+        Page<ProductChangeRequests> result = closed
+                ? productChangeRequestRepository
+                    .findByStatusAndClosedAtIsNotNullOrderByClosedAtDesc(
+                            ProductChangeRequestStatus.REJECTED,
+                            pageable
+                    )
+                : productChangeRequestRepository
+                    .findLatestRequestsByStatus(
+                            ProductChangeRequestStatus.REJECTED,
+                            pageable
+                    );
 
         return toPageResponse(
                 result
@@ -123,6 +131,51 @@ public class RejectedProductService {
 
 
     // =====================================================
+    // STAFF CHON KHONG TIEP TUC
+    // =====================================================
+
+    @Transactional
+    public ProductApprovalRequestResponse closeRejectedRequest(Long requestId) {
+        Users currentUser = getCurrentUser();
+        ProductChangeRequests request = getRejectedChangeRequest(requestId);
+
+        // Chi nguoi gui yeu cau moi duoc dong phan viec cua minh.
+        if (!request.getCreatedBy().getId().equals(currentUser.getId())) {
+            throw new Forbidden("Only the request creator can close follow-up");
+        }
+        if (request.getClosedAt() != null) {
+            throw new BadRequest("This rejected request is already closed");
+        }
+
+        // Chi xu ly request moi nhat; request cu chi la lich su.
+        ProductChangeRequests latest = productChangeRequestRepository
+                .findTopByProduct_IdOrderByCreatedAtDescIdDesc(
+                        request.getProduct().getId()
+                )
+                .orElseThrow(() -> new NotFound("Product change request not found"));
+        if (!request.getId().equals(latest.getId())) {
+            throw new BadRequest("This rejected request is no longer the latest request");
+        }
+
+        request.setClosedAt(LocalDateTime.now());
+        request.setClosedBy(currentUser);
+        productChangeRequestRepository.save(request);
+
+        // Ghi nhat ky ma khong sua thong tin hay trang thai san pham.
+        ActivityLogs log = ActivityLogs.builder()
+                .user(currentUser)
+                .action(ActivityAction.UPDATE)
+                .entityType(ActivityEntityType.PRODUCT)
+                .entityId(request.getProduct().getId())
+                .oldValue("{\"requestId\":" + request.getId() + ",\"followUp\":\"OPEN\"}")
+                .newValue("{\"requestId\":" + request.getId() + ",\"followUp\":\"CLOSED\"}")
+                .build();
+        activityLogRepository.save(log);
+
+        return productApprovalMapper.toResponse(request);
+    }
+
+    // =====================================================
     // RESUBMIT
     // =====================================================
 
@@ -146,6 +199,10 @@ public class RejectedProductService {
                 getRejectedChangeRequest(
                         requestId
                 );
+
+        if (rejectedRequest.getClosedAt() != null) {
+            throw new BadRequest("Closed rejected requests cannot be resubmitted");
+        }
 
         Products product =
                 rejectedRequest.getProduct();

@@ -42,14 +42,18 @@ public class RejectedProductController {
             @RequestParam(
                     defaultValue = "10"
             )
-            Integer size
+            Integer size,
+
+            @RequestParam(defaultValue = "false")
+            boolean closed
     ) {
 
         return ResponseEntity.ok(
                 rejectedProductService
                         .getRejectedProducts(
                                 page,
-                                size
+                                size,
+                                closed
                         )
         );
     }
@@ -75,6 +79,19 @@ public class RejectedProductController {
         );
     }
 
+
+    // =====================================================
+    // REJECTED REQUEST - CLOSE FOLLOW-UP
+    // =====================================================
+
+    @PostMapping("/{requestId}/close")
+    public ResponseEntity<ProductApprovalRequestResponse> closeRejectedRequest(
+            @PathVariable Long requestId
+    ) {
+        return ResponseEntity.ok(
+                rejectedProductService.closeRejectedRequest(requestId)
+        );
+    }
 
     // =====================================================
     // RESUBMIT REJECTED PRODUCT

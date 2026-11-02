@@ -178,6 +178,15 @@ public class ProductChangeRequests {
     )
     private LocalDateTime approvedAt;
 
+    // Ghi nhan Staff khong can tiep tuc xu ly request REJECTED.
+    // Khong thay doi trang thai phe duyet REJECTED.
+    @Column(name = "closed_at")
+    private LocalDateTime closedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "closed_by")
+    private Users closedBy;
+
     @PrePersist
     protected void onCreate() {
 

@@ -142,6 +142,11 @@ public class ProductApprovalMapper {
                 changeRequest.getApprovedAt()
         );
 
+        response.setClosedAt(changeRequest.getClosedAt());
+        if (changeRequest.getClosedBy() != null) {
+            response.setClosedById(changeRequest.getClosedBy().getId());
+            response.setClosedByName(changeRequest.getClosedBy().getName());
+        }
 
         return response;
     }

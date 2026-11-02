@@ -48,6 +48,9 @@ public class ProductApprovalRequestResponse {
 
     private LocalDateTime createdAt;
     private LocalDateTime approvedAt;
+    private LocalDateTime closedAt;
+    private Long closedById;
+    private String closedByName;
 
     public ProductApprovalRequestResponse() {
     }
@@ -186,5 +189,29 @@ public class ProductApprovalRequestResponse {
 
     public void setApprovedAt(LocalDateTime approvedAt) {
         this.approvedAt = approvedAt;
+    }
+
+    public LocalDateTime getClosedAt() {
+        return closedAt;
+    }
+
+    public void setClosedAt(LocalDateTime closedAt) {
+        this.closedAt = closedAt;
+    }
+
+    public Long getClosedById() {
+        return closedById;
+    }
+
+    public void setClosedById(Long closedById) {
+        this.closedById = closedById;
+    }
+
+    public String getClosedByName() {
+        return closedByName;
+    }
+
+    public void setClosedByName(String closedByName) {
+        this.closedByName = closedByName;
     }
 }

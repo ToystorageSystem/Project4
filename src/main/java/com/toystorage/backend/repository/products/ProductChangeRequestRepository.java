@@ -84,6 +84,7 @@ public interface ProductChangeRequestRepository
                     select r
                     from ProductChangeRequests r
                     where r.status = :status
+                      and r.closedAt is null
                       and not exists (
                           select newer.id
                           from ProductChangeRequests newer
@@ -102,6 +103,7 @@ public interface ProductChangeRequestRepository
                     select count(r)
                     from ProductChangeRequests r
                     where r.status = :status
+                      and r.closedAt is null
                       and not exists (
                           select newer.id
                           from ProductChangeRequests newer
@@ -118,6 +120,15 @@ public interface ProductChangeRequestRepository
     )
     Page<ProductChangeRequests> findLatestRequestsByStatus(
             @Param("status") ProductChangeRequestStatus status,
+            Pageable pageable
+    );
+
+    // Lich su request da duoc Staff ghi nhan khong tiep tuc.
+    @EntityGraph(attributePaths = {
+            "product", "product.category", "product.brand", "createdBy", "approvedBy", "closedBy"
+    })
+    Page<ProductChangeRequests> findByStatusAndClosedAtIsNotNullOrderByClosedAtDesc(
+            ProductChangeRequestStatus status,
             Pageable pageable
     );
 
