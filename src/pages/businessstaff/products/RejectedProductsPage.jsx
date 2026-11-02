@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../../auth/AuthContext";
 import {
+    closeRejectedProductRequest,
     getRejectedProductRequest,
     listRejectedProductRequests,
     resubmitRejectedProductRequest,
@@ -152,7 +154,9 @@ function FormField({ label, value, onChange, type = "text", required = false, ..
 }
 
 export default function RejectedProductsPage() {
+    const { user } = useAuth();
     const [page, setPage] = useState(0);
+    const [showClosed, setShowClosed] = useState(false);
     const [reload, setReload] = useState(0);
     const [data, setData] = useState({ items: [], totalPages: 0, totalElements: 0 });
     const [loading, setLoading] = useState(true);
@@ -173,7 +177,7 @@ export default function RejectedProductsPage() {
         const controller = new AbortController();
         setLoading(true);
         setError("");
-        listRejectedProductRequests({ page, size: PAGE_SIZE }, controller.signal)
+        listRejectedProductRequests({ page, size: PAGE_SIZE, closed: showClosed }, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
                 if (!Array.isArray(result?.items)) {
@@ -190,7 +194,7 @@ export default function RejectedProductsPage() {
                 if (!controller.signal.aborted) setLoading(false);
             });
         return () => controller.abort();
-    }, [page, reload]);
+    }, [page, reload, showClosed]);
 
     const openDetail = async (row) => {
         if (detailLoading || saving) return;
@@ -219,6 +223,27 @@ export default function RejectedProductsPage() {
         }
     };
 
+    const closeRequest = async () => {
+        if (!detail || saving || showClosed) return;
+        if (!window.confirm("Stop following up on this rejected request? The rejection history will remain available.")) {
+            return;
+        }
+        setSaving(true);
+        setDetailError("");
+        try {
+            await closeRejectedProductRequest(detail.id);
+            setNotice("The rejected request was closed. Its approval history was retained.");
+            setDetail(null);
+            setEditing(false);
+            setPage(0);
+            setReload((current) => current + 1);
+        } catch (requestError) {
+            setDetailError(productErrorMessage(requestError, "Could not close this request."));
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const changeForm = (field, value) => {
         setForm((current) => ({ ...current, [field]: value }));
         setConfirmed(false);
@@ -227,7 +252,7 @@ export default function RejectedProductsPage() {
 
     const submitResubmission = async (event) => {
         event.preventDefault();
-        if (!detail || saving || !confirmed || detail.status !== "REJECTED") return;
+        if (!detail || saving || !confirmed || detail.status !== "REJECTED" || detail.closedAt) return;
         const validationError = validate(form);
         if (validationError) {
             setFormError(validationError);
@@ -258,7 +283,7 @@ export default function RejectedProductsPage() {
             <div className="space-y-6">
                 <PageHeader
                     title="Sản phẩm bị từ chối"
-                    description="Xem lý do từ chối, chỉnh sửa theo góp ý và gửi lại Business Manager phê duyệt."
+                    description="Xem lý do từ chối, gửi lại nếu cần hoặc chọn Không tiếp tục. Lịch sử vẫn được giữ."
                 />
 
                 {notice && (
@@ -274,11 +299,19 @@ export default function RejectedProductsPage() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <p className="text-sm text-slate-600">
-                            Tổng số: <strong>{data.totalElements ?? 0}</strong> yêu cầu bị từ chối.
+                            {showClosed ? "Đã kết thúc:" : "Cần xử lý:"} <strong>{data.totalElements ?? 0}</strong> yêu cầu.
                         </p>
-                        <Button variant="outline" onClick={() => setReload((current) => current + 1)}>
-                            Làm mới
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button variant={!showClosed ? "primary" : "outline"} onClick={() => { setShowClosed(false); setPage(0); setDetail(null); }}>
+                                Cần xử lý
+                            </Button>
+                            <Button variant={showClosed ? "primary" : "outline"} onClick={() => { setShowClosed(true); setPage(0); setDetail(null); }}>
+                                Đã kết thúc
+                            </Button>
+                            <Button variant="outline" onClick={() => setReload((current) => current + 1)}>
+                                Làm mới
+                            </Button>
+                        </div>
                     </div>
 
                     {loading ? (
@@ -287,8 +320,8 @@ export default function RejectedProductsPage() {
                         </div>
                     ) : !error && rows.length === 0 ? (
                         <EmptyState
-                            title="Không có sản phẩm bị từ chối"
-                            description="Hiện chưa có yêu cầu bị từ chối cần xử lý."
+                            title={showClosed ? "Chưa có yêu cầu đã kết thúc" : "Không có yêu cầu bị từ chối cần xử lý"}
+                            description={showClosed ? "Chưa có yêu cầu nào được đánh dấu Không tiếp tục." : "Hiện không có yêu cầu nào cần xem lại."}
                         />
                     ) : !error ? (
                         <div className="overflow-x-auto">
@@ -318,7 +351,7 @@ export default function RejectedProductsPage() {
                                             <td className="px-3 py-3">{formatDate(row.approvedAt || row.createdAt)}</td>
                                             <td className="px-3 py-3">
                                                 <Button variant="outline" size="sm" onClick={() => openDetail(row)}>
-                                                    Xem / Gửi lại
+                                                    {showClosed ? "Xem lịch sử" : "Xem / Gửi lại"}
                                                 </Button>
                                             </td>
                                         </tr>
@@ -390,12 +423,25 @@ export default function RejectedProductsPage() {
                             </div>
                         </details>
 
-                        {detail.status === "REJECTED" && !editing && (
-                            <Button onClick={() => { setEditing(true); setFormError(""); setConfirmed(false); }}>
-                                Chỉnh sửa và gửi lại phê duyệt
-                            </Button>
+                        {detail.status === "REJECTED" && !editing && !detail.closedAt && !showClosed && (
+                            <div className="flex flex-wrap gap-2">
+                                <Button onClick={() => { setEditing(true); setFormError(""); setConfirmed(false); }}>
+                                    Chỉnh sửa và gửi lại phê duyệt
+                                </Button>
+                                {String(detail.createdById) === String(user?.id) && (
+                                    <Button variant="outline" disabled={saving} onClick={closeRequest}>
+                                        Không tiếp tục
+                                    </Button>
+                                )}
+                            </div>
                         )}
-                        {editing && detail.status === "REJECTED" && (
+                        {detail.closedAt && (
+                            <p className="text-sm text-slate-600">
+                                Đã kết thúc theo dõi lúc {formatDate(detail.closedAt)}.
+                                Yêu cầu vẫn giữ trạng thái REJECTED.
+                            </p>
+                        )}
+                        {editing && detail.status === "REJECTED" && !detail.closedAt && (
                             <form onSubmit={submitResubmission} className="space-y-4 border-t border-slate-200 pt-5">
                                 <h3 className="text-lg font-semibold">Chỉnh sửa thông tin theo góp ý</h3>
                                 {formError && <div role="alert"><Alert type="danger">{formError}</Alert></div>}
