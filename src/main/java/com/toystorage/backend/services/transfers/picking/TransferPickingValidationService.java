@@ -185,8 +185,8 @@ public class TransferPickingValidationService {
                         ? 0
                         : item.getPickedQuantity();
 
-        int after =
-                currentPicked
+        long after =
+                (long) currentPicked
                         + quantity;
 
         if (after

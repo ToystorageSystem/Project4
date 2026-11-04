@@ -1,7 +1,7 @@
 package com.toystorage.backend.services.warehouses.putaway;
 
 import com.toystorage.backend.dto.request.warehouses.putaway.ExecutePutawayItemRequest;
-
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.PutawayTaskItems;
 import com.toystorage.backend.entity.warehouses.PutawayTasks;
@@ -18,7 +18,6 @@ import com.toystorage.backend.exceptions.Unauthorized;
 
 import com.toystorage.backend.repository.users.UserRepository;
 import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskItemRepository;
-import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -206,8 +205,8 @@ public class PutawayExecutionValidationService {
                         : item.getPutawayQuantity();
 
 
-        int after =
-                currentQuantity
+        long after =
+                (long) currentQuantity
                         + quantity;
 
 

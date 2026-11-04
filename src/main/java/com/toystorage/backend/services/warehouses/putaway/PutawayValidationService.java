@@ -4,6 +4,7 @@ import com.toystorage.backend.dto.request.warehouses.putaway.CreatePutawayItemRe
 import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.users.Users;
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.entity.warehouses.PutawayTasks;
 import com.toystorage.backend.entity.warehouses.WarehouseLocations;
 import com.toystorage.backend.enums.warehouses.WarehouseStatus;
@@ -11,9 +12,7 @@ import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
-import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.users.UserRepository;
-import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 import com.toystorage.backend.enums.warehouses.WarehouseLocationType;
 import com.toystorage.backend.repository.warehouses.putaway.WarehouseLocationRepository;
 
@@ -22,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;

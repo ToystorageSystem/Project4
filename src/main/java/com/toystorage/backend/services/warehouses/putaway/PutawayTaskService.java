@@ -10,12 +10,10 @@ import com.toystorage.backend.enums.warehouses.PutawayTaskItemStatus;
 import com.toystorage.backend.enums.warehouses.PutawayTaskStatus;
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskItemRepository;
-import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
-import com.toystorage.backend.services.warehouses.location.WarehouseLocationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -46,6 +44,11 @@ public class PutawayTaskService {
             );
         }
 
+
+        if (items.stream().noneMatch(item -> item.getAcceptedQuantity() != null
+                && item.getAcceptedQuantity() > 0)) {
+            return null;
+        }
 
         PutawayTasks task =
                 new PutawayTasks();

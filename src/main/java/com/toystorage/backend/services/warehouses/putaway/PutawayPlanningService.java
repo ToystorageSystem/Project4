@@ -1,21 +1,14 @@
 package com.toystorage.backend.services.warehouses.putaway;
 
-import com.toystorage.backend.dto.request.warehouses.putaway.CreatePutawayPlanRequest;
 import com.toystorage.backend.dto.response.warehouses.putaway.PutawayPlanResponse;
-
-import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.entity.warehouses.PutawayTasks;
-import com.toystorage.backend.entity.warehouses.WarehouseLocations;
 
-import com.toystorage.backend.enums.receipts.GoodsReceiptStatus;
 import com.toystorage.backend.enums.warehouses.PutawayTaskStatus;
 
-import com.toystorage.backend.exceptions.BadRequest;
-
 import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository;
-import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 
 import lombok.RequiredArgsConstructor;
 

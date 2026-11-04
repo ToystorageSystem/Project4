@@ -4,6 +4,7 @@ import com.toystorage.backend.dto.request.warehouses.putaway.ExecutePutawayItemR
 
 import com.toystorage.backend.dto.response.warehouses.putaway.PutawayStaffItemResponse;
 import com.toystorage.backend.dto.response.warehouses.putaway.PutawayStaffTaskResponse;
+import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
 import com.toystorage.backend.entity.warehouses.WarehouseLocations;
 import com.toystorage.backend.services.warehouses.location.WarehouseLocationService;
@@ -19,7 +20,6 @@ import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.mapper.warehouses.putaway.PutawayExecutionMapper;
 
 import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskItemRepository;
-import com.toystorage.backend.repository.warehouses.putaway.PutawayTaskRepository;
 
 import com.toystorage.backend.services.warehouses.taskclaim.WarehouseTaskClaimService;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +53,6 @@ public class PutawayExecutionService {
             mapper;
     private final WarehouseLocationService
             warehouseLocationService;
-
     // =====================================================
     // MY TASKS
     // =====================================================
@@ -158,7 +157,7 @@ public class PutawayExecutionService {
 
         PutawayTasks task =
                 putawayTaskRepository
-                        .findById(taskId)
+                        .findByIdForUpdate(taskId)
                         .orElseThrow(() ->
                                 new BadRequest(
                                         "Putaway task not found"
@@ -241,7 +240,7 @@ public class PutawayExecutionService {
 
         PutawayTasks task =
                 putawayTaskRepository
-                        .findById(taskId)
+                        .findByIdForUpdate(taskId)
                         .orElseThrow(() ->
                                 new BadRequest(
                                         "Putaway task not found"
@@ -377,7 +376,7 @@ public class PutawayExecutionService {
 
         PutawayTasks task =
                 putawayTaskRepository
-                        .findById(taskId)
+                        .findByIdForUpdate(taskId)
                         .orElseThrow(() ->
                                 new BadRequest(
                                         "Putaway task not found"

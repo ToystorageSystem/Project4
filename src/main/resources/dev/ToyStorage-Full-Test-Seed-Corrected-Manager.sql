@@ -1,10 +1,11 @@
+-- Revised 2026-11-02: receiving/putaway/returns/stock-count fixtures aligned.
 -- ToyStorageSystem: SINGLE-FILE FULL DEV/TEST SEED
 -- UTF-8. Designed for a FRESH, EMPTY schema created by the matching Spring Boot/Hibernate backend.
 -- DOES NOT create tables. NEVER import into production or a database containing real records.
 -- Keep application.properties: app.dev-seed.enabled=false ; app.dev-seed.reset=false.
 -- Timezone alignment: SQL planned dates and backend Start checks use Asia/Ho_Chi_Minh.
 -- All 19 catalog SKUs participate in FULL stock count, including zero/no stock.
--- Manager's active COUNTING demo has 23 rows (products at multiple shelves).
+-- Manager's active COUNTING demo has 24 rows (products at multiple shelves).
 -- Future PLANNED checks have 0 materialized rows until their scheduled date.
 -- Test login: manager.demo@warehouse.test (see existing README for the demo password).
 -- One-time seed only: fixed primary keys. Requires latest Manager FULL Catalog
@@ -16,8 +17,8 @@ START TRANSACTION;
 
 -- TOYSTORAGE DEV SEED (CORRECTED) - DO NOT RUN AGAINST REAL/PERSISTENT DATA.
 -- Expected schema: branch `backend` Hibernate tables + applicable stock-count updates.
--- Previous team accounts' password values are placeholders, not working passwords.
--- Three demo accounts can log in with credentials documented in README.
+-- All DEV/DEMO fixture accounts use BCrypt password 123456 (test database only).
+-- Demo accounts: manager.demo@warehouse.test / staff.demo@warehouse.test / driver.demo@warehouse.test; password 123456.
 -- All records have FIXED IDs. Import ONLY into empty DEV/TEST database.
 -- Dates are relative to import date; two future PLANNED schedules are test fixtures.
 
@@ -91,16 +92,22 @@ VALUES
     (10, 'District 1, Ho Chi Minh City', NOW(), 'Store District 1', 'ACTIVE', 'STORE', NOW(), 'STORE-000010'),
     (11, 'District 7, Ho Chi Minh City', NOW(), 'Store District 7', 'ACTIVE', 'STORE', NOW(), 'STORE-000011');
 
+-- Store extension rows follow warehouse master data, even on a fresh schema.
+INSERT INTO stores (warehouse_id)
+SELECT w.id FROM warehouses w
+WHERE w.type = 'STORE'
+  AND NOT EXISTS (SELECT 1 FROM stores s WHERE s.warehouse_id = w.id);
+
 INSERT INTO users
 (id, created_at, email, identity_card, name, password, status, updated_at, user_code, warehouse_id, must_change_password)
 VALUES
-    (10, NOW(), 'phuctan053@gmail.com', '000000000008', 'Phúc Tân', 'DEV_PASSWORD_PLACEHOLDER', 'ACTIVE', NOW(), 'DEV002', NULL, 0),
-    (11, NOW(), 'quocdatvan97@gmail.com', '000000000009', 'Quốc Đạt', 'DEV_PASSWORD_PLACEHOLDER', 'ACTIVE', NOW(), 'DEV003', 10, 0),
-    (12, NOW(), 'dohoangducminh19032004@gmail.com', '000000000007', 'Đỗ Hoàng Đức Minh', 'DEV_PASSWORD_PLACEHOLDER', 'ACTIVE', NOW(), 'DEV001', NULL, 0),
-    (13, NOW(), 'dinhlam030805@gmail.com', '000000000010', 'Đinh Lâm', 'DEV_PASSWORD_PLACEHOLDER', 'ACTIVE', NOW(), 'DEV004', 9, 0),
-    (14, NOW(), 'staff.demo@warehouse.test', '000000000014', 'Demo Warehouse Staff', '$2y$10$sPM4emWLggoihvBaLcSGwOqsrasjih7IOFdtL2Zx.naj9Zck73Fbq', 'ACTIVE', NOW(), 'DEMO014', 9, 0),
-    (15, NOW(), 'driver.demo@warehouse.test', '000000000015', 'Demo Delivery Driver', '$2y$10$sPM4emWLggoihvBaLcSGwOqsrasjih7IOFdtL2Zx.naj9Zck73Fbq', 'ACTIVE', NOW(), 'DEMO015', 9, 0),
-    (16, NOW(), 'manager.demo@warehouse.test', '000000000016', 'Demo Warehouse Manager', '$2y$10$sPM4emWLggoihvBaLcSGwOqsrasjih7IOFdtL2Zx.naj9Zck73Fbq', 'ACTIVE', NOW(), 'DEMO016', 9, 0);
+    (10, NOW(), 'phuctan053@gmail.com', '000000000008', 'Phúc Tân', '$2b$10$WboEggqXdawTxyOUCOML7.mydVAbDIs.AlV1GQ76UcX5Jlg2lT38u', 'ACTIVE', NOW(), 'DEV002', NULL, 0),
+    (11, NOW(), 'quocdatvan97@gmail.com', '000000000009', 'Quốc Đạt', '$2b$10$WboEggqXdawTxyOUCOML7.mydVAbDIs.AlV1GQ76UcX5Jlg2lT38u', 'ACTIVE', NOW(), 'DEV003', 10, 0),
+    (12, NOW(), 'dohoangducminh19032004@gmail.com', '000000000007', 'Đỗ Hoàng Đức Minh', '$2b$10$WboEggqXdawTxyOUCOML7.mydVAbDIs.AlV1GQ76UcX5Jlg2lT38u', 'ACTIVE', NOW(), 'DEV001', NULL, 0),
+    (13, NOW(), 'dinhlam030805@gmail.com', '000000000010', 'Đinh Lâm', '$2b$10$WboEggqXdawTxyOUCOML7.mydVAbDIs.AlV1GQ76UcX5Jlg2lT38u', 'ACTIVE', NOW(), 'DEV004', 9, 0),
+    (14, NOW(), 'staff.demo@warehouse.test', '000000000014', 'Demo Warehouse Staff', '$2b$10$WboEggqXdawTxyOUCOML7.mydVAbDIs.AlV1GQ76UcX5Jlg2lT38u', 'ACTIVE', NOW(), 'DEMO014', 9, 0),
+    (15, NOW(), 'driver.demo@warehouse.test', '000000000015', 'Demo Delivery Driver', '$2b$10$WboEggqXdawTxyOUCOML7.mydVAbDIs.AlV1GQ76UcX5Jlg2lT38u', 'ACTIVE', NOW(), 'DEMO015', 9, 0),
+    (16, NOW(), 'manager.demo@warehouse.test', '000000000016', 'Demo Warehouse Manager', '$2b$10$WboEggqXdawTxyOUCOML7.mydVAbDIs.AlV1GQ76UcX5Jlg2lT38u', 'ACTIVE', NOW(), 'DEMO016', 9, 0);
 
 INSERT INTO user_roles
 (id, user_roles_code, role_id, user_id)
@@ -141,7 +148,8 @@ VALUES
     (7, 'NORMAL', 'Main Picking Shelf B01', 'SHELF-B01', 'ACTIVE', 'B-01-01', 'WL-000007', 'ZONE-B', 9),
     (8, 'NORMAL', 'Main Bulk Shelf C01', 'SHELF-C01', 'ACTIVE', 'C-01-01', 'WL-000008', 'ZONE-C', 9),
     (9, 'NORMAL', 'Store Q1 Shelf B01', 'SHELF-B01', 'ACTIVE', 'S1-B-01', 'WL-000009', 'STORE-B', 10),
-    (10, 'NORMAL', 'Store Q7 Shelf B01', 'SHELF-B01', 'ACTIVE', 'S2-B-01', 'WL-000010', 'STORE-B', 11);
+    (10, 'NORMAL', 'Store Q7 Shelf B01', 'SHELF-B01', 'ACTIVE', 'S2-B-01', 'WL-000010', 'STORE-B', 11),
+    (11, 'RECEIVING', 'Main Supplier Receiving', 'RCV-01', 'ACTIVE', 'RCV-01-01', 'WL-000011', 'ZONE-RCV', 9);
 
 -- ============================================================
 -- PRODUCTS / SUPPLIER PRODUCTS
@@ -207,7 +215,7 @@ INSERT INTO purchase_order_items
 VALUES
     (1, 100, 120000.00, 100, 'POI-000001', 35, 'Confirmed', 'AVAILABLE', 120000.00, 7, 14),
     (2, 50, 48000.00, 50, 'POI-000002', 20, 'Confirmed', 'AVAILABLE', 48000.00, 8, 14),
-    (3, NULL, NULL, 40, 'POI-000003', 0, NULL, 'PENDING_RESPONSE', 12000.00, 9, 15);
+    (3, NULL, NULL, 40, 'POI-000003', 0, NULL, 'PENDING', 12000.00, 9, 15);
 
 INSERT INTO goods_receipts
 (id, created_at, goods_receipts_code, inspection_confirmed_at, receipt_code, received_at, status, updated_at, confirmed_by, inspection_confirmed_by, purchase_order_id, received_by, warehouse_id)
@@ -215,7 +223,7 @@ VALUES
     (41, DATE_SUB(NOW(), INTERVAL 5 HOUR), 'GRC-WAIT-001', NULL, 'GR-WAIT-001', NULL, 'CREATED', NOW(), NULL, NULL, 14, NULL, 9),
     (42, DATE_SUB(NOW(), INTERVAL 4 HOUR), 'GRC-RECV-001', NULL, 'GR-RECV-001', DATE_SUB(NOW(), INTERVAL 3 HOUR), 'RECEIVING', NOW(), NULL, NULL, 14, 14, 9),
     (43, DATE_SUB(NOW(), INTERVAL 3 HOUR), 'GRC-INSP-001', NULL, 'GR-INSP-001', DATE_SUB(NOW(), INTERVAL 2 HOUR), 'INSPECTED', NOW(), NULL, NULL, 14, 14, 9),
-    (44, DATE_SUB(NOW(), INTERVAL 1 DAY), 'GRC-CONF-001', DATE_SUB(NOW(), INTERVAL 20 HOUR), 'GR-CONF-001', DATE_SUB(NOW(), INTERVAL 22 HOUR), 'CONFIRMED', NOW(), 13, 13, 14, 14, 9),
+    (44, DATE_SUB(NOW(), INTERVAL 1 DAY), 'GRC-CONF-001', DATE_SUB(NOW(), INTERVAL 20 HOUR), 'GR-CONF-001', DATE_SUB(NOW(), INTERVAL 22 HOUR), 'COMPLETED', NOW(), 13, 13, 14, 14, 9),
     (45, DATE_SUB(NOW(), INTERVAL 2 DAY), 'GRC-DONE-001', DATE_SUB(NOW(), INTERVAL 40 HOUR), 'GR-DONE-001', DATE_SUB(NOW(), INTERVAL 42 HOUR), 'COMPLETED', NOW(), 13, 13, 14, 14, 9);
 
 INSERT INTO goods_receipt_items
@@ -235,19 +243,26 @@ INSERT INTO warehouse_task_claims
 (id, claimed_at, reference_id, released_at, task_type, claimed_by, attempt_no)
 VALUES
     (1, DATE_SUB(NOW(), INTERVAL 3 HOUR), 42, NULL, 'GOODS_RECEIVING', 14, 1),
-    (2, DATE_SUB(NOW(), INTERVAL 2 HOUR), 1, DATE_SUB(NOW(), INTERVAL 1 HOUR), 'PUTAWAY', 14, 1),
-    (3, DATE_SUB(NOW(), INTERVAL 1 HOUR), 32, NULL, 'STORE_RETURN_RECEIVING', 14, 1);
+    (2, DATE_SUB(NOW(), INTERVAL 19 HOUR), 1, NULL, 'PUTAWAY', 14, 1),
+    (3, DATE_SUB(NOW(), INTERVAL 1 HOUR), 32, NULL, 'STORE_RETURN_RECEIVING', 14, 1),
+    (4, DATE_SUB(NOW(), INTERVAL 2 HOUR), 43, DATE_SUB(NOW(), INTERVAL 1 HOUR), 'GOODS_RECEIVING', 14, 1),
+    (5, DATE_SUB(NOW(), INTERVAL 22 HOUR), 44, DATE_SUB(NOW(), INTERVAL 21 HOUR), 'GOODS_RECEIVING', 14, 1),
+    (6, DATE_SUB(NOW(), INTERVAL 42 HOUR), 45, DATE_SUB(NOW(), INTERVAL 41 HOUR), 'GOODS_RECEIVING', 14, 1),
+    (7, DATE_SUB(NOW(), INTERVAL 39 HOUR), 2, DATE_SUB(NOW(), INTERVAL 24 HOUR), 'PUTAWAY', 14, 1);
 
 INSERT INTO receipt_inspections
 (id, actual_quantity, evidence_image, expected_quantity, inspected_at, inspected_result, notes, package_code, receipt_inspections_code, goods_receipt_id, inspected_by, product_id, task_claim_id)
 VALUES
-    (1, 8, NULL, 10, DATE_SUB(NOW(), INTERVAL 2 HOUR), 'SHORTAGE', '2 units missing', 'PKG-RECEIVING-01', 'RI-000001', 42, 14, 7, 1);
+    (1, 8, NULL, 10, DATE_SUB(NOW(), INTERVAL 2 HOUR), 'SHORTAGE', '2 units missing', 'PKG-RECEIVING-01', 'RI-000001', 42, 14, 7, 1),
+    (2, 8, NULL, 10, DATE_SUB(NOW(), INTERVAL 90 MINUTE), 'PARTIAL', '2 missing, 2 damaged, 6 accepted', 'PKG-INSP-001', 'RI-000002', 43, 14, 8, 4),
+    (3, 15, NULL, 15, DATE_SUB(NOW(), INTERVAL 21 HOUR), 'MATCHED', 'Accepted for receiving then putaway', 'PKG-CONF-001', 'RI-000003', 44, 14, 7, 5),
+    (4, 20, NULL, 20, DATE_SUB(NOW(), INTERVAL 41 HOUR), 'MATCHED', 'Completed supplier receipt', 'PKG-DONE-001', 'RI-000004', 45, 14, 7, 6);
 
 INSERT INTO discrepancy_reports
-(id, created_at, description, discrepancy_reports_code, discrepancy_type, evidence_image_url, reference_id, reference_type, report_code, resolution_action, resolution_note, resolved_at, responsible_party, reviewed_at, status, updated_at, reported_by, resolved_by, reviewed_by, warehouse_id, product_id)
+(id, created_at, description, discrepancy_reports_code, discrepancy_type, evidence_image_url, reference_id, reference_type, report_code, resolution_action, resolution_note, resolved_at, responsible_party, reviewed_at, status, updated_at, reported_by, resolved_by, reviewed_by, warehouse_id, product_id, severity, blocking)
 VALUES
-    (1, DATE_SUB(NOW(), INTERVAL 2 HOUR), 'Receipt GR-INSP-001: 2 missing units of PAW101 500g', 'DRC-000001', 'SHORTAGE', NULL, 43, 'GOODS_RECEIPT', 'DR-000001', NULL, NULL, NULL, 'WAREHOUSE_MANAGER', NULL, 'OPEN', NOW(), 13, NULL, NULL, 9, 8),
-    (2, DATE_SUB(NOW(), INTERVAL 1 HOUR), 'Two units missing from Store Return SR-TEST-SHORT-001', 'DRC-000002', 'SHORTAGE', NULL, 34, 'STORE_RETURN', 'DR-000002', 'RECOUNT', 'Recount requested', NULL, 'WAREHOUSE_MANAGER', NOW(), 'UNDER_REVIEW', NOW(), 13, NULL, 13, 9, 7);
+    (1, DATE_SUB(NOW(), INTERVAL 2 HOUR), 'Receipt GR-INSP-001: 2 missing units of PAW101 500g', 'DRC-000001', 'SHORTAGE', NULL, 43, 'GOODS_RECEIPT', 'DR-000001', NULL, NULL, NULL, 'WAREHOUSE_MANAGER', NULL, 'OPEN', NOW(), 13, NULL, NULL, 9, 8, 'MAJOR', 1),
+    (2, DATE_SUB(NOW(), INTERVAL 1 HOUR), 'Two units missing from Store Return SR-TEST-SHORT-001', 'DRC-000002', 'SHORTAGE', NULL, 34, 'STORE_RETURN', 'DR-000002', 'RECOUNT', 'Recount requested', NULL, 'WAREHOUSE_MANAGER', NOW(), 'INVESTIGATING', NOW(), 13, NULL, 13, 9, 7, 'MINOR', 0);
 
 INSERT INTO discrepancy_items
 (id, actual_quantity, difference_quantity, discrepancy_items_code, expected_quantity, discrepancy_report_id, product_id)
@@ -268,7 +283,7 @@ VALUES
 INSERT INTO receiving_reinspection_requests
 (id, allow_same_staff, reason, requested_at, goods_receipt_id, requested_by)
 VALUES
-    (1, 0, 'Manager requested recount for shortage test', NOW(), 43, 13);
+    (1, 1, 'Manager requested recount for shortage test', DATE_SUB(NOW(), INTERVAL 150 MINUTE), 43, 13);
 
 -- ============================================================
 -- PUTAWAY
@@ -277,14 +292,14 @@ VALUES
 INSERT INTO putaway_tasks
 (id, completed_at, created_at, putaway_tasks_code, status, assigned_to, created_by, goods_receipt_id, warehouse_id)
 VALUES
-    (1, NULL, NOW(), 'PA-000001', 'IN_PROGRESS', 14, 13, 44, 9),
+    (1, NULL, DATE_SUB(NOW(), INTERVAL 20 HOUR), 'PA-000001', 'IN_PROGRESS', 14, 13, 44, 9),
     (2, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY), 'PA-000002', 'COMPLETED', 14, 13, 45, 9);
 
 INSERT INTO putaway_task_items
 (id, expected_quantity, putaway_quantity, putaway_task_items_code, status, from_location_id, product_id, putaway_task_id, to_location_id)
 VALUES
-    (1, 15, 5, 'PAI-000001', 'PUTAWAYING', 3, 7, 1, 1),
-    (2, 20, 20, 'PAI-000002', 'COMPLETED', 3, 7, 2, 1);
+    (1, 15, 5, 'PAI-000001', 'PUTAWAYING', 11, 7, 1, 1),
+    (2, 20, 20, 'PAI-000002', 'COMPLETED', 11, 7, 2, 1);
 
 -- ============================================================
 -- INVENTORY
@@ -293,7 +308,7 @@ VALUES
 INSERT INTO inventory_balances
 (id, available_quantity, inventory_balances_code, quantity, reserved_quantity, updated_at, location_id, product_id, warehouse_id)
 VALUES
-    (1, 120, 'IB-000001', 130, 10, NOW(), 1, 7, 9),
+    (1, 155, 'IB-000001', 165, 10, NOW(), 1, 7, 9),
     (2, 0, 'IB-000002', 5, 0, NOW(), 2, 7, 9),
     (3, 85, 'IB-000003', 90, 5, NOW(), 5, 7, 10),
     (4, 20, 'IB-000004', 20, 0, NOW(), 1, 8, 9),
@@ -318,18 +333,23 @@ VALUES
     (23, 8, 'IB-000023', 8, 0, NOW(), 6, 10, 11),
     (24, 5, 'IB-000024', 5, 0, NOW(), 10, 12, 11),
     (25, 0, 'IB-000025', 2, 0, NOW(), 4, 8, 9),
-    (26, 35, 'IB-000026', 35, 0, NOW(), 3, 7, 9);
+    (26, 0, 'IB-000026', 0, 0, NOW(), 3, 7, 9),
+    (27, 0, 'IB-000027', 10, 0, NOW(), 11, 7, 9);
 
 INSERT INTO inventory_transactions
 (id, created_at, inventory_transactions_code, quantity_after, quantity_before, quantity_change, reference_id, reference_type, transaction_type, location_id, performed_by, product_id, warehouse_id)
 VALUES
-    (1, DATE_SUB(NOW(), INTERVAL 2 DAY), 'IT-000001', 125, 105, 20, 45, 'GOODS_RECEIPT', 'GOODS_RECEIPT', 1, 13, 7, 9),
+    (1, DATE_SUB(NOW(), INTERVAL 40 HOUR), 'IT-000001', 20, 0, 20, 45, 'GOODS_RECEIPT', 'GOODS_RECEIPT', 11, 13, 7, 9),
     (2, DATE_SUB(NOW(), INTERVAL 5 HOUR), 'IT-000002', 90, 100, -10, 22, 'STOCK_TRANSFER', 'TRANSFER_OUT', 5, 11, 7, 10),
-    (3, NOW(), 'IT-000003', 130, 125, 5, 1, 'INVENTORY_ADJUSTMENT', 'ADJUSTMENT_INCREASE', 1, 13, 7, 9),
+    (3, DATE_SUB(NOW(), INTERVAL 17 HOUR), 'IT-000003', 165, 160, 5, 1, 'LOCATION_TRANSFER', 'LOCATION_TRANSFER', 1, 14, 7, 9),
     (4, DATE_SUB(NOW(), INTERVAL 3 DAY), 'IT-000004', 20, 25, -5, 5, 'STOCK_COUNT', 'ADJUSTMENT_DECREASE', 1, 13, 8, 9),
-    (5, DATE_SUB(NOW(), INTERVAL 25 HOUR), 'IT-000005', 15, 0, 15, 33, 'STORE_RETURN', 'STORE_RETURN_IN', 3, 13, 7, 9),
-    (6, DATE_SUB(NOW(), INTERVAL 23 HOUR), 'IT-000006', 23, 15, 8, 34, 'STORE_RETURN', 'STORE_RETURN_IN', 3, 13, 7, 9),
-    (7, DATE_SUB(NOW(), INTERVAL 21 HOUR), 'IT-000007', 35, 23, 12, 35, 'STORE_RETURN', 'STORE_RETURN_IN', 3, 13, 7, 9);
+    (5, DATE_SUB(NOW(), INTERVAL 20 HOUR), 'IT-000005', 140, 125, 15, 33, 'STORE_RETURN', 'STORE_RETURN_IN', 1, 13, 7, 9),
+    (6, DATE_SUB(NOW(), INTERVAL 18 HOUR), 'IT-000006', 148, 140, 8, 34, 'STORE_RETURN', 'STORE_RETURN_IN', 1, 13, 7, 9),
+    (7, DATE_SUB(NOW(), INTERVAL 18 HOUR), 'IT-000007', 160, 148, 12, 35, 'STORE_RETURN', 'STORE_RETURN_IN', 1, 13, 7, 9),
+    (8, DATE_SUB(NOW(), INTERVAL 24 HOUR), 'IT-000008', 0, 20, -20, 2, 'LOCATION_TRANSFER', 'LOCATION_TRANSFER', 11, 14, 7, 9),
+    (9, DATE_SUB(NOW(), INTERVAL 24 HOUR), 'IT-000009', 125, 105, 20, 2, 'LOCATION_TRANSFER', 'LOCATION_TRANSFER', 1, 14, 7, 9),
+    (10, DATE_SUB(NOW(), INTERVAL 20 HOUR), 'IT-000010', 15, 0, 15, 44, 'GOODS_RECEIPT', 'GOODS_RECEIPT', 11, 13, 7, 9),
+    (11, DATE_SUB(NOW(), INTERVAL 17 HOUR), 'IT-000011', 10, 15, -5, 1, 'LOCATION_TRANSFER', 'LOCATION_TRANSFER', 11, 14, 7, 9);
 
 -- ============================================================
 -- WAREHOUSE MANAGER STOCK COUNTS: FULL CATALOG, REAL WAREHOUSE BALANCES
@@ -383,7 +403,7 @@ INSERT INTO stock_count_items
  recounted_by, stock_count_id, recount_requested)
 VALUES
     -- Active FULL stock count: one sample first count, all remaining rows open.
-    (1, NULL, NULL, NULL, -2, NULL, 128, NULL, 'SCI-000001', 130,
+    (1, NULL, NULL, NULL, -2, NULL, 163, NULL, 'SCI-000001', 165,
         NULL, 16, 1, 7, NULL, 1, 0),
     -- Completed scoped AD_HOC, prior recount matched warehouse snapshot.
     (2, NULL, NULL, NULL, 0, 130, 129, 130, 'SCI-000002', 130,
@@ -394,7 +414,7 @@ VALUES
         -5, 20, 22, NULL, 'SCI-000003', 25,
         13, 14, 1, 8, NULL, 5, 0),
     (4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000004', 5, NULL, NULL, 2, 7, NULL, 1, 0),
-    (5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000005', 35, NULL, NULL, 3, 7, NULL, 1, 0),
+    (5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000005', 0, NULL, NULL, 3, 7, NULL, 1, 0),
     (6, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000006', 25, NULL, NULL, 7, 7, NULL, 1, 0),
     (7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000007', 20, NULL, NULL, 1, 8, NULL, 1, 0),
     (8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000008', 2, NULL, NULL, 4, 8, NULL, 1, 0),
@@ -414,14 +434,15 @@ VALUES
     (22, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000022', 9, NULL, NULL, 8, 22, NULL, 1, 0),
     (23, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000023', 17, NULL, NULL, 7, 24, NULL, 1, 0),
     (24, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000024', 0, NULL, NULL, 1, 23, NULL, 1, 0),
-    (25, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000025', 0, NULL, NULL, 1, 25, NULL, 1, 0);
+    (25, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000025', 0, NULL, NULL, 1, 25, NULL, 1, 0),
+    (26, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'SCI-DEMO-000026', 10, NULL, NULL, 11, 7, NULL, 1, 0);
 
 -- Audit fixtures make the History timeline meaningful for the demo.
 INSERT INTO stock_count_audit
 (id, stock_count_id, item_id, actor_id, action, old_quantity, new_quantity, reason, created_at)
 VALUES
     (1, 1, NULL, 16, 'COUNT_STARTED', NULL, NULL, 'Manager direct stock count', TIMESTAMP(CURDATE(), '00:00:00')),
-    (2, 1, 1, 16, 'MANAGER_COUNT_ENTERED', NULL, 128, NULL, NOW()),
+    (2, 1, 1, 16, 'MANAGER_COUNT_ENTERED', NULL, 163, NULL, NOW()),
     (3, 2, 2, 14, 'FIRST_COUNT', NULL, 129, NULL, DATE_SUB(NOW(), INTERVAL 29 HOUR)),
     (4, 2, 2, 14, 'RECOUNT_SUBMITTED', 129, 130, NULL, DATE_SUB(NOW(), INTERVAL 26 HOUR)),
     (5, 2, NULL, 13, 'CONFIRMED', NULL, NULL, 'Approved final count', DATE_SUB(NOW(), INTERVAL 1 DAY)),
@@ -594,13 +615,13 @@ VALUES
     (35, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 18 HOUR), DATE_SUB(NOW(), INTERVAL 24 HOUR), 'Completed return with surplus', DATE_SUB(NOW(), INTERVAL 18 HOUR), 'SR-TEST-SURPLUS-001', 'OTHER', 'RECEIVED', 'SRC-TEST-SURPLUS-001', NOW(), 11, 11, 14, 11, 26, 10, 9);
 
 INSERT INTO store_return_items
-(id, approved_quantity, condition_status, evidence_image_url, issued_quantity, note, received_quantity, rejected_quantity, requested_quantity, store_return_items_code, from_location_id, product_id, store_return_id, inspected)
+(id, approved_quantity, condition_status, evidence_image_url, issued_quantity, note, received_quantity, rejected_quantity, requested_quantity, store_return_items_code, from_location_id, product_id, store_return_id, inspected, inventory_posted)
 VALUES
-    (1, 10, 'NORMAL', NULL, 10, 'Waiting for warehouse inspection', 0, 0, 10, 'SRI-WAIT-001', 5, 7, 31, 0),
-    (2, 12, 'NORMAL', NULL, 12, 'Warehouse inspection in progress', 5, 0, 12, 'SRI-INSPECT-001', 5, 7, 32, 0),
-    (3, 15, 'NORMAL', NULL, 15, 'Completed normally', 15, 0, 15, 'SRI-OK-001', 5, 7, 33, 1),
-    (4, 8, 'NORMAL', NULL, 10, 'Expected 10, received 8', 8, 0, 10, 'SRI-SHORT-001', 5, 7, 34, 1),
-    (5, 10, 'NORMAL', NULL, 10, 'Expected 10, received 12', 12, 0, 10, 'SRI-SURPLUS-001', 5, 7, 35, 1);
+    (1, 10, 'NORMAL', NULL, 10, 'Waiting for warehouse inspection', 0, 0, 10, 'SRI-WAIT-001', 5, 7, 31, 0, 0),
+    (2, 12, 'NORMAL', NULL, 12, 'Warehouse inspection in progress', 5, 0, 12, 'SRI-INSPECT-001', 5, 7, 32, 0, 0),
+    (3, 15, 'NORMAL', NULL, 15, 'Completed normally', 15, 0, 15, 'SRI-OK-001', 5, 7, 33, 1, 1),
+    (4, 8, 'NORMAL', NULL, 10, 'Expected 10, received 8', 8, 0, 10, 'SRI-SHORT-001', 5, 7, 34, 1, 1),
+    (5, 10, 'NORMAL', NULL, 10, 'Expected 10, received 12', 12, 0, 10, 'SRI-SURPLUS-001', 5, 7, 35, 1, 1);
 
 -- ============================================================
 -- SUPPLIER INVOICE
@@ -655,7 +676,7 @@ VALUES
     (1, 'LOW', 'Development suspicious login alert', NOW(), NULL, NULL, NULL, 15.50, 'NEW', 'SAA-000001', NOW(), 1, NULL, 13);
 
 -- Seed is complete. Leave FOREIGN_KEY_CHECKS=1 to detect bad references.
--- Demo FULL count 1 has 19 distinct SKUs / 23 SKU-location count lines.
+-- Demo FULL count 1 has 19 distinct SKUs / 24 SKU-location count lines.
 -- Future PLANNED counts do not store snapshot rows before Start.
 
 
@@ -664,8 +685,8 @@ COMMIT;
 -- Optional manual verification after import:
 -- SELECT COUNT(*) AS products FROM products; -- expect 19
 -- SELECT COUNT(DISTINCT product_id) AS sku_count, COUNT(*) AS count_lines
---   FROM stock_count_items WHERE stock_count_id=1; -- expect 19 SKU / 23 lines
+--   FROM stock_count_items WHERE stock_count_id=1; -- expect 19 SKU / 24 lines
 -- SELECT status, COUNT(*) FROM stock_counts GROUP BY status;
 -- SELECT count_code, scheduled_date, status FROM stock_counts ORDER BY scheduled_date;
--- SELECT COUNT(*) AS balance_rows FROM inventory_balances; -- expect 26
+-- SELECT COUNT(*) AS balance_rows FROM inventory_balances; -- expect 27
 -- SELECT stock_count_id, COUNT(*) FROM stock_count_items GROUP BY stock_count_id;

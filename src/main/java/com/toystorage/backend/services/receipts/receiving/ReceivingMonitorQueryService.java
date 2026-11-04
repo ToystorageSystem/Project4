@@ -7,13 +7,12 @@ import com.toystorage.backend.entity.warehouses.WarehouseTaskClaim;
 import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository;
-import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.receipts.receiving.ReceiptInspectionRepository;
 import com.toystorage.backend.services.warehouses.taskclaim.WarehouseTaskClaimService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import java.util.List;
 
 @Service

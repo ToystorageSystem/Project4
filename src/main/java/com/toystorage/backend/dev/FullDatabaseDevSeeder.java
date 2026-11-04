@@ -20,7 +20,7 @@ import java.util.List;
 @Component
 @Profile("dev")
 @ConditionalOnProperty(
-        name = "app.dev-seed.enabled",
+        name = {"app.dev-seed.enabled", "app.dev-seed.confirmed"},
         havingValue = "true"
 )
 public class FullDatabaseDevSeeder implements CommandLineRunner {
@@ -57,6 +57,7 @@ public class FullDatabaseDevSeeder implements CommandLineRunner {
          * discrepancy_reports.reference_type
          * cần hỗ trợ STORE_RETURN.
          */
+        validateSeedResources();
         patchDevSchema();
 
         /*
@@ -93,6 +94,15 @@ public class FullDatabaseDevSeeder implements CommandLineRunner {
     // =====================================================
     // PATCH DEV SCHEMA
     // =====================================================
+
+    private void validateSeedResources() {
+        for (String path : List.of("dev/schema-dev-patch.sql",
+                "dev/ToyStorage-Full-Test-Seed-Corrected-Manager.sql")) {
+            if (!new ClassPathResource(path).isReadable()) {
+                throw new IllegalStateException("Development seed resource is missing: " + path);
+            }
+        }
+    }
 
     private void patchDevSchema() {
 
@@ -282,7 +292,7 @@ public class FullDatabaseDevSeeder implements CommandLineRunner {
 
         populator.addScript(
                 new ClassPathResource(
-                        "dev/full-seed.sql"
+                        "dev/ToyStorage-Full-Test-Seed-Corrected-Manager.sql"
                 )
         );
 

@@ -3,6 +3,7 @@ package com.toystorage.backend.services.receipts.receiving;
 import com.toystorage.backend.dto.request.receipts.receiving.ReceiptInspectionRequest;
 import com.toystorage.backend.dto.response.receipts.receiving.GoodsReceiptResponse;
 import com.toystorage.backend.dto.response.receipts.receiving.ReceiptInspectionResponse;
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.receipts.ReceiptInspections;
@@ -18,7 +19,6 @@ import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.mapper.receipts.receiving.GoodsReceiptMapper;
 import com.toystorage.backend.mapper.receipts.receiving.ReceiptInspectionMapper;
 import com.toystorage.backend.repository.products.ProductRepository;
-import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.receipts.receiving.ReceiptInspectionRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -314,7 +314,7 @@ public class GoodsReceivingService {
     ) {
 
         return goodsReceiptRepository
-                .findById(receiptId)
+                .findByIdForUpdate(receiptId)
                 .orElseThrow(() ->
                         new NotFound(
                                 "Goods receipt not found with id: "

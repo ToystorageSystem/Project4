@@ -3,14 +3,13 @@ package com.toystorage.backend.services.inventories.shortage;
 import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.users.Users;
-
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
 import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository;
-import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 
 import lombok.RequiredArgsConstructor;

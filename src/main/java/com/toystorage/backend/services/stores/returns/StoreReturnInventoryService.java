@@ -47,7 +47,7 @@ public class StoreReturnInventoryService {
 
         InventoryBalances balance =
                 inventoryBalanceRepository
-                        .findByWarehouseIdAndLocationIdAndProductId(
+                        .findBalanceForUpdate(
                                 storeReturn
                                         .getWarehouse()
                                         .getId(),
@@ -141,7 +141,7 @@ public class StoreReturnInventoryService {
 
         InventoryBalances balance =
                 inventoryBalanceRepository
-                        .findByWarehouseIdAndLocationIdAndProductId(
+                        .findBalanceForUpdate(
                                 storeReturn
                                         .getWarehouse()
                                         .getId(),

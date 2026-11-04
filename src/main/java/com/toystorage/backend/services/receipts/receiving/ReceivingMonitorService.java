@@ -2,7 +2,7 @@ package com.toystorage.backend.services.receipts.receiving;
 
 import com.toystorage.backend.dto.response.receipts.receiving.ReceivingMonitorResponse;
 import com.toystorage.backend.dto.response.receipts.receiving.ReceivingProgressResponse;
-
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.users.Users;
@@ -17,7 +17,6 @@ import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
 import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyReportRepository;
-import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 
 import lombok.RequiredArgsConstructor;

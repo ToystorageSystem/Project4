@@ -6,6 +6,7 @@ import com.toystorage.backend.dto.request.receipts.receiving.ReceiptInspectionIt
 import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.users.Users;
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 
 import com.toystorage.backend.enums.receipts.GoodsReceiptStatus;
 
@@ -14,7 +15,6 @@ import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 
-import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -83,6 +83,21 @@ public class ReceivingValidationService {
 
         return goodsReceiptRepository
                 .findById(receiptId)
+
+                .orElseThrow(() ->
+                        new NotFound(
+                                "Goods receipt not found: "
+                                        + receiptId
+                        )
+                );
+    }
+
+    public GoodsReceipts getReceiptForUpdate(
+            Long receiptId
+    ) {
+
+        return goodsReceiptRepository
+                .findByIdForUpdate(receiptId)
 
                 .orElseThrow(() ->
                         new NotFound(

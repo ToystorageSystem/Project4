@@ -148,6 +148,10 @@ public class InventoryBalances {
     }
 
     private void calculateAvailableQuantity() {
+        availableQuantity = getAvailableQuantity();
+    }
+
+    public Integer getAvailableQuantity() {
 
         int currentQuantity =
                 quantity == null
@@ -164,25 +168,13 @@ public class InventoryBalances {
          * Hàng ở khu cách ly hoặc khu hàng hỏng
          * tuyệt đối không được tính là available.
          */
-        if (
-                location != null
-                        && (
-                        location.getLocationType()
-                                == WarehouseLocationType.QUARANTINE
+        if (location == null || location.getLocationType() != WarehouseLocationType.NORMAL) {
 
-                                || location.getLocationType()
-                                == WarehouseLocationType.DAMAGED
-                )
-        ) {
-
-            availableQuantity = 0;
-
-            return;
+            return 0;
         }
 
 
-        availableQuantity =
-                Math.max(
+        return Math.max(
                         0,
                         currentQuantity
                                 - currentReservedQuantity

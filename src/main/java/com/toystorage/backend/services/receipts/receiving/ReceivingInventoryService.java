@@ -70,7 +70,7 @@ public class ReceivingInventoryService {
 
         InventoryBalances balance =
                 inventoryBalanceRepository
-                        .findByWarehouseIdAndLocationIdAndProductId(
+                        .findBalanceForUpdate(
                                 warehouseId,
                                 locationId,
                                 productId
@@ -111,7 +111,7 @@ public class ReceivingInventoryService {
                 item.getAcceptedQuantity();
 
         int after =
-                before + accepted;
+                Math.addExact(before, accepted);
 
         /*
          * Hàng mới nhận chỉ nằm ở receiving location.

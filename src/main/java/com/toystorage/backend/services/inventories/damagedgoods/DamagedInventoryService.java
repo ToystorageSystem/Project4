@@ -151,7 +151,7 @@ public class DamagedInventoryService {
 
         InventoryBalances quarantineBalance =
                 inventoryBalanceRepository
-                        .findByWarehouseIdAndLocationIdAndProductId(
+                        .findBalanceForUpdate(
                                 warehouseId,
                                 quarantineLocation.getId(),
                                 item.getProduct().getId()
@@ -368,7 +368,7 @@ public class DamagedInventoryService {
     ) {
 
         return inventoryBalanceRepository
-                .findByWarehouseIdAndLocationIdAndProductId(
+                .findBalanceForUpdate(
                         warehouseId,
                         locationId,
                         productId

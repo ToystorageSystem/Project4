@@ -2,7 +2,7 @@ package com.toystorage.backend.services.receipts.receiving;
 
 import com.toystorage.backend.dto.request.receipts.receiving.ReceiptInspectionBatchRequest;
 import com.toystorage.backend.dto.request.receipts.receiving.ReceiptInspectionItemRequest;
-
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.dto.response.receipts.receiving.ReceivingDetailResponse;
 
 import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
@@ -20,7 +20,6 @@ import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
 import com.toystorage.backend.exceptions.BadRequest;
 
 import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository;
-import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.receipts.receiving.ReceiptInspectionRepository;
 import com.toystorage.backend.repository.receipts.receiving.ReceivingReinspectionRequestRepository;
 
@@ -73,7 +72,7 @@ public class ReceivingInspectionService {
 
         GoodsReceipts receipt =
                 validationService
-                        .getReceipt(receiptId);
+                        .getReceiptForUpdate(receiptId);
 
         Users staff =
                 validationService
@@ -302,7 +301,7 @@ public class ReceivingInspectionService {
 
         GoodsReceipts receipt =
                 validationService
-                        .getReceipt(receiptId);
+                        .getReceiptForUpdate(receiptId);
 
         Users staff =
                 validationService
@@ -674,7 +673,7 @@ public class ReceivingInspectionService {
 
         GoodsReceipts receipt =
                 validationService
-                        .getReceipt(receiptId);
+                        .getReceiptForUpdate(receiptId);
 
         Users staff =
                 validationService

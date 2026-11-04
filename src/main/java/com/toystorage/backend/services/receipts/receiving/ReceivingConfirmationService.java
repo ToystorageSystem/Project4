@@ -13,7 +13,6 @@ import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository;
-import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.receipts.receiving.ReceiptInspectionRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 import com.toystorage.backend.services.warehouses.putaway.PutawayTaskService;
@@ -22,7 +21,7 @@ import com.toystorage.backend.dto.request.receipts.receiving.RequestReinspection
 import com.toystorage.backend.services.inventories.discrepancy.ReceivingDiscrepancyService;
 import com.toystorage.backend.entity.receipts.ReceivingReinspectionRequest;
 import com.toystorage.backend.entity.warehouses.WarehouseTaskClaim;
-
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
 
 import com.toystorage.backend.repository.receipts.receiving.ReceivingReinspectionRequestRepository;
@@ -107,7 +106,7 @@ public class ReceivingConfirmationService {
     ) {
 
         GoodsReceipts receipt =
-                getReceipt(receiptId);
+                getReceiptForUpdate(receiptId);
 
         Users manager =
                 getCurrentUser();
@@ -320,6 +319,11 @@ public class ReceivingConfirmationService {
     // RECEIPT
     // =====================================================
 
+    private GoodsReceipts getReceiptForUpdate(Long receiptId) {
+        return goodsReceiptRepository.findByIdForUpdate(receiptId)
+                .orElseThrow(() -> new NotFound("Goods receipt not found: " + receiptId));
+    }
+
     private GoodsReceipts getReceipt(
             Long receiptId
     ) {
@@ -414,7 +418,7 @@ public class ReceivingConfirmationService {
     ) {
 
         GoodsReceipts receipt =
-                getReceipt(receiptId);
+                getReceiptForUpdate(receiptId);
 
         Users manager =
                 getCurrentUser();

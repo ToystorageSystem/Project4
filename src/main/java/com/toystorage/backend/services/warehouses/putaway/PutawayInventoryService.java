@@ -18,6 +18,7 @@ import com.toystorage.backend.repository.inventories.InventoryTransactionReposit
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -33,6 +34,7 @@ public class PutawayInventoryService {
             inventoryTransactionRepository;
 
 
+    @Transactional
     public void moveInventory(
             PutawayTasks task,
             PutawayTaskItems item,
@@ -53,13 +55,20 @@ public class PutawayInventoryService {
                 item.getToLocation();
 
 
+        if (quantity <= 0) {
+            throw new BadRequest("Putaway quantity must be greater than 0");
+        }
+        if (from.getId().equals(to.getId())) {
+            throw new BadRequest("Putaway source and destination must be different");
+        }
+
         // =================================================
         // SOURCE BALANCE
         // =================================================
 
         InventoryBalances source =
                 inventoryBalanceRepository
-                        .findByWarehouseIdAndLocationIdAndProductId(
+                        .findBalanceForUpdate(
                                 warehouseId,
                                 from.getId(),
                                 productId
@@ -72,7 +81,7 @@ public class PutawayInventoryService {
                         );
 
 
-        if (source.getQuantity() < quantity) {
+        if ((long) source.getQuantity() - source.getReservedQuantity() < quantity) {
 
             throw new BadRequest(
                     "Source location does not have "
@@ -117,7 +126,7 @@ public class PutawayInventoryService {
 
         InventoryBalances destination =
                 inventoryBalanceRepository
-                        .findByWarehouseIdAndLocationIdAndProductId(
+                        .findBalanceForUpdate(
                                 warehouseId,
                                 to.getId(),
                                 productId
@@ -156,7 +165,7 @@ public class PutawayInventoryService {
                 destination.getQuantity();
 
         int destinationAfter =
-                destinationBefore + quantity;
+                Math.addExact(destinationBefore, quantity);
 
         destination.setQuantity(
                 destinationAfter
@@ -167,9 +176,7 @@ public class PutawayInventoryService {
          * hàng mới trở thành available.
          */
         destination.setAvailableQuantity(
-                destination
-                        .getAvailableQuantity()
-                        + quantity
+                destination.getAvailableQuantity()
         );
 
         destination.setUpdatedAt(
@@ -180,6 +187,9 @@ public class PutawayInventoryService {
                 destination
         );
 
+
+        createTransaction(task, item, staff, from,
+                sourceBefore, -quantity, sourceAfter);
 
         createTransaction(
                 task,
