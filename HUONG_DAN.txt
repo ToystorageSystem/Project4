@@ -1,0 +1,48 @@
+TOYSTORAGE — FRONTEND GỌN HƠN + DASHBOARD
+
+CÁCH CHẠY
+Giải nén ZIP ra một thư mục mới. package.json nằm ngay trong thư mục gốc
+của gói (không có thư mục frontend lồng bên trong).
+Mở terminal tại thư mục chứa package.json và chạy:
+  npm ci
+  npm run dev
+Mở địa chỉ Local do Vite hiển thị.
+Backend chạy tại http://localhost:8080. Giữ cấu hình proxy /api và /ws.
+Node.js 22.12+; đã kiểm tra build với Node 24.22.1.
+
+THAY ĐỔI
+- Header gọn: bỏ banner chào hỏi lớn, đồng hồ cập nhật mỗi giây và phần
+  giới thiệu lặp lại. Giữ thông tin tài khoản và đăng xuất.
+- Sidebar nhỏ hơn, nhóm Overview / Inbound / Outbound / Exceptions /
+  Warehouse / History & reports. Giữ đủ các đường dẫn nghiệp vụ.
+- Có nút thu gọn sidebar trên desktop và menu mở/đóng trên điện thoại.
+- Tiêu đề trang bỏ khung lớn, giảm khoảng trống chung trên các trang.
+- Dashboard lấy dữ liệu thật từ API đang có: phiếu đang nhận, phiếu chờ
+  duyệt, putaway đang mở, phiếu nhận hoàn tất; bảng tiến độ nhận hàng,
+  khu vực chờ duyệt và lối tắt thao tác.
+- Số liệu tổng toàn thời gian theo phạm vi API của tài khoản, không phải
+  số liệu hôm nay. Putaway chỉ đếm PENDING / AVAILABLE / IN_PROGRESS.
+- Có trạng thái tải, trống, lỗi và Refresh; API lỗi hiển thị không khả dụng,
+  không giả định số lượng bằng 0. Không có dữ liệu giả trong source chạy.
+- Giữ các bản sửa trước: route, menu, xóa session khi hết hạn đăng nhập,
+  export sendStoreReturnToStoreManager tương thích.
+- Giữ nguyên nội dung comment cũ; không bỏ chức năng nghiệp vụ hay sửa DB.
+- Giao diện tiếp tục dùng tiếng Anh để đồng nhất với các trang hiện có.
+
+FILE GIAO DIỆN CHÍNH
+src/components/layout/MainLayout.jsx
+src/components/layout/Sidebar.jsx
+src/components/layout/PageHeader.jsx
+src/components/icons/warehouseMenuItems.jsx
+src/pages/warehouses/dashboard/WarehouseDashboardPage.jsx
+src/index.css
+
+KIỂM TRA
+npm run build: thành công. Vite vẫn cảnh báo bundle JS >500 kB.
+npm run lint: không lỗi, còn cảnh báo ở code hiện có (Fast Refresh/hooks).
+Kiểm tra trình duyệt với API mô phỏng: số tổng, lọc putaway, thu gọn
+sidebar, menu mobile, tràn ngang, dữ liệu trống, lỗi 403/503 và phục hồi
+sau Refresh đều đạt; không có lỗi JavaScript runtime trong các ca này.
+Chưa kiểm thử luồng nghiệp vụ với backend/database thực tế.
+Không chứa node_modules, dist hoặc lịch sử .git. Backend/SQL không thay đổi.
+Production cần reverse proxy /api và /ws; proxy Vite chỉ phục vụ dev.

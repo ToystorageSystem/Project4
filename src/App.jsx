@@ -1,0 +1,170 @@
+import {
+    BrowserRouter,
+    Navigate,
+    Route,
+    Routes,
+} from "react-router-dom";
+
+import { AuthProvider } from "./auth/AuthContext";
+
+import Login from "./pages/auth/Login";
+import ReceivingMonitorPage from "./pages/warehouses/receiving/ReceivingMonitorPage";
+import ReceivingWaitingReviewPage from "./pages/warehouses/receiving/ReceivingWaitingReviewPage";
+import ReceivingCompletedPage from "./pages/warehouses/receiving/ReceivingCompletedPage";
+import ReceivingIncidentReportsPage from "./pages/warehouses/receiving/ReceivingIncidentReportsPage";
+import ReceivingIncidentReportPrintPage from "./pages/warehouses/receiving/ReceivingIncidentReportPrintPage";
+import WarehouseDiscrepancyPage from "./pages/warehouses/discrepancies/WarehouseDiscrepancyPage.jsx";
+import WarehouseDashboardPage from "./pages/warehouses/dashboard/WarehouseDashboardPage.jsx";
+import WarehouseLocationsPage from "./pages/warehouses/locations/WarehouseLocationsPage";
+import PutawayTasksPage from "./pages/warehouses/putaway/PutawayTasksPage";
+import PutawayDetailPage from "./pages/warehouses/putaway/PutawayDetailPage";
+import PackingConfirmationPage from "./pages/warehouses/packing/PackingConfirmationPage";
+import PackingConfirmationDetailPage from "./pages/warehouses/packing/PackingConfirmationDetailPage";
+import ShipmentHistoryPage from "./pages/warehouses/shipments/ShipmentHistoryPage";
+import ShipmentManifestPage from "./pages/warehouses/shipments/ShipmentManifestPage";
+import DispatchHandoverListPage from "./pages/warehouses/dispatch/DispatchHandoverListPage";
+import DispatchHandoverPage from "./pages/warehouses/dispatch/DispatchHandoverPage";
+import DamagedGoodsPage from "./pages/warehouses/damagedgoods/DamagedGoodsPage.jsx";
+import DamagedGoodsDetailPage from "./pages/warehouses/damagedgoods/DamagedGoodsDetailPage.jsx";
+
+import ReceivingProcessPage from "./pages/warehouses/receiving/ReceivingProcessPage";
+import StoreReturnsPage from "./pages/warehouses/store-returns/StoreReturnsPage";
+import StoreReturnDetailPage from "./pages/warehouses/store-returns/StoreReturnDetailPage";
+import StoreReturnManagerPage from "./pages/warehouses/store-returns/StoreReturnManagerPage";
+
+export default function App() {
+    return (
+        <BrowserRouter>
+            <AuthProvider>
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+
+                    <Route path="/warehouse/receiving/process" element={<ReceivingProcessPage />} />
+                    <Route path="/warehouse/store-returns" element={<StoreReturnsPage />} />
+                    <Route path="/warehouse/store-returns/review" element={<StoreReturnManagerPage />} />
+                    <Route path="/warehouse/store-returns/:returnId" element={<StoreReturnDetailPage />} />
+
+                    <Route
+                        path="/warehouse/receiving/in-progress"
+                        element={<ReceivingMonitorPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/receiving/waiting-review"
+                        element={<ReceivingWaitingReviewPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/receiving/completed"
+                        element={<ReceivingCompletedPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/discrepancies"
+                        element={<WarehouseDiscrepancyPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/receiving/incident-reports"
+                        element={<ReceivingIncidentReportsPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/receiving/incident-reports/:id/print"
+                        element={<ReceivingIncidentReportPrintPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/dashboard"
+                        element={<WarehouseDashboardPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/packing"
+                        element={<PackingConfirmationPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/packing/:transferId"
+                        element={<PackingConfirmationDetailPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/receiving"
+                        element={
+                            <Navigate
+                                to="/warehouse/receiving/in-progress"
+                                replace
+                            />
+                        }
+                    />
+
+                    <Route
+                        path="/warehouse/putaway"
+                        element={<PutawayTasksPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/putaway/:taskId"
+                        element={<PutawayDetailPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/damaged-goods"
+                        element={<DamagedGoodsPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/damaged-goods/:reportId"
+                        element={<DamagedGoodsDetailPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/locations"
+                        element={<WarehouseLocationsPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/manifests/transfer/:transferId"
+                        element={<ShipmentManifestPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/shipment-history"
+                        element={<ShipmentHistoryPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/dispatch"
+                        element={<DispatchHandoverListPage />}
+                    />
+
+                    <Route
+                        path="/warehouse/dispatch/:transferId"
+                        element={<DispatchHandoverPage />}
+                    />
+
+                    <Route
+                        path="/warehouse"
+                        element={
+                            <Navigate
+                                to="/warehouse/dashboard"
+                                replace
+                            />
+                        }
+                    />
+
+                    <Route
+                        path="/"
+                        element={<Navigate to="/login" replace />}
+                    />
+
+                    <Route
+                        path="*"
+                        element={<Navigate to="/login" replace />}
+                    />
+                </Routes>
+            </AuthProvider>
+        </BrowserRouter>
+    );
+}
