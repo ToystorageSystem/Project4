@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 
 import api from "../api";
 
@@ -106,7 +107,7 @@ export function inTransitShipmentErrorMessage(
     }
 
     if (!error?.response) {
-        return "Không kết nối được Backend. Hãy kiểm tra Spring Boot.";
+        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     }
 
     const data = error.response.data;
@@ -116,7 +117,5 @@ export function inTransitShipmentErrorMessage(
             ? data
             : data?.message;
 
-    return typeof message === "string" && message.trim()
-        ? message
-        : fallback;
+    return friendlyBusinessError(error, fallback);
 }

@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 import api from "../api";
 
 // Issue #11 - creation, detail, and explicit, confirmed stock transfer state changes.
@@ -18,6 +19,24 @@ export async function getStockTransferSourceProducts(sourceId, signal) {
     );
     return response.data;
 }
+/**
+ * Lấy danh sách phiếu điều chuyển do người đang đăng nhập tạo.
+ * Backend chịu trách nhiệm lọc theo người tạo và phân quyền.
+ */
+export async function getMyStockTransfers(filters = {}, signal) {
+    const response = await api.get("/stock-transfers/mine", {
+        params: {
+            keyword: filters.keyword || undefined,
+            status: filters.status || undefined,
+            page: filters.page ?? 0,
+            size: filters.size ?? 10,
+        },
+        signal,
+    });
+
+    return response.data;
+}
+
 
 // POST writes a DRAFT record to the shared database; it does not submit/reserve stock.
 export async function createStockTransferDraft(payload) {
@@ -55,12 +74,12 @@ export async function cancelStockTransfer(transferId, reason) {
 
 export function stockTransferErrorMessage(error, fallback = "Không tải được dữ liệu điều chuyển hàng.") {
     if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.";
-    if (error?.response?.status === 403) return "Tài khoản không có quyền truy cập chức năng điều chuyển hàng (403).";
+    if (error?.response?.status === 403) return "Bạn chưa được cấp quyền điều chuyển hàng.";
     if (!error?.response) {
         if (!error?.isAxiosError && error?.message) return error.message;
-        return "Không kết nối được Backend. Hãy kiểm tra Spring Boot đang chạy.";
+        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     }
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;
-    return typeof message === "string" && message.trim() ? message : fallback;
+    return friendlyBusinessError(error, fallback);
 }

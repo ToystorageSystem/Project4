@@ -32,6 +32,12 @@ function formatDate(value) {
         : date.toLocaleString("vi-VN");
 }
 
+function formatLocalDate(value) {
+    if (!value) return "—";
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value));
+    return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+}
+
 const transportLabels = {
     CREATED: "Mới tạo",
     ASSIGNED: "Đã phân công",
@@ -59,7 +65,7 @@ function StatusBadge({ status }) {
                 colors[status] || "bg-slate-100 text-slate-700"
             }`}
         >
-            {transportLabels[status] || status || "Chưa có trạng thái"}
+            {transportLabels[status] || status || "Chưa có chuyến giao"}
         </span>
     );
 }
@@ -111,12 +117,12 @@ const transferColumns = [
     {
         key: "expectedShipmentDate",
         label: "Dự kiến xuất",
-        render: (value) => value || "—",
+        render: (value) => formatLocalDate(value),
     },
     {
         key: "expectedReceiptDate",
         label: "Dự kiến nhận",
-        render: (value) => value || "—",
+        render: (value) => formatLocalDate(value),
     },
 ];
 
@@ -228,7 +234,7 @@ export default function ShipmentManifestDetailPage() {
                 ) : (
                     <>
                         <Alert type="info">
-                            Business Staff chỉ được xem và theo dõi
+                            Nhân viên kinh doanh chỉ được xem và theo dõi
                             bảng kê. Không được chỉnh sửa, hủy hoặc
                             thay đổi nội dung kiện hàng.
                         </Alert>

@@ -21,7 +21,7 @@ import Select from "../../../components/ui/Select";
 import Spinner from "../../../components/ui/Spinner";
 import TextArea from "../../../components/ui/TextArea";
 import { formatPurchaseOrderMoney } from "./purchaseOrderFormat";
-import { toPurchaseOrderPayload, validatePurchaseOrderDraft } from "./purchaseOrderDraft";
+import { toPurchaseOrderPayload, todayVietnamIso, validatePurchaseOrderDraft } from "./purchaseOrderDraft";
 
 const ROOT = "/business-staff/purchase-orders";
 const blankRow = (clientKey) => ({ clientKey, productId: "", orderedQuantity: "" });
@@ -62,7 +62,7 @@ export default function PurchaseOrderFormPage() {
         setConfirmedPriceChange(false);
 
         if (editing && (!Number.isSafeInteger(Number(orderId)) || Number(orderId) <= 0)) {
-            setLoadError("ID đơn mua hàng không hợp lệ.");
+            setLoadError("Mã đơn mua hàng không hợp lệ.");
             setLoading(false);
             return () => controller.abort();
         }
@@ -80,7 +80,7 @@ export default function PurchaseOrderFormPage() {
             setWarehouseOptions(warehouses);
             if (editing) {
                 if (loadedDetail?.status !== "DRAFT") {
-                    setLoadError("Chỉ có thể sửa đơn mua hàng đang ở trạng thái DRAFT.");
+                    setLoadError("Chỉ có thể sửa đơn mua hàng đang ở trạng thái nháp.");
                     return;
                 }
                 const loadedItems = Array.isArray(loadedDetail.items) ? loadedDetail.items : [];
@@ -219,10 +219,10 @@ export default function PurchaseOrderFormPage() {
             const saved = editing
                 ? await updatePurchaseOrder(orderId, payload)
                 : await createPurchaseOrder(payload);
-            if (!saved?.id) throw new Error("Backend không trả về ID đơn mua hàng.");
+            if (!saved?.id) throw new Error("Chưa nhận được mã đơn mua hàng. Vui lòng kiểm tra danh sách trước khi tạo lại.");
             navigate(`${ROOT}/${saved.id}`, {
                 replace: true,
-                state: { notice: editing ? "Đã cập nhật đơn nháp." : "Đã tạo đơn mua hàng ở trạng thái DRAFT. Chưa gửi đặt hàng và chưa thay đổi tồn kho." },
+                state: { notice: editing ? "Đã cập nhật đơn nháp." : "Đã tạo đơn nháp. Đơn chưa được gửi cho nhà cung cấp và số lượng hàng trong kho không thay đổi." },
             });
         } catch (error) {
             setSaveError(purchaseOrderErrorMessage(error, "Không lưu được đơn mua hàng."));
@@ -240,10 +240,10 @@ export default function PurchaseOrderFormPage() {
             <div className="space-y-6">
                 <PageHeader
                     title={editing ? `Sửa đơn nháp ${detail?.orderCode || ""}` : "Tạo đơn mua hàng"}
-                    description="Issue #9 — Chọn NCC, kho tổng, các sản phẩm đã liên kết và số lượng. Giá nhập lấy trực tiếp từ liên kết NCC."
+                    description="Chọn nhà cung cấp, kho nhận hàng và các sản phẩm cần đặt mua. Đơn giá được lấy theo thỏa thuận với nhà cung cấp."
                     actions={<Button type="button" variant="outline" onClick={() => navigate(editing ? `${ROOT}/${orderId}` : ROOT)}>← Quay lại</Button>}
                 />
-                <Alert type="info">Tạo đơn chỉ lưu trạng thái DRAFT, không nhập tồn kho. Sau khi lưu, việc gửi hoặc hủy đơn được thực hiện trong trang chi tiết và phải xác nhận riêng. Không sử dụng dữ liệu thử trên MySQL chung khi chưa thống nhất với nhóm.</Alert>
+                <Alert type="info">Khi tạo, đơn được lưu dưới dạng nháp và chưa làm thay đổi tồn kho. Bạn có thể gửi hoặc hủy đơn tại trang chi tiết.</Alert>
                 {loadError && <div role="alert"><Alert type="danger">{loadError}</Alert></div>}
                 {productError && <div role="alert"><Alert type="danger">{productError}</Alert></div>}
                 {saveError && <div role="alert"><Alert type="danger">{saveError}</Alert></div>}
@@ -256,22 +256,22 @@ export default function PurchaseOrderFormPage() {
                             <div className="grid gap-4 md:grid-cols-2">
                                 <Select label="Nhà cung cấp *" value={form.supplierId} options={supplierSelectOptions} disabled={saving} onChange={(event) => changeSupplier(event.target.value)} />
                                 <Select label="Kho tổng nhận hàng *" value={form.warehouseId} options={warehouseSelectOptions} disabled={saving} onChange={(event) => setField("warehouseId", event.target.value)} />
-                                <Input label="Ngày dự kiến giao hàng *" type="date" value={form.expectedDeliveryDate} disabled={saving} onChange={(event) => setField("expectedDeliveryDate", event.target.value)} />
+                                <Input label="Ngày dự kiến giao hàng *" type="date" min={todayVietnamIso()} value={form.expectedDeliveryDate} disabled={saving} onChange={(event) => setField("expectedDeliveryDate", event.target.value)} />
                             </div>
                             <TextArea label="Ghi chú (nếu có)" value={form.note} disabled={saving} rows={3} onChange={(event) => setField("note", event.target.value)} />
-                            {editing && <p className="text-sm text-slate-500">Chỉ đơn DRAFT mới được sửa. Nếu đổi nhà cung cấp, danh sách sản phẩm sẽ được yêu cầu chọn lại.</p>}
+                            {editing && <p className="text-sm text-slate-500">Chỉ đơn nháp mới được chỉnh sửa. Nếu đổi nhà cung cấp, bạn cần chọn lại danh sách sản phẩm.</p>}
                         </Card>
 
                         <Card className="space-y-4">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
                                     <h2 className="text-lg font-semibold text-slate-900">Sản phẩm đặt mua</h2>
-                                    <p className="mt-1 text-sm text-slate-500">Chỉ sản phẩm ACTIVE có liên kết ACTIVE với nhà cung cấp. Giá nhập do Backend quyết định, không nhập thủ công.</p>
+                                    <p className="mt-1 text-sm text-slate-500">Chỉ hiển thị sản phẩm đang kinh doanh và được nhà cung cấp này cung ứng. Đơn giá mua được cập nhật tự động.</p>
                                 </div>
                                 <Button type="button" variant="outline" disabled={!canAdd || saving || loadingProducts} onClick={addRow}>+ Thêm sản phẩm</Button>
                             </div>
                             {loadingProducts && <p role="status" className="text-sm text-slate-500">Đang tải sản phẩm liên kết...</p>}
-                            {!loadingProducts && form.supplierId && !productError && productOptions.length === 0 && <Alert type="warning">Nhà cung cấp chưa có sản phẩm ACTIVE được phép đặt hàng.</Alert>}
+                            {!loadingProducts && form.supplierId && !productError && productOptions.length === 0 && <Alert type="warning">Nhà cung cấp chưa có sản phẩm đang hoạt động để đặt mua.</Alert>}
                             {form.items.map((row, index) => {
                                 const option = productById.get(row.productId);
                                 const otherIds = new Set(form.items.filter((item) => item.clientKey !== row.clientKey).map((item) => item.productId));
@@ -283,7 +283,7 @@ export default function PurchaseOrderFormPage() {
                                 ];
                                 // Keep stale selections visible for review; validation prevents saving them.
                                 if (row.productId && !option) {
-                                    selectOptions.push({ value: row.productId, label: `SP ID ${row.productId} (không còn liên kết ACTIVE)` });
+                                    selectOptions.push({ value: row.productId, label: `Sản phẩm mã ${row.productId} (không còn liên kết hoạt động)` });
                                 }
                                 const quantity = Number(row.orderedQuantity);
                                 const total = option && Number.isFinite(quantity) && quantity > 0 ? quantity * Number(option.purchasePrice) : 0;
@@ -297,18 +297,18 @@ export default function PurchaseOrderFormPage() {
                                             <Select label="Sản phẩm *" disabled={!form.supplierId || loadingProducts || saving} value={row.productId} options={selectOptions} onChange={(event) => updateRow(row.clientKey, "productId", event.target.value)} />
                                             <Input label="Số lượng đặt *" type="number" min="1" step="1" disabled={!option || saving} value={row.orderedQuantity} onChange={(event) => updateRow(row.clientKey, "orderedQuantity", event.target.value)} />
                                             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                                                <span className="block text-slate-500">Đơn giá nhập từ NCC</span>
+                                                <span className="block text-slate-500">Đơn giá mua</span>
                                                 <strong className="mt-1 block text-slate-900">{option ? formatPurchaseOrderMoney(option.purchasePrice) : "—"}</strong>
                                             </div>
                                         </div>
                                         {option && row.orderedQuantity !== "" && Number.isFinite(quantity) &&
                                             quantity > 0 && quantity < Math.max(1, Number(option.minimumOrderQuantity || 1)) && (
                                                 <p role="alert" className="text-sm font-medium text-rose-700">
-                                                    Số lượng đặt phải đạt tối thiểu {option.minimumOrderQuantity || 1} (MOQ).
+                                                    Số lượng đặt phải đạt tối thiểu {option.minimumOrderQuantity || 1} (số lượng đặt tối thiểu).
                                                 </p>
                                             )}
                                         {option && <div className="flex flex-wrap justify-between gap-3 text-sm text-slate-600">
-                                            <span>MOQ: <b>{option.minimumOrderQuantity}</b> · Giao dự kiến: <b>{option.leadTimeDays} ngày</b>{option.defaultSupplier ? " · NCC mặc định" : ""}</span>
+                                            <span>Đặt tối thiểu: <b>{option.minimumOrderQuantity}</b> · Giao dự kiến: <b>{option.leadTimeDays} ngày</b>{option.defaultSupplier ? " · Nhà cung cấp chính" : ""}</span>
                                             <span>Thành tiền tạm tính: <b className="text-slate-900">{formatPurchaseOrderMoney(total)}</b></span>
                                         </div>}
                                     </div>
@@ -322,16 +322,16 @@ export default function PurchaseOrderFormPage() {
                             </div>
                         </Card>
                         {priceDiffers && <Alert type="warning">
-                            Đơn nháp này có đơn giá cũ khác giá liên kết NCC hiện tại. Nếu lưu sửa, Backend sẽ lấy lại giá nhập hiện tại của NCC; vui lòng xác nhận với nhóm trước khi tiếp tục.
-                            <div className="mt-3"><Checkbox checked={confirmedPriceChange} onChange={(event) => setConfirmedPriceChange(event.target.checked)} label="Tôi hiểu đơn giá sẽ được cập nhật theo liên kết NCC hiện tại." /></div>
+                            Đơn giá trong bản nháp khác đơn giá hiện tại của nhà cung cấp. Nếu lưu, hệ thống sẽ cập nhật theo giá mới. Vui lòng kiểm tra trước khi tiếp tục.
+                            <div className="mt-3"><Checkbox checked={confirmedPriceChange} onChange={(event) => setConfirmedPriceChange(event.target.checked)} label="Tôi đồng ý cập nhật đơn giá theo giá mua hiện tại." /></div>
                         </Alert>}
                         <Card className="space-y-4">
                             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi xác nhận thao tác này sẽ ghi dữ liệu thật vào MySQL chung của nhóm." />
+                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi đã kiểm tra thông tin và đồng ý lưu đơn mua hàng." />
                             </div>
                             <div className="flex flex-wrap justify-end gap-3">
                                 <Button type="button" variant="outline" onClick={() => navigate(editing ? `${ROOT}/${orderId}` : ROOT)}>Hủy</Button>
-                                <Button type="submit" disabled={saving || loadingProducts || !!productError || !confirmed || (priceDiffers && !confirmedPriceChange)}>{saving ? "Đang lưu..." : editing ? "Lưu thay đổi DRAFT" : "Tạo đơn nháp"}</Button>
+                                <Button type="submit" disabled={saving || loadingProducts || !!productError || !confirmed || (priceDiffers && !confirmedPriceChange)}>{saving ? "Đang lưu..." : editing ? "Lưu thay đổi đơn nháp" : "Tạo đơn nháp"}</Button>
                             </div>
                         </Card>
                     </form>

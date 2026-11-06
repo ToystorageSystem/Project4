@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 import api from "../api";
 
 // Issue #10 - supplier invoices.
@@ -53,15 +54,15 @@ export async function uploadSupplierInvoiceAttachment(invoiceId, file) {
 
 export function supplierInvoiceErrorMessage(error, fallback = "Không tải được danh sách hóa đơn nhà cung cấp.") {
     if (error?.response?.status === 403) {
-        return "Tài khoản không có quyền thực hiện thao tác hóa đơn này (403).";
+        return "Bạn chưa được cấp quyền thực hiện thao tác này.";
     }
     if (error?.response?.status === 401) {
         return "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.";
     }
     if (!error?.response) {
-        return "Không kết nối được Backend. Hãy kiểm tra Spring Boot đang chạy.";
+        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     }
     const body = error.response.data;
     const message = typeof body === "string" ? body : body?.message;
-    return typeof message === "string" && message.trim() ? message : fallback;
+    return friendlyBusinessError(error, fallback);
 }

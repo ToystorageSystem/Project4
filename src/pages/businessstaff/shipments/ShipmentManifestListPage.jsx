@@ -52,6 +52,7 @@ const STATUS_LABELS = {
 
 const STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
+    { value: "NO_DELIVERY", label: "Chưa có chuyến giao" },
     ...Object.entries(STATUS_LABELS).map(([value, label]) => ({
         value,
         label,
@@ -322,7 +323,7 @@ export default function ShipmentManifestListPage() {
 
                 <Alert type="info">
                     Bảng kê được hệ thống tạo sau khi hoàn tất
-                    đóng kiện. Business Staff chỉ được xem và theo dõi,
+                    đóng kiện. Nhân viên kinh doanh chỉ được xem và theo dõi,
                     không được chỉnh sửa hoặc xóa dữ liệu.
                 </Alert>
 

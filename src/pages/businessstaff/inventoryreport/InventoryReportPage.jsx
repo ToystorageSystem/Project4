@@ -37,7 +37,11 @@ function formatDate(value) {
         : date.toLocaleString("vi-VN");
 }
 
-function StockStatusBadge({ status }) {
+function StockStatusBadge({ status, onHandQuantity, availableQuantity }) {
+    // Hết hàng thực tế khác với còn hàng nhưng chưa thể cấp phát/bán.
+    const unavailable = status === "OUT_OF_STOCK"
+        && Number(onHandQuantity ?? 0) > 0
+        && Number(availableQuantity ?? 0) === 0;
     const config = {
         IN_STOCK: {
             text: "Còn hàng",
@@ -48,7 +52,7 @@ function StockStatusBadge({ status }) {
             className: "bg-yellow-100 text-yellow-800",
         },
         OUT_OF_STOCK: {
-            text: "Hết hàng",
+            text: unavailable ? "Không khả dụng" : "Hết hàng",
             className: "bg-red-100 text-red-700",
         },
     };
@@ -163,13 +167,21 @@ function ProductLocationsDialog({ product, onClose }) {
                                             {formatNumber(item.availableQuantity)}
                                         </td>
                                         <td className="p-3">
-                                            <StockStatusBadge status={item.stockStatus} />
+                                            <StockStatusBadge status={item.stockStatus}
+                                                onHandQuantity={item.onHandQuantity}
+                                                availableQuantity={item.availableQuantity} />
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
 
+                        {locations.some((item) => Number(item.onHandQuantity) > 0 && Number(item.availableQuantity) === 0) && (
+                            <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                                Có hàng tồn thực tế nhưng chưa khả dụng. Báo cáo không cung cấp lý do bị hạn chế;
+                                cần đối chiếu trạng thái kiểm nhận, cách ly hoặc khóa hàng tại bộ phận kho.
+                            </p>
+                        )}
                         {locations.length === 0 && (
                             <p className="py-6 text-center text-slate-500">
                                 Không có dữ liệu tồn kho.
@@ -399,7 +411,7 @@ export default function InventoryReportPage() {
                         <option value="">Tất cả trạng thái</option>
                         <option value="IN_STOCK">Còn hàng</option>
                         <option value="LOW_STOCK">Sắp hết hàng</option>
-                        <option value="OUT_OF_STOCK">Hết hàng</option>
+                        <option value="OUT_OF_STOCK">Không có hàng khả dụng</option>
                     </select>
                 </div>
 
@@ -498,7 +510,9 @@ export default function InventoryReportPage() {
                                             {formatNumber(item.minimumStockLevel)}
                                         </td>
                                         <td className="p-3">
-                                            <StockStatusBadge status={item.stockStatus} />
+                                            <StockStatusBadge status={item.stockStatus}
+                                                onHandQuantity={item.onHandQuantity}
+                                                availableQuantity={item.availableQuantity} />
                                         </td>
                                         <td className="p-3">
                                             {formatDate(item.lastUpdatedAt)}

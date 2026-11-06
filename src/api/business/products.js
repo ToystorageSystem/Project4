@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 import api from "../api";
 
 // All requests use the group's session-cookie Axios client. Mutations are
@@ -66,9 +67,9 @@ export async function getMyProductRequests({ page = 0, size = 10 } = {}, signal)
 }
 
 export function productErrorMessage(error, fallback = "Không thực hiện được thao tác. Vui lòng thử lại.") {
-    if (error?.response?.status === 403) return "Tài khoản không có quyền thực hiện thao tác này (403).";
-    if (!error?.response) return "Không kết nối được Backend. Vui lòng kiểm tra server.";
+    if (error?.response?.status === 403) return "Bạn chưa được cấp quyền thực hiện thao tác này.";
+    if (!error?.response) return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;
-    return typeof message === "string" && message.trim() ? message : fallback;
+    return friendlyBusinessError(error, fallback);
 }

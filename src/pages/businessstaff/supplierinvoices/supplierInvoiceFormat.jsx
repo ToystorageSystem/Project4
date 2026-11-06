@@ -1,18 +1,18 @@
 export const SUPPLIER_INVOICE_STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
-    { value: "DRAFT", label: "DRAFT — Đang nháp" },
-    { value: "PENDING_VERIFICATION", label: "PENDING_VERIFICATION — Chờ kiểm tra" },
-    { value: "VERIFIED", label: "VERIFIED — Đã xác nhận" },
-    { value: "PARTIALLY_PAID", label: "PARTIALLY_PAID — Thanh toán một phần" },
-    { value: "PAID", label: "PAID — Đã thanh toán" },
-    { value: "OVERDUE", label: "OVERDUE — Quá hạn" },
-    { value: "CANCELLED", label: "CANCELLED — Đã hủy" },
+    { value: "DRAFT", label: "Đơn nháp" },
+    { value: "PENDING_VERIFICATION", label: "Chờ kiểm tra" },
+    { value: "VERIFIED", label: "Đã xác nhận" },
+    { value: "PARTIALLY_PAID", label: "Đã thanh toán một phần" },
+    { value: "PAID", label: "Đã thanh toán" },
+    { value: "OVERDUE", label: "Quá hạn thanh toán" },
+    { value: "CANCELLED", label: "Đã hủy" },
 ];
 
 const statusLabels = Object.fromEntries(
     SUPPLIER_INVOICE_STATUS_OPTIONS
         .filter(({ value }) => value)
-        .map(({ value, label }) => [value, label.split(" — ")[1]])
+        .map(({ value, label }) => [value, label])
 );
 
 const statusStyles = {
@@ -52,7 +52,7 @@ export function formatSupplierInvoiceDate(value, includeTime = false) {
 
 export function SupplierInvoiceReconciliation({ invoice }) {
     if (invoice.purchaseOrderMatched === true) {
-        return <span className="font-semibold text-emerald-700">Khớp PO</span>;
+        return <span className="font-semibold text-emerald-700">Khớp đơn mua hàng</span>;
     }
 
     if (invoice.purchaseOrderMatched === false) {
@@ -62,7 +62,7 @@ export function SupplierInvoiceReconciliation({ invoice }) {
             : "chưa rõ số tiền";
         return (
             <div className="space-y-1" title={invoice.comparisonWarning || undefined}>
-                <span className="font-semibold text-rose-700">Chưa khớp PO</span>
+                <span className="font-semibold text-rose-700">Chưa khớp đơn mua hàng</span>
                 <p className="text-xs text-rose-700">Lệch {amount} (trước thuế)</p>
             </div>
         );
@@ -72,7 +72,7 @@ export function SupplierInvoiceReconciliation({ invoice }) {
 }
 
 export function SupplierInvoiceMatchBadge({ matched }) {
-    if (matched === true) return <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Khớp PO</span>;
-    if (matched === false) return <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Chênh lệch PO</span>;
+    if (matched === true) return <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Khớp đơn mua hàng</span>;
+    if (matched === false) return <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Khác đơn mua hàng</span>;
     return <span className="text-xs text-slate-500">Chưa có kết quả</span>;
 }

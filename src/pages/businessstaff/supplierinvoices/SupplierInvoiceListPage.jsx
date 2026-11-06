@@ -46,7 +46,7 @@ export default function SupplierInvoiceListPage() {
             .then((data) => {
                 if (controller.signal.aborted) return;
                 if (!Array.isArray(data)) {
-                    throw new Error("Invalid supplier invoice list response");
+                    throw new Error("Danh sách hóa đơn chưa hợp lệ");
                 }
                 setInvoices(data);
             })
@@ -132,7 +132,7 @@ export default function SupplierInvoiceListPage() {
         },
         {
             key: "purchaseOrderMatched",
-            label: "Đối chiếu PO",
+            label: "Đối chiếu đơn mua hàng",
             render: (_value, invoice) => <SupplierInvoiceReconciliation invoice={invoice} />,
         },
         {
@@ -158,18 +158,18 @@ export default function SupplierInvoiceListPage() {
             <div className="space-y-6">
                 <PageHeader
                     title="Quản lý hóa đơn nhà cung cấp"
-                    description="Danh sách hóa đơn lấy trực tiếp từ Backend. Tìm kiếm, lọc trạng thái và theo dõi chênh lệch với đơn mua hàng — Issue #10."
+                    description="Theo dõi hóa đơn nhà cung cấp, tình trạng thanh toán và chênh lệch so với đơn mua hàng."
                     actions={<Link to={`${ROOT}/new`} className="inline-flex h-10 items-center justify-center rounded-xl bg-[#f25d19] px-4 text-sm font-medium text-white hover:bg-[#d94f12]">+ Tạo hóa đơn</Link>}
                 />
                 <Alert type="info">
-                    Danh sách chỉ đọc. Khi tạo/sửa hóa đơn, hệ thống yêu cầu xác nhận trước khi ghi MySQL chung. Backend đối chiếu giá trị <strong>trước thuế</strong> của hóa đơn với giá trị đơn mua hàng.
-                    Trạng thái VERIFIED không đồng nghĩa với việc số tiền đã khớp PO.
+                    Bạn có thể tìm và xem hóa đơn tại đây. Khi tạo hoặc sửa hóa đơn, hệ thống sẽ yêu cầu xác nhận. Số tiền đối chiếu được tính theo <strong>giá trị trước thuế</strong>.
+                    Hóa đơn đã xác nhận vẫn có thể chênh lệch số tiền so với đơn mua hàng.
                 </Alert>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 <Card>
                     <form onSubmit={applyFilters} className="grid grid-cols-1 items-end gap-3 md:grid-cols-2">
                         <SearchInput
-                            label="Số hóa đơn, mã hóa đơn, tên NCC hoặc mã PO"
+                            label="Số hóa đơn, mã hóa đơn, nhà cung cấp hoặc mã đơn mua hàng"
                             placeholder="Nhập thông tin cần tìm..."
                             value={draft.keyword}
                             onChange={(event) => setDraft((value) => ({ ...value, keyword: event.target.value }))}
@@ -193,7 +193,7 @@ export default function SupplierInvoiceListPage() {
                 {!loading && !error && mismatchCount > 0 && (
                     <div role="alert">
                         <Alert type="warning">
-                            Có <strong>{mismatchCount}</strong> hóa đơn có giá trị trước thuế chưa khớp với PO.
+                            Có <strong>{mismatchCount}</strong> hóa đơn có số tiền trước thuế chưa khớp với đơn mua hàng.
                             Hãy kiểm tra số liệu trước khi xác nhận hoặc thanh toán.
                         </Alert>
                     </div>
@@ -212,7 +212,7 @@ export default function SupplierInvoiceListPage() {
                 )}
                 <p className="text-xs text-slate-500">
                     Chức năng tạo/sửa, hủy hóa đơn và tải file sẽ được bổ sung ở các bước tiếp theo.
-                    Trang này không gửi API ghi dữ liệu.
+                    Trang này chỉ dùng để xem và tra cứu hóa đơn.
                 </p>
             </div>
         </MainLayout>

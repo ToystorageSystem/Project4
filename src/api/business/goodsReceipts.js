@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 import api from "../api";
 
 // These GET requests use the existing session-cookie client (baseURL: /api).
@@ -30,14 +31,26 @@ export async function getGoodsReceiptById(receiptId, signal) {
     return response.data;
 }
 
+// Danh sach phieu nhap phuc vu Business Staff theo doi (chi doc).
+export async function getBusinessGoodsReceipts(filters = {}, signal) {
+    const params = { page: filters.page ?? 0, size: filters.size ?? 10 };
+    const keyword = String(filters.keyword ?? "").trim();
+    if (keyword) params.keyword = keyword;
+    for (const key of ["purchaseOrderId", "warehouseId", "status", "fromDate", "toDate"]) {
+        if (filters[key] !== "" && filters[key] != null) params[key] = filters[key];
+    }
+    const response = await api.get("/goods-receipts/business", { params, signal });
+    return response.data;
+}
+
 export function goodsReceiptErrorMessage(error, fallback = "Không thể thực hiện yêu cầu này.") {
     if (error?.response?.status === 403) {
-        return "Tài khoản không có quyền thực hiện thao tác này (403).";
+        return "Bạn chưa được cấp quyền thực hiện thao tác này.";
     }
     if (!error?.response) {
-        return "Không kết nối được Backend. Kiểm tra Spring Boot đang chạy.";
+        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     }
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;
-    return typeof message === "string" && message.trim() ? message : fallback;
+    return friendlyBusinessError(error, fallback);
 }

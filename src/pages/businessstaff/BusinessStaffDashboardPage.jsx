@@ -109,7 +109,7 @@ export default function BusinessStaffDashboardPage() {
             .then((data) => {
                 if (!cancelled) {
                     if (!Array.isArray(data)) {
-                        throw new Error("Invalid supplier list response");
+                        throw new Error("Dữ liệu nhà cung cấp chưa hợp lệ");
                     }
                     setSuppliers(data);
                 }
@@ -118,8 +118,8 @@ export default function BusinessStaffDashboardPage() {
                 if (!cancelled) {
                     setError(
                         err.response?.status === 403
-                            ? "Tài khoản không có quyền xem nhà cung cấp (403)."
-                            : "Không tải được nhà cung cấp. Kiểm tra Backend và phiên đăng nhập."
+                            ? "Tài khoản chưa được cấp quyền xem nhà cung cấp."
+                            : "Không tải được danh sách nhà cung cấp. Vui lòng thử lại."
                     );
                 }
             })
@@ -142,7 +142,7 @@ export default function BusinessStaffDashboardPage() {
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
-                <PageHeader title="Business Staff Dashboard" />
+                <PageHeader title="Tổng quan công việc" />
 
                 {loading && (
                     <p role="status" className="text-sm text-slate-500">
@@ -377,8 +377,8 @@ export default function BusinessStaffDashboardPage() {
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-slate-50 text-slate-500">
                                             <tr>
-                                                <th className="px-5 py-3">Mã NCC</th>
-                                                <th className="px-5 py-3">Tên NCC</th>
+                                                <th className="px-5 py-3">Mã nhà cung cấp</th>
+                                                <th className="px-5 py-3">Tên nhà cung cấp</th>
                                                 <th className="px-5 py-3">Email</th>
                                                 <th className="px-5 py-3">Trạng thái</th>
                                             </tr>

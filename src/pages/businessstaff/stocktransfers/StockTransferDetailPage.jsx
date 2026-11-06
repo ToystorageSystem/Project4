@@ -112,7 +112,7 @@ export default function StockTransferDetailPage() {
                 return;
             }
             if (type === "submit" && latest.status !== "DRAFT") {
-                setActionError("Chỉ phiếu DRAFT mới được gửi.");
+                setActionError("Chỉ phiếu nháp mới được gửi.");
                 return;
             }
             if (type === "cancel" && !CANCELLABLE_STATUSES.has(latest.status)) {
@@ -126,12 +126,12 @@ export default function StockTransferDetailPage() {
             const expectedStatus = type === "submit" ? "CREATED" : "CANCELLED";
             if (!result || Number(result.id) !== Number(detail.id) || result.status !== expectedStatus) {
                 setActionUncertain(true);
-                setActionError("Backend đã phản hồi nhưng chưa xác nhận được trạng thái mới. Không bấm lại; hãy kiểm tra phiếu với nhóm.");
+                setActionError("Chưa thể xác nhận phiếu đã đổi trạng thái. Vui lòng kiểm tra lại chi tiết trước khi thao tác lần nữa.");
                 return;
             }
             setActionNotice(type === "submit"
-                ? "Gửi phiếu thành công. Backend đã chuyển sang CREATED và xử lý giữ chỗ tồn kho."
-                : "Hủy phiếu thành công. Backend đã chuyển sang CANCELLED và xử lý hoàn giữ chỗ nếu có.");
+                ? "Đã gửi phiếu điều chuyển thành công. Số hàng cần chuyển đã được tạm giữ tại kho xuất."
+                : "Đã hủy phiếu điều chuyển. Hàng đang tạm giữ (nếu có) đã được trả lại số lượng có thể sử dụng.");
             setDetail(result);
             setActionType("");
             setRefresh((value) => value + 1);
@@ -140,7 +140,7 @@ export default function StockTransferDetailPage() {
                 setActionUncertain(true);
                 setActionError("Mất kết nối sau khi gửi yêu cầu. Phiếu có thể đã được xử lý; KHÔNG bấm gửi/hủy lại.");
             } else {
-                setActionError(stockTransferErrorMessage(requestError, "Backend từ chối thao tác với phiếu."));
+                setActionError(stockTransferErrorMessage(requestError, "Không thể thực hiện thao tác này với trạng thái hiện tại của phiếu."));
             }
         } finally {
             actionInFlight.current = false;
@@ -156,13 +156,13 @@ export default function StockTransferDetailPage() {
             <div className="space-y-6">
                 <PageHeader
                     title="Chi tiết phiếu điều chuyển hàng"
-                    description="Xem trạng thái thực tế từ Backend. Chỉ sửa/hủy trước khi kho lấy hàng, theo quyền và trạng thái được Backend cho phép."
+                    description="Theo dõi quá trình điều chuyển hàng. Bạn chỉ có thể sửa hoặc hủy phiếu trước khi bộ phận kho bắt đầu lấy hàng."
                     actions={<div className="flex flex-wrap items-center gap-2">
                         <Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/new`)}>← Tạo phiếu khác</Button>
                         {detail && canEditStockTransfer(detail.status) &&
                             <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => navigate(`${ROOT}/${detail.id}/edit`)}>Sửa phiếu</Button>}
                         {detail?.status === "DRAFT" &&
-                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => openAction("submit")}>Gửi phiếu (CREATED)</Button>}
+                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => openAction("submit")}>Gửi phiếu cho kho</Button>}
                         {detail && CANCELLABLE_STATUSES.has(detail.status) && <Button type="button" variant="outline" disabled={actionBusy || actionUncertain} onClick={() => openAction("cancel")}>Hủy phiếu</Button>}
                         <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Làm mới</Button>
                     </div>}
@@ -226,11 +226,11 @@ export default function StockTransferDetailPage() {
                     </Card>
                     <Alert type="info">
                         {detail.status === "DRAFT"
-                            ? "Phiếu DRAFT chưa giữ chỗ tồn kho. Có thể sửa, gửi hoặc hủy nếu có quyền theo Backend."
+                            ? "Phiếu nháp chưa tạm giữ hàng. Bạn có thể sửa, gửi hoặc hủy phiếu."
                             : detail.status === "CREATED" || detail.status === "PENDING_SOURCE_CONFIRMATION"
-                                ? "Phiếu đã gửi nhưng kho chưa bắt đầu lấy hàng. Có thể sửa (không đổi điểm nhận) hoặc hủy nếu Backend cho phép. Sửa/hủy có thể điều chỉnh phần tồn đang giữ chỗ."
+                                ? "Phiếu đã gửi nhưng kho chưa bắt đầu lấy hàng. Bạn có thể chỉnh sửa hoặc hủy theo quy định; số hàng tạm giữ sẽ được cập nhật tương ứng."
                                 : "Phiếu đang ở giai đoạn xử lý khác; không thể sửa hoặc hủy tại trang này."}
-                        {" "}Chỉ người tạo hoặc Business Manager/Admin có quyền sửa và hủy theo Service.
+                        {" "}Chỉ người tạo phiếu hoặc người quản lý được phân quyền mới có thể chỉnh sửa và hủy phiếu.
                     </Alert>
                 </>}
                 {actionType && detail && <StockTransferActionDialog

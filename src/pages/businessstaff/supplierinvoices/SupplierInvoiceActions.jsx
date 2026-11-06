@@ -55,7 +55,7 @@ export function SupplierInvoiceCancelAction({ invoice, onUpdated }) {
         try {
             const updated = await cancelSupplierInvoice(invoice.id, reason.trim());
             if (!updated || Number(updated.id) !== Number(invoice.id) || updated.status !== "CANCELLED") {
-                throw new Error("Backend chưa trả về trạng thái hóa đơn CANCELLED hợp lệ. Hãy làm mới để kiểm tra.");
+                throw new Error("Chưa xác nhận được hóa đơn đã hủy. Vui lòng tải lại để kiểm tra.");
             }
             closeAfterSuccess();
             onUpdated(updated, `Đã hủy hóa đơn ${invoice.invoiceNumber || invoice.invoiceCode}. Lý do được lưu trong lịch sử hóa đơn.`);
@@ -118,7 +118,7 @@ export function SupplierInvoiceCancelAction({ invoice, onUpdated }) {
                     <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-slate-700">
                         <input type="checkbox" className="mt-1 accent-[#f25d19]" checked={confirmed}
                             onChange={(event) => setConfirmed(event.target.checked)} disabled={saving} />
-                        <span>Tôi xác nhận thao tác hủy sẽ thay đổi dữ liệu thật trong MySQL chung của nhóm.</span>
+                        <span>Tôi đã kiểm tra và đồng ý hủy hóa đơn này.</span>
                     </label>
                     {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 </div>
@@ -149,15 +149,15 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
         try {
             const updated = await uploadSupplierInvoiceAttachment(invoice.id, file);
             if (!updated || Number(updated.id) !== Number(invoice.id)) {
-                throw new Error("Backend không trả về dữ liệu hóa đơn hợp lệ sau khi tải tệp.");
+                throw new Error("Chưa thể xác nhận tệp đã được đính kèm. Vui lòng kiểm tra lại hóa đơn.");
             }
             setFile(null);
             setFileInputKey((value) => value + 1);
             setConfirmed(false);
             setSuccess("Tải file thành công. Liên kết file được cập nhật ở phần trên.");
-            onUpdated(updated, "File hóa đơn đã được tải lên Cloudinary và lưu liên kết trong hệ thống.");
+            onUpdated(updated, "Đã đính kèm tệp chứng từ cho hóa đơn.");
         } catch (requestError) {
-            setError(mutationError(requestError, "Không thể tải file hóa đơn. Hãy kiểm tra tệp và cấu hình Cloudinary."));
+            setError(mutationError(requestError, "Không tải được tệp chứng từ. Vui lòng kiểm tra tệp và thử lại."));
         } finally {
             setSaving(false);
         }
@@ -168,7 +168,7 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
             <h4 className="font-semibold text-slate-900">Tải file hóa đơn</h4>
             <p className="text-sm text-slate-600">
                 Hỗ trợ PDF, XML, JPG, JPEG, PNG, WEBP. Chọn file mới cùng loại sẽ cập nhật đường dẫn file hiện có.
-                File được gửi lên Cloudinary qua Backend; giới hạn dung lượng phụ thuộc cấu hình server.
+                Bạn có thể đính kèm tệp chứng từ cho hóa đơn. Chọn tệp có dung lượng phù hợp.
             </p>
             <label htmlFor="supplier-invoice-attachment" className="block text-sm font-medium text-slate-800">
                 Chọn file hóa đơn *
@@ -192,7 +192,7 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
             <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-slate-700">
                 <input type="checkbox" className="mt-1 accent-[#f25d19]" checked={confirmed}
                     onChange={(event) => setConfirmed(event.target.checked)} disabled={saving} />
-                <span>Tôi xác nhận thao tác sẽ tải file lên Cloudinary và cập nhật dữ liệu thật trong MySQL chung.</span>
+                <span>Tôi đã kiểm tra và đồng ý đính kèm tệp vào hóa đơn.</span>
             </label>
             {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
             {success && <div role="status"><Alert type="success">{success}</Alert></div>}

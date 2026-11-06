@@ -332,7 +332,7 @@ export default function InTransitShipmentDetailPage() {
                     <>
                         {/* Quyen han Business Staff */}
                         <Alert type="info">
-                            Business Staff chỉ được xem và theo
+                            Nhân viên kinh doanh chỉ được xem và theo
                             dõi chuyến vận chuyển. Việc cập
                             nhật trạng thái giao hàng thuộc về
                             các vai trò được phân quyền.
@@ -757,10 +757,8 @@ export default function InTransitShipmentDetailPage() {
                             )}
 
                             <p className="mt-4 text-xs text-slate-500">
-                                Lịch sử này được hiển thị theo
-                                những sự kiện Backend cung cấp,
-                                không tự bổ sung các trạng thái
-                                chưa được ghi nhận.
+                                Lịch sử chỉ hiển thị những lần cập nhật
+                                đã được hệ thống ghi nhận.
                             </p>
                         </Card>
                     </>

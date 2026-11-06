@@ -21,13 +21,13 @@ export default function StockTransferActionDialog({
                 </div>
                 <div className="space-y-4 px-6 py-5 text-sm text-slate-700">
                     {isSubmit ? <p>
-                        Phiếu <strong>{transferCode}</strong> sẽ chuyển từ <strong>DRAFT</strong> sang <strong>CREATED</strong>.
-                        Backend sẽ kiểm tra lại tồn khả dụng và <strong>giữ chỗ số lượng hàng tại điểm xuất</strong>.
-                        Sau đó không thể gửi lại hoặc sửa tùy ý như DRAFT.
+                        Phiếu <strong>{transferCode}</strong> sẽ được gửi cho bộ phận kho xử lý.
+                        Hệ thống sẽ kiểm tra số lượng có thể xuất và <strong>tạm giữ số hàng cần điều chuyển tại kho xuất</strong>.
+                        Sau khi gửi, việc chỉnh sửa phiếu sẽ bị hạn chế.
                     </p> : <>
                         <p>
-                            Hủy phiếu <strong>{transferCode}</strong> (trạng thái <strong>{status}</strong>) sẽ chuyển sang <strong>CANCELLED</strong>.
-                            Nếu phiếu có tồn đang được giữ chỗ, Backend sẽ hoàn phần giữ chỗ tương ứng.
+                            Hủy phiếu <strong>{transferCode}</strong> (trạng thái <strong>{status}</strong>) sẽ được đánh dấu đã hủy.
+                            Nếu có hàng đang được tạm giữ, hệ thống sẽ trả lại số lượng có thể sử dụng.
                             Không thể tiếp tục xử lý phiếu đã hủy.
                         </p>
                         <label className="block font-medium text-slate-800" htmlFor="stock-transfer-cancel-reason">Lý do hủy *</label>
@@ -43,7 +43,7 @@ export default function StockTransferActionDialog({
                     </>}
                     <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
                         <input type="checkbox" checked={confirmed} disabled={busy || uncertain} onChange={(event) => setConfirmed(event.target.checked)} className="mt-1 accent-orange-600" />
-                        <span>Tôi hiểu thao tác này <strong>thay đổi dữ liệu thật trên MySQL chung của nhóm</strong>{isSubmit ? " và sẽ giữ chỗ tồn kho." : " và có thể giải phóng phần tồn đã giữ chỗ."}</span>
+                        <span>Tôi đã kiểm tra thông tin và đồng ý <strong>lưu thay đổi vào hệ thống</strong>{isSubmit ? " và sẽ giữ chỗ tồn kho." : " và có thể giải phóng phần tồn đã giữ chỗ."}</span>
                     </label>
                     {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                     {uncertain && <Alert type="warning">Không thử lại thao tác này. Hãy làm mới chi tiết, kiểm tra trạng thái và đối chiếu với nhóm trước khi quyết định tiếp.</Alert>}
@@ -51,7 +51,7 @@ export default function StockTransferActionDialog({
                 <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
                     <Button type="button" variant="outline" disabled={busy} onClick={onClose}>Đóng</Button>
                     <Button type="button" disabled={!canConfirm} onClick={() => onConfirm(reason.trim())}>
-                        {busy ? "Đang xử lý..." : (isSubmit ? "Xác nhận gửi CREATED" : "Xác nhận hủy phiếu")}
+                        {busy ? "Đang xử lý..." : (isSubmit ? "Xác nhận gửi phiếu" : "Xác nhận hủy phiếu")}
                     </Button>
                 </div>
             </div>

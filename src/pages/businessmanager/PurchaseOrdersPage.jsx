@@ -5,6 +5,8 @@ import {
 } from "../../api/businessmanager/purchaseOrders";
 import { businessManagerMenuItems } from "../../components/icons/businessMenuItems";
 import MainLayout from "../../components/layout/MainLayout";
+import PurchaseOrderCancellationReviewPanel from "./PurchaseOrderCancellationReviewPanel";
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 
 const EMPTY_FILTERS = {
     keyword: "",
@@ -87,12 +89,10 @@ function StatusBadge({ value }) {
 
 function apiError(error) {
     const status = error?.response?.status;
-    if (status === 401) return "Phiên đăng nhập đã hết hạn (401). Vui lòng đăng nhập lại.";
-    if (status === 403) return "Tài khoản không được phép xem đơn mua hàng (403).";
-    if (status === 404) return "Không tìm thấy đơn mua hàng (404).";
-    const responseMessage = error?.response?.data?.message;
-    if (typeof responseMessage === "string" && responseMessage.trim()) return responseMessage;
-    return error?.message || "Không thể tải dữ liệu. Vui lòng thử lại.";
+    if (status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+    if (status === 403) return "Tài khoản của bạn chưa được cấp quyền xem đơn mua hàng.";
+    if (status === 404) return "Không tìm thấy đơn mua hàng cần xem.";
+    return friendlyBusinessError(error, "Không thể tải danh sách đơn mua hàng. Vui lòng thử lại.");
 }
 
 function cancelled(error) {
@@ -133,8 +133,8 @@ function PurchaseOrderDetail({ order, loading, error, onClose }) {
                         <DetailField title="Người tạo">{display(order.createdByName || order.createdByCode)}</DetailField>
                         <DetailField title="Thời gian tạo">{time(order.createdAt)}</DetailField>
                         <DetailField title="Ngày dự kiến nhận">{dateOnly(order.expectedDeliveryDate)}</DetailField>
-                        <DetailField title="Người duyệt">{display(order.approvedByName || order.approvedByCode)}</DetailField>
-                        <DetailField title="Thời gian duyệt">{time(order.approvedAt)}</DetailField>
+                        <DetailField title="Người duyệt đơn">{display(order.approvedByName || order.approvedByCode)}</DetailField>
+                        <DetailField title="Thời gian duyệt đơn">{time(order.approvedAt)}</DetailField>
                         <DetailField title="Cập nhật lần cuối">{time(order.updatedAt)}</DetailField>
                         <DetailField title="Tổng số sản phẩm">{integer(order.totalProducts)}</DetailField>
                         <DetailField title="Tổng số lượng đặt">{integer(order.totalOrderedQuantity)}</DetailField>
@@ -167,7 +167,7 @@ function PurchaseOrderDetail({ order, loading, error, onClose }) {
                                         <td className="px-4 py-3 text-right tabular-nums">{money(item.unitPrice)}</td>
                                         <td className="px-4 py-3 text-right font-semibold tabular-nums">{money(item.lineTotal)}</td>
                                     </tr>)}
-                                    {items.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Đơn mua chưa có dòng sản phẩm.</td></tr>}
+                                    {items.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Đơn mua hàng này chưa có sản phẩm.</td></tr>}
                                 </tbody>
                             </table>
                         </div>
@@ -201,7 +201,7 @@ export default function PurchaseOrdersPage() {
         const controller = new AbortController();
         listBusinessManagerPurchaseOrders({}, controller.signal)
             .then(setCatalog)
-            .catch((err) => { if (!cancelled(err)) console.warn("Purchase order filter options:", err); });
+            .catch((err) => { if (!cancelled(err)) console.warn("Không tải được bộ lọc đơn mua hàng:", err); });
         return () => controller.abort();
     }, []);
 
@@ -277,8 +277,10 @@ export default function PurchaseOrdersPage() {
         <main className="mx-auto w-full max-w-7xl space-y-5 px-4 py-8 sm:px-6 lg:py-10">
             <div>
                 <h1 className="text-xl font-bold text-slate-900">Danh sách đơn mua hàng</h1>
-                <p className="mt-1 text-sm text-slate-500">Business Manager theo dõi toàn bộ đơn mua hàng trong hệ thống. Chức năng chỉ xem, không chỉnh sửa đơn.</p>
+                <p className="mt-1 text-sm text-slate-500">Theo dõi đơn mua hàng và xử lý các đề nghị hủy từ nhân viên. Thông tin đơn chỉ để xem, không chỉnh sửa tại đây.</p>
             </div>
+
+            <PurchaseOrderCancellationReviewPanel onChanged={() => setReload((value) => value + 1)} />
 
             <form onSubmit={applyFilters} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">

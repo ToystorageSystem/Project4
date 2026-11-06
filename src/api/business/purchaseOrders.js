@@ -1,4 +1,5 @@
 import api from "../api";
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 
 // Issue #9: read APIs and explicit create/update actions for DRAFT orders.
 export async function listPurchaseOrders(filters = {}, signal) {
@@ -57,14 +58,22 @@ export async function cancelPurchaseOrder(orderId, reason) {
     return response.data;
 }
 
+export async function listPurchaseOrderCancellationRequests(orderId, signal) {
+    const response = await api.get(`/purchase-orders/${encodeURIComponent(orderId)}/cancellation-requests`, { signal });
+    return response.data;
+}
+
+export async function requestPurchaseOrderCancellation(orderId, payload) {
+    const response = await api.post(`/purchase-orders/${encodeURIComponent(orderId)}/cancellation-requests`, payload);
+    return response.data;
+}
+
 export function purchaseOrderErrorMessage(error, fallback = "Không tải được dữ liệu đơn mua hàng.") {
     if (error?.response?.status === 403) {
-        return "Tài khoản không có quyền thực hiện thao tác với đơn mua hàng (403).";
+        return "Tài khoản chưa được cấp quyền thực hiện thao tác này.";
     }
     if (!error?.response) {
-        return "Không kết nối được Backend. Hãy kiểm tra Spring Boot đang chạy.";
+        return "Không thể kết nối hệ thống. Vui lòng kiểm tra kết nối rồi thử lại.";
     }
-    const data = error.response.data;
-    const message = typeof data === "string" ? data : data?.message;
-    return typeof message === "string" && message.trim() ? message : fallback;
+    return friendlyBusinessError(error, fallback);
 }

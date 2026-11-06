@@ -54,7 +54,7 @@ export default function PurchaseOrderListPage() {
         getPurchaseOrderSuppliers(controller.signal)
             .then((data) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(data)) throw new Error("Invalid suppliers options response");
+                if (!Array.isArray(data)) throw new Error("Danh sách nhà cung cấp chưa hợp lệ");
                 setSuppliers(data);
             })
             .catch((requestError) => {
@@ -72,7 +72,7 @@ export default function PurchaseOrderListPage() {
         listPurchaseOrders(filters, controller.signal)
             .then((data) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(data)) throw new Error("Invalid purchase order list response");
+                if (!Array.isArray(data)) throw new Error("Danh sách đơn mua hàng chưa hợp lệ");
                 setOrders(data);
             })
             .catch((requestError) => {
@@ -147,11 +147,11 @@ export default function PurchaseOrderListPage() {
             <div className="space-y-6">
                 <PageHeader
                     title="Quản lý đơn hàng nhập"
-                    description="Danh sách Purchase Order lấy từ Backend. Tìm kiếm, lọc và xem chi tiết đơn mua hàng theo Issue #9."
+                    description="Tra cứu đơn mua hàng theo mã đơn, nhà cung cấp, trạng thái và thời gian tạo."
                     actions={<Button type="button" onClick={() => navigate(`${ROOT}/new`)}>+ Tạo đơn mua hàng</Button>}
                 />
                 <Alert type="info">
-                    Đơn PO-AUTO có thể đã được Backend tạo cùng phiếu nhập hàng. Chỉ tạo đơn mới khi đã thống nhất dữ liệu thử với nhóm; tạo đơn DRAFT không thay đổi tồn kho.
+                    Một số đơn được hệ thống tạo tự động khi lập phiếu nhận hàng. Tạo đơn nháp mới sẽ không làm thay đổi số lượng hàng trong kho.
                 </Alert>
                 {supplierWarning && <div role="alert"><Alert type="warning">{supplierWarning}</Alert></div>}
                 {filterError && <div role="alert"><Alert type="danger">{filterError}</Alert></div>}
@@ -160,7 +160,7 @@ export default function PurchaseOrderListPage() {
                     <form onSubmit={applyFilters} className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-5">
                         <SearchInput
                             label="Mã đơn hoặc tên nhà cung cấp"
-                            placeholder="Nhập mã PO hoặc tên NCC..."
+                            placeholder="Nhập mã đơn mua hàng hoặc tên nhà cung cấp..."
                             value={draft.keyword}
                             onChange={(event) => setDraft((value) => ({ ...value, keyword: event.target.value }))}
                         />

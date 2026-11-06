@@ -48,11 +48,11 @@ function dateTime(value) {
 
 function requestError(error) {
     if (error?.response?.status === 401) return "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
-    if (error?.response?.status === 403) return "Tài khoản không có quyền Business Manager (403).";
+    if (error?.response?.status === 403) return "Tài khoản chưa được cấp quyền xem hoạt động kho.";
     if (error?.response?.status === 404) return "Không tìm thấy phiếu trong hệ thống (404).";
     const message = error?.response?.data?.message || error?.response?.data?.error;
     return typeof message === "string" && message.trim()
-        ? message : "Không tải được dữ liệu. Kiểm tra kết nối Backend và thử lại.";
+        ? message : "Không tải được dữ liệu. Vui lòng kiểm tra kết nối rồi thử lại.";
 }
 
 function StatusChip({ value }) {
@@ -153,7 +153,7 @@ export default function StockTransactionsPage() {
         if (filters.warehouseId && (!/^\d+$/.test(filters.warehouseId)
             || !Number.isSafeInteger(Number(filters.warehouseId))
             || Number(filters.warehouseId) < 1)) {
-            setError("ID kho phải là số nguyên dương.");
+            setError("Mã kho phải là số nguyên dương.");
             return;
         }
         closeDetail();
@@ -203,7 +203,7 @@ export default function StockTransactionsPage() {
             <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 sm:px-6">
                 <div className="space-y-1">
                     <h1 className="text-2xl font-bold text-slate-900">Theo dõi phiếu xuất / phiếu nhập</h1>
-                    <p className="text-sm text-slate-500">Business Manager theo dõi chứng từ toàn hệ thống. Chức năng chỉ xem, không cập nhật tồn kho.</p>
+                    <p className="text-sm text-slate-500">Theo dõi phiếu xuất, phiếu nhập và điều chuyển trên toàn hệ thống. Bạn chỉ có quyền xem thông tin.</p>
                 </div>
 
                 <div className="flex flex-wrap gap-2" role="tablist" aria-label="Loại chứng từ">
@@ -227,7 +227,7 @@ export default function StockTransactionsPage() {
                                 {activeStatuses.map((value) => <option key={value} value={value}>{STATUS_LABELS[value] || value} ({value})</option>)}
                             </select>
                         </label>
-                        <label><span className={labelClass}>ID kho {isImport ? "nhập" : "xuất"}</span>
+                        <label><span className={labelClass}>Mã kho {isImport ? "nhập" : "xuất"}</span>
                             <input type="number" min="1" step="1" className={inputClass} value={filters.warehouseId} onChange={(event) => updateFilter("warehouseId", event.target.value)} placeholder="Tất cả kho" />
                         </label>
                         <label><span className={labelClass}>Từ ngày tạo</span>
@@ -293,7 +293,7 @@ export default function StockTransactionsPage() {
                 {detailKey && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDetail(); }}>
                     <section role="dialog" aria-modal="true" aria-label="Chi tiết phiếu" className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
                         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4">
-                            <div><h2 className="text-lg font-bold text-slate-900">Chi tiết {detailKey.type === "imports" ? "phiếu nhập" : "phiếu xuất"}</h2><p className="text-xs text-slate-500">Mã ID #{detailKey.id}</p></div>
+                            <div><h2 className="text-lg font-bold text-slate-900">Chi tiết {detailKey.type === "imports" ? "phiếu nhập" : "phiếu xuất"}</h2><p className="text-xs text-slate-500">Mã số #{detailKey.id}</p></div>
                             <button type="button" onClick={closeDetail} aria-label="Đóng chi tiết" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100">Đóng ✕</button>
                         </div>
                         <div className="space-y-5 p-5">

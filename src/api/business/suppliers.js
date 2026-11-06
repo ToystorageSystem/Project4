@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 import api from "../api";
 
 // This API uses the shared Axios client and the existing JSESSIONID cookie.
@@ -35,11 +36,11 @@ export async function changeSupplierStatus(id, active) {
 
 export function supplierErrorMessage(error, fallback = "Có lỗi xảy ra. Vui lòng thử lại.") {
     if (error?.response?.status === 403) {
-        return "Bạn không có quyền thực hiện thao tác này (403).";
+        return "Bạn chưa được cấp quyền thực hiện thao tác này.";
     }
     if (!error?.response) {
-        return "Không kết nối được Backend. Kiểm tra server và kết nối mạng.";
+        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     }
     const message = error.response.data?.message;
-    return typeof message === "string" && message.trim() ? message : fallback;
+    return friendlyBusinessError(error, fallback);
 }

@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 import api from "../api";
 
 // Issue #8: Supplier <-> Product relations. Use the team's session Axios client.
@@ -34,9 +35,9 @@ export async function deleteSupplierProductLink(linkId) {
 
 export function supplierProductErrorMessage(error, fallback = "Không thực hiện được thao tác.") {
     if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.";
-    if (error?.response?.status === 403) return "Tài khoản không có quyền thao tác liên kết sản phẩm - nhà cung cấp (403).";
-    if (!error?.response) return "Không kết nối được Backend. Vui lòng kiểm tra server.";
+    if (error?.response?.status === 403) return "Bạn chưa được cấp quyền thay đổi nhà cung cấp của sản phẩm.";
+    if (!error?.response) return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;
-    return typeof message === "string" && message.trim() ? message : fallback;
+    return friendlyBusinessError(error, fallback);
 }

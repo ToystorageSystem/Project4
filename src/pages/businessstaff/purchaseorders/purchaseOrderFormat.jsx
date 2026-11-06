@@ -1,16 +1,16 @@
 export const PURCHASE_ORDER_STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
-    { value: "DRAFT", label: "DRAFT — Đơn nháp" },
-    { value: "ORDERED", label: "ORDERED — Đã đặt" },
-    { value: "PARTIALLY_RECEIVED", label: "PARTIALLY_RECEIVED — Nhận một phần" },
-    { value: "COMPLETED", label: "COMPLETED — Hoàn tất" },
-    { value: "CANCELLED", label: "CANCELLED — Đã hủy" },
+    { value: "DRAFT", label: "Đơn nháp" },
+    { value: "ORDERED", label: "Đã gửi nhà cung cấp" },
+    { value: "PARTIALLY_RECEIVED", label: "Đã nhận một phần" },
+    { value: "COMPLETED", label: "Đã nhận đủ hàng" },
+    { value: "CANCELLED", label: "Đã hủy" },
 ];
 
 const statusLabels = Object.fromEntries(
     PURCHASE_ORDER_STATUS_OPTIONS.filter((option) => option.value).map((option) => [
         option.value,
-        option.label.split(" — ")[1],
+        option.label,
     ])
 );
 

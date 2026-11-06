@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 
 import api from "../api";
 
@@ -96,11 +97,11 @@ export function categoryErrorMessage(
     }
 
     if (error?.response?.status === 403) {
-        return "Tài khoản không có quyền quản lý danh mục (403).";
+        return "Bạn chưa được cấp quyền quản lý danh mục.";
     }
 
     if (!error?.response) {
-        return "Không kết nối được Backend. Vui lòng kiểm tra server.";
+        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     }
 
     const data = error.response.data;
@@ -110,7 +111,5 @@ export function categoryErrorMessage(
             ? data
             : data?.message;
 
-    return typeof message === "string" && message.trim()
-        ? message
-        : fallback;
+    return friendlyBusinessError(error, fallback);
 }

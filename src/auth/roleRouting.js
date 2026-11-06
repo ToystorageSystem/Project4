@@ -23,7 +23,7 @@ export function getHomePath(user) {
 }
 
 export function getBusinessRoleLabel(user) {
-    if (hasAuthority(user, ROLE.BUSINESS_MANAGER)) return "Business Manager";
-    if (hasAuthority(user, ROLE.BUSINESS_STAFF)) return "Business Staff";
+    if (hasAuthority(user, ROLE.BUSINESS_MANAGER)) return "Quản lý kinh doanh";
+    if (hasAuthority(user, ROLE.BUSINESS_STAFF)) return "Nhân viên kinh doanh";
     return null;
 }

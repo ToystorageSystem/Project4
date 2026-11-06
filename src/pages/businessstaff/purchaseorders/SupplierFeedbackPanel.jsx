@@ -312,7 +312,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                     )
                 ) {
                     throw new Error(
-                        "Dữ liệu sản phẩm PO và phản hồi không khớp."
+                        "Dữ liệu sản phẩm trong đơn không khớp với phản hồi của nhà cung cấp."
                     );
                 }
 
@@ -518,9 +518,8 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                                     {saveSuccess}
                                 </div>
                             )}
-                        Chức năng ghi nhận phản hồi chỉ áp dụng
-                        cho Purchase Order ở trạng thái ORDERED
-                        hoặc PARTIALLY_RECEIVED.
+                        Chỉ có thể ghi nhận phản hồi cho đơn đã gửi nhà cung cấp
+                        hoặc đã nhận một phần hàng.
                     </Alert>
                 </div>
             </Card>
@@ -537,8 +536,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                         </h2>
 
                         <p className="mt-1 text-sm text-slate-500">
-                            Issue #16 — Nhập phản hồi theo từng
-                            sản phẩm trong Purchase Order.
+                            Ghi nhận thông tin nhà cung cấp trả lời cho từng sản phẩm trong đơn.
                         </p>
                     </div>
 
@@ -556,18 +554,15 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
 
                 <Alert type="info">
                     {SUPPLIER_FEEDBACK_WRITE_ENABLED
-                        ? "Dữ liệu phản hồi được tải từ Backend. Khi nhấn Xác nhận lưu, thông tin phản hồi sẽ được cập nhật vào MySQL chung của nhóm."
-                        : "Dữ liệu phản hồi được tải từ Backend. Chế độ hiện tại chỉ cho phép chỉnh sửa và xem trước; chức năng xác nhận lưu đang bị khóa, không ghi dữ liệu mới vào MySQL."}
+                        ? "Phản hồi của nhà cung cấp được cập nhật khi bạn nhấn Xác nhận lưu."
+                        : "Bạn có thể xem và chỉnh sửa nội dung trước. Chức năng lưu hiện chưa khả dụng."}
                 </Alert>
 
 
 
                 <p className="text-xs text-slate-500">
-                    Thông tin phản hồi đã lưu được tải trực tiếp
-                    từ Backend. Người dùng có thể kiểm tra
-                    trạng thái, số lượng, giá và ghi chú trước đó.
-                    Mọi thay đổi hiện chỉ được xem trước,
-                    chưa gửi lên hệ thống.
+                    Bạn có thể kiểm tra lại trạng thái, số lượng, đơn giá và ghi chú
+                    của những lần phản hồi trước khi cập nhật.
                 </p>
 
 
@@ -617,7 +612,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                                 setOrderNote(event.target.value);
                                 setPreview(null);
                             }}
-                            placeholder="Ví dụ: NCC xác nhận giao hàng theo lịch..."
+                            placeholder="Ví dụ: Nhà cung cấp đồng ý giao hàng vào ngày đã hẹn..."
                         />
 
                         <div className="space-y-4">
@@ -637,13 +632,13 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
 
                                         <p className="mt-1 text-xs text-slate-500">
                                             {row.productCode} |
-                                            PO Item ID: {row.id}
+                                            Mã dòng hàng: {row.id}
                                         </p>
 
                                         <p className="mt-2 text-sm text-slate-600">
                                             Đặt: {row.orderedQuantity} |
                                             Đã nhận: {row.receivedQuantity} |
-                                            Giá PO: {Number(
+                                            Giá trong đơn: {Number(
                                                 row.originalUnitPrice
                                             ).toLocaleString("vi-VN")} đ
                                         </p>
@@ -683,7 +678,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                                             type="number"
                                             min="0.01"
                                             step="0.01"
-                                            label="Giá NCC báo (VNĐ)"
+                                            label="Giá nhà cung cấp báo (VNĐ)"
                                             value={row.confirmedUnitPrice}
                                             onChange={(event) =>
                                                 updateRow(
@@ -707,7 +702,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                                                 event.target.value
                                             )
                                         }
-                                        placeholder="Thông tin NCC phản hồi về sản phẩm..."
+                                        placeholder="Ghi chú của nhà cung cấp về sản phẩm..."
                                     />
                                 </div>
                             ))}
@@ -852,14 +847,14 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                                             </p>
 
                                             <p>
-                                                Giá PO ban đầu:{" "}
+                                                Giá mua ban đầu:{" "}
                                                 {Number(
                                                     product?.originalUnitPrice ?? 0
                                                 ).toLocaleString("vi-VN")} đ
                                             </p>
 
                                             <p>
-                                                Giá NCC báo:{" "}
+                                                Giá nhà cung cấp báo:{" "}
                                                 {item.confirmedUnitPrice == null
                                                     ? "Chưa báo giá"
                                                     : `${Number(

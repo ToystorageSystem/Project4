@@ -46,7 +46,7 @@ export default function ProductImportPage() {
         setResult(null);
         try {
             const response = await previewProductExcel(file);
-            if (!Array.isArray(response?.rows)) throw new Error("Invalid preview response");
+            if (!Array.isArray(response?.rows)) throw new Error("Dữ liệu xem trước chưa hợp lệ");
             setPreview(response);
         } catch (requestError) {
             setError(productErrorMessage(requestError, "Không thể xem trước file Excel."));
@@ -78,8 +78,8 @@ export default function ProductImportPage() {
         { key: "productCode", label: "Mã SP", render: (value) => value || "—" },
         { key: "barcode", label: "Barcode", render: (value) => value || "—" },
         { key: "name", label: "Tên sản phẩm", render: (value) => value || "—" },
-        { key: "categoryId", label: "Danh mục ID", render: (value) => value ?? "—" },
-        { key: "brandId", label: "Thương hiệu ID", render: (value) => value ?? "—" },
+        { key: "categoryId", label: "Mã danh mục", render: (value) => value ?? "—" },
+        { key: "brandId", label: "Mã thương hiệu", render: (value) => value ?? "—" },
         { key: "valid", label: "Kết quả", render: (value) => <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${value ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>{value ? "Hợp lệ" : "Có lỗi"}</span> },
         { key: "errors", label: "Lỗi", render: (value) => value?.length ? <ul className="list-disc space-y-1 pl-4 text-xs text-red-700">{value.map((item, i) => <li key={i}>{item}</li>)}</ul> : "—" },
     ];
@@ -95,7 +95,7 @@ export default function ProductImportPage() {
                         <Alert type="info">
                             Chọn Excel .xlsx hoặc .xls. <strong>Sheet đầu tiên</strong> phải có dòng tiêu đề gồm chính xác 10 cột theo thứ tự sau (phân biệt chữ hoa/thường):
                             <div className="mt-2 overflow-x-auto rounded-lg bg-white p-3 font-mono text-xs text-slate-800">{HEADERS.join(" | ")}</div>
-                            <p className="mt-2 text-xs">brandId, imageUrl và requestReason có thể để trống. categoryId và các trường bắt buộc phải hợp lệ. Backend kiểm tra trùng mã/barcode trong file và database.</p>
+                            <p className="mt-2 text-xs">Mã thương hiệu, đường dẫn ảnh và lý do có thể để trống. Vui lòng điền đủ các thông tin bắt buộc. Hệ thống sẽ kiểm tra mã sản phẩm và mã vạch bị trùng.</p>
                         </Alert>
                         <div className="flex flex-wrap items-center gap-3">
                             <input type="file" accept=".xlsx,.xls" aria-label="Chọn file Excel sản phẩm" onChange={chooseFile} className="max-w-full text-sm text-slate-600" />
@@ -103,11 +103,11 @@ export default function ProductImportPage() {
                                 {checking ? "Đang kiểm tra..." : "Xem trước / kiểm tra"}
                             </Button>
                         </div>
-                        {file && <p className="text-xs text-slate-500">File: {file.name}</p>}
+                        {file && <p className="text-xs text-slate-500">Tệp: {file.name}</p>}
                     </div>
                 </Card>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
-                {result && <div role="status"><Alert type="success">Đã gửi {result.importedRows} / {result.totalRows} sản phẩm từ Excel để Business Manager duyệt. Các sản phẩm chưa ở trạng thái ACTIVE.</Alert></div>}
+                {result && <div role="status"><Alert type="success">Đã gửi {result.importedRows} / {result.totalRows} sản phẩm từ Excel để quản lý kinh doanh xét duyệt. Sản phẩm chỉ được sử dụng khi đã được duyệt.</Alert></div>}
                 {preview && (
                     <>
                         <div className="grid gap-4 sm:grid-cols-3">
@@ -117,17 +117,17 @@ export default function ProductImportPage() {
                         </div>
                         <Card className="space-y-4">
                             <h2 className="text-lg font-semibold text-slate-900">Kết quả kiểm tra từng dòng</h2>
-                            <p className="text-sm text-slate-500">Đây là preview từ Backend, chưa tạo sản phẩm. Có thể cuộn bảng để xem các dòng.</p>
+                            <p className="text-sm text-slate-500">Đây chỉ là bản xem trước. Chưa có sản phẩm nào được tạo. Bạn có thể kéo bảng để xem thêm.</p>
                             <div className="max-h-[440px] overflow-auto"><Table columns={columns} data={preview.rows} rowKey="rowNumber" /></div>
                             {preview.invalidRows > 0 ? (
-                                <Alert type="danger">File còn {preview.invalidRows} dòng không hợp lệ. Sửa trong Excel và xem trước lại. Backend không cho import một phần file có lỗi.</Alert>
+                                <Alert type="danger">File còn {preview.invalidRows} dòng chưa hợp lệ. Vui lòng chỉnh sửa tệp Excel rồi kiểm tra lại. Chỉ có thể nhập khi tất cả dòng đều hợp lệ.</Alert>
                             ) : (
-                                <Alert type="success">Toàn bộ {preview.validRows} dòng hợp lệ tại thời điểm preview. Backend sẽ kiểm tra lại khi import.</Alert>
+                                <Alert type="success">Đã kiểm tra {preview.validRows} dòng hợp lệ. Hệ thống sẽ kiểm tra lại khi bạn xác nhận nhập.</Alert>
                             )}
                             {preview.invalidRows === 0 && preview.validRows > 0 && (
                                 <div className="space-y-4 border-t border-slate-100 pt-4">
                                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi xác nhận sẽ tạo yêu cầu sản phẩm thật trên MySQL chung của nhóm (cần Business Manager duyệt)." />
+                                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi đã kiểm tra và đồng ý gửi các sản phẩm này để quản lý kinh doanh xét duyệt." />
                                     </div>
                                     <div className="flex justify-end">
                                         <Button onClick={confirmImport} disabled={!confirmed || importing}>{importing ? "Đang nhập..." : `Xác nhận nhập ${preview.validRows} sản phẩm`}</Button>

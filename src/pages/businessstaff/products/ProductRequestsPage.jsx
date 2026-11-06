@@ -30,7 +30,7 @@ export default function ProductRequestsPage() {
         getMyProductRequests({ page, size: 10 }, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(result?.items)) throw new Error("Invalid request page response");
+                if (!Array.isArray(result?.items)) throw new Error("Danh sách yêu cầu chưa hợp lệ");
                 setData(result);
             })
             .catch((requestError) => {
@@ -48,16 +48,16 @@ export default function ProductRequestsPage() {
         { key: "status", label: "Trạng thái", render: (v) => <ProductStatusBadge status={v} /> },
         { key: "rejectionReason", label: "Lý do từ chối", render: (v) => v || "—" },
         { key: "createdAt", label: "Thời gian", render: formatProductDate },
-        { key: "productId", label: "Chi tiết", render: (v) => v ? <Link to={`${ROOT}/${v}`} className="text-[#c94810] hover:underline">Xem SP</Link> : "—" },
+        { key: "productId", label: "Chi tiết", render: (v) => v ? <Link to={`${ROOT}/${v}`} className="text-[#c94810] hover:underline">Xem sản phẩm</Link> : "—" },
     ];
 
     return (
         <MainLayout title="Business Staff" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Yêu cầu sản phẩm của tôi" description="Theo dõi yêu cầu tạo/sửa, trạng thái duyệt và lý do từ chối do Backend cung cấp."
+                <PageHeader title="Yêu cầu sản phẩm của tôi" description="Theo dõi yêu cầu thêm hoặc sửa sản phẩm, kết quả xét duyệt và lý do nếu bị từ chối."
                     actions={<div className="flex gap-2"><Button variant="ghost" onClick={() => navigate(ROOT)}>← Danh sách</Button><Button variant="outline" onClick={() => setReload((v) => v + 1)}>Làm mới</Button></div>}
                 />
-                <Alert type="info">Yêu cầu sửa được duyệt mới cập nhật dữ liệu sản phẩm. Trạng thái PENDING nghĩa là Business Manager chưa xử lý.</Alert>
+                <Alert type="info">Chỉ khi quản lý kinh doanh đồng ý thì thông tin sản phẩm mới được cập nhật. Những yêu cầu đang chờ sẽ được xét duyệt sau.</Alert>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 {loading ? <div role="status" className="flex items-center gap-3 rounded-2xl bg-white p-5"><Spinner /> Đang tải yêu cầu...</div>
                     : !error && (data?.items?.length || 0) === 0 ? <EmptyState title="Chưa có yêu cầu" description="Bạn chưa gửi yêu cầu nào trong danh sách này." />

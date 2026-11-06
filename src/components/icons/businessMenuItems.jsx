@@ -76,13 +76,13 @@ function InventoryReportIcon() {
 export const businessStaffMenuItems = [
     {
         key: "business-staff-dashboard",
-        label: "Dashboard",
+        label: "Tổng quan",
         path: "/business-staff/dashboard",
         icon: <DashboardIcon />,
     },
     {
         key: "business-staff-suppliers",
-        label: "Quản lý nhà cung cấp",
+        label: "Nhà cung cấp",
         path: "/business-staff/suppliers",
         icon: <SupplierIcon />,
     },
@@ -94,7 +94,7 @@ export const businessStaffMenuItems = [
     },
     {
         key: "business-staff-categories",
-        label: "Quản lý danh mục sản phẩm",
+        label: "Danh mục sản phẩm",
         path: "/business-staff/categories",
         icon: <ProductIcon />,
     },
@@ -106,15 +106,21 @@ export const businessStaffMenuItems = [
     },
     {
         key: "business-staff-purchase-orders",
-        label: "Quản lý đơn hàng nhập",
+        label: "Đơn mua hàng",
         path: "/business-staff/purchase-orders",
         icon: <PurchaseOrderIcon />,
     },
     {
         key: "business-staff-supplier-invoices",
-        label: "Quản lý hóa đơn NCC",
+        label: "Hóa đơn nhà cung cấp",
         path: "/business-staff/supplier-invoices",
         icon: <SupplierInvoiceIcon />,
+    },
+    {
+        key: "business-staff-stock-transfer-list",
+        label: "Phiếu điều chuyển của tôi",
+        path: "/business-staff/stock-transfers",
+        icon: <StockTransferIcon />,
     },
     {
         key: "business-staff-stock-transfer-create",
@@ -136,13 +142,19 @@ export const businessStaffMenuItems = [
     },
     {
         key: "business-staff-in-transit-shipments",
-        label: "Xem hàng đang vận chuyển",
+        label: "Theo dõi vận chuyển",
         path: "/business-staff/in-transit-shipments",
         icon: <StockTransferIcon />,
     },
     {
+        key: "business-staff-goods-receipt-list",
+        label: "Theo dõi phiếu nhập kho",
+        path: "/business-staff/goods-receipts/list",
+        icon: <GoodsReceiptIcon />,
+    },
+    {
         key: "business-staff-goods-receipt",
-        label: "Tạo phiếu nhập kho tổng",
+        label: "Lập phiếu nhận hàng cho kho tổng",
         path: "/business-staff/goods-receipts",
         icon: <GoodsReceiptIcon />,
     },
@@ -151,7 +163,7 @@ export const businessStaffMenuItems = [
 export const businessManagerMenuItems = [
     {
         key: "business-manager-dashboard",
-        label: "Dashboard",
+        label: "Tổng quan",
         path: "/business-manager/dashboard",
         icon: <DashboardIcon />,
     },

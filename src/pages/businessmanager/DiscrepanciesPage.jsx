@@ -15,7 +15,7 @@ import Spinner from "../../components/ui/Spinner";
 
 const T = {
     title: "X\u1eed l\u00fd b\u00e1o c\u00e1o ch\u00eanh l\u1ec7ch h\u00e0ng h\u00f3a",
-    desc: "Xem c\u00e1c b\u00e1o c\u00e1o nh\u1eadp h\u00e0ng, \u0111i\u1ec1u chuy\u1ec3n \u0111\u00e3 chuy\u1ec3n l\u00ean Business Manager v\u00e0 quy\u1ebft \u0111\u1ecbnh ph\u01b0\u01a1ng \u00e1n x\u1eed l\u00fd.",
+    desc: "Theo dõi các báo cáo chênh lệch hàng hóa do kho và cửa hàng gửi lên, sau đó lựa chọn cách xử lý phù hợp.",
     reports: "Danh s\u00e1ch b\u00e1o c\u00e1o",
     refresh: "L\u00e0m m\u1edbi",
     receiving: "Nh\u1eadp h\u00e0ng",
@@ -25,7 +25,7 @@ const T = {
     discrepancy: "Lo\u1ea1i ch\u00eanh l\u1ec7ch",
     source: "Ngu\u1ed3n ph\u00e1t sinh",
     search: "T\u00ecm m\u00e3 b\u00e1o c\u00e1o, ch\u1ee9ng t\u1eeb, kho...",
-    pending: "Ch\u1edd Business Manager x\u1eed l\u00fd",
+    pending: "Chờ quản lý xử lý",
     empty: "Kh\u00f4ng c\u00f3 b\u00e1o c\u00e1o ph\u00f9 h\u1ee3p",
     detail: "Chi ti\u1ebft b\u00e1o c\u00e1o",
     view: "Xem chi ti\u1ebft",
@@ -38,7 +38,7 @@ const T = {
     receipt: "Phi\u1ebfu nh\u1eadp h\u00e0ng",
     transferDoc: "Phi\u1ebfu \u0111i\u1ec1u chuy\u1ec3n",
     evidence: "H\u00ecnh \u1ea3nh minh ch\u1ee9ng",
-    confirm: "T\u00f4i \u0111\u00e3 ki\u1ec3m tra ch\u1ee9ng t\u1eeb, s\u1ed1 l\u01b0\u1ee3ng v\u00e0 x\u00e1c nh\u1eadn ghi k\u1ebft qu\u1ea3 v\u00e0o MySQL chung.",
+    confirm: "Tôi đã kiểm tra chứng từ, số lượng và đồng ý lưu kết quả xử lý vào hệ thống.",
     inspect: "Xem minh ch\u1ee9ng",
     completed: "\u0110\u00e3 x\u1eed l\u00fd",
 };
@@ -100,9 +100,9 @@ const sourceReady = (report) => {
 
 function apiError(error) {
     const status = error?.response?.status;
-    if (status === 403) return "T\u00e0i kho\u1ea3n kh\u00f4ng c\u00f3 quy\u1ec1n Business Manager (403).";
-    if (status === 401) return "Phi\u00ean \u0111\u0103ng nh\u1eadp \u0111\u00e3 h\u1ebft h\u1ea1n (401).";
-    return error?.response?.data?.message || "Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i Backend. Ki\u1ec3m tra API v\u00e0 tr\u1ea1ng th\u00e1i ch\u1ee9ng t\u1eeb.";
+    if (status === 403) return "Tài khoản chưa được cấp quyền xử lý chênh lệch hàng hóa.";
+    if (status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+    return error?.response?.data?.message || "Không thể kết nối hệ thống. Vui lòng kiểm tra kết nối và thử lại.";
 }
 
 function Badge({ status }) {
@@ -131,7 +131,7 @@ function useReportList(filters, refresh) {
         setState((old) => ({ ...old, loading: true, error: "" }));
         listBusinessManagerDiscrepancies(filters, controller.signal)
             .then((data) => {
-                if (!Array.isArray(data)) throw new Error("Invalid discrepancy response");
+                if (!Array.isArray(data)) throw new Error("Dữ liệu báo cáo chưa hợp lệ");
                 if (!controller.signal.aborted) setState({ items: data, loading: false, error: "" });
             })
             .catch((error) => {
@@ -188,7 +188,7 @@ export default function DiscrepanciesPage() {
         try {
             const report = await getBusinessManagerDiscrepancy(id);
             if (sequence.current !== seq) return;
-            if (!report || report.id == null || !Array.isArray(report.items)) throw new Error("Invalid detail response");
+            if (!report || report.id == null || !Array.isArray(report.items)) throw new Error("Dữ liệu chi tiết báo cáo chưa hợp lệ");
             setDetail(report);
             resetForm(report);
         } catch (err) {
@@ -231,7 +231,7 @@ export default function DiscrepanciesPage() {
         setSuccess("");
         try {
             const updated = await resolveBusinessManagerDiscrepancy(id, payload);
-            if (!updated || updated.status !== "RESOLVED") throw new Error("Unexpected resolve response");
+            if (!updated || updated.status !== "RESOLVED") throw new Error("Chưa nhận được kết quả xử lý báo cáo");
             setDetail(updated);
             resetForm(updated);
             setSuccess(`B\u00e1o c\u00e1o #${id} \u0111\u00e3 \u0111\u01b0\u1ee3c x\u1eed l\u00fd th\u00e0nh c\u00f4ng. S\u1ed1 l\u01b0\u1ee3ng tr\u00ean ch\u1ee9ng t\u1eeb ngu\u1ed3n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt theo quy\u1ebft \u0111\u1ecbnh.`);
@@ -265,13 +265,13 @@ export default function DiscrepanciesPage() {
                         <label className="block space-y-1"><span className="text-xs font-medium text-slate-600">{T.status}</span><select className={SELECT_STYLE} value={filters.status} onChange={(e) => setFilters((old) => ({ ...old, status: e.target.value }))}>{STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
                         <label className="block space-y-1"><span className="text-xs font-medium text-slate-600">{T.search}</span><input className={SELECT_STYLE} type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="DRC-..., GR-..., ST-..." /></label>
                     </div>
-                    {loading ? <div role="status" className="flex items-center gap-2 text-sm text-slate-500"><Spinner /> Đang tải danh sách...</div> : !error && shown.length === 0 ? <EmptyState title={T.empty} description="API chỉ trả về báo cáo Warehouse/Store đã chuyển lên BUSINESS_MANAGER. Không cần tạo dữ liệu mẫu trực tiếp trong SQL chung." /> : !error && (
+                    {loading ? <div role="status" className="flex items-center gap-2 text-sm text-slate-500"><Spinner /> Đang tải danh sách...</div> : !error && shown.length === 0 ? <EmptyState title={T.empty} description="Danh sách gồm các báo cáo do kho và cửa hàng gửi lên để quản lý kinh doanh xử lý." /> : !error && (
                         <div className="overflow-x-auto rounded-xl border border-slate-200">
                             <table className="min-w-full divide-y divide-slate-200 text-sm">
                                 <thead className="bg-orange-50/60 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"><tr><th className="px-4 py-3">{T.reports}</th><th className="px-4 py-3">{T.source}</th><th className="px-4 py-3">{T.discrepancy}</th><th className="px-4 py-3">{T.status}</th><th className="px-4 py-3">{T.fields}</th><th className="px-4 py-3">{T.view}</th></tr></thead>
                                 <tbody className="divide-y divide-slate-100">{shown.map((r) => <tr key={r.id} className="hover:bg-slate-50">
-                                    <td className="min-w-48 px-4 py-3"><div className="font-semibold text-slate-900">{r.reportCode || `#${r.id}`}</div><div className="mt-1 text-xs text-slate-500">ID #{r.id} | {time(r.createdAt)}</div><div className="mt-1 text-xs text-slate-500">{r.warehouseName || r.warehouseCode || "\u2014"}</div></td>
-                                    <td className="min-w-40 px-4 py-3"><div>{sourceName(r.referenceType)}</div><div className="mt-1 font-mono text-xs text-slate-500">{r.referenceCode || `ID ${r.referenceId}`}</div></td>
+                                    <td className="min-w-48 px-4 py-3"><div className="font-semibold text-slate-900">{r.reportCode || `#${r.id}`}</div><div className="mt-1 text-xs text-slate-500">Số {r.id} | {time(r.createdAt)}</div><div className="mt-1 text-xs text-slate-500">{r.warehouseName || r.warehouseCode || "\u2014"}</div></td>
+                                    <td className="min-w-40 px-4 py-3"><div>{sourceName(r.referenceType)}</div><div className="mt-1 font-mono text-xs text-slate-500">{r.referenceCode || `Mã ${r.referenceId}`}</div></td>
                                     <td className="px-4 py-3">{discrepancyName(r.discrepancyType)}</td>
                                     <td className="px-4 py-3"><Badge status={r.status}/></td>
                                     <td className="px-4 py-3 text-slate-600">{Array.isArray(r.items) ? r.items.length : 0} sản phẩm</td>
@@ -280,7 +280,7 @@ export default function DiscrepanciesPage() {
                             </table>
                         </div>
                     )}
-                    <p className="text-xs text-slate-500">{T.all}: {shown.length} / {items.length}. Backend chỉ trả về báo cáo thuộc phạm vi Business Manager.</p>
+                    <p className="text-xs text-slate-500">{T.all}: {shown.length} / {items.length}. Chỉ hiển thị các báo cáo bạn được phép xử lý.</p>
                 </Card>
 
                 {detailLoading && <Card><div role="status" className="flex items-center gap-2 text-sm text-slate-500"><Spinner /> Đang tải chi tiết...</div></Card>}
@@ -305,7 +305,7 @@ export default function DiscrepanciesPage() {
                             <h3 className="font-semibold text-slate-900">{detail.referenceType === "GOODS_RECEIPT" ? T.receipt : T.transferDoc}</h3>
                             <div className="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2 xl:grid-cols-4">
                                 <Definition title="Mã chứng từ" value={detail.referenceCode}/>
-                                <Definition title="ID chứng từ" value={detail.referenceId}/>
+                                <Definition title="Mã chứng từ" value={detail.referenceId}/>
                                 <Definition title="Trạng thái chứng từ" value={detail.sourceStatus}/>
                                 {detail.referenceType === "GOODS_RECEIPT" ? <>
                                     <Definition title="Đơn mua hàng" value={detail.purchaseOrderCode || detail.purchaseOrderId}/>
@@ -322,20 +322,20 @@ export default function DiscrepanciesPage() {
                                 </>}
                             </div>
                             <div className="text-sm text-slate-600">{T.evidence}: <Evidence value={detail.evidenceImageUrl}/></div>
-                            <p className="text-xs text-slate-500">Chứng từ nguồn chỉ hiển thị dữ liệu từ API Manager, không mở trang dành riêng cho role khác.</p>
+                            <p className="text-xs text-slate-500">Thông tin chứng từ liên quan được hiển thị tại đây để bạn tiện đối chiếu.</p>
                         </section>
 
                         <section className="space-y-3">
-                            <div><h3 className="font-semibold text-slate-900">{T.fields}</h3><p className="mt-1 text-sm text-slate-500">{T.final} {detail.referenceType === "GOODS_RECEIPT" ? "= acceptedQuantity" : "= receivedQuantity"}. Backend yêu cầu nhập đủ từng sản phẩm.</p></div>
-                            {reportItems.length === 0 ? <Alert type="warning">Báo cáo chưa có sản phẩm. Backend không cho phép xử lý khi danh sách rỗng.</Alert> : (
+                            <div><h3 className="font-semibold text-slate-900">{T.fields}</h3><p className="mt-1 text-sm text-slate-500">{T.final} {detail.referenceType === "GOODS_RECEIPT" ? "= acceptedQuantity" : "= receivedQuantity"}. Vui lòng kiểm tra và nhập đủ số lượng của từng sản phẩm.</p></div>
+                            {reportItems.length === 0 ? <Alert type="warning">Báo cáo này chưa có sản phẩm nên chưa thể xử lý.</Alert> : (
                                 <div className="overflow-x-auto rounded-xl border border-slate-200"><table className="min-w-full divide-y divide-slate-200 text-sm">
-                                    <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600"><tr><th className="px-3 py-3">Sản phẩm</th><th className="px-3 py-3">Dự kiến</th><th className="px-3 py-3">Thực tế</th><th className="px-3 py-3">Chênh lệch</th><th className="px-3 py-3">{detail.referenceType === "GOODS_RECEIPT" ? "Ordered / Accepted" : "Shipped / Received"}</th><th className="px-3 py-3">{T.final}</th><th className="px-3 py-3">Kiểm tra / {T.evidence}</th></tr></thead>
+                                    <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600"><tr><th className="px-3 py-3">Sản phẩm</th><th className="px-3 py-3">Dự kiến</th><th className="px-3 py-3">Thực tế</th><th className="px-3 py-3">Chênh lệch</th><th className="px-3 py-3">{detail.referenceType === "GOODS_RECEIPT" ? "Đặt / Chấp nhận" : "Đã xuất / Đã nhận"}</th><th className="px-3 py-3">{T.final}</th><th className="px-3 py-3">Kiểm tra / {T.evidence}</th></tr></thead>
                                     <tbody className="divide-y divide-slate-100">{reportItems.map((row, idx) => {
                                         const key = String(row.productId);
                                         const value = quantities[key] ?? "";
                                         const invalid = value === "" || !/^(0|[1-9][0-9]*)$/.test(value) || !Number.isSafeInteger(Number(value)) || (detail.referenceType === "GOODS_RECEIPT" && Number(value) > (row.actualQuantity ?? 0));
                                         return <tr key={`${key}-${idx}`}>
-                                            <td className="min-w-44 px-3 py-3"><div className="font-semibold text-slate-800">{row.productName || row.productCode || `#${key}`}</div><div className="text-xs text-slate-500">{row.productCode} | ID {key}</div>{row.notes && <p className="mt-1 text-xs text-slate-500">{row.notes}</p>}</td>
+                                            <td className="min-w-44 px-3 py-3"><div className="font-semibold text-slate-800">{row.productName || row.productCode || `#${key}`}</div><div className="text-xs text-slate-500">{row.productCode} | mã {key}</div>{row.notes && <p className="mt-1 text-xs text-slate-500">{row.notes}</p>}</td>
                                             <td className="px-3 py-3">{integer(row.expectedQuantity)}</td>
                                             <td className="px-3 py-3">{integer(row.actualQuantity)}</td>
                                             <td className={`px-3 py-3 font-semibold ${Number(row.differenceQuantity) !== 0 ? "text-orange-700" : "text-slate-700"}`}>{integer(row.differenceQuantity)}</td>
@@ -351,16 +351,16 @@ export default function DiscrepanciesPage() {
                         {detail.resolvedAt && <section className="grid gap-3 rounded-xl bg-green-50 p-4 sm:grid-cols-3"><Definition title={T.completed} value={actionName(detail.resolutionAction)}/><Definition title="Người xử lý" value={detail.resolvedByName || detail.resolvedBy}/><Definition title="Thời gian xử lý" value={time(detail.resolvedAt)}/></section>}
                         {canResolve(detail) ? <form onSubmit={submitResolution} className="space-y-4 rounded-2xl border border-orange-200 bg-orange-50/40 p-4">
                             <div><h3 className="font-semibold text-slate-900">{T.resolve}</h3><p className="mt-1 text-sm text-slate-600">Chức năng này CẬP NHẬT số lượng trên chứng từ nguồn và lưu kết quả, không chỉ đóng báo cáo. Chỉ xử lý báo cáo INVESTIGATING đã chuyển cấp.</p></div>
-                            {detail.referenceType === "GOODS_RECEIPT" && detail.sourceStatus !== "INSPECTED" && <Alert type="warning">Phiếu nhập phải ở trạng thái INSPECTED để Backend cho phép xử lý.</Alert>}
-                            {detail.referenceType === "STOCK_TRANSFER" && (detail.sourceStatus === "COMPLETED" || detail.sourceStatus === "CANCELLED") && <Alert type="warning">Phiếu điều chuyển đã COMPLETED/CANCELLED. Backend sẽ từ chối thay đổi số lượng.</Alert>}
+                            {detail.referenceType === "GOODS_RECEIPT" && detail.sourceStatus !== "INSPECTED" && <Alert type="warning">Chỉ có thể xử lý sau khi kho đã kiểm nhận hàng.</Alert>}
+                            {detail.referenceType === "STOCK_TRANSFER" && (detail.sourceStatus === "COMPLETED" || detail.sourceStatus === "CANCELLED") && <Alert type="warning">Phiếu điều chuyển đã hoàn tất hoặc đã hủy nên không thể thay đổi số lượng.</Alert>}
                             {detail.referenceType === "STOCK_TRANSFER" && !["INSPECTED", "CONFIRMED"].includes(detail.storeReceiptStatus) && <Alert type="warning">Store Receipt phải được kiểm hàng (INSPECTED/CONFIRMED) trước khi xử lý.</Alert>}
                             <div className="grid gap-4 md:grid-cols-2">
                                 <label className="block space-y-1"><span className="text-sm font-semibold text-slate-700">{T.action} *</span><select value={action} className={SELECT_STYLE} disabled={saving} required onChange={(e) => { setAction(e.target.value); setConfirmed(false); }}><option value="">Chọn phương án</option>{ACTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
                                 <label className="block space-y-1"><span className="text-sm font-semibold text-slate-700">{T.note} *</span><textarea className={`${SELECT_STYLE} min-h-24`} rows={3} value={note} required disabled={saving} onChange={(e) => { setNote(e.target.value); setConfirmed(false); }} placeholder="Ghi rõ nguyên nhân, phương án và cơ sở xác nhận số lượng" /></label>
                             </div>
-                            <Alert type="warning">Quan trọng: Ngay cả khi chọn NO_ACTION hoặc REJECT, Backend vẫn ghi số lượng cuối cùng vào chứng từ. Hãy kiểm tra tất cả sản phẩm; số nhập không được vượt số thực tế.</Alert>
+                            <Alert type="warning">Lưu ý: Kết quả xử lý sẽ cập nhật số lượng cuối cùng trên chứng từ. Vui lòng kiểm tra từng sản phẩm trước khi xác nhận.</Alert>
                             <label className="flex items-start gap-2 text-sm text-slate-700"><input type="checkbox" className="mt-1 h-4 w-4 accent-orange-600" checked={confirmed} disabled={saving} onChange={(e) => setConfirmed(e.target.checked)}/><span>{T.confirm}</span></label>
-                            <label className="block max-w-xs space-y-1"><span className="text-sm text-slate-700">Nhập ID báo cáo <strong>#{detail.id}</strong> để xác nhận *</span><input type="text" inputMode="numeric" className={SELECT_STYLE} value={typedId} disabled={saving} onChange={(e) => setTypedId(e.target.value)} placeholder={`Nhập ${detail.id}`} /></label>
+                            <label className="block max-w-xs space-y-1"><span className="text-sm text-slate-700">Nhập số báo cáo <strong>#{detail.id}</strong> để xác nhận *</span><input type="text" inputMode="numeric" className={SELECT_STYLE} value={typedId} disabled={saving} onChange={(e) => setTypedId(e.target.value)} placeholder={`Nhập ${detail.id}`} /></label>
                             <Button type="submit" variant="danger" disabled={!canSubmit}>{saving ? "Đang xử lý..." : T.resolve}</Button>
                         </form> : <Alert type="info">{detail.status === "RESOLVED" ? "Báo cáo đã xử lý; chỉ có thể xem lại kết quả và lịch sử." : "Báo cáo không ở trạng thái INVESTIGATING hoặc chưa được chuyển cấp. Chỉ xem thông tin."}</Alert>}
                     </Card>

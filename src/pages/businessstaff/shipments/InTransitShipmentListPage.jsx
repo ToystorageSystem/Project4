@@ -407,7 +407,7 @@ export default function InTransitShipmentListPage() {
         >
             <div className="space-y-6">
                 <PageHeader
-                    title="Xem hàng đang vận chuyển"
+                    title="Theo dõi vận chuyển"
                     description="Theo dõi chuyến giao, phiếu điều chuyển, kiện hàng, thời gian dự kiến nhận và trạng thái vận chuyển."
                 />
 
@@ -416,7 +416,7 @@ export default function InTransitShipmentListPage() {
                     trong hệ thống, bao gồm cả chuyến đã hoàn
                     thành. Chọn trạng thái "Đang vận chuyển"
                     để chỉ xem các chuyến đang trên đường.
-                    Business Staff chỉ được xem dữ liệu.
+                    Nhân viên kinh doanh chỉ được xem và theo dõi thông tin.
                 </Alert>
 
                 {optionsError && (

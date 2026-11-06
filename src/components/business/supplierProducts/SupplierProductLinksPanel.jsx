@@ -18,6 +18,7 @@ import Input from "../../ui/Input";
 import Modal from "../../ui/Modal";
 import Select from "../../ui/Select";
 import StatusBadge from "../../ui/StatusBadge";
+const businessStatusLabel = (value) => ({ ACTIVE: "Đang hoạt động", INACTIVE: "Tạm ngừng", REJECTED: "Đã từ chối", PENDING: "Chờ duyệt" }[value] || value);
 import Table from "../../ui/Table";
 
 const EMPTY_FORM = {
@@ -37,20 +38,20 @@ function validationErrors(form, creating, linkedSupplierIds) {
     if (creating && (!Number.isSafeInteger(Number(form.supplierId)) || Number(form.supplierId) <= 0)) {
         errors.supplierId = "Chọn nhà cung cấp hợp lệ.";
     } else if (creating && linkedSupplierIds.has(Number(form.supplierId))) {
-        errors.supplierId = "Nhà cung cấp này đã liên kết với sản phẩm (kể cả liên kết INACTIVE). Hãy sửa liên kết cũ.";
+        errors.supplierId = "Nhà cung cấp này đã liên kết với sản phẩm (kể cả liên kết đang tạm ngừng). Hãy sửa liên kết cũ.";
     }
     if (form.supplierProductCode.trim().length > 100) {
         errors.supplierProductCode = "Tối đa 100 ký tự.";
     }
     const rawPrice = form.purchasePrice.trim();
     if (!/^\d+(\.\d{1,2})?$/.test(rawPrice) || Number(rawPrice) < 0.01 || !Number.isFinite(Number(rawPrice))) {
-        errors.purchasePrice = "Giá nhập phải >= 0.01 và tối đa 2 chữ số thập phân.";
+        errors.purchasePrice = "Giá nhập phải lớn hơn 0 và có tối đa 2 chữ số thập phân.";
     }
     if (!/^\d+$/.test(form.leadTimeDays) || !Number.isSafeInteger(Number(form.leadTimeDays))) {
         errors.leadTimeDays = "Thời gian giao hàng phải là số nguyên từ 0 trở lên.";
     }
     if (!/^\d+$/.test(form.minimumOrderQuantity) || !Number.isSafeInteger(Number(form.minimumOrderQuantity)) || Number(form.minimumOrderQuantity) < 1) {
-        errors.minimumOrderQuantity = "MOQ phải là số nguyên từ 1 trở lên.";
+        errors.minimumOrderQuantity = "Số lượng đặt tối thiểu phải là số nguyên từ 1 trở lên.";
     }
     if (!creating && !["ACTIVE", "INACTIVE"].includes(form.status)) {
         errors.status = "Trạng thái không hợp lệ.";
@@ -218,15 +219,15 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                 <div className="space-y-1">
                     <Link to={`/business-staff/suppliers/${link.supplierId}`} className="font-semibold text-[#c94810] hover:underline">{link.supplierName || link.supplierCode || "—"}</Link>
                     <div className="text-xs text-slate-500">{display(link.supplierCode)} · {display(link.linkCode)}</div>
-                    <StatusBadge status={link.supplierStatus} />
+                    <StatusBadge status={link.supplierStatus} label={businessStatusLabel(link.supplierStatus)} />
                 </div>
             ),
         },
-        { key: "supplierProductCode", label: "Mã SP phía NCC", render: display },
+        { key: "supplierProductCode", label: "Mã sản phẩm phía nhà cung cấp", render: display },
         { key: "purchasePrice", label: "Giá nhập", render: formatMoney },
-        { key: "minimumOrderQuantity", label: "MOQ", render: display },
+        { key: "minimumOrderQuantity", label: "Đặt tối thiểu", render: display },
         { key: "leadTimeDays", label: "Giao (ngày)", render: display },
-        { key: "status", label: "Liên kết", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ NCC mặc định</div>}</div> },
+        { key: "status", label: "Liên kết", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} label={businessStatusLabel(value)} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ Nhà cung cấp ưu tiên</div>}</div> },
         {
             key: "id", label: "Thao tác",
             render: (_value, link) => (
@@ -247,14 +248,14 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h2 className="text-lg font-bold text-slate-900">Nhà cung cấp liên kết ({links.length})</h2>
-                        <p className="mt-1 text-sm text-slate-500">Giá nhập, MOQ, thời gian giao hàng và nhà cung cấp mặc định · Issue #8</p>
+                        <p className="mt-1 text-sm text-slate-500">Theo dõi giá mua, số lượng đặt tối thiểu, thời gian giao hàng và nhà cung cấp ưu tiên</p>
                     </div>
                     <Button type="button" disabled={!canManage} onClick={() => openAction("create")}>+ Liên kết nhà cung cấp</Button>
                 </div>
-                {!canManage && <div className="mt-4"><Alert type="warning">Chỉ cho phép thay đổi liên kết khi sản phẩm ở trạng thái ACTIVE. Các liên kết hiện có vẫn được hiển thị để tra cứu.</Alert></div>}
+                {!canManage && <div className="mt-4"><Alert type="warning">Chỉ có thể thay đổi nhà cung cấp khi sản phẩm đang hoạt động. Các liên kết hiện có vẫn được hiển thị để tra cứu.</Alert></div>}
                 {notice && <div role="status" className="mt-4"><Alert type="success">{notice}</Alert></div>}
                 {loadError && <div role="alert" className="mt-4"><Alert type="danger">{loadError}</Alert></div>}
-                {!loading && !loadError && <p className="mt-4 text-xs text-slate-500">Có {links.filter((link) => link.status === "ACTIVE").length} liên kết đang hoạt động. Liên kết INACTIVE vẫn được giữ để có thể khôi phục qua chức năng Sửa.</p>}
+                {!loading && !loadError && <p className="mt-4 text-xs text-slate-500">Có {links.filter((link) => link.status === "ACTIVE").length} liên kết đang hoạt động. Liên kết tạm ngừng vẫn được lưu để có thể khôi phục khi cần.</p>}
             </Card>
             {loading ? <p role="status" className="text-sm text-slate-600">Đang tải liên kết nhà cung cấp...</p>
                 : !loadError && (links.length ? <Table columns={columns} data={links} />
@@ -329,26 +330,26 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                                         </div>
                                     </div>
                                 </div>
-                            ) : <p className="text-sm text-slate-700">Liên kết với <strong>{action.link?.supplierName}</strong> (ID {action.link?.id}). Muốn đổi NCC, hãy tạo liên kết mới.</p>}
-                            <Input label="Mã sản phẩm phía NCC (tối đa 100 ký tự)" value={form.supplierProductCode} maxLength={100} onChange={change("supplierProductCode")} error={errors.supplierProductCode} />
+                            ) : <p className="text-sm text-slate-700">Liên kết với <strong>{action.link?.supplierName}</strong> (mã liên kết {action.link?.id}). Muốn đổi NCC, hãy tạo liên kết mới.</p>}
+                            <Input label="Mã sản phẩm do nhà cung cấp sử dụng (tối đa 100 ký tự)" value={form.supplierProductCode} maxLength={100} onChange={change("supplierProductCode")} error={errors.supplierProductCode} />
                             <Input label="Giá nhập *" type="number" min="0.01" step="0.01" value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} />
                             <Input label="Thời gian giao hàng (ngày) *" type="number" min="0" step="1" value={form.leadTimeDays} onChange={change("leadTimeDays")} error={errors.leadTimeDays} />
-                            <Input label="MOQ (số lượng đặt tối thiểu) *" type="number" min="1" step="1" value={form.minimumOrderQuantity} onChange={change("minimumOrderQuantity")} error={errors.minimumOrderQuantity} />
+                            <Input label="Số lượng đặt tối thiểu *" type="number" min="1" step="1" value={form.minimumOrderQuantity} onChange={change("minimumOrderQuantity")} error={errors.minimumOrderQuantity} />
                             {creating ? <Checkbox checked={form.defaultSupplier} onChange={change("defaultSupplier")} label="Đặt làm nhà cung cấp mặc định ngay khi tạo (sẽ bỏ mặc định cũ)." />
-                                : <Select label="Trạng thái liên kết" value={form.status} onChange={change("status")} error={errors.status} options={[{ value: "ACTIVE", label: "ACTIVE – Hoạt động" }, { value: "INACTIVE", label: "INACTIVE – Ngừng hoạt động" }]} />}
+                                : <Select label="Trạng thái liên kết" value={form.status} onChange={change("status")} error={errors.status} options={[{ value: "ACTIVE", label: "Đang hoạt động" }, { value: "INACTIVE", label: "Tạm ngừng" }]} />}
                             <p className="text-xs text-slate-500">Chỉ sửa điều kiện mua hàng và trạng thái của liên kết. Không thay đổi chính sản phẩm hoặc nhà cung cấp.</p>
                         </form>
                     ) : action?.type === "default" ? (
-                        <p className="text-sm text-slate-700">Chọn <strong>{action.link?.supplierName}</strong> làm nhà cung cấp mặc định của sản phẩm? Backend sẽ bỏ mặc định của NCC cũ.</p>
+                        <p className="text-sm text-slate-700">Chọn <strong>{action.link?.supplierName}</strong> làm nhà cung cấp mặc định của sản phẩm? Hệ thống sẽ bỏ lựa chọn ưu tiên của nhà cung cấp trước đó.</p>
                     ) : action?.type === "delete" ? (
                         <div className="space-y-3 text-sm text-slate-700">
-                            <Alert type="danger">Cảnh báo: API DELETE xóa vĩnh viễn liên kết trên MySQL chung và hiện chưa ghi lịch sử xóa trong activity_logs. Chỉ thực hiện khi nhóm đã đồng ý.</Alert>
+                            <Alert type="danger">Cảnh báo: Liên kết sẽ bị xóa vĩnh viễn và chưa thể khôi phục qua lịch sử thao tác. Chỉ thực hiện khi đã được cho phép.</Alert>
                             <p>Xóa liên kết với <strong>{action.link?.supplierName}</strong> (mã {action.link?.linkCode})?</p>
                             <Input label='Gõ XOA để xác nhận' value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="XOA" />
                         </div>
                     ) : null}
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi xác nhận thao tác này ghi dữ liệu thật vào MySQL dùng chung của nhóm." />
+                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi hiểu thao tác này sẽ lưu thay đổi vào dữ liệu đang sử dụng chung." />
                     </div>
                 </div>
             </Modal>

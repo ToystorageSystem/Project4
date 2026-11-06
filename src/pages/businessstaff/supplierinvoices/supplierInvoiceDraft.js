@@ -36,11 +36,26 @@ export function validateSupplierInvoiceDraft(form, purchaseOrders) {
     if (!isPositiveId(purchaseOrderId)) {
         issues.push("Vui lòng chọn đơn mua hàng hợp lệ của nhà cung cấp.");
     } else if (!purchaseOrders.some((po) => String(po.id) === purchaseOrderId)) {
-        issues.push("Đơn mua hàng không nằm trong danh sách PO đủ điều kiện. Hãy chọn PO khác.");
+        issues.push("Đơn mua hàng này chưa đủ điều kiện để lập hóa đơn. Vui lòng chọn đơn khác.");
     }
     if (!invoiceNumber) issues.push("Số hóa đơn không được để trống.");
     else if (invoiceNumber.length > 100) issues.push("Số hóa đơn không được vượt quá 100 ký tự.");
-    if (!validLocalDate(form.invoiceDate)) issues.push("Ngày phát hành hóa đơn không hợp lệ.");
+    if (!validLocalDate(form.invoiceDate)) {
+    issues.push("Ngày phát hành hóa đơn không hợp lệ.");
+} else {
+    const now = new Date();
+
+    const today =
+        `${now.getFullYear()}-` +
+        `${String(now.getMonth() + 1).padStart(2, "0")}-` +
+        `${String(now.getDate()).padStart(2, "0")}`;
+
+    if (form.invoiceDate > today) {
+        issues.push(
+            "Ngày phát hành hóa đơn không được sau ngày hiện tại."
+        );
+    }
+}
     if (!validLocalDate(form.dueDate)) issues.push("Hạn thanh toán không hợp lệ.");
     if (validLocalDate(form.invoiceDate) && validLocalDate(form.dueDate) && form.dueDate < form.invoiceDate) {
         issues.push("Hạn thanh toán không được trước ngày phát hành hóa đơn.");

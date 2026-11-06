@@ -35,7 +35,7 @@ function MenuIcon({
 export const warehouseSidebarItems = [
     {
         key: "dashboard",
-        label: "Dashboard",
+        label: "Tổng quan",
         path: "/warehouse/dashboard",
         icon: (
             <svg
@@ -56,7 +56,7 @@ export const warehouseSidebarItems = [
 
     {
         key: "receiving",
-        label: "Receiving",
+        label: "Nhận hàng",
         path: "/warehouse/receiving",
         icon: (
             <svg
@@ -77,7 +77,7 @@ export const warehouseSidebarItems = [
 
     {
         key: "putaway",
-        label: "Putaway",
+        label: "Sắp xếp hàng vào kho",
         path: "/warehouse/putaway",
         icon: (
             <svg
@@ -119,6 +119,7 @@ const BUSINESS_STAFF_SECTIONS = [
         keys: [
             "business-staff-purchase-orders",
             "business-staff-supplier-invoices",
+            "business-staff-goods-receipt-list",
             "business-staff-goods-receipt",
         ],
     },
@@ -127,6 +128,7 @@ const BUSINESS_STAFF_SECTIONS = [
         id: "delivery",
         label: "Điều chuyển & giao nhận",
         keys: [
+            "business-staff-stock-transfer-list",
             "business-staff-stock-transfer-create",
             "business-staff-shipment-manifests",
             "business-staff-in-transit-shipments",
@@ -146,10 +148,11 @@ const STAFF_MENU_LABELS = {
     "business-staff-suppliers": "Nhà cung cấp",
     "business-staff-purchase-orders": "Đơn mua hàng",
     "business-staff-supplier-invoices": "Hóa đơn nhà cung cấp",
-    "business-staff-goods-receipt": "Tạo phiếu nhập kho tổng",
+    "business-staff-goods-receipt-list": "Theo dõi phiếu nhập kho",
+    "business-staff-goods-receipt": "Lập phiếu nhận hàng cho kho tổng",
     "business-staff-stock-transfer-create": "Tạo phiếu điều chuyển",
-    "business-staff-shipment-manifests": "Bảng kê đi hàng",
-    "business-staff-in-transit-shipments": "Hàng đang vận chuyển",
+    "business-staff-shipment-manifests": "Bảng kê hàng gửi đi",
+    "business-staff-in-transit-shipments": "Theo dõi vận chuyển",
 };
 
 function pathMatches(pathname, path) {
@@ -411,10 +414,10 @@ export default function Sidebar({
                 {!collapsed && (
                     <div className="min-w-0 px-2">
                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                            Workspace
+                            Khu vực làm việc
                         </p>
                         <p className="truncate text-sm font-semibold text-slate-800">
-                            {title}
+                            {title === "Business Staff" ? "Nhân viên kinh doanh" : title === "Business Manager" ? "Quản lý kinh doanh" : title === "Warehouse" ? "Bộ phận kho" : title}
                         </p>
                     </div>
                 )}
@@ -431,13 +434,13 @@ export default function Sidebar({
                     }
                     aria-label={
                         collapsed
-                            ? "Expand sidebar"
-                            : "Collapse sidebar"
+                            ? "Mở rộng thanh chức năng"
+                            : "Thu gọn thanh chức năng"
                     }
                     title={
                         collapsed
-                            ? "Expand sidebar"
-                            : "Collapse sidebar"
+                            ? "Mở rộng thanh chức năng"
+                            : "Thu gọn thanh chức năng"
                     }
                 >
                     <svg

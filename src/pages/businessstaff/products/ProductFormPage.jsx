@@ -27,8 +27,8 @@ function validate(form) {
     for (const field of ["productCode", "barcode", "name", "baseUnit"]) {
         if (!form[field].trim()) errors[field] = "Không được để trống.";
     }
-    if (!/^[1-9]\d*$/.test(form.categoryId.trim())) errors.categoryId = "Chọn ID danh mục hợp lệ (lớn hơn 0).";
-    if (form.brandId.trim() && !/^[1-9]\d*$/.test(form.brandId.trim())) errors.brandId = "ID thương hiệu phải lớn hơn 0.";
+    if (!/^[1-9]\d*$/.test(form.categoryId.trim())) errors.categoryId = "Vui lòng chọn danh mục hợp lệ.";
+    if (form.brandId.trim() && !/^[1-9]\d*$/.test(form.brandId.trim())) errors.brandId = "Vui lòng nhập mã thương hiệu hợp lệ.";
     for (const field of ["purchasePrice", "sellingPrice"]) {
         if (!form[field].trim() || !Number.isFinite(Number(form[field])) || Number(form[field]) < 0.01) {
             errors[field] = "Giá phải là số lớn hơn hoặc bằng 0,01.";
@@ -108,7 +108,7 @@ export default function ProductFormPage() {
                 if (editing) {
                     if (product.status !== "ACTIVE" && product.status !== "INACTIVE") {
                         setLoadFailed(true);
-                        setError("Chỉ có thể gửi đề nghị sửa sản phẩm đang ACTIVE hoặc INACTIVE.");
+                        setError("Chỉ có thể đề nghị sửa sản phẩm đang hoạt động hoặc đang tạm ẩn.");
                     } else {
                         setForm(Object.fromEntries(Object.keys(EMPTY_FORM).map((key) => [key, product[key] == null ? "" : String(product[key])])));
                     }
@@ -139,7 +139,7 @@ export default function ProductFormPage() {
         setError("");
         try {
             const result = await uploadProductImage(imageFile);
-            if (!result?.imageUrl) throw new Error("No image URL returned");
+            if (!result?.imageUrl) throw new Error("Không nhận được đường dẫn hình ảnh");
             setForm((old) => ({ ...old, imageUrl: result.imageUrl }));
             setConfirmed(false);
             setImageFile(null);
@@ -164,8 +164,8 @@ export default function ProductFormPage() {
                 : await createProduct(toPayload(form));
             const destinationId = editing ? productId : request?.product?.id;
             const notice = editing
-                ? "Đã gửi yêu cầu sửa để Business Manager duyệt. Thông tin sản phẩm chưa thay đổi."
-                : "Đã tạo sản phẩm ở trạng thái PENDING_CREATE và gửi yêu cầu chờ Business Manager duyệt.";
+                ? "Đã gửi yêu cầu sửa để quản lý kinh doanh xét duyệt. Thông tin sản phẩm chưa thay đổi."
+                : "Đã gửi sản phẩm mới đến quản lý kinh doanh để chờ xét duyệt. Sản phẩm chưa được đưa vào sử dụng.";
             navigate(destinationId ? `${ROOT}/${destinationId}` : `${ROOT}/requests`, {
                 replace: true,
                 state: { notice },
@@ -181,7 +181,7 @@ export default function ProductFormPage() {
         <MainLayout title="Business Staff" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader title={editing ? "Đề nghị sửa sản phẩm" : "Thêm sản phẩm"}
-                    description={editing ? "Thông tin mới chỉ có hiệu lực sau khi Business Manager duyệt." : "Tạo mới sẽ chuyển sang trạng thái PENDING_CREATE, chưa thể sử dụng ngay."}
+                    description={editing ? "Thông tin mới chỉ có hiệu lực sau khi quản lý kinh doanh phê duyệt." : "Sản phẩm mới cần được phê duyệt trước khi có thể sử dụng."}
                     actions={<Button variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>← Quay lại</Button>}
                 />
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
@@ -191,24 +191,24 @@ export default function ProductFormPage() {
                     <Card><Button variant="outline" onClick={() => navigate(ROOT)}>Về danh sách</Button></Card>
                 ) : (
                     <Card className="max-w-6xl">
-                        <Alert type="info">Mã sản phẩm và barcode phải duy nhất. Backend kiểm tra trùng trên toàn bộ dữ liệu khi bạn gửi yêu cầu.</Alert>
+                        <Alert type="info">Mã sản phẩm và mã vạch không được trùng với sản phẩm khác. Hệ thống sẽ kiểm tra khi bạn gửi yêu cầu.</Alert>
                         {categoryApiWarning && (
-                            <div className="mt-4"><Alert type="warning">Không tải được danh mục từ API: {categoryApiWarning} Có thể nhập ID danh mục đang hoạt động ở bên dưới (Backend sẽ xác minh).</Alert></div>
+                            <div className="mt-4"><Alert type="warning">Không tải được danh mục sản phẩm: {categoryApiWarning} Có thể nhập mã danh mục đang sử dụng ở bên dưới (hệ thống sẽ kiểm tra lại).</Alert></div>
                         )}
                         <form onSubmit={submit} noValidate className="mt-6 space-y-6">
                             <div className="grid gap-5 md:grid-cols-2">
                                 <Input label="Mã sản phẩm *" required maxLength={50} value={form.productCode} onChange={change("productCode")} error={errors.productCode} placeholder="VD: SP-TOY-001" />
-                                <Input label="Barcode *" required maxLength={100} value={form.barcode} onChange={change("barcode")} error={errors.barcode} placeholder="Mã vạch duy nhất" />
+                                <Input label="Mã vạch *" required maxLength={100} value={form.barcode} onChange={change("barcode")} error={errors.barcode} placeholder="Mã vạch duy nhất" />
                                 <div className="md:col-span-2"><Input label="Tên sản phẩm *" required maxLength={200} value={form.name} onChange={change("name")} error={errors.name} placeholder="Tên sản phẩm" /></div>
                                 <div>
-                                    <Input label="Chọn danh mục (ID) *" type="number" min="1" step="1" required list="product-category-options" value={form.categoryId} onChange={change("categoryId")} error={errors.categoryId} placeholder="Nhập/chọn ID danh mục" />
+                                    <Input label="Danh mục sản phẩm *" type="number" min="1" step="1" required list="product-category-options" value={form.categoryId} onChange={change("categoryId")} error={errors.categoryId} placeholder="Nhập mã hoặc chọn danh mục" />
                                     <datalist id="product-category-options">{categorySuggestions.map((item) => <option key={item.value} value={item.value} label={item.label} />)}</datalist>
-                                    <p className="mt-1 text-xs text-slate-500">{categorySuggestions.length ? `Gợi ý: ${categorySuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "Chưa có gợi ý. Cần nhập ID danh mục đang hoạt động."}</p>
+                                    <p className="mt-1 text-xs text-slate-500">{categorySuggestions.length ? `Gợi ý: ${categorySuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "Chưa có danh mục gợi ý. Vui lòng nhập mã danh mục đang sử dụng."}</p>
                                 </div>
                                 <div>
-                                    <Input label="Chọn thương hiệu (ID, tùy chọn)" type="number" min="1" step="1" list="product-brand-options" value={form.brandId} onChange={change("brandId")} error={errors.brandId} placeholder="Để trống hoặc nhập ID" />
+                                    <Input label="Thương hiệu (không bắt buộc)" type="number" min="1" step="1" list="product-brand-options" value={form.brandId} onChange={change("brandId")} error={errors.brandId} placeholder="Để trống hoặc nhập mã thương hiệu" />
                                     <datalist id="product-brand-options">{brandSuggestions.map((item) => <option key={item.value} value={item.value} label={item.label} />)}</datalist>
-                                    <p className="mt-1 text-xs text-slate-500">{brandSuggestions.length ? `Gợi ý từ sản phẩm hiện có: ${brandSuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "Backend chưa có API danh sách thương hiệu; có thể nhập ID đang hoạt động."}</p>
+                                    <p className="mt-1 text-xs text-slate-500">{brandSuggestions.length ? `Gợi ý từ sản phẩm hiện có: ${brandSuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "Chưa có danh sách thương hiệu để chọn. Bạn có thể nhập mã thương hiệu đã có."}</p>
                                 </div>
                                 <Input label="Đơn vị cơ sở *" maxLength={30} required value={form.baseUnit} onChange={change("baseUnit")} error={errors.baseUnit} placeholder="VD: PCS, BAG, BOX" />
                                 <Input label="Giá nhập (VND) *" type="number" min="0.01" step="0.01" required value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} placeholder="120000" />
@@ -216,7 +216,7 @@ export default function ProductFormPage() {
                                 <div className="md:col-span-2"><Input label="URL hình ảnh (nếu có)" maxLength={500} type="url" value={form.imageUrl} onChange={change("imageUrl")} error={errors.imageUrl} placeholder="https://..." /></div>
                             </div>
                             <div className="rounded-xl border border-slate-200 p-4">
-                                <p className="text-sm font-semibold text-slate-800">Hoặc tải hình ảnh lên Cloudinary</p>
+                                <p className="text-sm font-semibold text-slate-800">Hoặc tải hình ảnh sản phẩm lên hệ thống</p>
                                 <p className="mb-3 mt-1 text-xs text-slate-500">Chỉ khi bạn bấm “Tải ảnh lên”, ảnh mới được gửi đến dịch vụ lưu trữ. Việc tải ảnh không tạo sản phẩm.</p>
                                 <div className="flex flex-wrap items-center gap-3">
                                     <input type="file" accept="image/*" aria-label="Chọn ảnh sản phẩm" onChange={(event) => setImageFile(event.target.files?.[0] || null)} className="max-w-full text-sm text-slate-600" />
@@ -226,7 +226,7 @@ export default function ProductFormPage() {
                             </div>
                             <TextArea label="Lý do đề nghị (nếu có)" rows={3} maxLength={500} value={form.requestReason} onChange={change("requestReason")} error={errors.requestReason} placeholder="Lý do tạo hoặc sửa sản phẩm" />
                             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi xác nhận gửi yêu cầu thật vào MySQL chung. Sản phẩm/việc chỉnh sửa cần Business Manager phê duyệt." />
+                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi đã kiểm tra và đồng ý gửi yêu cầu cho quản lý kinh doanh xét duyệt." />
                             </div>
                             <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
                                 <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>Hủy</Button>

@@ -61,7 +61,7 @@ export default function SupplierListPage() {
             .then((data) => {
                 if (controller.signal.aborted) return;
                 if (!Array.isArray(data?.content)) {
-                    throw new Error("Invalid supplier page response");
+                    throw new Error("Danh sách nhà cung cấp chưa hợp lệ");
                 }
                 setResult(data);
             })
@@ -141,7 +141,7 @@ export default function SupplierListPage() {
             <div className="space-y-6">
                 <PageHeader
                     title="Quản lý nhà cung cấp"
-                    description="Danh sách, tìm kiếm, thông tin liên hệ và trạng thái nhà cung cấp. Mã NCC được hệ thống tự sinh."
+                    description="Danh sách, tìm kiếm, thông tin liên hệ và trạng thái nhà cung cấp. Mã nhà cung cấp được tạo tự động."
                     actions={<Button type="button" onClick={() => navigate(`${ROOT}/new`)}>+ Thêm nhà cung cấp</Button>}
                 />
 
@@ -213,10 +213,10 @@ export default function SupplierListPage() {
             >
                 <p className="text-sm leading-6 text-slate-600">
                     {action?.status === "ACTIVE"
-                        ? `Ẩn “${action?.name}”? Nhà cung cấp có đơn mua hàng chưa hoàn tất sẽ bị Backend từ chối.`
+                        ? `Ẩn “${action?.name}”? Không thể ẩn nhà cung cấp nếu vẫn còn đơn mua hàng chưa hoàn tất.`
                         : `Khôi phục “${action?.name}” về trạng thái hoạt động?`}
                 </p>
-                <p className="mt-3 text-xs text-amber-700">Thao tác này cập nhật dữ liệu thật trên database chung của nhóm.</p>
+                <p className="mt-3 text-xs text-amber-700">Thay đổi này sẽ được lưu vào dữ liệu đang sử dụng chung.</p>
             </Modal>
         </MainLayout>
     );

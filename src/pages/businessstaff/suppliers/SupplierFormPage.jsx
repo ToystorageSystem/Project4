@@ -145,7 +145,7 @@ export default function SupplierFormPage() {
             <div className="space-y-6">
                 <PageHeader
                     title={editing ? "Chỉnh sửa nhà cung cấp" : "Thêm nhà cung cấp"}
-                    description="Thông tin quản lý nhà cung cấp theo Issue #7. Dấu * là trường bắt buộc."
+                    description="Nhập thông tin nhà cung cấp. Các ô có dấu * là bắt buộc."
                     actions={<Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${supplierId}` : ROOT)}>← Quay lại</Button>}
                 />
                 {loading ? (
@@ -165,7 +165,7 @@ export default function SupplierFormPage() {
                         )}
                         {!editing && (
                             <div className="mb-5 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-800">
-                                Mã NCC sẽ được Backend tự sinh sau khi lưu, không cần nhập thủ công.
+                                Mã nhà cung cấp sẽ được tạo tự động sau khi lưu.
                             </div>
                         )}
                         <form onSubmit={handleSubmit} className="space-y-6" noValidate>
@@ -188,7 +188,7 @@ export default function SupplierFormPage() {
                                 <Checkbox
                                     checked={confirmedSharedData}
                                     onChange={(event) => setConfirmedSharedData(event.target.checked)}
-                                    label="Tôi xác nhận thao tác này sẽ ghi dữ liệu thật vào MySQL dùng chung của nhóm."
+                                    label="Tôi đã kiểm tra và đồng ý lưu thông tin nhà cung cấp."
                                 />
                             </div>
                             <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">

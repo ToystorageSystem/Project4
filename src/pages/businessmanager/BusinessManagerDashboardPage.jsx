@@ -16,7 +16,7 @@ export default function BusinessManagerDashboardPage() {
             .then((data) => {
                 if (!cancelled) {
                     if (!data || typeof data !== "object" || Array.isArray(data)) {
-                        throw new Error("Invalid inventory report response");
+                        throw new Error("Dữ liệu báo cáo tồn kho chưa hợp lệ");
                     }
                     setReport(data);
                 }
@@ -24,8 +24,8 @@ export default function BusinessManagerDashboardPage() {
             .catch((err) => {
                 if (!cancelled) {
                     setError(err.response?.status === 403
-                        ? "Tài khoản không có quyền xem báo cáo tồn kho (403)."
-                        : "Không tải được báo cáo tồn kho. Kiểm tra Backend và phiên đăng nhập.");
+                        ? "Tài khoản chưa được cấp quyền xem báo cáo tồn kho."
+                        : "Không tải được báo cáo tồn kho. Vui lòng kiểm tra kết nối rồi thử lại.");
                 }
             })
             .finally(() => { if (!cancelled) setLoading(false); });
@@ -36,8 +36,8 @@ export default function BusinessManagerDashboardPage() {
         <MainLayout title="Business Manager" items={businessManagerMenuItems}>
             <div className="space-y-6">
                 <PageHeader
-                    title="Business Manager Dashboard"
-                    description="Tổng quan tồn kho được truy vấn trực tiếp từ API báo cáo. Bước này chỉ đọc dữ liệu."
+                    title="Tổng quan kinh doanh"
+                    description="Theo dõi tình hình tồn kho tại các kho và cửa hàng."
                 />
 
                 {loading && <p role="status" className="text-sm text-slate-500">Đang tải báo cáo tồn kho...</p>}
@@ -52,7 +52,7 @@ export default function BusinessManagerDashboardPage() {
                         </div>
                         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                             <h2 className="font-semibold text-slate-900">Tình trạng dữ liệu</h2>
-                            <p className="mt-2 text-sm text-slate-600">Nguồn: GET /api/business-manager/reports/inventory</p>
+                            <p className="mt-2 text-sm text-slate-600">Số liệu được cập nhật từ hệ thống.</p>
                             <p className="mt-1 text-sm text-slate-500">Số dòng tồn kho theo vị trí: {formatCount(report.totalBalanceRecords)}</p>
                             {report.snapshotAt && <p className="mt-1 text-xs text-slate-500">Thời điểm báo cáo: {report.snapshotAt}</p>}
                         </section>

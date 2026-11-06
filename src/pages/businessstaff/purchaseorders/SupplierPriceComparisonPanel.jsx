@@ -128,14 +128,14 @@ const columns = [
                     {value || "—"}
                 </p>
                 <p className="text-xs text-slate-500">
-                    Product ID: {item.productId ?? "—"}
+                    Mã sản phẩm: {item.productId ?? "—"}
                 </p>
             </div>
         ),
     },
     {
         key: "supplierResponseStatus",
-        label: "Phản hồi NCC",
+        label: "Phản hồi nhà cung cấp",
         render: (value) =>
             RESPONSE_STATUS_LABELS[value] || value || "—",
     },
@@ -161,7 +161,7 @@ const columns = [
     },
     {
         key: "confirmedUnitPrice",
-        label: "Giá NCC báo",
+        label: "Giá nhà cung cấp báo",
         render: (value) => formatMoney(value),
     },
     {
@@ -212,7 +212,7 @@ export default function SupplierPriceComparisonPanel({
             !Number.isSafeInteger(numericId) ||
             numericId <= 0
         ) {
-            setError("ID đơn mua hàng không hợp lệ.");
+            setError("Mã đơn mua hàng không hợp lệ.");
             setLoading(false);
             return () => controller.abort();
         }
@@ -515,8 +515,7 @@ export default function SupplierPriceComparisonPanel({
                         So sánh giá nhà cung cấp
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
-                        Issue #16 — Giá nhập ban đầu và giá
-                        nhà cung cấp phản hồi.
+                        So sánh giá mua ban đầu với mức giá mới nhà cung cấp đề nghị.
                     </p>
                 </div>
 
@@ -534,8 +533,8 @@ export default function SupplierPriceComparisonPanel({
 
                     <Alert type="info">
                         {PRICE_DECISION_WRITE_ENABLED
-                            ? "Chức năng quyết định giá đã được kích hoạt. Chấp nhận giá sẽ cập nhật giá PO và giá nhập nhà cung cấp. Từ chối giá sẽ không thay đổi giá. Mọi quyết định đều được ghi lịch sử."
-                            : "Giá mới hiện chỉ dùng để xem và so sánh. Chức năng gửi quyết định ACCEPT/REJECT đang được khóa để tránh thay đổi dữ liệu."}
+                            ? "Bạn có thể chấp nhận hoặc từ chối mức giá mới. Nếu chấp nhận, đơn giá mua sẽ được cập nhật. Mọi quyết định đều được lưu lại."
+                            : "Giá mới hiện chỉ để tham khảo. Bạn chưa thể xác nhận thay đổi giá ở thời điểm này."}
                     </Alert>
 
             </div>
@@ -555,7 +554,7 @@ export default function SupplierPriceComparisonPanel({
             ) : items.length === 0 ? (
                 <EmptyState
                     title="Chưa có dữ liệu so sánh giá"
-                    description="Purchase Order chưa có sản phẩm để so sánh."
+                    description="Đơn mua hàng chưa có sản phẩm để so sánh."
                 />
             ) : (
                 <div className="space-y-4">
@@ -577,12 +576,12 @@ export default function SupplierPriceComparisonPanel({
                     {/* Thong bao dieu kien quyet dinh gia */}
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                         {hasReceivedGoods
-                            ? "Chưa thể quyết định giá: Đơn mua hàng đã nhận hàng. Backend không cho phép ACCEPT/REJECT giá mới sau khi đã nhận hàng."
+                            ? "Không thể thay đổi giá của đơn đã nhận hàng. Vui lòng liên hệ người quản lý nếu cần xử lý thêm."
                             : purchaseOrderStatus !== "ORDERED"
-                            ? "Chưa thể quyết định giá: Purchase Order không ở trạng thái ORDERED."
+                            ? "Chưa thể quyết định giá vì đơn chưa ở trạng thái đã gửi nhà cung cấp."
                             : !hasNoReceivedItems
                                 ? "Chưa thể quyết định giá: Chưa xác định đầy đủ số lượng hàng đã nhận."
-                                : "Đơn hàng đủ điều kiện ban đầu để xem xét giá mới. Chỉ sản phẩm PRICE_CHANGED có báo giá hợp lệ mới được ACCEPT/REJECT."}
+                                : "Chỉ những sản phẩm được nhà cung cấp đề nghị đổi giá và có báo giá hợp lệ mới có thể xét duyệt."}
                     </div>
 
                     {decisionSuccess && (
@@ -601,7 +600,7 @@ export default function SupplierPriceComparisonPanel({
 
                             <p className="text-xs text-amber-800">
                                 Hai nút bên dưới chỉ mở Modal để kiểm tra.
-                                Không gửi POST và không thay đổi MySQL.
+                                Chưa lưu thay đổi nào.
                             </p>
 
                             <div className="flex flex-wrap gap-2">
@@ -610,7 +609,7 @@ export default function SupplierPriceComparisonPanel({
                                     variant="outline"
                                     onClick={() => openMockDecisionPreview("ACCEPT")}
                                 >
-                                    Test Modal ACCEPT
+                                    Xem trước đồng ý giá
                                 </Button>
 
                                 <Button
@@ -618,7 +617,7 @@ export default function SupplierPriceComparisonPanel({
                                     variant="outline"
                                     onClick={() => openMockDecisionPreview("REJECT")}
                                 >
-                                    Test Modal REJECT
+                                    Xem trước từ chối giá
                                 </Button>
                             </div>
                         </div>
@@ -635,7 +634,7 @@ export default function SupplierPriceComparisonPanel({
                     </div>
 
                     <p className="text-xs text-slate-500">
-                        Chênh lệch ước tính được Backend
+                        Chênh lệch ước tính được hệ thống
                         tính theo số lượng đặt mua.
                         Nếu nhà cung cấp chỉ xác nhận một
                         phần số lượng, giá trị này chưa
@@ -695,7 +694,7 @@ export default function SupplierPriceComparisonPanel({
                         </p>
 
                         <p className="text-sm text-slate-700">
-                            Giá PO hiện tại:{" "}
+                            Giá mua hiện tại:{" "}
                             <strong>
                                 {formatMoney(
                                     decisionDraft.item.originalUnitPrice
@@ -740,9 +739,9 @@ export default function SupplierPriceComparisonPanel({
 
                         <Alert type="info">
                             {PRICE_DECISION_UI_PREVIEW
-                                ? "Đây là dữ liệu giả lập để kiểm thử giao diện. Không gửi quyết định lên Backend."
+                                ? "Đây là thông tin minh họa. Chưa có thay đổi nào được lưu."
                                 : PRICE_DECISION_WRITE_ENABLED
-                                ? "Hãy kiểm tra kỹ quyết định và lý do. Khi xác nhận, hệ thống sẽ ghi lịch sử. ACCEPT còn cập nhật giá PO và giá nhập nhà cung cấp."
+                                ? "Vui lòng kiểm tra mức giá và lý do trước khi xác nhận. Nếu đồng ý, giá mua trong đơn hàng và thông tin nhà cung cấp sẽ được cập nhật."
                                 : "Đây chỉ là bước xem trước. Chức năng gửi quyết định giá đang bị khóa."}
                         </Alert>
 

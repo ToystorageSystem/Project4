@@ -43,7 +43,7 @@ export default function ProductDetailPage() {
     return (
         <MainLayout title="Business Staff" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Chi tiết sản phẩm" description="Sản phẩm chỉ được đưa vào sử dụng sau khi Business Manager phê duyệt."
+                <PageHeader title="Chi tiết sản phẩm" description="Sản phẩm chỉ được đưa vào sử dụng sau khi quản lý kinh doanh phê duyệt."
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Button variant="ghost" onClick={() => navigate(ROOT)}>← Danh sách</Button>
@@ -59,7 +59,7 @@ export default function ProductDetailPage() {
                 {!loading && product && !error && (
                     <>
                         {(product.status === "PENDING_CREATE" || product.status === "PENDING_UPDATE" || product.status === "PENDING") && (
-                            <Alert type="warning">Sản phẩm hoặc yêu cầu thay đổi đang chờ Business Manager duyệt, chưa được dùng như sản phẩm đã duyệt.</Alert>
+                            <Alert type="warning">Sản phẩm hoặc yêu cầu thay đổi đang chờ quản lý kinh doanh duyệt, chưa được dùng như sản phẩm đã duyệt.</Alert>
                         )}
                         {product.status === "REJECTED" && (
                             <Alert type="danger">Sản phẩm bị từ chối. Lý do: {product.rejectionReason || "Chưa có thông tin lý do."} Bạn có thể theo dõi yêu cầu tại “Yêu cầu của tôi”.</Alert>
@@ -74,10 +74,10 @@ export default function ProductDetailPage() {
                             </div>
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                 <DetailField label="Mã sản phẩm">{product.productCode}</DetailField>
-                                <DetailField label="Barcode">{product.barcode}</DetailField>
+                                <DetailField label="Mã vạch">{product.barcode}</DetailField>
                                 <DetailField label="Đơn vị cơ sở">{product.baseUnit}</DetailField>
-                                <DetailField label="Danh mục">{product.categoryName ? `${product.categoryName} (ID ${product.categoryId})` : `ID ${product.categoryId}`}</DetailField>
-                                <DetailField label="Thương hiệu">{product.brandId ? `${product.brandName || "Thương hiệu"} (ID ${product.brandId})` : "Không có"}</DetailField>
+                                <DetailField label="Danh mục">{product.categoryName ? `${product.categoryName} (mã ${product.categoryId})` : `Mã ${product.categoryId}`}</DetailField>
+                                <DetailField label="Thương hiệu">{product.brandId ? `${product.brandName || "Thương hiệu"} (mã ${product.brandId})` : "Không có"}</DetailField>
                                 <DetailField label="Giá nhập">{formatProductPrice(product.purchasePrice)}</DetailField>
                                 <DetailField label="Giá bán">{formatProductPrice(product.sellingPrice)}</DetailField>
                                 <DetailField label="Người tạo">{product.createdByName || "—"}</DetailField>
@@ -94,7 +94,7 @@ export default function ProductDetailPage() {
                         </Card>
                         <SupplierProductLinksPanel productId={productId} productStatus={product.status} />
                         <Card>
-                            <p className="text-sm text-slate-600">Đề nghị sửa sản phẩm được lưu riêng và chỉ áp dụng lên sản phẩm khi được Business Manager phê duyệt. Để kiểm tra trạng thái yêu cầu, mở <button type="button" onClick={() => navigate(`${ROOT}/requests`)} className="font-semibold text-[#c94810] hover:underline">Yêu cầu của tôi</button>.</p>
+                            <p className="text-sm text-slate-600">Đề nghị sửa sản phẩm được lưu riêng và chỉ áp dụng lên sản phẩm khi được quản lý kinh doanh phê duyệt. Để kiểm tra trạng thái yêu cầu, mở <button type="button" onClick={() => navigate(`${ROOT}/requests`)} className="font-semibold text-[#c94810] hover:underline">Yêu cầu của tôi</button>.</p>
                         </Card>
                     </>
                 )}

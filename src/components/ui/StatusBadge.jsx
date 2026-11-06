@@ -28,6 +28,6 @@ const map = {
     INACTIVE: "default",
 };
 
-export default function StatusBadge({ status }) {
-    return <Badge variant={map[status] || "default"}>{status || "-"}</Badge>;
+export default function StatusBadge({ status, label }) {
+    return <Badge variant={map[status] || "default"}>{label || status || "-"}</Badge>;
 }

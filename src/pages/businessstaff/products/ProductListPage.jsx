@@ -48,7 +48,7 @@ export default function ProductListPage() {
         listProducts({ status, page, size: PAGE_SIZE }, controller.signal)
             .then((result) => {
                 if (!controller.signal.aborted) {
-                    if (!Array.isArray(result?.content)) throw new Error("Invalid product list response");
+                    if (!Array.isArray(result?.content)) throw new Error("Danh sách sản phẩm chưa hợp lệ");
                     setData(result);
                 }
             })
@@ -113,7 +113,7 @@ export default function ProductListPage() {
     return (
         <MainLayout title="Business Staff" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Quản lý sản phẩm" description="Xem sản phẩm, gửi yêu cầu thêm/sửa để Business Manager phê duyệt, ẩn và khôi phục sản phẩm."
+                <PageHeader title="Quản lý sản phẩm" description="Xem sản phẩm, gửi yêu cầu thêm/sửa để quản lý kinh doanh phê duyệt, ẩn và khôi phục sản phẩm."
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Button variant="outline" onClick={() => navigate(`${ROOT}/requests`)}>Yêu cầu của tôi</Button>
@@ -130,7 +130,7 @@ export default function ProductListPage() {
                             onChange={(event) => { setStatus(event.target.value); setPage(0); }} />
                         <Button variant="ghost" onClick={() => setReload((current) => current + 1)}>Làm mới</Button>
                     </div>
-                    <p className="mt-3 text-sm text-slate-500">Tổng số: {data?.totalElements ?? "—"} sản phẩm · Sắp xếp ngày tạo mới nhất từ Backend.</p>
+                    <p className="mt-3 text-sm text-slate-500">Tổng số: {data?.totalElements ?? "—"} sản phẩm · Sắp xếp theo ngày tạo, mới nhất trước.</p>
                 </div>
                 {loading ? (
                     <div className="flex items-center gap-3 rounded-2xl bg-white p-6 text-sm text-slate-600"><Spinner /> Đang tải sản phẩm...</div>
@@ -150,7 +150,7 @@ export default function ProductListPage() {
                     </>}
                 >
                     <p className="mb-4 text-sm text-slate-700">{target?.makeActive ? "Khôi phục" : "Ẩn"} sản phẩm <strong>{target?.product?.name}</strong> (mã {target?.product?.productCode})?</p>
-                    <p className="mb-4 text-sm text-amber-700">Hành động này cập nhật trạng thái thật trong MySQL dùng chung, không xóa sản phẩm.</p>
+                    <p className="mb-4 text-sm text-amber-700">Thao tác này thay đổi trạng thái sản phẩm nhưng không xóa sản phẩm khỏi hệ thống.</p>
                     <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi xác nhận thay đổi dữ liệu chung của nhóm." />
                 </Modal>
             </div>

@@ -16,7 +16,7 @@ const TYPES = [
 const METRICS = {
     imports: [
         ["totalReceipts", "Tổng phiếu nhập"],
-        ["completedReceipts", "Phiếu hoàn thành"],
+        ["completedReceipts", "Phiếu đã hoàn tất"],
         ["totalAcceptedQuantity", "Số lượng chấp nhận"],
     ],
     exports: [
@@ -26,14 +26,14 @@ const METRICS = {
     ],
     transfers: [
         ["totalTransfers", "Tổng phiếu điều chuyển"],
-        ["completedTransfers", "Phiếu hoàn thành"],
+        ["completedTransfers", "Phiếu đã hoàn tất"],
         ["totalShippedQuantity", "Số lượng đã gửi"],
     ],
     inventory: [
         ["totalProducts", "Sản phẩm khác nhau"],
-        ["totalBalanceRecords", "Dòng tồn kho"],
+        ["totalBalanceRecords", "Vị trí có hàng"],
         ["totalQuantity", "Tồn vật lý"],
-        ["totalReservedQuantity", "Đang giữ chỗ"],
+        ["totalReservedQuantity", "Đã tạm giữ"],
         ["totalAvailableQuantity", "Tồn khả dụng"],
     ],
 };
@@ -131,7 +131,7 @@ function toFilters(fields, type) {
 
 function validateFilters(filters) {
     if (filters.warehouseId && (!/^[1-9][0-9]*$/.test(filters.warehouseId) || !Number.isSafeInteger(Number(filters.warehouseId)))) {
-        return "ID kho phải là số nguyên dương.";
+        return "Mã kho phải là số nguyên dương.";
     }
     if (filters.fromDate && filters.toDate && filters.fromDate > filters.toDate) {
         return "Ngày bắt đầu không được sau ngày kết thúc.";
@@ -141,11 +141,11 @@ function validateFilters(filters) {
 
 function requestError(error) {
     if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-    if (error?.response?.status === 403) return "Tài khoản không có quyền Business Manager (403).";
+    if (error?.response?.status === 403) return "Tài khoản chưa được cấp quyền xem báo cáo của quản lý kinh doanh.";
     const body = error?.response?.data;
     if (typeof body?.message === "string" && body.message.trim()) return body.message;
     if (typeof body === "string" && body.trim()) return body;
-    return "Không tải được báo cáo. Kiểm tra Backend và thử lại.";
+    return "Không tải được báo cáo. Vui lòng kiểm tra kết nối rồi thử lại.";
 }
 
 async function excelError(error) {
@@ -264,11 +264,11 @@ export default function BusinessActivityReportsPage() {
             const response = await getBusinessActivityExcel(type, next);
             const data = response?.data;
             if (!(data instanceof Blob) || data.size === 0) {
-                throw new Error("Backend không trả về file Excel hợp lệ.");
+                throw new Error("Không tạo được tệp Excel hợp lệ.");
             }
             const contentType = String(response?.headers?.["content-type"] || data.type || "").toLowerCase();
             if (contentType.includes("json") || contentType.includes("text/html")) {
-                throw new Error("Backend trả về dữ liệu không phải Excel.");
+                throw new Error("Không nhận được tệp Excel. Vui lòng thử lại.");
             }
             const url = URL.createObjectURL(data);
             const anchor = document.createElement("a");
@@ -279,7 +279,7 @@ export default function BusinessActivityReportsPage() {
             anchor.remove();
             window.setTimeout(() => URL.revokeObjectURL(url), 1500);
         } catch (err) {
-            setExportError(err?.message?.startsWith("Backend") ? err.message : await excelError(err));
+            setExportError(err?.message?.startsWith("Không") ? err.message : await excelError(err));
         } finally {
             setExporting(false);
         }
@@ -290,7 +290,7 @@ export default function BusinessActivityReportsPage() {
             <div className="mx-auto max-w-7xl space-y-5 px-3 py-6 sm:px-6 lg:py-10">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Xem báo cáo hoạt động</h1>
-                    <p className="mt-1 text-sm text-slate-500">Thống kê toàn hệ thống theo dữ liệu Backend. Chức năng chỉ xem và xuất Excel.</p>
+                    <p className="mt-1 text-sm text-slate-500">Xem tình hình nhập, xuất, điều chuyển và tồn kho của toàn hệ thống; có thể xuất báo cáo Excel.</p>
                 </div>
 
                 <div className="flex flex-wrap gap-2" role="tablist" aria-label="Loại báo cáo">
@@ -306,7 +306,7 @@ export default function BusinessActivityReportsPage() {
                 <form onSubmit={applyFilters} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                     <div className="grid gap-3 sm:grid-cols-3">
                         <label className="block">
-                            <span className={labelClass}>ID kho (để trống = tất cả)</span>
+                            <span className={labelClass}>Mã kho (để trống để xem tất cả)</span>
                             <input className={inputClass} type="text" inputMode="numeric" placeholder="Ví dụ: 9"
                                 value={draft.warehouseId} onChange={(event) => setDraft((old) => ({ ...old, warehouseId: event.target.value }))}/>
                         </label>
@@ -350,7 +350,7 @@ export default function BusinessActivityReportsPage() {
                                 ))}
                             </section>
 
-                            {type === "inventory" && <p className="text-sm text-slate-500">Thời điểm dữ liệu tồn kho: <strong>{dateTime(report.snapshotAt)}</strong>. Tồn vật lý, giữ chỗ và khả dụng được hiển thị theo số liệu Backend.</p>}
+                            {type === "inventory" && <p className="text-sm text-slate-500">Thời điểm dữ liệu tồn kho: <strong>{dateTime(report.snapshotAt)}</strong>. Số lượng thực tế, số đã giữ và số có thể sử dụng được cập nhật từ hệ thống.</p>}
 
                             {breakdown.length > 0 && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                                 <h2 className="mb-4 text-sm font-bold text-slate-800">Phiếu điều chuyển theo trạng thái</h2>
@@ -367,7 +367,7 @@ export default function BusinessActivityReportsPage() {
                             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-4">
                                     <h2 className="font-bold text-slate-900">Chi tiết {current.label.toLowerCase()}</h2>
-                                    <span className="text-xs text-slate-500">{number(rows.length)} dòng · Dữ liệu từ Backend</span>
+                                    <span className="text-xs text-slate-500">{number(rows.length)} dòng kết quả</span>
                                 </div>
                                 {rows.length === 0 ? <p className="p-10 text-center text-sm text-slate-500">Không có dữ liệu trong bộ lọc đã chọn.</p> : <>
                                     <div className="overflow-x-auto">

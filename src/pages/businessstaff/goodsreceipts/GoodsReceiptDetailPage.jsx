@@ -12,6 +12,7 @@ import Table from "../../../components/ui/Table";
 import { formatReceiptDate, formatReceiptMoney, receiptStatusLabels, receiptText as T } from "./receiptText";
 
 const ROOT = "/business-staff/goods-receipts";
+const LIST = `${ROOT}/list`;
 
 function StatusBadge({ status }) {
     const style = status === "COMPLETED"
@@ -73,7 +74,10 @@ export default function GoodsReceiptDetailPage() {
         <MainLayout title="Business Staff" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader title={T.detailTitle} description={T.draftNote}
-                    actions={<Button type="button" variant="outline" onClick={() => navigate(ROOT)}>{T.back}</Button>} />
+                    actions={<div className="flex gap-2">
+                        <Button type="button" variant="outline" onClick={() => navigate(LIST)}>← Danh sách phiếu nhập</Button>
+                        <Button type="button" onClick={() => navigate(ROOT)}>+ Tạo phiếu khác</Button>
+                    </div>} />
                 {location.state?.notice && <div role="status"><Alert type="success">{location.state.notice}</Alert></div>}
                 {error && <div role="alert" className="space-y-2"><Alert type="danger">{error}</Alert>
                     <Button type="button" variant="outline" onClick={() => setReload((x) => x + 1)}>{T.retry}</Button>

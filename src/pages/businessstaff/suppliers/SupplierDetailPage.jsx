@@ -73,7 +73,7 @@ export default function SupplierDetailPage() {
             <div className="space-y-6">
                 <PageHeader
                     title="Chi tiết nhà cung cấp"
-                    description="Thông tin hồ sơ và tất cả sản phẩm liên kết theo Issue #8."
+                    description="Thông tin nhà cung cấp và những sản phẩm đang được nhà cung cấp này cung ứng."
                     actions={<Button type="button" variant="ghost" onClick={() => navigate(ROOT)}>← Danh sách</Button>}
                 />
                 {notice && <div role="status"><Alert type="success">{notice}</Alert></div>}
@@ -114,7 +114,7 @@ export default function SupplierDetailPage() {
 
                         <SupplierProductsPanel supplierId={supplierId} />
                         <div className="rounded-xl bg-slate-100 p-4 text-xs leading-5 text-slate-600">
-                            Backend ghi lịch sử tạo/sửa liên kết vào activity_logs; riêng thao tác DELETE hiện chưa ghi lịch sử xóa. Chưa có API xem lịch sử liên kết trên trang này.
+                            Các thay đổi về sản phẩm do nhà cung cấp cung ứng được lưu lại. Lịch sử chi tiết hiện chưa hiển thị trên trang này.
                         </div>
                     </>
                 )}
@@ -134,7 +134,7 @@ export default function SupplierDetailPage() {
             >
                 <p className="text-sm text-slate-700">
                     {supplier?.status === "ACTIVE"
-                        ? "Backend sẽ từ chối ẩn nếu nhà cung cấp còn đơn mua hàng chưa hoàn thành."
+                        ? "Không thể ngừng sử dụng nhà cung cấp nếu vẫn còn đơn mua hàng chưa hoàn thành."
                         : "Bạn muốn khôi phục nhà cung cấp này về trạng thái hoạt động?"}
                 </p>
                 <p className="mt-3 text-xs text-amber-700">Đây là thay đổi thật trên database chung của nhóm.</p>

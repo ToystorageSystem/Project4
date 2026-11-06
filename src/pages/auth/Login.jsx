@@ -19,6 +19,7 @@ import {
     useAuth,
 } from "../../auth/AuthContext";
 import { getHomePath } from "../../auth/roleRouting";
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 
 
 export default function Login() {
@@ -143,7 +144,7 @@ export default function Login() {
                 ) {
 
                     setError(
-                        "Login succeeded but user information was not returned."
+                        "Đăng nhập thành công nhưng chưa nhận được thông tin tài khoản. Vui lòng thử lại."
                     );
 
                     return;
@@ -171,12 +172,7 @@ export default function Login() {
                 ) {
 
                 setError(
-                    requestError
-                        .response
-                        ?.data
-                        ?.message
-                    ??
-                    "Invalid email or password."
+                    friendlyBusinessError(requestError, "Email hoặc mật khẩu không đúng.")
                 );
             }
             finally {
@@ -208,7 +204,7 @@ export default function Login() {
 
                         <img
                             src="/logo.png"
-                            alt="Toy Storage System logo"
+                            alt="Biểu trưng hệ thống quản lý kho"
                             className="app-logo app-logo--large"
                         />
 
@@ -221,7 +217,7 @@ export default function Login() {
 
 
                     <p className="mt-2 text-sm text-slate-500">
-                        Warehouse Management System
+                        Hệ thống quản lý kho hàng
                     </p>
 
                 </div>
@@ -239,12 +235,12 @@ export default function Login() {
                         <div>
 
                             <h2 className="text-xl font-semibold text-slate-900">
-                                Sign in
+                                Đăng nhập
                             </h2>
 
 
                             <p className="mt-1 text-sm text-slate-500">
-                                Enter your account credentials to continue.
+                                Nhập thông tin tài khoản để tiếp tục.
                             </p>
 
                         </div>
@@ -280,12 +276,12 @@ export default function Login() {
 
 
                         <Input
-                            label="Password"
+                            label="Mật khẩu"
                             type="password"
                             value={
                                 password
                             }
-                            placeholder="Enter your password"
+                            placeholder="Nhập mật khẩu"
                             onChange={(
                                 event
                             ) =>
@@ -309,8 +305,8 @@ export default function Login() {
                         >
 
                             {loading
-                                ? "Signing in..."
-                                : "Sign in"}
+                                ? "Đang đăng nhập..."
+                                : "Đăng nhập"}
 
                         </Button>
 

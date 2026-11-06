@@ -27,12 +27,14 @@ import ProductRequestsPage from "./pages/businessstaff/products/ProductRequestsP
 import RejectedProductsPage from "./pages/businessstaff/products/RejectedProductsPage";
 import GoodsReceiptCreatePage from "./pages/businessstaff/goodsreceipts/GoodsReceiptCreatePage";
 import GoodsReceiptDetailPage from "./pages/businessstaff/goodsreceipts/GoodsReceiptDetailPage";
+import GoodsReceiptListPage from "./pages/businessstaff/goodsreceipts/GoodsReceiptListPage";
 import PurchaseOrderListPage from "./pages/businessstaff/purchaseorders/PurchaseOrderListPage";
 import PurchaseOrderDetailPage from "./pages/businessstaff/purchaseorders/PurchaseOrderDetailPage";
 import PurchaseOrderFormPage from "./pages/businessstaff/purchaseorders/PurchaseOrderFormPage";
 import SupplierInvoiceListPage from "./pages/businessstaff/supplierinvoices/SupplierInvoiceListPage";
 import SupplierInvoiceDetailPage from "./pages/businessstaff/supplierinvoices/SupplierInvoiceDetailPage";
 import SupplierInvoiceFormPage from "./pages/businessstaff/supplierinvoices/SupplierInvoiceFormPage";
+import StockTransferListPage from "./pages/businessstaff/stocktransfers/StockTransferListPage";
 import StockTransferCreatePage from "./pages/businessstaff/stocktransfers/StockTransferCreatePage";
 import StockTransferDetailPage from "./pages/businessstaff/stocktransfers/StockTransferDetailPage";
 import InventoryReportPage from "./pages/businessstaff/inventoryreport/InventoryReportPage";
@@ -94,6 +96,7 @@ export default function App() {
                         <Route path="/business-staff/products/:productId/edit" element={<ProductFormPage />} />
                         <Route path="/business-staff/products/:productId" element={<ProductDetailPage />} />
                         <Route path="/business-staff/goods-receipts" element={<GoodsReceiptCreatePage />} />
+                        <Route path="/business-staff/goods-receipts/list" element={<GoodsReceiptListPage />} />
                         <Route path="/business-staff/goods-receipts/:receiptId" element={<GoodsReceiptDetailPage />} />
                         <Route path="/business-staff/purchase-orders" element={<PurchaseOrderListPage />} />
                         <Route path="/business-staff/purchase-orders/new" element={<PurchaseOrderFormPage />} />
@@ -103,6 +106,8 @@ export default function App() {
                         <Route path="/business-staff/supplier-invoices/new" element={<SupplierInvoiceFormPage />} />
                         <Route path="/business-staff/supplier-invoices/:invoiceId/edit" element={<SupplierInvoiceFormPage />} />
                         <Route path="/business-staff/supplier-invoices/:invoiceId" element={<SupplierInvoiceDetailPage />} />
+                        {/* Business Staff - Danh sach phieu dieu chuyen cua toi */}
+                        <Route path="/business-staff/stock-transfers" element={<StockTransferListPage />} />
                         <Route path="/business-staff/stock-transfers/new" element={<StockTransferCreatePage />} />
                         <Route path="/business-staff/stock-transfers/:transferId/edit" element={<StockTransferCreatePage />} />
                         <Route path="/business-staff/stock-transfers/:transferId" element={<StockTransferDetailPage />} />

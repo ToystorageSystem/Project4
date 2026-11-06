@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 
 import api from "../api";
 
@@ -83,7 +84,7 @@ export async function getShipmentManifestDetail(
 // 3. Xu ly thong bao loi.
 export function shipmentManifestErrorMessage(
     error,
-    fallback = "Khong tai duoc du lieu bang ke di hang."
+    fallback = "Không tải được danh sách bảng kê đi hàng."
 ) {
     if (error?.code === "ERR_CANCELED") {
         return "";
@@ -102,7 +103,7 @@ export function shipmentManifestErrorMessage(
     }
 
     if (!error?.response) {
-        return "Không kết nối được Backend. Hãy kiểm tra Spring Boot.";
+        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     }
 
     const data = error.response.data;
@@ -112,7 +113,5 @@ export function shipmentManifestErrorMessage(
             ? data
             : data?.message;
 
-    return typeof message === "string" && message.trim()
-        ? message
-        : fallback;
+    return friendlyBusinessError(error, fallback);
 }

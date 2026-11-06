@@ -1,3 +1,4 @@
+import { friendlyBusinessError } from "../../utils/friendlyBusinessError";
 
 import api from "../api";
 
@@ -110,14 +111,12 @@ export function supplierFeedbackErrorMessage(
             : data?.message;
 
     if (status === 404) {
-        return message || "Không tìm thấy dữ liệu yêu cầu.";
+        return friendlyBusinessError(error, "Không tìm thấy thông tin nhà cung cấp cần tìm.");
     }
 
     if (!error?.response) {
-        return "Không kết nối được Backend. Hãy kiểm tra Spring Boot.";
+        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
     }
 
-    return typeof message === "string" && message.trim()
-        ? message
-        : fallback;
+    return friendlyBusinessError(error, fallback);
 }

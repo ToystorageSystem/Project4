@@ -81,7 +81,7 @@ export default function CategoryListPage() {
                 if (controller.signal.aborted) return;
 
                 if (!Array.isArray(result?.content)) {
-                    throw new Error("Invalid category response");
+                    throw new Error("Danh sách danh mục sản phẩm chưa hợp lệ");
                 }
 
                 setData(result);
@@ -629,8 +629,8 @@ export default function CategoryListPage() {
                         <p className="text-sm text-amber-700">
                             Danh mục không bị xóa khỏi cơ sở dữ liệu.
                             Danh mục đã ẩn sẽ không xuất hiện trong
-                            danh sách lựa chọn ACTIVE khi tạo sản phẩm.
-                            Backend có thể từ chối ẩn nếu danh mục
+                            danh sách danh mục đang hoạt động khi tạo sản phẩm.
+                            Hệ thống có thể không cho ẩn nếu danh mục
                             đang liên quan đến dữ liệu chờ xử lý.
                         </p>
 

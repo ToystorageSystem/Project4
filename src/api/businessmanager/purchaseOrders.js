@@ -23,9 +23,24 @@ export async function listBusinessManagerPurchaseOrders(filters = {}, signal) {
     return response.data;
 }
 
+export async function listPurchaseOrderCancellationApprovals(status = "PENDING", signal) {
+    const response = await api.get(`${BASE}/cancellation-requests`, {
+        params: status ? { status } : {}, signal,
+    });
+    return response.data;
+}
+
+export async function reviewPurchaseOrderCancellation(requestId, action, note = "") {
+    if (!["approve", "reject"].includes(action)) throw new Error("Quyết định xét duyệt chưa hợp lệ");
+    const response = await api.patch(`${BASE}/cancellation-requests/${encodeURIComponent(requestId)}/${action}`, {
+        note: String(note).trim(),
+    });
+    return response.data;
+}
+
 export async function getBusinessManagerPurchaseOrderDetail(id, signal) {
     if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0) {
-        throw new Error("ID đơn mua hàng không hợp lệ.");
+        throw new Error("Mã đơn mua hàng không hợp lệ.");
     }
     const response = await api.get(`${BASE}/${id}`, { signal });
     return response.data;
