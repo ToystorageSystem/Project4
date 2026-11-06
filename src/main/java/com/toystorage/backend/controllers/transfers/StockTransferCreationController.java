@@ -1,5 +1,10 @@
 package com.toystorage.backend.controllers.transfers;
 
+import com.toystorage.backend.dto.response.transfers.StockTransferListResponse;
+import com.toystorage.backend.enums.transfers.TransferStatus;
+import com.toystorage.backend.services.transfers.BusinessStaffTransferListService;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.RequestParam;
 import com.toystorage.backend.dto.request.transfers.CancelStockTransferRequest;
 import com.toystorage.backend.dto.request.transfers.CreateStockTransferRequest;
 import com.toystorage.backend.dto.request.transfers.UpdateStockTransferRequest;
@@ -30,6 +35,8 @@ public class StockTransferCreationController {
 
     private final StockTransferCreationService
             stockTransferCreationService;
+    private final BusinessStaffTransferListService
+        businessStaffTransferListService;
 
 
     // =====================================================
@@ -148,7 +155,45 @@ public class StockTransferCreationController {
                 );
     }
 
+    // =====================================================
+    // BUSINESS STAFF - VIEW MY STOCK TRANSFERS
+    // GET /api/stock-transfers/mine
+    // =====================================================
 
+    @GetMapping("/mine")
+    @PreAuthorize("""
+            hasAnyAuthority(
+                'STOCK_TRANSFER_CREATE',
+                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-ADMIN'
+            )
+            """)
+    public ResponseEntity<Page<StockTransferListResponse>>
+    getMyStockTransfers(
+
+            @RequestParam(required = false)
+            String keyword,
+
+            @RequestParam(required = false)
+            TransferStatus status,
+
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @RequestParam(defaultValue = "10")
+            int size
+    ) {
+
+        return ResponseEntity.ok(
+                businessStaffTransferListService.getMyTransfers(
+                        keyword,
+                        status,
+                        page,
+                        size
+                )
+        );
+    }
     // =====================================================
     // GET STOCK TRANSFER DETAIL
     // =====================================================

@@ -3,6 +3,7 @@ package com.toystorage.backend.controllers.packages.packing.manager;
 import com.toystorage.backend.dto.response.packages.packing.PackingConfirmationResponse;
 import com.toystorage.backend.services.packages.packing.PackingConfirmationService;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
@@ -23,9 +24,8 @@ public class PackingConfirmationController {
      * seal.
      */
     @GetMapping("/{transferId}/packing-result")
-//    @PreAuthorize(
-//            "hasAuthority('PACKING_CONFIRM_VIEW')"
-//    )
+    // Warehouse Manager quan ly kho xuat (service tiep tuc kiem tra kho).
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-WH-MANAGER', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<PackingConfirmationResponse>
     getPackingResult(
             @PathVariable Long transferId
@@ -44,9 +44,7 @@ public class PackingConfirmationController {
      * Warehouse Manager confirm.
      */
     @PatchMapping("/{transferId}/confirm-packing")
-//    @PreAuthorize(
-//            "hasAuthority('PACKING_CONFIRM')"
-//    )
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-WH-MANAGER', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<PackingConfirmationResponse>
     confirmPacking(
             @PathVariable Long transferId
@@ -60,6 +58,7 @@ public class PackingConfirmationController {
         );
     }
     @GetMapping("/packing-confirmations")
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-WH-MANAGER', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<Page<PackingConfirmationResponse>>
     getPackingConfirmations(
 

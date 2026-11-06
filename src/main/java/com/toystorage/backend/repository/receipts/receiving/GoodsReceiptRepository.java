@@ -7,6 +7,7 @@ import com.toystorage.backend.enums.receipts.GoodsReceiptStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,6 +19,8 @@ import java.util.Optional;
 @Repository
 public interface GoodsReceiptRepository
         extends JpaRepository<GoodsReceipts, Long> {
+
+    boolean existsByPurchaseOrder_Id(Long purchaseOrderId);
 
     // ===== CAC PHUONG THUC HIEN CO =====
 
@@ -44,6 +47,12 @@ public interface GoodsReceiptRepository
     List<GoodsReceipts>
     findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
             Long warehouseId,
+            List<GoodsReceiptStatus> statuses
+    );
+
+    // Một PO được nhận nhiều lần, nhưng không được có 2 phiếu đang xử lý đồng thời.
+    boolean existsByPurchaseOrder_IdAndStatusIn(
+            Long purchaseOrderId,
             List<GoodsReceiptStatus> statuses
     );
 
@@ -86,6 +95,34 @@ public interface GoodsReceiptRepository
             Pageable pageable
     );
 
+
+    // Danh sach phieu nhap lien ket voi PO, cho Business Staff theo doi.
+    // Phieu nhap chua co created_by rieng; KHONG loc gia theo nguoi tao PO.
+    @EntityGraph(attributePaths = {
+            "purchaseOrder", "purchaseOrder.supplier",
+            "purchaseOrder.createdBy", "warehouse"
+    })
+    @Query("""
+        SELECT gr FROM GoodsReceipts gr
+        WHERE (:keyword IS NULL
+            OR LOWER(gr.receiptCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(gr.goodsReceiptsCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(gr.purchaseOrder.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%')))
+          AND (:purchaseOrderId IS NULL OR gr.purchaseOrder.id = :purchaseOrderId)
+          AND (:warehouseId IS NULL OR gr.warehouse.id = :warehouseId)
+          AND (:status IS NULL OR gr.status = :status)
+          AND (:createdFrom IS NULL OR gr.createdAt >= :createdFrom)
+          AND (:createdToExclusive IS NULL OR gr.createdAt < :createdToExclusive)
+        """)
+    Page<GoodsReceipts> searchForBusinessStaff(
+            @Param("keyword") String keyword,
+            @Param("purchaseOrderId") Long purchaseOrderId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("status") GoodsReceiptStatus status,
+            @Param("createdFrom") LocalDateTime createdFrom,
+            @Param("createdToExclusive") LocalDateTime createdToExclusive,
+            Pageable pageable
+    );
 
     // Methods restored for legacy business APIs without replacing existing repository logic.
 

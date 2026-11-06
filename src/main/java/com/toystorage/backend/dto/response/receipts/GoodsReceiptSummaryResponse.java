@@ -19,6 +19,11 @@ public class GoodsReceiptSummaryResponse {
 
     private String receiptCode;
 
+    private Long purchaseOrderId;
+    private String purchaseOrderCode;
+    private Long purchaseOrderCreatedById;
+    private String purchaseOrderCreatedByName;
+
     private String status;
 
     private Long supplierId;

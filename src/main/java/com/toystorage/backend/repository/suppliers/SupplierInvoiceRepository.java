@@ -15,6 +15,11 @@ import java.util.Optional;
 public interface SupplierInvoiceRepository
         extends JpaRepository<SupplierInvoices, Long> {
 
+    boolean existsByPurchaseOrder_IdAndStatusNot(
+            Long purchaseOrderId,
+            SupplierInvoiceStatus status
+    );
+
     /*
      * Dùng khi sinh mã hóa đơn nội bộ.
      */

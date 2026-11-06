@@ -15,16 +15,10 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
 public class InventoryReportExcelService {
-
-    private static final DateTimeFormatter DATE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern(
-                    "yyyy-MM-dd HH:mm:ss"
-            );
 
     private static final String[] HEADERS = {
             "No.",
@@ -83,6 +77,10 @@ public class InventoryReportExcelService {
                             workbook
                     );
 
+            CellStyle dateStyle = workbook.createCellStyle();
+            dateStyle.setDataFormat(workbook.getCreationHelper()
+                    .createDataFormat().getFormat("dd/mm/yyyy hh:mm:ss"));
+
 
             createHeader(
                     sheet,
@@ -103,7 +101,8 @@ public class InventoryReportExcelService {
                     createDataRow(
                             sheet,
                             rowIndex,
-                            item
+                            item,
+                            dateStyle
                     );
 
                     rowIndex++;
@@ -190,7 +189,8 @@ public class InventoryReportExcelService {
     private void createDataRow(
             Sheet sheet,
             int rowIndex,
-            InventoryReportItemResponse item
+            InventoryReportItemResponse item,
+            CellStyle dateStyle
     ) {
 
         Row row =
@@ -328,16 +328,11 @@ public class InventoryReportExcelService {
         );
 
 
-        setStringCell(
-                row,
-                columnIndex,
-                item.getLastUpdatedAt() != null
-                        ? item.getLastUpdatedAt()
-                                .format(
-                                        DATE_TIME_FORMATTER
-                                )
-                        : null
-        );
+        if (item.getLastUpdatedAt() != null) {
+            Cell dateCell = row.createCell(columnIndex);
+            dateCell.setCellValue(item.getLastUpdatedAt());
+            dateCell.setCellStyle(dateStyle);
+        }
     }
 
 

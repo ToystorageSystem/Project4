@@ -77,272 +77,103 @@ public class GoodsReceiptCreationService {
     // =====================================================
 
     @Transactional
-    public GoodsReceiptDetailResponse create(
-            CreateGoodsReceiptRequest request
-    ) {
+    public GoodsReceiptDetailResponse create(CreateGoodsReceiptRequest request) {
+        // Xác thực phiên và vai trò thực hiện tại Controller.
+        getCurrentUser();
 
-        // 1. Lấy Business Staff đang đăng nhập
-        Users currentUser = getCurrentUser();
+        // Nguồn dữ liệu duy nhất cho phiếu nhập là Purchase Order đã gửi.
+        PurchaseOrders purchaseOrder = purchaseOrderRepository
+                .findForCancellationUpdate(request.getPurchaseOrderId())
+                .orElseThrow(() -> new NotFound(
+                        "Purchase order not found with id: " + request.getPurchaseOrderId()
+                ));
 
-
-        // 2. Kiểm tra Supplier
-        Suppliers supplier =
-                getActiveSupplier(
-                        request.getSupplierId()
-                );
-
-
-        // 3. Kiểm tra kho nhận hàng
-        Warehouses warehouse =
-                getActiveMainWarehouse(
-                        request.getWarehouseId()
-                );
-
-
-        // 4. Kiểm tra danh sách sản phẩm
-        validateItems(request.getItems());
-
-
-        // 5. Load Product từ database
-        Map<Long, Products> productsById =
-                new HashMap<>();
-
-        for (
-                CreateGoodsReceiptItemRequest itemRequest
-                : request.getItems()
-        ) {
-
-            Products product =
-                    productRepository
-                            .findById(
-                                    itemRequest.getProductId()
-                            )
-                            .orElseThrow(() ->
-                                    new NotFound(
-                                            "Product not found with id: "
-                                                    + itemRequest.getProductId()
-                                    )
-                            );
-
-
-            // Task #5 chỉ cho dùng sản phẩm ACTIVE
-            if (
-                    product.getStatus()
-                            != ProductStatus.ACTIVE
-            ) {
-
-                throw new BadRequest(
-                        "Product "
-                                + product.getId()
-                                + " is not ACTIVE"
-                );
-            }
-
-
-            productsById.put(
-                    product.getId(),
-                    product
+        if (purchaseOrder.getStatus() != PurchaseOrderStatus.ORDERED
+                && purchaseOrder.getStatus() != PurchaseOrderStatus.PARTIALLY_RECEIVED) {
+            throw new BadRequest(
+                    "Goods receipt can only be created from ORDERED or PARTIALLY_RECEIVED purchase orders"
             );
         }
 
+        // Giữ mối liên kết NCC + kho giống PO, không lấy từ request.
+        getActiveSupplier(purchaseOrder.getSupplier().getId());
+        Warehouses warehouse = getActiveMainWarehouse(purchaseOrder.getWarehouse().getId());
 
-        // =================================================
-        // 6. TẠO PURCHASE ORDER NỀN
-        // =================================================
-
-        PurchaseOrders purchaseOrder =
-                PurchaseOrders.builder()
-
-                        .orderCode(
-                                generatePurchaseOrderCode()
-                        )
-
-                        .supplier(supplier)
-
-                        .warehouse(warehouse)
-
-                        .status(
-                                PurchaseOrderStatus.ORDERED
-                        )
-
-                        .createdBy(currentUser)
-
-                        .note(
-                                normalizeNote(
-                                        request.getNote()
-                                )
-                        )
-
-                        .build();
-
-
-        purchaseOrder =
-                purchaseOrderRepository.save(
-                        purchaseOrder
-                );
-
-
-        // =================================================
-        // 7. TẠO PURCHASE ORDER ITEMS
-        // =================================================
-
-        List<PurchaseOrderItems> purchaseOrderItems =
-                new ArrayList<>();
-
-
-        for (
-                CreateGoodsReceiptItemRequest itemRequest
-                : request.getItems()
-        ) {
-
-            Products product =
-                    productsById.get(
-                            itemRequest.getProductId()
-                    );
-
-
-            PurchaseOrderItems item =
-                    PurchaseOrderItems.builder()
-
-                            .purchaseOrder(
-                                    purchaseOrder
-                            )
-
-                            .product(product)
-
-                            .orderedQuantity(
-                                    itemRequest
-                                            .getExpectedQuantity()
-                            )
-
-                            .receivedQuantity(0)
-
-                            .unitPrice(
-                                    itemRequest
-                                            .getUnitPrice()
-                            )
-
-                            .purchaseOrderItemsCode(
-                                    generateCode("POI")
-                            )
-
-                            .build();
-
-
-            purchaseOrderItems.add(item);
+        // Không tạo hai phiếu nhận cùng lúc cho một PO.
+        if (goodsReceiptRepository.existsByPurchaseOrder_IdAndStatusIn(
+                purchaseOrder.getId(),
+                List.of(
+                        GoodsReceiptStatus.CREATED,
+                        GoodsReceiptStatus.RECEIVING,
+                        GoodsReceiptStatus.INSPECTED,
+                        GoodsReceiptStatus.CONFIRMED
+                ))) {
+            throw new BadRequest(
+                    "This purchase order already has a goods receipt awaiting completion"
+            );
         }
 
+        validateItems(request.getItems());
+        List<PurchaseOrderItems> purchaseOrderItems = purchaseOrderItemRepository
+                .findByPurchaseOrder_IdOrderByIdAsc(purchaseOrder.getId());
 
-        purchaseOrderItemRepository
-                .saveAll(purchaseOrderItems);
-
-
-        // =================================================
-        // 8. TẠO GOODS RECEIPT
-        // =================================================
-
-        GoodsReceipts goodsReceipt =
-                GoodsReceipts.builder()
-
-                        .receiptCode(
-                                generateReceiptCode()
-                        )
-
-                        .goodsReceiptsCode(
-                                generateGoodsReceiptInternalCode()
-                        )
-
-                        .purchaseOrder(
-                                purchaseOrder
-                        )
-
-                        .warehouse(warehouse)
-
-                        // CREATED = Chờ xử lý
-                        .status(
-                                GoodsReceiptStatus.CREATED
-                        )
-
-                        .build();
-
-
-        goodsReceipt =
-                goodsReceiptRepository.save(
-                        goodsReceipt
-                );
-
-
-        // =================================================
-        // 9. TẠO GOODS RECEIPT ITEMS
-        // =================================================
-
-        List<GoodsReceiptItems> goodsReceiptItems =
-                new ArrayList<>();
-
-
-        for (
-                CreateGoodsReceiptItemRequest itemRequest
-                : request.getItems()
-        ) {
-
-            Products product =
-                    productsById.get(
-                            itemRequest.getProductId()
-                    );
-
-
-            GoodsReceiptItems item =
-                    GoodsReceiptItems.builder()
-
-                            .goodsReceipt(
-                                    goodsReceipt
-                            )
-
-                            .product(product)
-
-                            .expectedQuantity(
-                                    itemRequest
-                                            .getExpectedQuantity()
-                            )
-
-                            // Khi vừa tạo phiếu chưa nhận hàng
-                            .actualQuantity(0)
-
-                            .acceptedQuantity(0)
-
-                            .damagedQuantity(0)
-
-                            .surplusQuantity(0)
-
-                            .shortageQuantity(0)
-
-                            .goodsReceiptItemsCode(
-                                    generateCode("GRI")
-                            )
-
-                            .build();
-
-
-            goodsReceiptItems.add(item);
+        if (purchaseOrderItems.isEmpty()) {
+            throw new BadRequest("Purchase order contains no products");
         }
 
+        Map<Long, PurchaseOrderItems> purchaseItemByProduct = new HashMap<>();
+        for (PurchaseOrderItems item : purchaseOrderItems) {
+            purchaseItemByProduct.put(item.getProduct().getId(), item);
+        }
 
-        goodsReceiptItemRepository
-                .saveAll(goodsReceiptItems);
+        // Chỉ nhận hàng đã có trong PO. Không vượt quá số lượng chưa nhận.
+        for (CreateGoodsReceiptItemRequest requested : request.getItems()) {
+            PurchaseOrderItems orderedItem = purchaseItemByProduct.get(requested.getProductId());
+            if (orderedItem == null) {
+                throw new BadRequest(
+                        "Product " + requested.getProductId() + " does not belong to the purchase order"
+                );
+            }
+            int received = orderedItem.getReceivedQuantity() == null
+                    ? 0 : orderedItem.getReceivedQuantity();
+            int remaining = orderedItem.getOrderedQuantity() - received;
+            if (remaining < 1 || requested.getExpectedQuantity() > remaining) {
+                throw new BadRequest(
+                        "Expected quantity for product " + requested.getProductId()
+                                + " must be between 1 and " + Math.max(remaining, 0)
+                );
+            }
+        }
 
+        GoodsReceipts receipt = GoodsReceipts.builder()
+                .receiptCode(generateReceiptCode())
+                .goodsReceiptsCode(generateGoodsReceiptInternalCode())
+                .purchaseOrder(purchaseOrder)
+                .warehouse(warehouse)
+                .status(GoodsReceiptStatus.CREATED)
+                .build();
+        receipt = goodsReceiptRepository.save(receipt);
 
-        // =================================================
-        // QUAN TRỌNG:
-        // KHÔNG UPDATE INVENTORY Ở TASK NÀY
-        // =================================================
+        List<GoodsReceiptItems> receiptItems = new ArrayList<>();
+        for (CreateGoodsReceiptItemRequest requested : request.getItems()) {
+            PurchaseOrderItems orderedItem = purchaseItemByProduct.get(requested.getProductId());
+            receiptItems.add(GoodsReceiptItems.builder()
+                    .goodsReceipt(receipt)
+                    .product(orderedItem.getProduct())
+                    .expectedQuantity(requested.getExpectedQuantity())
+                    .actualQuantity(0)
+                    .acceptedQuantity(0)
+                    .damagedQuantity(0)
+                    .surplusQuantity(0)
+                    .shortageQuantity(0)
+                    .goodsReceiptItemsCode(generateCode("GRI"))
+                    .build());
+        }
+        receiptItems = goodsReceiptItemRepository.saveAll(receiptItems);
 
-
-        // 10. Trả response cho Frontend
-        return buildDetailResponse(
-                goodsReceipt,
-                purchaseOrderItems,
-                goodsReceiptItems
-        );
+        // Không thay đổi tồn kho hoặc purchase_order_items.received_quantity lúc tạo.
+        // Warehouse Manager sẽ hoàn tất việc nhận sau khi kiểm hàng.
+        return buildDetailResponse(receipt, purchaseOrderItems, receiptItems);
     }
 
 

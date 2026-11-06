@@ -78,6 +78,15 @@ public interface ShipmentManifestRepository
                     )
 
                     and (
+                        :onlyWithoutDelivery = false
+                        or not exists (
+                            select emptyTrip.id
+                            from Deliveries emptyTrip
+                            where emptyTrip.manifest = m
+                        )
+                    )
+
+                    and (
                         :transportStatus is null
 
                         or exists (
@@ -107,6 +116,9 @@ public interface ShipmentManifestRepository
 
                 @Param("transportStatus")
                 DeliveryStatus transportStatus,
+
+                @Param("onlyWithoutDelivery")
+                boolean onlyWithoutDelivery,
 
                 @Param("createdFrom")
                 LocalDateTime createdFrom,

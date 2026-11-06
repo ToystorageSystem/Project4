@@ -83,14 +83,10 @@ public class TransferPickingService {
                                 )
                         );
 
-        return transfers.stream()
-                .filter(transfer ->
-                        transfer.getStatus() != TransferStatus.CREATED
-                        || isReturnTransferType(transfer.getTransferType())
-                )
-                .map(this::buildResponse)
-                .toList();
-    }
+            return transfers.stream()
+                    .map(this::buildResponse)
+                    .toList();
+                }
 
 
     // =====================================================
@@ -171,10 +167,13 @@ public class TransferPickingService {
         }
 
 
-
         boolean normalPicking =
                 transfer.getStatus()
-                        == TransferStatus.PENDING_SOURCE_CONFIRMATION;
+                        == TransferStatus.PENDING_SOURCE_CONFIRMATION
+                || (
+                        transfer.getStatus() == TransferStatus.CREATED
+                        && !isReturnTransferType(transfer.getTransferType())
+                );
 
         boolean storeReturnPicking =
                 isReturnTransferType(transfer.getTransferType())

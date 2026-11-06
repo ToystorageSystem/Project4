@@ -83,10 +83,11 @@ public class ShipmentManifestQueryService {
                 );
 
 
-        DeliveryStatus normalizedTransportStatus =
-                normalizeTransportStatus(
-                        transportStatus
-                );
+        // Bảng kê chưa có chuyến phải được phân biệt với chuyến CREATED.
+        boolean onlyWithoutDelivery = transportStatus != null
+                && "NO_DELIVERY".equalsIgnoreCase(transportStatus.trim());
+        DeliveryStatus normalizedTransportStatus = onlyWithoutDelivery
+                ? null : normalizeTransportStatus(transportStatus);
 
 
         validateDateRange(
@@ -146,6 +147,7 @@ public class ShipmentManifestQueryService {
                                 fromWarehouseId,
                                 toWarehouseId,
                                 normalizedTransportStatus,
+                                onlyWithoutDelivery,
                                 createdFrom,
                                 createdToExclusive,
                                 pageable
@@ -374,8 +376,8 @@ public class ShipmentManifestQueryService {
             throw new BadRequest(
                     "Invalid transport status. "
                             + "Allowed values: "
-                            + "CREATED, ASSIGNED, READY_TO_SHIP, "
-                            + "IN_TRANSIT, ARRIVED, DELIVERED, "
+                            + "NO_DELIVERY, CREATED, ASSIGNED, ACCEPTED, REJECTED, "
+                            + "READY_TO_SHIP, IN_TRANSIT, ARRIVED, DELIVERED, "
                             + "FAILED, CANCELLED"
             );
         }

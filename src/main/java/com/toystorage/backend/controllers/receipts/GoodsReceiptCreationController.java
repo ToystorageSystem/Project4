@@ -4,9 +4,12 @@ import com.toystorage.backend.dto.request.receipts.CreateGoodsReceiptRequest;
 import com.toystorage.backend.dto.response.receipts.GoodsReceiptDetailResponse;
 import com.toystorage.backend.dto.response.receipts.GoodsReceiptOptionResponse;
 import com.toystorage.backend.dto.response.receipts.GoodsReceiptSummaryResponse;
+import com.toystorage.backend.dto.response.receipts.GoodsReceiptTrackingPageResponse;
 import com.toystorage.backend.enums.receipts.GoodsReceiptStatus;
 import com.toystorage.backend.services.receipts.GoodsReceiptCreationService;
+import com.toystorage.backend.services.receipts.GoodsReceiptTrackingService;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -27,6 +31,25 @@ import java.util.List;
 public class GoodsReceiptCreationController {
 
     private final GoodsReceiptCreationService goodsReceiptCreationService;
+    private final GoodsReceiptTrackingService goodsReceiptTrackingService;
+
+    // BUSINESS STAFF - Theo doi phieu nhap, tim theo GR/PO va loc trang thai.
+    // Khong gioi han "cua toi" vi goods_receipts chua luu created_by.
+    @GetMapping("/business")
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-STAFF', 'ROLE_ROLE-BIZ-MANAGER', 'ROLE_ROLE-ADMIN')")
+    public ResponseEntity<GoodsReceiptTrackingPageResponse> getBusinessGoodsReceipts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long purchaseOrderId,
+            @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) GoodsReceiptStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size
+    ) {
+        return ResponseEntity.ok(goodsReceiptTrackingService.search(
+                keyword, purchaseOrderId, warehouseId, status, fromDate, toDate, page, size));
+    }
 
 
     // =====================================================

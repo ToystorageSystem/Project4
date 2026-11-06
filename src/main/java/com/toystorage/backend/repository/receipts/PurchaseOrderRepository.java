@@ -1,5 +1,7 @@
 package com.toystorage.backend.repository.receipts;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import java.util.Collection;
 import com.toystorage.backend.entity.receipts.PurchaseOrders;
 import com.toystorage.backend.enums.receipts.PurchaseOrderStatus;
@@ -18,6 +20,11 @@ public interface PurchaseOrderRepository
         extends JpaRepository<PurchaseOrders, Long> {
 
     boolean existsByOrderCode(String orderCode);
+
+    // Khóa PO khi hủy hoặc xử lý yêu cầu hủy để chống thao tác đồng thời.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select po from PurchaseOrders po where po.id = :id")
+    Optional<PurchaseOrders> findForCancellationUpdate(@Param("id") Long id);
 
 
     @EntityGraph(

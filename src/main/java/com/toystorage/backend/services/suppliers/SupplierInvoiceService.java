@@ -792,19 +792,19 @@ public class SupplierInvoiceService {
             Long supplierId
     ) {
 
-        return purchaseOrderRepository
-                .findInvoiceEligibleById(
-                        purchaseOrderId,
-                        supplierId,
-                        INVOICE_ELIGIBLE_PO_STATUSES
-                )
-                .orElseThrow(() ->
-                        new BadRequest(
-                                "Purchase order must belong to the selected supplier "
-                                        + "and have status ORDERED, "
-                                        + "PARTIALLY_RECEIVED, or COMPLETED"
-                        )
-                );
+        // Dùng chung khóa PO với luồng hủy để không tạo invoice sau khi Manager vừa duyệt hủy.
+        PurchaseOrders order = purchaseOrderRepository
+                .findForCancellationUpdate(purchaseOrderId)
+                .orElseThrow(() -> new BadRequest("Purchase order not found"));
+
+        if (!supplierId.equals(order.getSupplier().getId())
+                || !INVOICE_ELIGIBLE_PO_STATUSES.contains(order.getStatus())) {
+            throw new BadRequest(
+                    "Purchase order must belong to the selected supplier "
+                            + "and have status ORDERED, PARTIALLY_RECEIVED, or COMPLETED"
+            );
+        }
+        return order;
     }
 
 

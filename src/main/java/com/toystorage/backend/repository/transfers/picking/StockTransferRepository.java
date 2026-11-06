@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import com.toystorage.backend.entity.transfers.StockTransfer;
 import com.toystorage.backend.enums.transfers.TransferStatus;
+import com.toystorage.backend.enums.transfers.TransferType;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Page;
@@ -86,6 +87,35 @@ public interface StockTransferRepository
             Pageable pageable
     );
 
+        // Lay danh sach phieu dieu chuyen do chinh nguoi dung tao.
+        // Ho tro tim theo ma phieu, loc trang thai va phan trang.
+        // Chi lay phieu dieu chuyen NORMAL, khong lay phieu tra hang.
+        @EntityGraph(attributePaths = {
+                "fromWarehouse",
+                "toWarehouse"
+        })
+        @Query("""
+                SELECT st
+                FROM StockTransfer st
+                WHERE st.createdBy.id = :createdById
+                  AND st.transferType = :transferType
+                  AND (
+                      :status IS NULL
+                      OR st.status = :status
+                  )
+                  AND (
+                      :keyword IS NULL
+                      OR LOWER(st.transferCode)
+                          LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  )
+                """)
+        Page<StockTransfer> findMyNormalTransfers(
+                @Param("createdById") Long createdById,
+                @Param("transferType") TransferType transferType,
+                @Param("keyword") String keyword,
+                @Param("status") TransferStatus status,
+                Pageable pageable
+        );
 
     // Methods restored for legacy business APIs without replacing existing repository logic.
 

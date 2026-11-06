@@ -3,6 +3,11 @@ package com.toystorage.backend.services.receipts.receiving;
 import com.toystorage.backend.dto.response.receipts.receiving.ReceivingConfirmationResponse;
 import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
+import com.toystorage.backend.entity.receipts.PurchaseOrders;
+import com.toystorage.backend.entity.receipts.PurchaseOrderItems;
+import com.toystorage.backend.enums.receipts.PurchaseOrderStatus;
+import com.toystorage.backend.repository.receipts.PurchaseOrderItemRepository;
+import com.toystorage.backend.repository.receipts.PurchaseOrderRepository;
 import com.toystorage.backend.mapper.receipts.receiving.ReceivingConfirmationMapper;
 import com.toystorage.backend.entity.receipts.ReceiptInspections;
 import com.toystorage.backend.entity.users.Users;
@@ -44,6 +49,10 @@ public class ReceivingConfirmationService {
     private final GoodsReceiptRepository goodsReceiptRepository;
 
     private final GoodsReceiptItemRepository goodsReceiptItemRepository;
+
+    private final PurchaseOrderItemRepository purchaseOrderItemRepository;
+
+    private final PurchaseOrderRepository purchaseOrderRepository;
 
     private final ReceiptInspectionRepository receiptInspectionRepository;
 
@@ -219,6 +228,10 @@ public class ReceivingConfirmationService {
                         receivingLocation
                 );
 
+        // Cập nhật PO theo số lượng ĐƯỢC CHẤP NHẬN khi nhận hàng hoàn tất.
+        // Transaction hiện tại đảm bảo rollback cùng tồn kho nếu có lỗi.
+        updatePurchaseOrderReceivedQuantities(receipt, items);
+
         /*
          * =============================================
          * PUTAWAY
@@ -274,6 +287,64 @@ public class ReceivingConfirmationService {
          * for read-only history viewing.
          */
         return buildResponse(receipt);
+    }
+
+
+    // =====================================================
+    // UPDATE PURCHASE ORDER AFTER RECEIPT COMPLETION
+    // =====================================================
+
+    private void updatePurchaseOrderReceivedQuantities(
+            GoodsReceipts receipt,
+            List<GoodsReceiptItems> receiptItems
+    ) {
+        PurchaseOrders purchaseOrder = receipt.getPurchaseOrder();
+        if (purchaseOrder == null) {
+            throw new BadRequest("Goods receipt has no linked purchase order");
+        }
+        if (purchaseOrder.getStatus() != PurchaseOrderStatus.ORDERED
+                && purchaseOrder.getStatus() != PurchaseOrderStatus.PARTIALLY_RECEIVED) {
+            throw new BadRequest("Purchase order is not eligible for receiving");
+        }
+
+        List<PurchaseOrderItems> orderItems = purchaseOrderItemRepository
+                .findByPurchaseOrder_IdOrderByIdAsc(purchaseOrder.getId());
+        if (orderItems.isEmpty()) {
+            throw new BadRequest("Purchase order contains no products");
+        }
+
+        java.util.Map<Long, PurchaseOrderItems> byProduct = new java.util.HashMap<>();
+        for (PurchaseOrderItems orderItem : orderItems) {
+            byProduct.put(orderItem.getProduct().getId(), orderItem);
+        }
+
+        for (GoodsReceiptItems receiptItem : receiptItems) {
+            PurchaseOrderItems orderItem = byProduct.get(receiptItem.getProduct().getId());
+            if (orderItem == null) {
+                throw new BadRequest("Receipt product does not belong to purchase order");
+            }
+            int accepted = receiptItem.getAcceptedQuantity() == null
+                    ? 0 : receiptItem.getAcceptedQuantity();
+            int alreadyReceived = orderItem.getReceivedQuantity() == null
+                    ? 0 : orderItem.getReceivedQuantity();
+            if (accepted < 0 || (long) alreadyReceived + accepted > orderItem.getOrderedQuantity()) {
+                throw new BadRequest("Accepted quantity exceeds the purchase order remaining quantity");
+            }
+            orderItem.setReceivedQuantity(alreadyReceived + accepted);
+        }
+        purchaseOrderItemRepository.saveAll(orderItems);
+
+        boolean allReceived = orderItems.stream().allMatch(item ->
+                item.getReceivedQuantity() != null
+                        && item.getReceivedQuantity() >= item.getOrderedQuantity());
+        boolean anyReceived = orderItems.stream().anyMatch(item ->
+                item.getReceivedQuantity() != null && item.getReceivedQuantity() > 0);
+
+        purchaseOrder.setStatus(allReceived
+                ? PurchaseOrderStatus.COMPLETED
+                : anyReceived ? PurchaseOrderStatus.PARTIALLY_RECEIVED
+                : PurchaseOrderStatus.ORDERED);
+        purchaseOrderRepository.save(purchaseOrder);
     }
 
 

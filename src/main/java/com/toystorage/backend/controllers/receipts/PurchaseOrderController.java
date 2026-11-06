@@ -188,14 +188,7 @@ public class PurchaseOrderController {
     // =====================================================
 
     @PatchMapping("/{orderId}/cancel")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PURCHASE_ORDER_CANCEL',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-STAFF', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<PurchaseOrderDetailResponse>
     cancelPurchaseOrder(
 
