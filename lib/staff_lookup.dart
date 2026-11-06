@@ -1,0 +1,158 @@
+import 'package:flutter/material.dart';
+import 'api.dart';
+import 'brand.dart';
+import 'main.dart' show ScanPage;
+
+Future<Json?> chooseItemLocation(BuildContext context, List<Json> items) async {
+  if (items.length == 1) return items.first;
+  return showModalBottomSheet<Json>(
+    context: context,
+    isScrollControlled: true,
+    builder:
+        (c) => SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    'Chọn vị trí cần ghi nhận',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                for (final item in items)
+                  ListTile(
+                    title: Text('${item['productName']}'),
+                    subtitle: Text(
+                      'Vị trí: ${item['toLocationCode'] ?? item['locationCode'] ?? '—'}',
+                    ),
+                    onTap: () => Navigator.pop(c, item),
+                  ),
+              ],
+            ),
+          ),
+        ),
+  );
+}
+
+/// Read-only location lookup. Creation/editing/status changes remain manager operations.
+class LocationLookupPage extends StatefulWidget {
+  final WarehouseApi api;
+  const LocationLookupPage({super.key, required this.api});
+  @override
+  State<LocationLookupPage> createState() => _LocationLookupState();
+}
+
+class _LocationLookupState extends State<LocationLookupPage> {
+  final search = TextEditingController();
+  List<Json> rows = [];
+  bool busy = true;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    search.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    setState(() => busy = true);
+    try {
+      final data = await widget.api.call('GET', '/api/warehouse/locations');
+      if (mounted)
+        setState(() {
+          rows =
+              (data as List)
+                  .map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList();
+          error = null;
+        });
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shown =
+        rows
+            .where(
+              (r) => r.toString().toLowerCase().contains(
+                search.text.toLowerCase(),
+              ),
+            )
+            .toList();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Tra cứu vị trí'),
+        actions: [
+          IconButton(
+            onPressed: busy ? null : load,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          children: [
+            TextField(
+              controller: search,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Mã vị trí, khu vực, kệ…',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  tooltip: 'Quét mã vị trí',
+                  icon: const Icon(Icons.qr_code_scanner),
+                  onPressed: () async {
+                    final code = await Navigator.push<String>(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ScanPage()),
+                    );
+                    if (code != null && mounted)
+                      setState(() => search.text = code);
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (busy) const LinearProgressIndicator(),
+            if (error != null)
+              Text(error!, style: const TextStyle(color: Colors.red)),
+            if (!busy && error == null && shown.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('Không có vị trí phù hợp.'),
+              ),
+            for (final row in shown)
+              Card(
+                elevation: 0,
+                color: Colors.white,
+                child: ListTile(
+                  leading: const Icon(Icons.shelves, color: brand),
+                  title: Text(
+                    '${row['warehouseCode'] ?? row['warehouseLocationsCode'] ?? row['name']}',
+                  ),
+                  subtitle: Text(
+                    '${row['warehouseName'] ?? ''}\nKhu: ${row['zone'] ?? '—'} • Kệ: ${row['shelf'] ?? '—'}\n${row['locationType'] ?? ''} • ${row['status'] ?? ''}',
+                  ),
+                  isThreeLine: true,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}

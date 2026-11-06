@@ -1,0 +1,5 @@
+Flutter 3.44.4 / Dart 3.12.2
+flutter analyze --no-pub: No issues found
+flutter test --no-pub: 16 tests passed
+Backend source inspected at commit d9d8b2b511abd6090ec6df0b8dde3c5fbd6d25c2
+No live database/API/SMTP or native iOS build verified.
