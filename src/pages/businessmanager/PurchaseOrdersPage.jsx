@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../utils/viStatus";
 import { useEffect, useMemo, useState } from "react";
 import {
     getBusinessManagerPurchaseOrderDetail,
@@ -23,13 +24,13 @@ const buttonClass = "rounded-xl px-4 py-2.5 text-sm font-semibold transition dis
 const STATUS_LABELS = {
     DRAFT: "Nháp",
     PENDING: "Chờ xử lý",
-    PENDING_APPROVAL: "Chờ duyệt",
+    PENDING_APPROVAL: "Chờ phê duyệt",
     APPROVED: "Đã duyệt",
     ORDERED: "Đã đặt hàng",
     RECEIVING: "Đang nhận hàng",
     PARTIALLY_RECEIVED: "Nhận một phần",
-    COMPLETED: "Hoàn thành",
-    REJECTED: "Đã từ chối",
+    COMPLETED: "Đã hoàn thành",
+    REJECTED: "Bị từ chối",
     CANCELLED: "Đã hủy",
 };
 
@@ -71,7 +72,7 @@ function dateOnly(value) {
 }
 
 function statusName(status) {
-    return STATUS_LABELS[status] || (status ? status.replaceAll("_", " ") : "—");
+    return STATUS_LABELS[status] || (status ? formatBusinessStatus(status) : "—");
 }
 
 function StatusBadge({ value }) {
@@ -129,7 +130,7 @@ function PurchaseOrderDetail({ order, loading, error, onClose }) {
                         <DetailField title="Mã đơn mua">{display(order.orderCode)}</DetailField>
                         <DetailField title="Trạng thái"><StatusBadge value={order.status}/></DetailField>
                         <DetailField title="Nhà cung cấp">{display(order.supplierName)}{order.supplierCode ? <div className="mt-1 text-xs font-normal text-slate-500">{order.supplierCode}</div> : null}</DetailField>
-                        <DetailField title="Kho nhập">{display(order.warehouseName)}</DetailField>
+                        <DetailField title="Kho nhận hàng">{display(order.warehouseName)}</DetailField>
                         <DetailField title="Người tạo">{display(order.createdByName || order.createdByCode)}</DetailField>
                         <DetailField title="Thời gian tạo">{time(order.createdAt)}</DetailField>
                         <DetailField title="Ngày dự kiến nhận">{dateOnly(order.expectedDeliveryDate)}</DetailField>
@@ -273,7 +274,7 @@ export default function PurchaseOrdersPage() {
         setDetail(null);
     }
 
-    return <MainLayout title="Business Manager" items={businessManagerMenuItems}>
+    return <MainLayout title="Business Operations" items={businessManagerMenuItems}>
         <main className="mx-auto w-full max-w-7xl space-y-5 px-4 py-8 sm:px-6 lg:py-10">
             <div>
                 <h1 className="text-xl font-bold text-slate-900">Danh sách đơn mua hàng</h1>
@@ -292,7 +293,7 @@ export default function PurchaseOrdersPage() {
                 </div>
                 {formError && <p role="alert" className="mt-3 text-sm text-red-600">{formError}</p>}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <button type="submit" className={`${buttonClass} bg-blue-600 text-white hover:bg-blue-700`}>Tìm kiếm / Lọc</button>
+                    <button type="submit" className={`${buttonClass} bg-blue-600 text-white hover:bg-blue-700`}>Tìm kiếm / Bộ lọc</button>
                     <button type="button" className={`${buttonClass} border border-slate-200 text-slate-700 hover:bg-slate-50`} onClick={clearFilters}>Xóa bộ lọc</button>
                     <button type="button" className={`${buttonClass} text-blue-700 hover:bg-blue-50`} onClick={() => setReload((n) => n + 1)}>Tải lại</button>
                 </div>
@@ -313,9 +314,9 @@ export default function PurchaseOrdersPage() {
                 {loading ? <div className="py-12 text-center text-sm text-slate-500">Đang tải danh sách đơn mua hàng...</div> : !error && records.length === 0 ? <div className="py-12 text-center text-sm text-slate-500">Không tìm thấy đơn mua hàng phù hợp.</div> : !error && <div className="overflow-x-auto">
                     <table className="min-w-[1200px] w-full text-left text-sm">
                         <thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr>
-                            <th className="px-4 py-3">Mã đơn</th>
+                            <th className="px-4 py-3">Mã đơn hàng</th>
                             <th className="px-4 py-3">Nhà cung cấp</th>
-                            <th className="px-4 py-3">Kho nhập</th>
+                            <th className="px-4 py-3">Kho nhận hàng</th>
                             <th className="px-4 py-3">Trạng thái</th>
                             <th className="px-4 py-3 text-right">Sản phẩm / Số lượng</th>
                             <th className="px-4 py-3 text-right">Tổng tiền</th>

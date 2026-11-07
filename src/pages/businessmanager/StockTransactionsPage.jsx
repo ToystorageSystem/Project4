@@ -11,9 +11,9 @@ const EMPTY_FILTERS = { keyword: "", status: "", warehouseId: "", fromDate: "", 
 const EMPTY_PAGE = { content: [], totalElements: 0, totalPages: 0, number: 0 };
 const STATUS_LABELS = {
     DRAFT: "Nháp", CREATED: "Đã tạo", ORDERED: "Đã đặt", INSPECTING: "Đang kiểm hàng",
-    INSPECTED: "Đã kiểm hàng", COMPLETED: "Hoàn tất", CANCELLED: "Đã hủy",
+    INSPECTED: "Đã kiểm hàng", COMPLETED: "Đã hoàn thành", CANCELLED: "Đã hủy",
     PENDING_SOURCE_CONFIRMATION: "Chờ kho nguồn xác nhận", PICKING: "Đang lấy hàng",
-    PICKED: "Đã lấy hàng", PACKING: "Đang đóng gói", PACKED: "Đã đóng gói",
+    PICKED: "Đã lấy hàng", PACKING: "Đang đóng kiện", PACKED: "Đã đóng kiện",
     SHIPPED: "Đã xuất hàng", IN_TRANSIT: "Đang vận chuyển", RECEIVED: "Đã nhận hàng",
     CONFIRMED: "Đã xác nhận", REJECTED: "Từ chối",
 };
@@ -24,9 +24,9 @@ const ITEM_FIELDS = {
         ["shortageQuantity", "Thiếu"], ["surplusQuantity", "Thừa"],
     ],
     exports: [
-        ["requestedQuantity", "Yêu cầu"], ["approvedQuantity", "Duyệt"],
-        ["pickedQuantity", "Đã lấy"], ["packedQuantity", "Đã đóng"],
-        ["shippedQuantity", "Đã gửi"], ["receivedQuantity", "Đã nhận"],
+        ["requestedQuantity", "Yêu cầu"], ["approvedQuantity", "Phê duyệt"],
+        ["pickedQuantity", "Picked"], ["packedQuantity", "Đã đóng"],
+        ["shippedQuantity", "Sent"], ["receivedQuantity", "Đã nhận"],
         ["shortageQuantity", "Thiếu"], ["surplusQuantity", "Thừa"],
     ],
 };
@@ -199,7 +199,7 @@ export default function StockTransactionsPage() {
     const isImport = type === "imports";
 
     return (
-        <MainLayout title="Business Manager" items={businessManagerMenuItems}>
+        <MainLayout title="Business Operations" items={businessManagerMenuItems}>
             <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 sm:px-6">
                 <div className="space-y-1">
                     <h1 className="text-2xl font-bold text-slate-900">Theo dõi phiếu xuất / phiếu nhập</h1>
@@ -218,7 +218,7 @@ export default function StockTransactionsPage() {
 
                 <form onSubmit={search} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                        <label><span className={labelClass}>Mã phiếu</span>
+                        <label><span className={labelClass}>Mã chứng từ</span>
                             <input className={inputClass} value={filters.keyword} onChange={(event) => updateFilter("keyword", event.target.value)} placeholder={isImport ? "GR-..." : "ST-..."} />
                         </label>
                         <label><span className={labelClass}>Trạng thái</span>
@@ -238,7 +238,7 @@ export default function StockTransactionsPage() {
                         </label>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
-                        <button type="submit" className={`${buttonClass} bg-blue-700 text-white hover:bg-blue-800`}>Tìm kiếm / Lọc</button>
+                        <button type="submit" className={`${buttonClass} bg-blue-700 text-white hover:bg-blue-800`}>Tìm kiếm / Bộ lọc</button>
                         <button type="button" className={`${buttonClass} border border-slate-200 bg-white text-slate-700 hover:bg-slate-50`} onClick={clearFilters}>Xóa bộ lọc</button>
                         <button type="button" disabled={loading} className={`${buttonClass} text-blue-700 hover:bg-blue-50`} onClick={() => setReload((value) => value + 1)}>Tải lại</button>
                     </div>
@@ -255,10 +255,10 @@ export default function StockTransactionsPage() {
                         <table className="min-w-full divide-y divide-slate-100 text-sm">
                             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 <tr>
-                                    <th className="whitespace-nowrap px-4 py-3">Mã phiếu</th>
+                                    <th className="whitespace-nowrap px-4 py-3">Mã chứng từ</th>
                                     <th className="whitespace-nowrap px-4 py-3">Trạng thái</th>
-                                    <th className="whitespace-nowrap px-4 py-3">{isImport ? "Kho nhập" : "Kho xuất"}</th>
-                                    {!isImport && <th className="whitespace-nowrap px-4 py-3">Kho nhận</th>}
+                                    <th className="whitespace-nowrap px-4 py-3">{isImport ? "Kho nhận hàng" : "Kho xuất hàng"}</th>
+                                    {!isImport && <th className="whitespace-nowrap px-4 py-3">Kho/cửa hàng nhận</th>}
                                     <th className="whitespace-nowrap px-4 py-3">{isImport ? "Người nhận" : "Người tạo"}</th>
                                     <th className="whitespace-nowrap px-4 py-3">Ngày tạo</th>
                                     <th className="px-4 py-3 text-right">Thao tác</th>
@@ -301,11 +301,11 @@ export default function StockTransactionsPage() {
                             {detailError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{detailError}</div>}
                             {detail && <>
                                 <div className="grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
-                                    <Definition label="Mã phiếu" value={detail.transactionCode} />
+                                    <Definition label="Mã chứng từ" value={detail.transactionCode} />
                                     <div><dt className="mb-1 text-xs text-slate-500">Trạng thái</dt><dd><StatusChip value={detail.status} /></dd></div>
                                     <Definition label="Ngày tạo" value={dateTime(detail.createdAt)} />
-                                    <Definition label={detailKey.type === "imports" ? "Kho nhập" : "Kho xuất"} value={detail.warehouseName || (detail.warehouseId ? `Kho #${detail.warehouseId}` : null)} />
-                                    {detailKey.type === "exports" && <Definition label="Kho nhận" value={detail.destinationWarehouseName || (detail.destinationWarehouseId ? `Kho #${detail.destinationWarehouseId}` : null)} />}
+                                    <Definition label={detailKey.type === "imports" ? "Kho nhận hàng" : "Kho xuất hàng"} value={detail.warehouseName || (detail.warehouseId ? `Kho #${detail.warehouseId}` : null)} />
+                                    {detailKey.type === "exports" && <Definition label="Kho/cửa hàng nhận" value={detail.destinationWarehouseName || (detail.destinationWarehouseId ? `Kho #${detail.destinationWarehouseId}` : null)} />}
                                     <Definition label={detailKey.type === "imports" ? "Người nhận" : "Người tạo phiếu"} value={detail.performedByName || (detail.performedById ? `#${detail.performedById}` : null)} />
                                 </div>
                                 <section className="space-y-3">

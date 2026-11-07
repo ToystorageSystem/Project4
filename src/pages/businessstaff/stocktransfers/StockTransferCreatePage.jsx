@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -32,7 +33,7 @@ import {
     validateStockTransferDraft,
 } from "./stockTransferDraft";
 
-const ROOT = "/business-staff/stock-transfers";
+const ROOT = "/business/stock-transfers";
 const numberLabel = new Intl.NumberFormat("vi-VN");
 const displayQuantity = (quantity) => numberLabel.format(Number(quantity) || 0);
 
@@ -289,17 +290,17 @@ export default function StockTransferCreatePage() {
     };
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title={isEditMode ? `Sửa phiếu điều chuyển ${originalDetail?.transferCode || `#${transferId}`}` : "Tạo phiếu điều chuyển hàng"}
                     description={isEditMode
                         ? "Chỉnh sửa phiếu điều chuyển khi bộ phận kho chưa bắt đầu lấy hàng."
                         : "Điều chuyển hàng từ kho tổng đến cửa hàng hoặc giữa các cửa hàng."}
-                    actions={<Button type="button" variant="outline" onClick={() => navigate(isEditMode ? `${ROOT}/${transferId}` : "/business-staff/dashboard")}>← {isEditMode ? "Chi tiết" : "Dashboard"}</Button>}
+                    actions={<Button type="button" variant="outline" onClick={() => navigate(isEditMode ? `${ROOT}/${transferId}` : "/business/dashboard")}>← {isEditMode ? "Chi tiết" : "Trang tổng quan"}</Button>}
                 />
                 <Alert type="info">
-                    <strong>{isEditMode ? `Sửa phiếu ${originalDetail?.status || "đã tạo"}` : "Tạo phiếu nháp"}:</strong> Xem trước chỉ kiểm tra trên giao diện.
+                    <strong>{isEditMode ? `Sửa phiếu ${formatBusinessStatus(originalDetail?.status)}` : "Tạo phiếu nháp"}:</strong> Xem trước chỉ kiểm tra trên giao diện.
                     Những thay đổi của bạn sẽ được lưu vào hệ thống.
                     {editingReservedTransfer
                         ? " Nếu phiếu đã được gửi, hệ thống sẽ cập nhật lại số hàng tạm giữ theo số lượng mới."
@@ -326,7 +327,7 @@ export default function StockTransferCreatePage() {
                             </div>
                             <Select label="Lý do điều chuyển *" disabled={saving} value={form.reasonCode} options={[{ value: "", label: "-- Chọn lý do --" }, ...TRANSFER_REASONS]} onChange={(event) => setField("reasonCode", event.target.value)} />
                             <TextArea disabled={saving} label={form.reasonCode === "OTHER" ? "Giải thích lý do khác *" : "Diễn giải lý do (nếu có)"} rows={2} value={form.reasonNote} onChange={(event) => setField("reasonNote", event.target.value)} />
-                            <TextArea disabled={saving} label="Ghi chú (nếu có)" rows={2} value={form.notes} onChange={(event) => setField("notes", event.target.value)} />
+                            <TextArea disabled={saving} label="Ghi chú (không bắt buộc)" rows={2} value={form.notes} onChange={(event) => setField("notes", event.target.value)} />
                         </Card>
 
                         <Card className="space-y-4">
@@ -411,7 +412,7 @@ export default function StockTransferCreatePage() {
                                 }}>{isEditMode ? "Khôi phục dữ liệu" : "Làm lại form"}</Button>
                                 <Button type="button" disabled={saving || loadingProducts || !!productsError || uncertainSave} onClick={() => setPreviewRequested(true)}>Kiểm tra / Xem trước</Button>
                                 <Button type="button" disabled={!previewReady || !confirmedDbWrite || saving || uncertainSave} onClick={handleSaveDraft}>
-                                    {saving ? "Đang lưu..." : (isEditMode ? "Lưu thay đổi phiếu" : "Lưu phiếu nháp")}
+                                    {saving ? "Saving..." : (isEditMode ? "Lưu thay đổi phiếu" : "Lưu phiếu nháp")}
                                 </Button>
                             </div>
                             <p className="text-xs text-slate-500">Bạn có thể gửi hoặc hủy phiếu tại trang chi tiết. Hệ thống sẽ yêu cầu xác nhận trước khi lưu thay đổi.</p>

@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
@@ -20,7 +21,7 @@ import Spinner from "../../../components/ui/Spinner";
 import Table from "../../../components/ui/Table";
 import { formatReceiptDate, receiptStatusLabels } from "./receiptText";
 
-const ROOT = "/business-staff/goods-receipts";
+const ROOT = "/business/goods-receipts";
 const PAGE_SIZE = 10;
 const BASE_FILTERS = { keyword: "", status: "", warehouseId: "", fromDate: "", toDate: "" };
 const STATUS_OPTIONS = [
@@ -37,7 +38,7 @@ function ReceiptStatus({ status }) {
                 ? "bg-blue-100 text-blue-700"
                 : "bg-amber-100 text-amber-800";
     return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${color}`}>
-        {receiptStatusLabels[status] || status || "—"}
+        {receiptStatusLabels[status] || (status ? formatBusinessStatus(status) : "—")}
     </span>;
 }
 
@@ -108,14 +109,14 @@ export default function GoodsReceiptListPage() {
             <Link to={`${ROOT}/${item.id}`} className="font-semibold text-[#c94810] hover:underline">{code}</Link>
         ) },
         { key: "purchaseOrderCode", label: "Đơn mua hàng", render: (code, item) => (
-            <Link to={`/business-staff/purchase-orders/${item.purchaseOrderId}`} className="text-blue-700 hover:underline">
+            <Link to={`/business/purchase-orders/${item.purchaseOrderId}`} className="text-blue-700 hover:underline">
                 {code || "—"}
             </Link>
         ) },
         { key: "supplierName", label: "Nhà cung cấp" },
-        { key: "warehouseName", label: "Kho nhận" },
-        { key: "totalProducts", label: "Số mặt hàng", render: (n) => n ?? 0 },
-        { key: "totalExpectedQuantity", label: "SL dự kiến", render: (n) => n ?? 0 },
+        { key: "warehouseName", label: "Kho/cửa hàng nhận" },
+        { key: "totalProducts", label: "Số dòng sản phẩm", render: (n) => n ?? 0 },
+        { key: "totalExpectedQuantity", label: "Số lượng dự kiến", render: (n) => n ?? 0 },
         { key: "status", label: "Trạng thái", render: (status) => <ReceiptStatus status={status} /> },
         { key: "createdAt", label: "Ngày tạo", render: formatReceiptDate },
         { key: "id", label: "Thao tác", render: (id) => (
@@ -124,7 +125,7 @@ export default function GoodsReceiptListPage() {
     ];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader title="Theo dõi phiếu nhập kho"
                     description="Theo dõi các phiếu nhận hàng và tiến độ xử lý tại kho."
@@ -149,7 +150,7 @@ export default function GoodsReceiptListPage() {
                             value={draft.keyword} onChange={(e) => setDraft((p) => ({ ...p, keyword: e.target.value }))} />
                         <Select label="Trạng thái" value={draft.status} options={STATUS_OPTIONS}
                             onChange={(e) => setDraft((p) => ({ ...p, status: e.target.value }))} />
-                        <Select label="Kho nhận" value={draft.warehouseId}
+                        <Select label="Kho/cửa hàng nhận" value={draft.warehouseId}
                             options={[{ value: "", label: "Tất cả kho tổng" }, ...warehouses.map((w) => ({ value: String(w.id), label: w.name }))]}
                             onChange={(e) => setDraft((p) => ({ ...p, warehouseId: e.target.value }))} />
                         <Input label="Từ ngày" type="date" value={draft.fromDate}
@@ -157,7 +158,7 @@ export default function GoodsReceiptListPage() {
                         <Input label="Đến ngày" type="date" value={draft.toDate}
                             onChange={(e) => setDraft((p) => ({ ...p, toDate: e.target.value }))} />
                         <div className="flex flex-wrap gap-2 xl:col-span-3">
-                            <Button type="submit">Tìm kiếm / Lọc</Button>
+                            <Button type="submit">Tìm kiếm / Bộ lọc</Button>
                             <Button type="button" variant="outline" onClick={resetFilters}>Xóa bộ lọc</Button>
                             <Button type="button" variant="ghost" onClick={() => setReload((n) => n + 1)}>Làm mới</Button>
                         </div>
@@ -166,9 +167,9 @@ export default function GoodsReceiptListPage() {
                         {loading ? "Đang tải..." : `Tìm thấy ${result.totalElements ?? 0} phiếu nhập.`}
                     </p>
                 </Card>
-                {loading ? <div className="flex items-center gap-2 rounded-xl bg-white p-6"><Spinner />Đang tải phiếu nhập...</div>
+                {loading ? <div className="flex items-center gap-2 rounded-xl bg-white p-6"><Spinner />Đang tải phiếu nhập kho...</div>
                     : error ? null
-                        : !result.items?.length ? <EmptyState title="Chưa có phiếu nhập phù hợp" description="Hãy thử thay đổi bộ lọc." />
+                        : !result.items?.length ? <EmptyState title="Chưa có phiếu nhập phù hợp" description="Hãy điều chỉnh bộ lọc và thử lại." />
                             : <div className="space-y-4">
                                 <Table data={result.items} columns={columns} />
                                 <Pagination page={page + 1} totalPages={Math.max(1, result.totalPages || 0)}

@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -27,7 +28,7 @@ import Table from "../../../components/ui/Table";
 // Issue #13 - Business Staff xem hàng đang vận chuyển.
 // Chỉ xem dữ liệu, không cập nhật trạng thái vận chuyển.
 
-const ROOT = "/business-staff/in-transit-shipments";
+const ROOT = "/business/in-transit-shipments";
 const PAGE_SIZE = 10;
 
 const EMPTY_FILTERS = {
@@ -44,7 +45,7 @@ const STATUS_LABELS = {
     IN_TRANSIT: "Đang vận chuyển",
     ARRIVED: "Đã đến điểm nhận",
     DELIVERED: "Đã giao thành công",
-    FAILED: "Giao thất bại",
+    FAILED: "Giao hàng thất bại",
     CANCELLED: "Đã hủy",
 };
 
@@ -93,7 +94,7 @@ function DeliveryStatusBadge({ status }) {
         <span
             className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${color}`}
         >
-            {STATUS_LABELS[status] || status || "Chưa xác định"}
+            {STATUS_LABELS[status] || formatBusinessStatus(status)}
         </span>
     );
 }
@@ -285,7 +286,7 @@ export default function InTransitShipmentListPage() {
                     </p>
 
                     <CodeList
-                        label="Phiếu"
+                        label="Chứng từ"
                         values={delivery.transferCodes}
                     />
 
@@ -298,7 +299,7 @@ export default function InTransitShipmentListPage() {
         },
         {
             key: "fromWarehouseName",
-            label: "Điểm xuất",
+            label: "Điểm xuất phát",
             render: (value, delivery) => (
                 <div>
                     <p className="font-medium">
@@ -313,7 +314,7 @@ export default function InTransitShipmentListPage() {
         },
         {
             key: "toWarehouseName",
-            label: "Điểm nhận",
+            label: "Điểm đến",
             render: (value, delivery) => (
                 <div>
                     <p className="font-medium">
@@ -333,7 +334,7 @@ export default function InTransitShipmentListPage() {
         },
         {
             key: "expectedDeliveryAt",
-            label: "Dự kiến nhận",
+            label: "Dự kiến nhận hàng",
             render: (value) => formatDateTime(value),
         },
         {
@@ -402,7 +403,7 @@ export default function InTransitShipmentListPage() {
 
     return (
         <MainLayout
-            title="Business Staff"
+            title="Business Operations"
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
@@ -414,7 +415,7 @@ export default function InTransitShipmentListPage() {
                 <Alert type="info">
                     Trang này hiển thị các chuyến vận chuyển
                     trong hệ thống, bao gồm cả chuyến đã hoàn
-                    thành. Chọn trạng thái "Đang vận chuyển"
+                    thành. Chọn trạng thái "In Transit"
                     để chỉ xem các chuyến đang trên đường.
                     Nhân viên kinh doanh chỉ được xem và theo dõi thông tin.
                 </Alert>
@@ -452,7 +453,7 @@ export default function InTransitShipmentListPage() {
                         />
 
                         <Select
-                            label="Điểm xuất"
+                            label="Điểm xuất phát"
                             value={draftFilters.fromWarehouseId}
                             options={warehouseOptions}
                             onChange={(event) =>
@@ -464,7 +465,7 @@ export default function InTransitShipmentListPage() {
                         />
 
                         <Select
-                            label="Điểm nhận"
+                            label="Điểm đến"
                             value={draftFilters.toWarehouseId}
                             options={warehouseOptions}
                             onChange={(event) =>
@@ -489,7 +490,7 @@ export default function InTransitShipmentListPage() {
 
                         <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-3">
                             <Button type="submit">
-                                Tìm kiếm / Lọc
+                                Tìm kiếm / Bộ lọc
                             </Button>
 
                             <Button

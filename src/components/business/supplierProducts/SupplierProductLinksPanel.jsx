@@ -88,7 +88,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
         getLinksByProduct(productId, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(result)) throw new Error("Invalid supplier product links response");
+                if (!Array.isArray(result)) throw new Error("Dữ liệu liên kết sản phẩm và nhà cung cấp không hợp lệ");
                 setLinks(result);
             })
             .catch((requestError) => {
@@ -106,7 +106,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
         listSuppliers({ keyword: supplierKeyword || undefined, status: "ACTIVE", page: supplierPage, size: 20, sortBy: "name", direction: "ASC" }, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(result?.content)) throw new Error("Invalid supplier list response");
+                if (!Array.isArray(result?.content)) throw new Error("Dữ liệu danh sách nhà cung cấp không hợp lệ");
                 setSupplierOptions(result.content);
                 setSupplierTotalPages(result.totalPages ?? 0);
             })
@@ -217,7 +217,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
             key: "supplierName", label: "Nhà cung cấp",
             render: (_value, link) => (
                 <div className="space-y-1">
-                    <Link to={`/business-staff/suppliers/${link.supplierId}`} className="font-semibold text-[#c94810] hover:underline">{link.supplierName || link.supplierCode || "—"}</Link>
+                    <Link to={`/business/suppliers/${link.supplierId}`} className="font-semibold text-[#c94810] hover:underline">{link.supplierName || link.supplierCode || "—"}</Link>
                     <div className="text-xs text-slate-500">{display(link.supplierCode)} · {display(link.linkCode)}</div>
                     <StatusBadge status={link.supplierStatus} label={businessStatusLabel(link.supplierStatus)} />
                 </div>

@@ -15,15 +15,12 @@ import Select from "../../../components/ui/Select";
 import Spinner from "../../../components/ui/Spinner";
 import Table from "../../../components/ui/Table";
 
-const ROOT = "/business-staff/products";
+const ROOT = "/business/products";
 const PAGE_SIZE = 10;
 const STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
-    { value: "PENDING_CREATE", label: "Chờ duyệt tạo" },
-    { value: "PENDING_UPDATE", label: "Chờ duyệt sửa" },
-    { value: "ACTIVE", label: "Hoạt động" },
-    { value: "INACTIVE", label: "Đã ẩn" },
-    { value: "REJECTED", label: "Bị từ chối" },
+    { value: "ACTIVE", label: "Đang hoạt động" },
+    { value: "INACTIVE", label: "Ngừng hoạt động" },
     { value: "DISCONTINUED", label: "Ngừng kinh doanh" },
 ];
 
@@ -48,12 +45,12 @@ export default function ProductListPage() {
         listProducts({ status, page, size: PAGE_SIZE }, controller.signal)
             .then((result) => {
                 if (!controller.signal.aborted) {
-                    if (!Array.isArray(result?.content)) throw new Error("Danh sách sản phẩm chưa hợp lệ");
+                    if (!Array.isArray(result?.content)) throw new Error("Dữ liệu danh sách sản phẩm trả về không hợp lệ.");
                     setData(result);
                 }
             })
             .catch((requestError) => {
-                if (!controller.signal.aborted) setError(productErrorMessage(requestError, "Không tải được danh sách sản phẩm."));
+                if (!controller.signal.aborted) setError(productErrorMessage(requestError, "Không thể tải danh sách sản phẩm."));
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false); });
         return () => controller.abort();
@@ -73,12 +70,12 @@ export default function ProductListPage() {
         setError("");
         try {
             await changeProductVisibility(target.product.id, target.makeActive);
-            setNotice(`${target.makeActive ? "Khôi phục" : "Ẩn"} sản phẩm thành công.`);
+            setNotice(`${target.makeActive ? "Khôi phục" : "Ngừng hoạt động"} sản phẩm thành công.`);
             setTarget(null);
             setConfirmed(false);
             setReload((current) => current + 1);
         } catch (requestError) {
-            setError(productErrorMessage(requestError, "Không thể thay đổi trạng thái sản phẩm."));
+            setError(productErrorMessage(requestError, "Không thể cập nhật trạng thái sản phẩm."));
             setTarget(null);
         } finally {
             setSaving(false);
@@ -88,7 +85,7 @@ export default function ProductListPage() {
     const columns = [
         { key: "productCode", label: "Mã sản phẩm", render: (v, p) => <Link className="font-semibold text-[#c94810] hover:underline" to={`${ROOT}/${p.id}`}>{v || "—"}</Link> },
         { key: "name", label: "Tên sản phẩm", render: (v) => <span className="font-medium text-slate-900">{v || "—"}</span> },
-        { key: "barcode", label: "Barcode" },
+        { key: "barcode", label: "Mã vạch" },
         { key: "categoryName", label: "Danh mục", render: (v) => v || "—" },
         { key: "sellingPrice", label: "Giá bán", render: formatProductPrice },
         { key: "status", label: "Trạng thái", render: (v) => <ProductStatusBadge status={v} /> },
@@ -97,10 +94,10 @@ export default function ProductListPage() {
                 <div className="flex flex-wrap items-center gap-2">
                     <Button size="sm" variant="ghost" onClick={() => navigate(`${ROOT}/${product.id}`)}>Chi tiết</Button>
                     {(product.status === "ACTIVE" || product.status === "INACTIVE") && (
-                        <Button size="sm" variant="outline" onClick={() => navigate(`${ROOT}/${product.id}/edit`)}>Đề nghị sửa</Button>
+                        <Button size="sm" variant="outline" onClick={() => navigate(`${ROOT}/${product.id}/edit`)}>Chỉnh sửa</Button>
                     )}
                     {product.status === "ACTIVE" && (
-                        <Button size="sm" variant="danger" onClick={() => openAction(product, false)}>Ẩn</Button>
+                        <Button size="sm" variant="danger" onClick={() => openAction(product, false)}>Ngừng hoạt động</Button>
                     )}
                     {product.status === "INACTIVE" && (
                         <Button size="sm" variant="success" onClick={() => openAction(product, true)}>Khôi phục</Button>
@@ -111,12 +108,11 @@ export default function ProductListPage() {
     ];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Quản lý sản phẩm" description="Xem sản phẩm, gửi yêu cầu thêm/sửa để quản lý kinh doanh phê duyệt, ẩn và khôi phục sản phẩm."
+                <PageHeader title="Quản lý sản phẩm" description="Xem, tạo, chỉnh sửa, tạm ẩn và khôi phục sản phẩm. Mọi thay đổi đều được ghi lịch sử."
                     actions={
                         <div className="flex flex-wrap gap-2">
-                            <Button variant="outline" onClick={() => navigate(`${ROOT}/requests`)}>Yêu cầu của tôi</Button>
                             <Button variant="outline" onClick={() => navigate(`${ROOT}/import`)}>Nhập từ Excel</Button>
                             <Button onClick={() => navigate(`${ROOT}/new`)}>+ Thêm sản phẩm</Button>
                         </div>
@@ -149,7 +145,7 @@ export default function ProductListPage() {
                         </Button>
                     </>}
                 >
-                    <p className="mb-4 text-sm text-slate-700">{target?.makeActive ? "Khôi phục" : "Ẩn"} sản phẩm <strong>{target?.product?.name}</strong> (mã {target?.product?.productCode})?</p>
+                    <p className="mb-4 text-sm text-slate-700">{target?.makeActive ? "Khôi phục" : "Ngừng hoạt động"} sản phẩm <strong>{target?.product?.name}</strong> (mã {target?.product?.productCode})?</p>
                     <p className="mb-4 text-sm text-amber-700">Thao tác này thay đổi trạng thái sản phẩm nhưng không xóa sản phẩm khỏi hệ thống.</p>
                     <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi xác nhận thay đổi dữ liệu chung của nhóm." />
                 </Modal>

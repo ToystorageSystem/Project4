@@ -20,10 +20,16 @@ export async function createProduct(payload) {
     return response.data;
 }
 
-// This submits a CHANGE REQUEST; existing product values remain unchanged
-// until a Business Manager approves the request.
-export async function requestProductUpdate(productId, payload) {
-    const response = await api.post(`/products/${productId}/change-requests`, payload);
+// Cập nhật trực tiếp thông tin sản phẩm. API BE sẽ ghi lịch sử vào activity_logs.
+export async function updateProduct(productId, payload) {
+    const response = await api.put(`/products/${productId}`, payload);
+    return response.data;
+}
+
+export async function getProductHistory(productId, { page = 0, size = 10 } = {}, signal) {
+    const response = await api.get(`/products/${productId}/history`, {
+        params: { page, size }, signal,
+    });
     return response.data;
 }
 
@@ -67,8 +73,8 @@ export async function getMyProductRequests({ page = 0, size = 10 } = {}, signal)
 }
 
 export function productErrorMessage(error, fallback = "Không thực hiện được thao tác. Vui lòng thử lại.") {
-    if (error?.response?.status === 403) return "Bạn chưa được cấp quyền thực hiện thao tác này.";
-    if (!error?.response) return "Không thể kết nối hệ thống. Vui lòng thử lại.";
+    if (error?.response?.status === 403) return "Bạn không có quyền thực hiện thao tác này.";
+    if (!error?.response) return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;
     return friendlyBusinessError(error, fallback);

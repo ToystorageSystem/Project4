@@ -4,10 +4,10 @@ export default function PageHeader({
     actions,
 }) {
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <div className="bo-shared-page-header rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                    <div className="mb-2 h-1 w-12 rounded-full bg-[#f25d19]" />
+                    <div className="bo-heading-accent mb-2 h-1 w-12 rounded-full bg-[#f25d19]" />
 
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
                         {title}

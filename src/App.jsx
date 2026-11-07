@@ -1,5 +1,6 @@
 import {
     BrowserRouter,
+    useLocation,
     Navigate,
     Route,
     Routes,
@@ -8,12 +9,10 @@ import {
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import RequireRole from "./auth/RequireRole";
 import { getHomePath, ROLE } from "./auth/roleRouting";
-import BusinessStaffDashboardPage from "./pages/businessstaff/BusinessStaffDashboardPage";
-import BusinessManagerDashboardPage from "./pages/businessmanager/BusinessManagerDashboardPage";
-import ProductApprovalsPage from "./pages/businessmanager/ProductApprovalsPage";
+import BusinessDashboardPage from "./pages/business/BusinessDashboardPage";
+
 import StockTransactionsPage from "./pages/businessmanager/StockTransactionsPage";
 import BusinessActivityReportsPage from "./pages/businessmanager/BusinessActivityReportsPage";
-import PurchaseOrdersPage from "./pages/businessmanager/PurchaseOrdersPage";
 import DiscrepanciesPage from "./pages/businessmanager/DiscrepanciesPage";
 import SupplierListPage from "./pages/businessstaff/suppliers/SupplierListPage";
 import SupplierDetailPage from "./pages/businessstaff/suppliers/SupplierDetailPage";
@@ -23,8 +22,6 @@ import CategoryListPage from "./pages/businessstaff/categories/CategoryListPage"
 import ProductDetailPage from "./pages/businessstaff/products/ProductDetailPage";
 import ProductFormPage from "./pages/businessstaff/products/ProductFormPage";
 import ProductImportPage from "./pages/businessstaff/products/ProductImportPage";
-import ProductRequestsPage from "./pages/businessstaff/products/ProductRequestsPage";
-import RejectedProductsPage from "./pages/businessstaff/products/RejectedProductsPage";
 import GoodsReceiptCreatePage from "./pages/businessstaff/goodsreceipts/GoodsReceiptCreatePage";
 import GoodsReceiptDetailPage from "./pages/businessstaff/goodsreceipts/GoodsReceiptDetailPage";
 import GoodsReceiptListPage from "./pages/businessstaff/goodsreceipts/GoodsReceiptListPage";
@@ -65,6 +62,25 @@ import DispatchHandoverPage from "./pages/warehouses/dispatch/DispatchHandoverPa
 import DamagedGoodsPage from "./pages/warehouses/damagedgoods/DamagedGoodsPage.jsx";
 import DamagedGoodsDetailPage from "./pages/warehouses/damagedgoods/DamagedGoodsDetailPage.jsx";
 
+// Duong dan cu van truy cap duoc nhung URL chinh chi con /business/*.
+// API backend van la /api/business-staff/* va /api/business-manager/*.
+function LegacyBusinessRedirect() {
+    const location = useLocation();
+    let next = location.pathname;
+    if (next.startsWith("/business-manager/product-approvals")) {
+        next = next.replace("/business-manager/product-approvals", "/business/products");
+    } else if (next.startsWith("/business-manager/purchase-orders")) {
+        next = next.replace("/business-manager/purchase-orders", "/business/purchase-orders");
+    } else if (next.startsWith("/business-manager/")) {
+        next = next.replace("/business-manager/", "/business/");
+    } else if (next.startsWith("/business-staff/")) {
+        next = next.replace("/business-staff/", "/business/");
+    } else {
+        next = "/business/dashboard";
+    }
+    return <Navigate to={next + location.search + location.hash} replace />;
+}
+
 function HomeRedirect() {
     const { user } = useAuth();
     return <Navigate to={user ? getHomePath(user) : "/login"} replace />;
@@ -78,70 +94,70 @@ export default function App() {
                     <Route path="/login" element={<Login />} />
 
                     {/* Business routes are checked in the FE and enforced by BE @PreAuthorize. */}
-                    <Route element={<RequireRole authority={ROLE.BUSINESS_STAFF} />}>
-                        <Route path="/business-staff/dashboard" element={<BusinessStaffDashboardPage />} />
-                        <Route path="/business-staff/suppliers" element={<SupplierListPage />} />
-                        <Route path="/business-staff/suppliers/new" element={<SupplierFormPage />} />
-                        <Route path="/business-staff/suppliers/:supplierId/edit" element={<SupplierFormPage />} />
-                        <Route path="/business-staff/suppliers/:supplierId" element={<SupplierDetailPage />} />
-                        <Route path="/business-staff/products" element={<ProductListPage />} />
+                    <Route element={<RequireRole authority={ROLE.BUSINESS_OPERATIONS} />}>
+                        <Route path="/business" element={<Navigate to="/business/dashboard" replace />} />
+                        <Route path="/business/dashboard" element={<BusinessDashboardPage />} />
+                        <Route path="/business/suppliers" element={<SupplierListPage />} />
+                        <Route path="/business/suppliers/new" element={<SupplierFormPage />} />
+                        <Route path="/business/suppliers/:supplierId/edit" element={<SupplierFormPage />} />
+                        <Route path="/business/suppliers/:supplierId" element={<SupplierDetailPage />} />
+                        <Route path="/business/products" element={<ProductListPage />} />
                         <Route
-                            path="/business-staff/categories"
+                            path="/business/categories"
                             element={<CategoryListPage />}
                         />
-                        <Route path="/business-staff/products/new" element={<ProductFormPage />} />
-                        <Route path="/business-staff/products/import" element={<ProductImportPage />} />
-                        <Route path="/business-staff/products/requests" element={<ProductRequestsPage />} />
-                        <Route path="/business-staff/products/rejected" element={<RejectedProductsPage />} />
-                        <Route path="/business-staff/products/:productId/edit" element={<ProductFormPage />} />
-                        <Route path="/business-staff/products/:productId" element={<ProductDetailPage />} />
-                        <Route path="/business-staff/goods-receipts" element={<GoodsReceiptCreatePage />} />
-                        <Route path="/business-staff/goods-receipts/list" element={<GoodsReceiptListPage />} />
-                        <Route path="/business-staff/goods-receipts/:receiptId" element={<GoodsReceiptDetailPage />} />
-                        <Route path="/business-staff/purchase-orders" element={<PurchaseOrderListPage />} />
-                        <Route path="/business-staff/purchase-orders/new" element={<PurchaseOrderFormPage />} />
-                        <Route path="/business-staff/purchase-orders/:orderId/edit" element={<PurchaseOrderFormPage />} />
-                        <Route path="/business-staff/purchase-orders/:orderId" element={<PurchaseOrderDetailPage />} />
-                        <Route path="/business-staff/supplier-invoices" element={<SupplierInvoiceListPage />} />
-                        <Route path="/business-staff/supplier-invoices/new" element={<SupplierInvoiceFormPage />} />
-                        <Route path="/business-staff/supplier-invoices/:invoiceId/edit" element={<SupplierInvoiceFormPage />} />
-                        <Route path="/business-staff/supplier-invoices/:invoiceId" element={<SupplierInvoiceDetailPage />} />
+                        <Route path="/business/products/new" element={<ProductFormPage />} />
+                        <Route path="/business/products/import" element={<ProductImportPage />} />
+                        <Route path="/business/products/requests" element={<Navigate to="/business/products" replace />} />
+                        <Route path="/business/products/rejected" element={<Navigate to="/business/products" replace />} />
+                        <Route path="/business/products/:productId/edit" element={<ProductFormPage />} />
+                        <Route path="/business/products/:productId" element={<ProductDetailPage />} />
+                        <Route path="/business/goods-receipts" element={<GoodsReceiptCreatePage />} />
+                        <Route path="/business/goods-receipts/list" element={<GoodsReceiptListPage />} />
+                        <Route path="/business/goods-receipts/:receiptId" element={<GoodsReceiptDetailPage />} />
+                        <Route path="/business/purchase-orders" element={<PurchaseOrderListPage />} />
+                        <Route path="/business/purchase-orders/new" element={<PurchaseOrderFormPage />} />
+                        <Route path="/business/purchase-orders/:orderId/edit" element={<PurchaseOrderFormPage />} />
+                        <Route path="/business/purchase-orders/:orderId" element={<PurchaseOrderDetailPage />} />
+                        <Route path="/business/supplier-invoices" element={<SupplierInvoiceListPage />} />
+                        <Route path="/business/supplier-invoices/new" element={<SupplierInvoiceFormPage />} />
+                        <Route path="/business/supplier-invoices/:invoiceId/edit" element={<SupplierInvoiceFormPage />} />
+                        <Route path="/business/supplier-invoices/:invoiceId" element={<SupplierInvoiceDetailPage />} />
                         {/* Business Staff - Danh sach phieu dieu chuyen cua toi */}
-                        <Route path="/business-staff/stock-transfers" element={<StockTransferListPage />} />
-                        <Route path="/business-staff/stock-transfers/new" element={<StockTransferCreatePage />} />
-                        <Route path="/business-staff/stock-transfers/:transferId/edit" element={<StockTransferCreatePage />} />
-                        <Route path="/business-staff/stock-transfers/:transferId" element={<StockTransferDetailPage />} />
+                        <Route path="/business/stock-transfers" element={<StockTransferListPage />} />
+                        <Route path="/business/stock-transfers/new" element={<StockTransferCreatePage />} />
+                        <Route path="/business/stock-transfers/:transferId/edit" element={<StockTransferCreatePage />} />
+                        <Route path="/business/stock-transfers/:transferId" element={<StockTransferDetailPage />} />
                         {/* Issue #13 - In-Transit Shipment Tracking */}
                         <Route
-                            path="/business-staff/in-transit-shipments"
+                            path="/business/in-transit-shipments"
                             element={<InTransitShipmentListPage />}
                         />
                         <Route
-                            path="/business-staff/in-transit-shipments/:deliveryId"
+                            path="/business/in-transit-shipments/:deliveryId"
                             element={<InTransitShipmentDetailPage />}
                         />
                         {/* Issue #14 - Shipment Manifests */}
                         <Route
-                            path="/business-staff/shipment-manifests"
+                            path="/business/shipment-manifests"
                             element={<ShipmentManifestListPage />}
                         />
                         <Route
-                            path="/business-staff/shipment-manifests/:manifestId"
+                            path="/business/shipment-manifests/:manifestId"
                             element={<ShipmentManifestDetailPage />}
                         />
                         {/* Issue #15 - Inventory Report */}
                         <Route
-                            path="/business-staff/inventory-report"
+                            path="/business/inventory-report"
                             element={<InventoryReportPage />}
                         />
-                    </Route>
-                    <Route element={<RequireRole authority={ROLE.BUSINESS_MANAGER} />}>
-                        <Route path="/business-manager/dashboard" element={<BusinessManagerDashboardPage />} />
-                        <Route path="/business-manager/product-approvals" element={<ProductApprovalsPage />} />
-                        <Route path="/business-manager/stock-transactions" element={<StockTransactionsPage />} />
-                        <Route path="/business-manager/activity-reports" element={<BusinessActivityReportsPage />} />
-                        <Route path="/business-manager/purchase-orders" element={<PurchaseOrdersPage />} />
-                        <Route path="/business-manager/discrepancies" element={<DiscrepanciesPage />} />
+                        <Route path="/business/approvals/products" element={<Navigate to="/business/products" replace />} />
+                        <Route path="/business/stock-transactions" element={<StockTransactionsPage />} />
+                        <Route path="/business/activity-reports" element={<BusinessActivityReportsPage />} />
+                        <Route path="/business/approvals/purchase-orders" element={<Navigate to="/business/purchase-orders" replace />} />
+                        <Route path="/business/discrepancies" element={<DiscrepanciesPage />} />
+                        <Route path="/business-staff/*" element={<LegacyBusinessRedirect />} />
+                        <Route path="/business-manager/*" element={<LegacyBusinessRedirect />} />
                     </Route>
 
                     <Route path="/warehouse/receiving/pending" element={<ReceivingPendingPage />} />

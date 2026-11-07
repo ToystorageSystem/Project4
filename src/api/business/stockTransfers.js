@@ -72,12 +72,12 @@ export async function cancelStockTransfer(transferId, reason) {
     return response.data;
 }
 
-export function stockTransferErrorMessage(error, fallback = "Không tải được dữ liệu điều chuyển hàng.") {
-    if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.";
+export function stockTransferErrorMessage(error, fallback = "Không thể tải dữ liệu phiếu điều chuyển.") {
+    if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
     if (error?.response?.status === 403) return "Bạn chưa được cấp quyền điều chuyển hàng.";
     if (!error?.response) {
         if (!error?.isAxiosError && error?.message) return error.message;
-        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
+        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
     }
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;

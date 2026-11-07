@@ -11,7 +11,7 @@ const cleanParams = (filters) =>
 
 export async function listStockTransactions(type, filters = {}, signal) {
     if (!["imports", "exports"].includes(type)) {
-        throw new Error("Invalid stock transaction type");
+        throw new Error("Loại giao dịch tồn kho không hợp lệ");
     }
 
     const response = await api.get(`${BASE}/${type}`, {
@@ -24,7 +24,7 @@ export async function listStockTransactions(type, filters = {}, signal) {
 
 export async function getStockTransactionDetail(type, id, signal) {
     if (!["imports", "exports"].includes(type)) {
-        throw new Error("Invalid stock transaction type");
+        throw new Error("Loại giao dịch tồn kho không hợp lệ");
     }
 
     const response = await api.get(`${BASE}/${type}/${id}`, {

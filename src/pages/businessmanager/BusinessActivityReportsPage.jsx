@@ -22,48 +22,48 @@ const METRICS = {
     exports: [
         ["totalExports", "Tổng phiếu xuất"],
         ["shippedExports", "Phiếu đã xuất hàng"],
-        ["totalShippedQuantity", "Số lượng đã gửi"],
+        ["totalShippedQuantity", "Số lượng đã xuất"],
     ],
     transfers: [
-        ["totalTransfers", "Tổng phiếu điều chuyển"],
+        ["totalTransfers", "Tổng số phiếu điều chuyển"],
         ["completedTransfers", "Phiếu đã hoàn tất"],
-        ["totalShippedQuantity", "Số lượng đã gửi"],
+        ["totalShippedQuantity", "Số lượng đã xuất"],
     ],
     inventory: [
         ["totalProducts", "Sản phẩm khác nhau"],
         ["totalBalanceRecords", "Vị trí có hàng"],
         ["totalQuantity", "Tồn vật lý"],
         ["totalReservedQuantity", "Đã tạm giữ"],
-        ["totalAvailableQuantity", "Tồn khả dụng"],
+        ["totalAvailableQuantity", "Tồn kho khả dụng"],
     ],
 };
 
 const COLUMNS = {
     imports: [
-        ["receiptCode", "Mã phiếu"],
-        ["warehouseName", "Kho nhập"],
+        ["receiptCode", "Mã chứng từ"],
+        ["warehouseName", "Kho nhận hàng"],
         ["status", "Trạng thái"],
         ["createdAt", "Ngày tạo"],
         ["receivedAt", "Ngày nhận"],
         ["acceptedQuantity", "Số lượng chấp nhận"],
     ],
     exports: [
-        ["transferCode", "Mã phiếu"],
-        ["fromWarehouseName", "Kho xuất"],
-        ["toWarehouseName", "Kho nhận"],
+        ["transferCode", "Mã chứng từ"],
+        ["fromWarehouseName", "Kho xuất hàng"],
+        ["toWarehouseName", "Kho/cửa hàng nhận"],
         ["status", "Trạng thái"],
         ["createdAt", "Ngày tạo"],
         ["shippedAt", "Ngày xuất"],
-        ["shippedQuantity", "Số lượng đã gửi"],
+        ["shippedQuantity", "Số lượng đã xuất"],
     ],
     transfers: [
-        ["transferCode", "Mã phiếu"],
+        ["transferCode", "Mã chứng từ"],
         ["fromWarehouseName", "Kho gửi"],
-        ["toWarehouseName", "Kho nhận"],
+        ["toWarehouseName", "Kho/cửa hàng nhận"],
         ["status", "Trạng thái"],
         ["createdAt", "Ngày tạo"],
         ["shippedAt", "Ngày xuất"],
-        ["shippedQuantity", "Số lượng đã gửi"],
+        ["shippedQuantity", "Số lượng đã xuất"],
     ],
     inventory: [
         ["productCode", "Mã sản phẩm"],
@@ -82,10 +82,10 @@ const STATUS_LABELS = {
     CREATED: "Đã tạo",
     RECEIVING: "Đang nhận",
     INSPECTED: "Đã kiểm hàng",
-    COMPLETED: "Hoàn tất",
+    COMPLETED: "Đã hoàn thành",
     CANCELLED: "Đã hủy",
     PICKING: "Đang lấy hàng",
-    PACKING: "Đang đóng gói",
+    PACKING: "Đang đóng kiện",
     SHIPPED: "Đã xuất hàng",
     IN_TRANSIT: "Đang vận chuyển",
     CONFIRMED: "Đã xác nhận",
@@ -286,7 +286,7 @@ export default function BusinessActivityReportsPage() {
     }
 
     return (
-        <MainLayout title="Business Manager" items={businessManagerMenuItems}>
+        <MainLayout title="Business Operations" items={businessManagerMenuItems}>
             <div className="mx-auto max-w-7xl space-y-5 px-3 py-6 sm:px-6 lg:py-10">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Xem báo cáo hoạt động</h1>

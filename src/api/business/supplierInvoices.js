@@ -54,13 +54,13 @@ export async function uploadSupplierInvoiceAttachment(invoiceId, file) {
 
 export function supplierInvoiceErrorMessage(error, fallback = "Không tải được danh sách hóa đơn nhà cung cấp.") {
     if (error?.response?.status === 403) {
-        return "Bạn chưa được cấp quyền thực hiện thao tác này.";
+        return "Bạn không có quyền thực hiện thao tác này.";
     }
     if (error?.response?.status === 401) {
-        return "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.";
+        return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
     }
     if (!error?.response) {
-        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
+        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
     }
     const body = error.response.data;
     const message = typeof body === "string" ? body : body?.message;

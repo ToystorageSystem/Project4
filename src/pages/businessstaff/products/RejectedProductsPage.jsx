@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -260,7 +261,7 @@ const COMPARISON_FIELDS = [
     },
     {
         key: "purchasePrice",
-        label: "Giá nhập",
+        label: "Giá mua",
         price: true,
     },
     {
@@ -680,7 +681,7 @@ export default function RejectedProductsPage() {
 
     return (
         <MainLayout
-            title="Business Staff"
+            title="Business Operations"
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
@@ -697,7 +698,7 @@ export default function RejectedProductsPage() {
 
                         <Link
                             className="text-sm font-medium text-orange-700 underline"
-                            to="/business-staff/products/requests"
+                            to="/business/products/requests"
                         >
                             Xem lịch sử các yêu cầu của tôi
                         </Link>
@@ -955,7 +956,7 @@ export default function RejectedProductsPage() {
                                     Trạng thái
                                 </dt>
                                 <dd className="font-medium">
-                                    {detail.status || "—"}
+                                    {detail.status ? formatBusinessStatus(detail.status) : "—"}
                                 </dd>
                             </div>
 
@@ -1082,7 +1083,7 @@ export default function RejectedProductsPage() {
                                         />
 
                                         <FormField
-                                            label="Barcode"
+                                            label="Mã vạch"
                                             required
                                             maxLength={100}
                                             value={form.barcode}
@@ -1172,7 +1173,7 @@ export default function RejectedProductsPage() {
                                         />
 
                                         <FormField
-                                            label="Giá nhập"
+                                            label="Giá mua"
                                             required
                                             type="number"
                                             min="0.01"

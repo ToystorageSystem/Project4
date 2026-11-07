@@ -12,7 +12,7 @@ import Input from "../../../components/ui/Input";
 import Spinner from "../../../components/ui/Spinner";
 import TextArea from "../../../components/ui/TextArea";
 
-const ROOT = "/business-staff/suppliers";
+const ROOT = "/business/suppliers";
 const EMPTY_FORM = {
     name: "",
     taxCode: "",
@@ -141,7 +141,7 @@ export default function SupplierFormPage() {
     };
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title={editing ? "Chỉnh sửa nhà cung cấp" : "Thêm nhà cung cấp"}
@@ -194,7 +194,7 @@ export default function SupplierFormPage() {
                             <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
                                 <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${supplierId}` : ROOT)}>Hủy</Button>
                                 <Button type="submit" disabled={saving || !confirmedSharedData}>
-                                    {saving ? "Đang lưu..." : editing ? "Lưu thay đổi" : "Tạo nhà cung cấp"}
+                                    {saving ? "Saving..." : editing ? "Lưu thay đổi" : "Tạo nhà cung cấp"}
                                 </Button>
                             </div>
                         </form>

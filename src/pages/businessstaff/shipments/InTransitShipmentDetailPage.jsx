@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { formatBusinessStatus } from "../../../utils/viStatus";
 
 import {
     getInTransitShipmentDetail,
@@ -20,18 +21,18 @@ import Table from "../../../components/ui/Table";
 // Issue #13 - Chi tiet hang dang van chuyen.
 // Business Staff chi duoc xem du lieu.
 
-const ROOT = "/business-staff/in-transit-shipments";
+const ROOT = "/business/in-transit-shipments";
 
 const STATUS_LABELS = {
     CREATED: "Đã tạo",
     ASSIGNED: "Đã phân công",
     ACCEPTED: "Đã nhận chuyến",
-    REJECTED: "Đã từ chối",
-    READY_TO_SHIP: "Sẵn sàng giao",
+    REJECTED: "Bị từ chối",
+    READY_TO_SHIP: "Sẵn sàng giao hàng",
     IN_TRANSIT: "Đang vận chuyển",
     ARRIVED: "Đã đến điểm nhận",
     DELIVERED: "Đã giao thành công",
-    FAILED: "Giao thất bại",
+    FAILED: "Giao hàng thất bại",
     CANCELLED: "Đã hủy",
 };
 
@@ -79,7 +80,7 @@ function StatusBadge({ status }) {
                 colors[status] || "bg-slate-100 text-slate-700"
             }`}
         >
-            {STATUS_LABELS[status] || status || "Chưa xác định"}
+            {STATUS_LABELS[status] || formatBusinessStatus(status)}
         </span>
     );
 }
@@ -106,7 +107,7 @@ const transferColumns = [
         render: (value, transfer) =>
             transfer.transferId != null ? (
                 <Link
-                    to={`/business-staff/stock-transfers/${transfer.transferId}`}
+                    to={`/business/stock-transfers/${transfer.transferId}`}
                     className="font-semibold text-[#c94810] hover:underline"
                 >
                     {value || "—"}
@@ -124,11 +125,11 @@ const transferColumns = [
     {
         key: "transferStatus",
         label: "Trạng thái",
-        render: (value) => value || "—",
+        render: (value) => value ? formatBusinessStatus(value) : "—",
     },
     {
         key: "totalRequestedQuantity",
-        label: "SL yêu cầu",
+        label: "Số lượng yêu cầu",
         render: formatNumber,
     },
     {
@@ -143,7 +144,7 @@ const transferColumns = [
     },
     {
         key: "expectedReceiptDate",
-        label: "Dự kiến nhận",
+        label: "Dự kiến nhận hàng",
         render: (value) => value || "—",
     },
 ];
@@ -160,7 +161,7 @@ const transferProductColumns = [
     },
     {
         key: "barcode",
-        label: "Barcode",
+        label: "Mã vạch",
     },
     {
         key: "baseUnit",
@@ -173,7 +174,7 @@ const transferProductColumns = [
     },
     {
         key: "approvedQuantity",
-        label: "Duyệt",
+        label: "Phê duyệt",
         render: formatNumber,
     },
     {
@@ -183,7 +184,7 @@ const transferProductColumns = [
     },
     {
         key: "shippedQuantity",
-        label: "Đã xuất",
+        label: "Đã xuất hàng",
         render: formatNumber,
     },
     {
@@ -205,7 +206,7 @@ const packageProductColumns = [
     },
     {
         key: "barcode",
-        label: "Barcode",
+        label: "Mã vạch",
     },
     {
         key: "baseUnit",
@@ -294,7 +295,7 @@ export default function InTransitShipmentDetailPage() {
 
     return (
         <MainLayout
-            title="Business Staff"
+            title="Business Operations"
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
@@ -382,7 +383,7 @@ export default function InTransitShipmentDetailPage() {
                                     value={
                                         delivery.manifestId != null ? (
                                             <Link
-                                                to={`/business-staff/shipment-manifests/${delivery.manifestId}`}
+                                                to={`/business/shipment-manifests/${delivery.manifestId}`}
                                                 className="text-[#c94810] hover:underline"
                                             >
                                                 {delivery.manifestCode || "—"}
@@ -425,12 +426,12 @@ export default function InTransitShipmentDetailPage() {
                         <div className="grid gap-4 md:grid-cols-2">
                             <Card>
                                 <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                    Điểm xuất
+                                    Điểm xuất phát
                                 </h3>
 
                                 <div className="space-y-4">
                                     <InfoItem
-                                        label="Kho / cửa hàng"
+                                        label="Kho / Cửa hàng"
                                         value={delivery.fromWarehouseName}
                                     />
 
@@ -448,12 +449,12 @@ export default function InTransitShipmentDetailPage() {
 
                             <Card>
                                 <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                    Điểm nhận
+                                    Điểm đến
                                 </h3>
 
                                 <div className="space-y-4">
                                     <InfoItem
-                                        label="Kho / cửa hàng"
+                                        label="Kho / Cửa hàng"
                                         value={delivery.toWarehouseName}
                                     />
 
@@ -474,7 +475,7 @@ export default function InTransitShipmentDetailPage() {
                         <div className="grid gap-4 sm:grid-cols-3">
                             {[
                                 [
-                                    "Tổng phiếu điều chuyển",
+                                    "Tổng số phiếu điều chuyển",
                                     delivery.totalTransfers,
                                 ],
                                 [

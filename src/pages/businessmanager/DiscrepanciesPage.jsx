@@ -244,7 +244,7 @@ export default function DiscrepanciesPage() {
     };
 
     return (
-        <MainLayout title="Business Manager" items={businessManagerMenuItems}>
+        <MainLayout title="Business Operations" items={businessManagerMenuItems}>
             <div className="space-y-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1"><PageHeader title={T.title} description={T.desc} /></div>
@@ -312,8 +312,8 @@ export default function DiscrepanciesPage() {
                                     <Definition title="Người xác nhận kho" value={detail.warehouseConfirmedByName}/>
                                     <Definition title="Thời gian xác nhận kho" value={time(detail.warehouseConfirmedAt)}/>
                                 </> : <>
-                                    <Definition title="Kho xuất" value={`${detail.fromWarehouseName || detail.fromWarehouseCode || "\u2014"}`}/>
-                                    <Definition title="Kho nhận" value={`${detail.toWarehouseName || detail.toWarehouseCode || "\u2014"}`}/>
+                                    <Definition title="Kho xuất hàng" value={`${detail.fromWarehouseName || detail.fromWarehouseCode || "\u2014"}`}/>
+                                    <Definition title="Kho/cửa hàng nhận" value={`${detail.toWarehouseName || detail.toWarehouseCode || "\u2014"}`}/>
                                     <Definition title="Người xác nhận kho" value={detail.warehouseConfirmedByName}/>
                                     <Definition title="Phiếu nhận của cửa hàng" value={detail.storeReceiptCode || detail.storeReceiptId}/>
                                     <Definition title="Trạng thái phiếu nhận" value={detail.storeReceiptStatus}/>

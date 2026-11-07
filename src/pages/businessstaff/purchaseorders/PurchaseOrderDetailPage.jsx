@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "../../../auth/AuthContext";
 import {
     cancelPurchaseOrder,
     getPurchaseOrderDetail,
+    getPurchaseOrderCancellationHistory,
     listPurchaseOrderCancellationRequests,
-    requestPurchaseOrderCancellation,
     purchaseOrderErrorMessage,
     submitPurchaseOrder,
 } from "../../../api/business/purchaseOrders";
@@ -32,12 +31,12 @@ import SupplierFeedbackPanel from "./SupplierFeedbackPanel";
 import RelatedGoodsReceipts from "../goodsreceipts/RelatedGoodsReceipts";
 
 
-const ROOT = "/business-staff/purchase-orders";
+const ROOT = "/business/purchase-orders";
 
 const cancellationStatusNames = {
     PENDING: "Chờ xét duyệt",
     APPROVED: "Đã đồng ý hủy",
-    REJECTED: "Đã từ chối",
+    REJECTED: "Bị từ chối",
 };
 
 function DetailField({ label, value }) {
@@ -51,7 +50,6 @@ function DetailField({ label, value }) {
 
 export default function PurchaseOrderDetailPage() {
     const { orderId } = useParams();
-    const { user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [detail, setDetail] = useState(null);
@@ -68,6 +66,10 @@ export default function PurchaseOrderDetailPage() {
     const [cancellationRequests, setCancellationRequests] = useState([]);
     const [cancellationLoading, setCancellationLoading] = useState(false);
     const [cancellationError, setCancellationError] = useState("");
+    const [cancellationCheckedId, setCancellationCheckedId] = useState(null);
+    const [cancellationHistory, setCancellationHistory] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyError, setHistoryError] = useState("");
 
     useEffect(() => {
         const controller = new AbortController();
@@ -97,16 +99,23 @@ export default function PurchaseOrderDetailPage() {
 
     useEffect(() => {
         const controller = new AbortController();
-        if (!detail?.id || Number(detail.createdById) !== Number(user?.id)) {
+        // Tất cả Business Operations được xem lịch sử yêu cầu hủy cũ.
+        // Không phụ thuộc người đã tạo Purchase Order.
+        setCancellationCheckedId(null);
+        if (!detail?.id) {
             setCancellationRequests([]);
             setCancellationError("");
+            setCancellationLoading(false);
             return () => controller.abort();
         }
         setCancellationLoading(true);
         setCancellationError("");
         listPurchaseOrderCancellationRequests(detail.id, controller.signal)
             .then((rows) => {
-                if (!controller.signal.aborted) setCancellationRequests(Array.isArray(rows) ? rows : []);
+                if (!controller.signal.aborted) {
+                    setCancellationRequests(Array.isArray(rows) ? rows : []);
+                    setCancellationCheckedId(detail.id);
+                }
             })
             .catch((requestError) => {
                 if (!controller.signal.aborted) setCancellationError(purchaseOrderErrorMessage(requestError));
@@ -115,19 +124,57 @@ export default function PurchaseOrderDetailPage() {
                 if (!controller.signal.aborted) setCancellationLoading(false);
             });
         return () => controller.abort();
-    }, [detail?.id, detail?.createdById, refresh, user?.id]);
+    }, [detail?.id, refresh]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        setCancellationHistory([]);
+        setHistoryError("");
+        if (!detail?.id || detail.status !== "CANCELLED") {
+            setHistoryLoading(false);
+            return () => controller.abort();
+        }
+        setHistoryLoading(true);
+        getPurchaseOrderCancellationHistory(detail.id, controller.signal)
+            .then((rows) => {
+                if (!controller.signal.aborted) setCancellationHistory(Array.isArray(rows) ? rows : []);
+            })
+            .catch((requestError) => {
+                if (!controller.signal.aborted) {
+                    setHistoryError(purchaseOrderErrorMessage(requestError));
+                }
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setHistoryLoading(false);
+            });
+        return () => controller.abort();
+    }, [detail?.id, detail?.status, refresh]);
 
     const canSubmit = detail?.status === "DRAFT" && Array.isArray(detail.items) && detail.items.length > 0;
-    // Conservative UI guard: Backend currently does not fully protect partially received orders from cancellation.
-    // Only expose cancellation for DRAFT orders; never offer it for already ordered/received or PO-AUTO orders.
-    const isCreator = Boolean(user?.id) && Number(user.id) === Number(detail?.createdById);
+    // Business Operations được hủy PO do bất kỳ nhân viên Business nào lập.
+    // Backend vẫn kiểm tra GR, hóa đơn và trạng thái trong một transaction.
     const hasPendingCancellation = cancellationRequests.some((row) => row.status === "PENDING");
-    const canCancel = detail?.status === "DRAFT" && isCreator && !String(detail.orderCode || "").startsWith("PO-AUTO-");
-    const canRequestCancellation = detail?.status === "ORDERED" && isCreator
-        && !cancellationLoading && !cancellationError && !hasPendingCancellation
-        && !String(detail.orderCode || "").startsWith("PO-AUTO-")
-        && Array.isArray(detail.items)
-        && detail.items.every((item) => Number(item.receivedQuantity || 0) === 0);
+    const isAutoGenerated = String(detail?.orderCode || "").startsWith("PO-AUTO-");
+    const hasReceivedQuantity = Array.isArray(detail?.items)
+        && detail.items.some((item) => Number(item.receivedQuantity || 0) > 0);
+    const cancellationCheckReady = Boolean(detail?.id) && cancellationCheckedId === detail.id
+        && !cancellationLoading && !cancellationError && !hasPendingCancellation;
+    const canCancel = detail?.status === "DRAFT" && cancellationCheckReady && !isAutoGenerated;
+    const canCancelOrdered = detail?.status === "ORDERED" && cancellationCheckReady
+        && !isAutoGenerated && Array.isArray(detail.items) && !hasReceivedQuantity;
+    const cancellationBlockedReason = ["DRAFT", "ORDERED"].includes(detail?.status)
+        ? isAutoGenerated
+            ? "Đơn mua hàng tạo tự động cần kiểm tra riêng trước khi hủy."
+            : cancellationError
+                ? "Chưa kiểm tra được các yêu cầu hủy cũ. Hãy làm mới trang."
+                : !cancellationCheckReady && !hasPendingCancellation
+                    ? "Đang kiểm tra trạng thái yêu cầu hủy..."
+                    : hasPendingCancellation
+                        ? "Đơn đang có yêu cầu hủy từ quy trình cũ cần đối soát."
+                        : hasReceivedQuantity
+                            ? "Đơn đã có số lượng hàng nhận, không thể hủy."
+                            : ""
+        : "";
 
     const openAction = (type) => {
         if (actionBusy) return;
@@ -151,31 +198,25 @@ export default function PurchaseOrderDetailPage() {
     const performAction = async () => {
         if (actionBusy || !actionConfirmed || !detail?.id) return;
         if (actionType === "submit" && !canSubmit) return;
-        if (actionType === "cancel" && (!canCancel || !cancelReason.trim())) return;
-        if (actionType === "requestCancel" && (
-            !canRequestCancellation || cancelReason.trim().length < 10 || !supplierAgreed
-        )) return;
-        if (!["submit", "cancel", "requestCancel"].includes(actionType)) return;
+        if (actionType === "cancel") {
+            const allowed = canCancel || canCancelOrdered;
+            const reason = cancelReason.trim();
+            if (!allowed || reason.length < (detail.status === "ORDERED" ? 10 : 1)
+                || reason.length > 1000) return;
+            if (detail.status === "ORDERED" && !supplierAgreed) return;
+        }
+        if (!["submit", "cancel"].includes(actionType)) return;
         setActionBusy(true);
         setActionError("");
         try {
-            if (actionType === "requestCancel") {
-                const response = await requestPurchaseOrderCancellation(detail.id, {
-                    reason: cancelReason.trim(),
-                    supplierAgreed: true,
-                });
-                if (!response?.id) throw new Error("Chưa xác nhận được yêu cầu hủy đã được lưu. Vui lòng kiểm tra lại lịch sử trước khi gửi lần nữa.");
-                setActionSuccess("Đã gửi đề nghị hủy đơn. Đơn mua hàng vẫn có hiệu lực cho đến khi quản lý xét duyệt.");
-            } else {
-                const result = actionType === "submit"
-                    ? await submitPurchaseOrder(detail.id)
-                    : await cancelPurchaseOrder(detail.id, cancelReason);
-                if (!result?.id) throw new Error("Chưa xác nhận được kết quả. Vui lòng tải lại đơn hàng để kiểm tra.");
-                setDetail(result);
-                setActionSuccess(actionType === "submit"
-                    ? "Đã gửi đơn mua hàng thành công."
-                    : "Đã hủy đơn mua hàng nháp.");
-            }
+            const result = actionType === "submit"
+                ? await submitPurchaseOrder(detail.id)
+                : await cancelPurchaseOrder(detail.id, cancelReason, detail.status === "ORDERED" && supplierAgreed);
+            if (!result?.id) throw new Error("Operation result is not confirmed. Refresh the order before retrying.");
+            setDetail(result);
+            setActionSuccess(actionType === "submit"
+                ? "Đã gửi đơn mua hàng thành công."
+                : "Đã hủy đơn mua hàng. Lịch sử vẫn được giữ lại.");
             setActionType("");
             setActionConfirmed(false);
             setCancelReason("");
@@ -192,25 +233,26 @@ export default function PurchaseOrderDetailPage() {
         { key: "productCode", label: "Mã sản phẩm", render: (value) => value || "—" },
         { key: "productName", label: "Tên sản phẩm", render: (value) => value || "—" },
         { key: "baseUnit", label: "Đơn vị", render: (value) => value || "—" },
-        { key: "orderedQuantity", label: "SL đặt", render: (value) => value ?? "—" },
-        { key: "receivedQuantity", label: "SL nhận", render: (value) => value ?? "—" },
+        { key: "orderedQuantity", label: "Số lượng đặt", render: (value) => value ?? "—" },
+        { key: "receivedQuantity", label: "Số lượng đã nhận", render: (value) => value ?? "—" },
         { key: "unitPrice", label: "Đơn giá", render: formatPurchaseOrderMoney },
         { key: "lineTotal", label: "Thành tiền", render: formatPurchaseOrderMoney },
     ];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title="Chi tiết đơn mua hàng"
                     description="Xem sản phẩm, nhà cung cấp và tiến độ xử lý đơn hàng. Bạn chỉ có thể sửa đơn còn ở trạng thái nháp."
                     actions={
                         <div className="flex flex-wrap gap-2">
-                            <Button type="button" variant="outline" onClick={() => navigate(ROOT)}>← Danh sách</Button>
+                            <Button type="button" variant="outline" onClick={() => navigate(ROOT)}>← Quay lại danh sách</Button>
                             {detail?.status === "DRAFT" && <Button type="button" onClick={() => navigate(`${ROOT}/${orderId}/edit`)}>Sửa đơn nháp</Button>}
                             {canSubmit && <Button type="button" disabled={actionBusy} onClick={() => openAction("submit")}>Gửi đơn cho nhà cung cấp</Button>}
+
                             {canCancel && <Button type="button" variant="danger" disabled={actionBusy} onClick={() => openAction("cancel")}>Hủy đơn nháp</Button>}
-                            {canRequestCancellation && <Button type="button" variant="danger" disabled={actionBusy} onClick={() => openAction("requestCancel")}>Đề nghị hủy đơn</Button>}
+                            {canCancelOrdered && <Button type="button" variant="danger" disabled={actionBusy} onClick={() => openAction("cancel")}>Hủy đơn đã đặt</Button>}
                             <Button type="button" variant="ghost" disabled={actionBusy} onClick={() => setRefresh((value) => value + 1)}>Làm mới</Button>
                         </div>
                     }
@@ -218,6 +260,7 @@ export default function PurchaseOrderDetailPage() {
                 {location.state?.notice && <Alert type="success">{location.state.notice}</Alert>}
                 {actionSuccess && <div role="status"><Alert type="success">{actionSuccess}</Alert></div>}
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
+                {cancellationBlockedReason && !loading && <Alert type="warning">{cancellationBlockedReason}</Alert>}
                 {loading ? (
                     <div className="flex items-center gap-3 rounded-2xl bg-white p-7 text-sm text-slate-600" role="status">
                         <Spinner /> Đang tải chi tiết đơn mua hàng...
@@ -237,19 +280,35 @@ export default function PurchaseOrderDetailPage() {
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <DetailField label="Nhà cung cấp" value={detail.supplierName} />
-                                <DetailField label="Kho nhận" value={detail.warehouseName} />
+                                <DetailField label="Kho/cửa hàng nhận" value={detail.warehouseName} />
                                 <DetailField label="Dự kiến giao hàng" value={formatExpectedDeliveryDate(detail.expectedDeliveryDate)} />
                                 <DetailField label="Người tạo" value={detail.createdByName} />
                                 <DetailField label="Ngày tạo" value={formatPurchaseOrderDate(detail.createdAt)} />
                                 <DetailField label="Cập nhật lần cuối" value={formatPurchaseOrderDate(detail.updatedAt)} />
-                                <DetailField label="Người duyệt" value={detail.approvedByName || "—"} />
-                                <DetailField label="Số mặt hàng" value={detail.totalProducts ?? "—"} />
+                                <DetailField label="Số dòng sản phẩm" value={detail.totalProducts ?? "—"} />
                                 <DetailField label="Tổng lượng đặt" value={detail.totalOrderedQuantity ?? "—"} />
                             </div>
                             {detail.note && <p className="mt-5 whitespace-pre-wrap rounded-xl bg-slate-50 p-4 text-sm text-slate-700">Ghi chú: {detail.note}</p>}
                             {detail.cancelReason && <p className="mt-3 whitespace-pre-wrap rounded-xl bg-rose-50 p-4 text-sm text-rose-800">Lý do hủy: {detail.cancelReason}</p>}
                             {detail.rejectionReason && <p className="mt-3 whitespace-pre-wrap rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Lý do từ chối: {detail.rejectionReason}</p>}
                         </Card>
+                        {detail.status === "CANCELLED" && <Card>
+                            <h2 className="text-lg font-semibold text-slate-900">Lịch sử hủy đơn</h2>
+                            <p className="mt-1 text-sm text-slate-500">Hệ thống ghi nhận người thực hiện và thời điểm hủy.</p>
+                            {historyLoading && <p className="mt-3 text-sm text-slate-500">Đang tải lịch sử...</p>}
+                            {historyError && <div className="mt-3" role="alert"><Alert type="danger">{historyError}</Alert></div>}
+                            {!historyLoading && !historyError && cancellationHistory.length === 0 && (
+                                <p className="mt-3 text-sm text-slate-500">Chưa tìm thấy nhật ký hủy cũ. Lý do hủy vẫn được lưu trên đơn.</p>
+                            )}
+                            <div className="mt-3 space-y-2">
+                                {cancellationHistory.map((entry) => (
+                                    <div key={entry.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+                                        <p className="font-semibold text-slate-800">Người hủy: {entry.cancelledByName || `ID ${entry.cancelledById || "—"}`}</p>
+                                        <p className="mt-1 text-slate-500">Thời gian: {formatPurchaseOrderDate(entry.cancelledAt)}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>}
                         <Card className="space-y-4">
                             <h2 className="text-lg font-semibold text-slate-900">Danh sách sản phẩm trong đơn</h2>
                             {Array.isArray(detail.items) && detail.items.length > 0 ? (
@@ -266,9 +325,9 @@ export default function PurchaseOrderDetailPage() {
                         </Card>
 
 
-                        {isCreator && <Card>
-                            <h2 className="text-lg font-semibold text-slate-900">Lịch sử đề nghị hủy đơn</h2>
-                            <p className="mt-1 text-sm text-slate-500">Đơn đã gửi chỉ được hủy khi quản lý kinh doanh đồng ý. Việc gửi đề nghị không làm thay đổi số lượng hàng trong kho.</p>
+                        {(cancellationLoading || cancellationError || cancellationRequests.length > 0) && <Card>
+                            <h2 className="text-lg font-semibold text-slate-900">Lịch sử yêu cầu hủy cũ</h2>
+                            <p className="mt-1 text-sm text-slate-500">Chỉ hiển thị yêu cầu từ quy trình cũ. Luồng mới không tạo yêu cầu duyệt.</p>
                             {cancellationLoading && <p className="mt-3 text-sm text-slate-500">Đang tải lịch sử đề nghị hủy...</p>}
                             {cancellationError && <div className="mt-3" role="alert"><Alert type="danger">{cancellationError}</Alert></div>}
                             {!cancellationLoading && !cancellationError && cancellationRequests.length === 0 && (
@@ -296,24 +355,27 @@ export default function PurchaseOrderDetailPage() {
                             purchaseOrderStatus={detail.status}
                         />
 
-                        <Alert type="info">Người lập có thể hủy đơn nháp. Với đơn đã gửi, nhân viên cần gửi đề nghị để quản lý xét duyệt. Đơn đã có phiếu nhận hàng hoặc hóa đơn liên quan sẽ không được hủy theo cách này.</Alert>
+                        <Alert type="info">Hủy đơn nháp trực tiếp. Với đơn đã đặt, cần xác nhận nhà cung cấp đồng ý. Hệ thống chặn hủy nếu đã có phiếu nhập kho hoặc hóa đơn liên quan.</Alert>
                     </>
                 ) : !error ? (
                     <EmptyState title="Không tìm thấy đơn mua hàng" />
                 ) : null}
                 <Modal
                     open={Boolean(actionType)}
-                    title={actionType === "submit" ? "Xác nhận gửi đơn mua hàng" : actionType === "cancel" ? "Hủy đơn mua hàng nháp" : "Đề nghị hủy đơn mua hàng"}
+                    title={actionType === "submit" ? "Xác nhận gửi đơn mua hàng" : "Hủy đơn mua hàng"}
                     onClose={closeAction}
                     footer={
                         <>
                             <Button type="button" variant="outline" disabled={actionBusy} onClick={closeAction}>Đóng</Button>
-                            <Button type="button" variant={actionType !== "submit" ? "danger" : "primary"}
+                            <Button type="button" variant={actionType === "submit" ? "primary" : "danger"}
                                 disabled={actionBusy || !actionConfirmed
-                                    || (actionType === "cancel" && !cancelReason.trim())
-                                    || (actionType === "requestCancel" && (cancelReason.trim().length < 10 || !supplierAgreed))}
+                                    || (actionType === "cancel" && (
+                                        cancelReason.trim().length < (detail?.status === "ORDERED" ? 10 : 1)
+                                        || cancelReason.trim().length > 1000
+                                        || (detail?.status === "ORDERED" && !supplierAgreed)
+                                    ))}
                                 onClick={performAction}>
-                                {actionBusy ? "Đang xử lý..." : actionType === "submit" ? "Xác nhận gửi đơn" : actionType === "cancel" ? "Xác nhận hủy đơn nháp" : "Gửi đề nghị hủy"}
+                                {actionBusy ? "Đang xử lý..." : actionType === "submit" ? "Xác nhận gửi đơn" : "Xác nhận hủy đơn"}
                             </Button>
                         </>
                     }
@@ -321,21 +383,23 @@ export default function PurchaseOrderDetailPage() {
                     <div className="space-y-4">
                         <p className="text-sm text-slate-700">
                             Đơn mua hàng <strong>{detail?.orderCode}</strong> — {actionType === "submit"
-                                ? "Sau khi gửi, đơn sẽ chuyển từ trạng thái nháp sang đã gửi nhà cung cấp."
-                                : actionType === "cancel"
-                                    ? "Đơn nháp sẽ được đánh dấu đã hủy. Lịch sử đơn hàng vẫn được giữ lại."
-                                    : "Đề nghị sẽ được chuyển đến quản lý kinh doanh. Trong thời gian chờ xét duyệt, đơn vẫn có hiệu lực."}
+                                ? "Gửi đơn từ trạng thái nháp sang đã đặt."
+                                : detail?.status === "ORDERED"
+                                    ? "Hủy trực tiếp sau khi xác nhận NCC đồng ý. Nếu có phiếu nhập kho hoặc hóa đơn, hệ thống sẽ từ chối."
+                                    : "Đơn nháp sẽ được đánh dấu đã hủy; lịch sử vẫn giữ lại."}
                         </p>
-                        {["cancel", "requestCancel"].includes(actionType) && <TextArea label="Lý do hủy đơn *" rows={3} value={cancelReason}
+                        {actionType === "cancel" && <p className="text-sm text-slate-600">Mọi tài khoản Nghiệp vụ kinh doanh được hủy PO đủ điều kiện. Hệ thống lưu tài khoản hủy và thời điểm.</p>}
+                        {actionType === "cancel" && <TextArea label="Lý do hủy đơn *" rows={3} value={cancelReason}
                             disabled={actionBusy} onChange={(event) => setCancelReason(event.target.value)}
-                            placeholder="Ví dụ: Nhà cung cấp đề nghị tăng giá nhưng hai bên không thống nhất được..." />}
-                        {actionType === "requestCancel" && <Checkbox checked={supplierAgreed} disabled={actionBusy}
+                            placeholder="Nêu lý do hủy và phương án với nhà cung cấp..." />}
+                        {actionType === "cancel" && detail?.status === "ORDERED" && <Checkbox
+                            checked={supplierAgreed} disabled={actionBusy}
                             onChange={(event) => setSupplierAgreed(event.target.checked)}
-                            label="Tôi xác nhận đã trao đổi và nhà cung cấp đồng ý hủy đơn này." />}
+                            label="Tôi xác nhận nhà cung cấp đã đồng ý hủy đơn này." />}
                         <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
                             <Checkbox checked={actionConfirmed} disabled={actionBusy}
                                 onChange={(event) => setActionConfirmed(event.target.checked)}
-                                label="Tôi đã kiểm tra thông tin và đồng ý lưu thao tác này vào hệ thống." />
+                                label="Tôi đã kiểm tra và đồng ý lưu thao tác này vào hệ thống." />
                         </div>
                         {actionError && <div role="alert"><Alert type="danger">{actionError}</Alert></div>}
                     </div>

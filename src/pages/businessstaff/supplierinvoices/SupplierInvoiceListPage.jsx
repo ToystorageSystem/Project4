@@ -24,7 +24,7 @@ import {
     SupplierInvoiceStatusBadge,
 } from "./supplierInvoiceFormat";
 
-const ROOT = "/business-staff/supplier-invoices";
+const ROOT = "/business/supplier-invoices";
 const PAGE_SIZE = 10;
 const EMPTY_FILTERS = { keyword: "", status: "" };
 
@@ -106,7 +106,7 @@ export default function SupplierInvoiceListPage() {
             label: "Đơn mua hàng",
             render: (value, invoice) => invoice.purchaseOrderId ? (
                 <Link
-                    to={`/business-staff/purchase-orders/${encodeURIComponent(invoice.purchaseOrderId)}`}
+                    to={`/business/purchase-orders/${encodeURIComponent(invoice.purchaseOrderId)}`}
                     className="whitespace-nowrap font-semibold text-[#c94810] hover:underline"
                 >
                     {value || `PO #${invoice.purchaseOrderId}`}
@@ -154,7 +154,7 @@ export default function SupplierInvoiceListPage() {
     ];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title="Quản lý hóa đơn nhà cung cấp"
@@ -181,7 +181,7 @@ export default function SupplierInvoiceListPage() {
                             onChange={(event) => setDraft((value) => ({ ...value, status: event.target.value }))}
                         />
                         <div className="flex flex-wrap gap-2 md:col-span-2">
-                            <Button type="submit">Tìm kiếm / Lọc</Button>
+                            <Button type="submit">Tìm kiếm / Bộ lọc</Button>
                             <Button type="button" variant="outline" onClick={clearFilters}>Xóa bộ lọc</Button>
                             <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Làm mới</Button>
                         </div>

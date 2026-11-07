@@ -17,7 +17,7 @@ import Select from "../../../components/ui/Select";
 import Spinner from "../../../components/ui/Spinner";
 import { formatReceiptMoney, receiptText as T } from "./receiptText";
 
-const ROOT = "/business-staff/goods-receipts";
+const ROOT = "/business/goods-receipts";
 const AVAILABLE_STATES = new Set(["ORDERED", "PARTIALLY_RECEIVED"]);
 const MAX_QUANTITY = 2147483647;
 
@@ -55,7 +55,7 @@ export default function GoodsReceiptCreatePage() {
         setLoadError("");
         listPurchaseOrders({}, controller.signal).then((data) => {
             if (controller.signal.aborted) return;
-            if (!Array.isArray(data)) throw new Error("Danh sách đơn mua hàng chưa hợp lệ.");
+            if (!Array.isArray(data)) throw new Error("Dữ liệu danh sách đơn mua hàng nhận được không hợp lệ.");
             setOrders(data.filter((po) => AVAILABLE_STATES.has(po.status)));
         }).catch((error) => {
             if (!controller.signal.aborted) setLoadError(goodsReceiptErrorMessage(error, T.loadError));
@@ -141,7 +141,13 @@ export default function GoodsReceiptCreatePage() {
                 setConfirmOpen(false);
             }
         } catch (error) {
-            setSubmitError(`${goodsReceiptErrorMessage(error, T.loadError)} ${T.timeoutWarning}`);
+            const raw = String(error?.response?.data?.message || error?.response?.data || "");
+            const isPendingReceipt = error?.response?.status === 400 &&
+                /goods receipt awaiting completion|already has a goods receipt|pending goods receipt/i.test(raw);
+            const readable = isPendingReceipt
+                ? T.pendingReceiptError
+                : goodsReceiptErrorMessage(error, T.createError);
+            setSubmitError(error?.response ? readable : `${readable} ${T.timeoutWarning}`);
             setConfirmOpen(false);
         } finally {
             postInFlight.current = false;
@@ -150,11 +156,11 @@ export default function GoodsReceiptCreatePage() {
     }
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader title={T.title} description={T.intro}
                     actions={<Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/list`)}>
-                        ← Theo dõi phiếu nhập kho
+                        ← Xem danh sách phiếu nhập
                     </Button>} />
                 <Alert type="info">{T.draftNote}</Alert>
                 <Alert type="warning">{T.fromPurchaseOrderNote}</Alert>

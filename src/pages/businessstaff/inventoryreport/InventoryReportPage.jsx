@@ -326,7 +326,7 @@ export default function InventoryReportPage() {
     const totalPages = report?.totalPages ?? 0;
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -420,7 +420,7 @@ export default function InventoryReportPage() {
                         type="submit"
                         className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"
                     >
-                        Tìm kiếm / Lọc
+                        Tìm kiếm / Bộ lọc
                     </button>
 
                     <button
@@ -465,9 +465,9 @@ export default function InventoryReportPage() {
                             <thead className="bg-slate-100 text-slate-700">
                                 <tr>
                                     <th className="p-3">Kho / Cửa hàng</th>
-                                    <th className="p-3">Mã SP</th>
+                                    <th className="p-3">Mã SKU</th>
                                     <th className="p-3">Tên sản phẩm</th>
-                                    <th className="p-3">Barcode</th>
+                                    <th className="p-3">Mã vạch</th>
                                     <th className="p-3">Danh mục / Thương hiệu</th>
                                     <th className="p-3">Vị trí</th>
                                     <th className="p-3 text-right">Thực tế</th>

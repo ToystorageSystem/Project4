@@ -1,3 +1,4 @@
+import BusinessOperationsLayout from "../business/BusinessOperationsLayout";
 import {
     useEffect,
     useState,
@@ -533,6 +534,9 @@ export default function MainLayout({
     title = "Warehouse",
     items = warehouseMenuItems,
 }) {
+    if (title === "Business Staff" || title === "Business Manager" || title === "Business Operations") {
+        return <BusinessOperationsLayout>{children}</BusinessOperationsLayout>;
+    }
     return (
         <div className="min-h-screen bg-slate-50">
 

@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 export const SUPPLIER_INVOICE_STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
     { value: "DRAFT", label: "Đơn nháp" },
@@ -28,7 +29,7 @@ const statusStyles = {
 export function SupplierInvoiceStatusBadge({ status }) {
     return (
         <span className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[status] || "bg-slate-100 text-slate-700"}`}>
-            {statusLabels[status] || status || "—"}
+            {statusLabels[status] || (status ? formatBusinessStatus(status) : "—")}
         </span>
     );
 }
@@ -52,7 +53,7 @@ export function formatSupplierInvoiceDate(value, includeTime = false) {
 
 export function SupplierInvoiceReconciliation({ invoice }) {
     if (invoice.purchaseOrderMatched === true) {
-        return <span className="font-semibold text-emerald-700">Khớp đơn mua hàng</span>;
+        return <span className="font-semibold text-emerald-700">Khớp với đơn mua hàng</span>;
     }
 
     if (invoice.purchaseOrderMatched === false) {
@@ -72,7 +73,7 @@ export function SupplierInvoiceReconciliation({ invoice }) {
 }
 
 export function SupplierInvoiceMatchBadge({ matched }) {
-    if (matched === true) return <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Khớp đơn mua hàng</span>;
+    if (matched === true) return <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Khớp với đơn mua hàng</span>;
     if (matched === false) return <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Khác đơn mua hàng</span>;
     return <span className="text-xs text-slate-500">Chưa có kết quả</span>;
 }

@@ -34,9 +34,9 @@ export async function deleteSupplierProductLink(linkId) {
 }
 
 export function supplierProductErrorMessage(error, fallback = "Không thực hiện được thao tác.") {
-    if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.";
+    if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
     if (error?.response?.status === 403) return "Bạn chưa được cấp quyền thay đổi nhà cung cấp của sản phẩm.";
-    if (!error?.response) return "Không thể kết nối hệ thống. Vui lòng thử lại.";
+    if (!error?.response) return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;
     return friendlyBusinessError(error, fallback);

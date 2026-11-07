@@ -24,7 +24,7 @@ export default function SupplierProductsPanel({ supplierId }) {
         getLinksBySupplier(supplierId, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(result)) throw new Error("Invalid supplier product links response");
+                if (!Array.isArray(result)) throw new Error("Dữ liệu liên kết sản phẩm và nhà cung cấp không hợp lệ");
                 setLinks(result);
             })
             .catch((requestError) => {
@@ -37,7 +37,7 @@ export default function SupplierProductsPanel({ supplierId }) {
     const columns = [
         {
             key: "productCode", label: "Mã sản phẩm",
-            render: (value, link) => <Link to={`/business-staff/products/${link.productId}`} className="font-semibold text-[#c94810] hover:underline">{show(value)}</Link>,
+            render: (value, link) => <Link to={`/business/products/${link.productId}`} className="font-semibold text-[#c94810] hover:underline">{show(value)}</Link>,
         },
         { key: "productName", label: "Tên sản phẩm", render: (value) => <span className="font-medium text-slate-900">{show(value)}</span> },
         { key: "supplierProductCode", label: "Mã sản phẩm phía nhà cung cấp", render: show },
@@ -46,7 +46,7 @@ export default function SupplierProductsPanel({ supplierId }) {
         { key: "leadTimeDays", label: "Giao (ngày)", render: show },
         { key: "status", label: "Liên kết", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} label={businessStatusLabel(value)} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ Nhà cung cấp ưu tiên</div>}</div> },
         { key: "productStatus", label: "Trạng thái SP", render: (value) => <StatusBadge status={value} label={businessStatusLabel(value)} /> },
-        { key: "id", label: "Thao tác", render: (_value, link) => <Link className="font-semibold text-[#c94810] hover:underline" to={`/business-staff/products/${link.productId}`}>Quản lý liên kết</Link> },
+        { key: "id", label: "Thao tác", render: (_value, link) => <Link className="font-semibold text-[#c94810] hover:underline" to={`/business/products/${link.productId}`}>Quản lý liên kết</Link> },
     ];
 
     return (

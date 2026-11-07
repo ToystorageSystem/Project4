@@ -10,7 +10,7 @@ import Card from "../../../components/ui/Card";
 import Checkbox from "../../../components/ui/Checkbox";
 import Table from "../../../components/ui/Table";
 
-const ROOT = "/business-staff/products";
+const ROOT = "/business/products";
 const HEADERS = [
     "productCode", "barcode", "imageUrl", "name", "categoryId",
     "brandId", "baseUnit", "purchasePrice", "sellingPrice", "requestReason",
@@ -75,8 +75,8 @@ export default function ProductImportPage() {
 
     const columns = [
         { key: "rowNumber", label: "Dòng" },
-        { key: "productCode", label: "Mã SP", render: (value) => value || "—" },
-        { key: "barcode", label: "Barcode", render: (value) => value || "—" },
+        { key: "productCode", label: "Mã SKU", render: (value) => value || "—" },
+        { key: "barcode", label: "Mã vạch", render: (value) => value || "—" },
         { key: "name", label: "Tên sản phẩm", render: (value) => value || "—" },
         { key: "categoryId", label: "Mã danh mục", render: (value) => value ?? "—" },
         { key: "brandId", label: "Mã thương hiệu", render: (value) => value ?? "—" },
@@ -85,9 +85,9 @@ export default function ProductImportPage() {
     ];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Nhập sản phẩm bằng Excel" description="Xem trước toàn bộ các dòng hợp lệ/không hợp lệ trước khi xác nhận. Sản phẩm nhập sẽ chờ duyệt."
+                <PageHeader title="Nhập sản phẩm bằng Excel" description="Xem trước toàn bộ các dòng hợp lệ/không hợp lệ trước khi xác nhận. Sản phẩm hợp lệ sẽ được tạo ngay sau khi xác nhận nhập."
                     actions={<Button variant="ghost" onClick={() => navigate(ROOT)}>← Danh sách sản phẩm</Button>}
                 />
                 <Card>
@@ -107,7 +107,7 @@ export default function ProductImportPage() {
                     </div>
                 </Card>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
-                {result && <div role="status"><Alert type="success">Đã gửi {result.importedRows} / {result.totalRows} sản phẩm từ Excel để quản lý kinh doanh xét duyệt. Sản phẩm chỉ được sử dụng khi đã được duyệt.</Alert></div>}
+                {result && <div role="status"><Alert type="success">Đã nhập thành công {result.importedRows} / {result.totalRows} sản phẩm từ Excel. Sản phẩm được đưa vào sử dụng ngay và đã ghi lịch sử tạo mới.</Alert></div>}
                 {preview && (
                     <>
                         <div className="grid gap-4 sm:grid-cols-3">
@@ -127,7 +127,7 @@ export default function ProductImportPage() {
                             {preview.invalidRows === 0 && preview.validRows > 0 && (
                                 <div className="space-y-4 border-t border-slate-100 pt-4">
                                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi đã kiểm tra và đồng ý gửi các sản phẩm này để quản lý kinh doanh xét duyệt." />
+                                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi xác nhận các sản phẩm hợp lệ sẽ được lưu trực tiếp vào cơ sở dữ liệu." />
                                     </div>
                                     <div className="flex justify-end">
                                         <Button onClick={confirmImport} disabled={!confirmed || importing}>{importing ? "Đang nhập..." : `Xác nhận nhập ${preview.validRows} sản phẩm`}</Button>

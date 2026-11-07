@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 import { useState } from "react";
 import {
     cancelSupplierInvoice,
@@ -93,7 +94,7 @@ export function SupplierInvoiceCancelAction({ invoice, onUpdated }) {
                 <div className="space-y-4">
                     <p className="text-sm leading-6 text-slate-700">
                         Hóa đơn <strong>{invoice.invoiceNumber || invoice.invoiceCode}</strong> sẽ chuyển từ
-                        <strong> {invoice.status}</strong> sang <strong>CANCELLED</strong>. Hóa đơn không bị xóa khỏi hệ thống.
+                        <strong> {formatBusinessStatus(invoice.status)}</strong> sang <strong>Đã hủy</strong>. Hóa đơn không bị xóa khỏi hệ thống.
                     </p>
                     <div>
                         <label htmlFor="supplier-invoice-cancel-reason" className="mb-2 block text-sm font-medium text-slate-800">
@@ -165,7 +166,7 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
 
     return (
         <div className="mt-5 space-y-3 border-t border-slate-200 pt-5">
-            <h4 className="font-semibold text-slate-900">Tải file hóa đơn</h4>
+            <h4 className="font-semibold text-slate-900">Tải tệp hóa đơn lên</h4>
             <p className="text-sm text-slate-600">
                 Hỗ trợ PDF, XML, JPG, JPEG, PNG, WEBP. Chọn file mới cùng loại sẽ cập nhật đường dẫn file hiện có.
                 Bạn có thể đính kèm tệp chứng từ cho hóa đơn. Chọn tệp có dung lượng phù hợp.
@@ -198,7 +199,7 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
             {success && <div role="status"><Alert type="success">{success}</Alert></div>}
             <div className="flex justify-end">
                 <Button type="button" onClick={upload} disabled={saving || !file || !!fileError || !confirmed}>
-                    {saving ? "Đang tải file..." : "Tải file hóa đơn"}
+                    {saving ? "Đang tải file..." : "Tải tệp hóa đơn lên"}
                 </Button>
             </div>
         </div>

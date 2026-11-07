@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -25,7 +26,7 @@ import Select from "../../../components/ui/Select";
 import Spinner from "../../../components/ui/Spinner";
 import Table from "../../../components/ui/Table";
 
-const ROOT = "/business-staff/shipment-manifests";
+const ROOT = "/business/shipment-manifests";
 const PAGE_SIZE = 10;
 
 const EMPTY_FILTERS = {
@@ -42,17 +43,17 @@ const STATUS_LABELS = {
     ASSIGNED: "Đã phân công",
     ACCEPTED: "Tài xế đã nhận",
     REJECTED: "Tài xế từ chối",
-    READY_TO_SHIP: "Sẵn sàng giao",
+    READY_TO_SHIP: "Sẵn sàng giao hàng",
     IN_TRANSIT: "Đang vận chuyển",
     ARRIVED: "Đã đến nơi",
-    DELIVERED: "Đã giao",
-    FAILED: "Giao thất bại",
+    DELIVERED: "Đã giao hàng",
+    FAILED: "Giao hàng thất bại",
     CANCELLED: "Đã hủy",
 };
 
 const STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
-    { value: "NO_DELIVERY", label: "Chưa có chuyến giao" },
+    { value: "NO_DELIVERY", label: "Không tìm thấy chuyến giao hàng" },
     ...Object.entries(STATUS_LABELS).map(([value, label]) => ({
         value,
         label,
@@ -85,7 +86,7 @@ function TransportStatusBadge({ status }) {
         <span
             className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${color}`}
         >
-            {STATUS_LABELS[status] || status || "Chưa có chuyến giao"}
+            {STATUS_LABELS[status] || formatBusinessStatus(status)}
         </span>
     );
 }
@@ -244,7 +245,7 @@ export default function ShipmentManifestListPage() {
         },
         {
             key: "fromWarehouseName",
-            label: "Điểm xuất",
+            label: "Điểm xuất phát",
             render: (value, manifest) => (
                 <div>
                     <p className="font-medium">{value || "—"}</p>
@@ -256,7 +257,7 @@ export default function ShipmentManifestListPage() {
         },
         {
             key: "toWarehouseName",
-            label: "Điểm nhận",
+            label: "Điểm đến",
             render: (value, manifest) => (
                 <div>
                     <p className="font-medium">{value || "—"}</p>
@@ -312,7 +313,7 @@ export default function ShipmentManifestListPage() {
 
     return (
         <MainLayout
-            title="Business Staff"
+            title="Business Operations"
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
@@ -356,7 +357,7 @@ export default function ShipmentManifestListPage() {
                         />
 
                         <Select
-                            label="Điểm xuất"
+                            label="Điểm xuất phát"
                             value={draftFilters.fromWarehouseId}
                             options={warehouseOptions}
                             onChange={(event) =>
@@ -365,7 +366,7 @@ export default function ShipmentManifestListPage() {
                         />
 
                         <Select
-                            label="Điểm nhận"
+                            label="Điểm đến"
                             value={draftFilters.toWarehouseId}
                             options={warehouseOptions}
                             onChange={(event) =>
@@ -402,7 +403,7 @@ export default function ShipmentManifestListPage() {
 
                         <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-3">
                             <Button type="submit">
-                                Tìm kiếm / Lọc
+                                Tìm kiếm / Bộ lọc
                             </Button>
 
                             <Button

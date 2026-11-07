@@ -12,7 +12,7 @@ import Modal from "../../../components/ui/Modal";
 import Spinner from "../../../components/ui/Spinner";
 import StatusBadge from "../../../components/ui/StatusBadge";
 
-const ROOT = "/business-staff/suppliers";
+const ROOT = "/business/suppliers";
 const show = (value) => value == null || value === "" ? "—" : value;
 const formatDate = (value) => value ? new Date(value).toLocaleString("vi-VN") : "—";
 
@@ -69,12 +69,12 @@ export default function SupplierDetailPage() {
     };
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title="Chi tiết nhà cung cấp"
                     description="Thông tin nhà cung cấp và những sản phẩm đang được nhà cung cấp này cung ứng."
-                    actions={<Button type="button" variant="ghost" onClick={() => navigate(ROOT)}>← Danh sách</Button>}
+                    actions={<Button type="button" variant="ghost" onClick={() => navigate(ROOT)}>← Quay lại danh sách</Button>}
                 />
                 {notice && <div role="status"><Alert type="success">{notice}</Alert></div>}
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}

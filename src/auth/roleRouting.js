@@ -1,29 +1,20 @@
-// Backend: "ROLE_" + roles.roles_code (see CustomUserDetailsService).
-// Keep these exact values in sync with MySQL roles.roles_code.
+// Ma role duoc backend sinh: "ROLE_" + roles.roles_code.
+// DB can co roles_code = ROLE-BIZ-OPS va tai khoan can duoc gan role nay.
 export const ROLE = Object.freeze({
-    BUSINESS_STAFF: "ROLE_ROLE-BIZ-STAFF",
-    BUSINESS_MANAGER: "ROLE_ROLE-BIZ-MANAGER",
+    BUSINESS_OPERATIONS: "ROLE_ROLE-BIZ-OPS",
 });
 
 export function hasAuthority(user, authority) {
-    return Array.isArray(user?.authorities) &&
-        user.authorities.includes(authority);
+    return Array.isArray(user?.authorities) && user.authorities.includes(authority);
 }
 
 export function getHomePath(user) {
-    // Multi-role account: manager landing page takes precedence.
-    if (hasAuthority(user, ROLE.BUSINESS_MANAGER)) {
-        return "/business-manager/dashboard";
-    }
-    if (hasAuthority(user, ROLE.BUSINESS_STAFF)) {
-        return "/business-staff/dashboard";
-    }
-    // Do not alter the existing landing page of other teams in step 1.
+    // Một role nghiệp vụ: không phân luồng Staff / Manager nữa.
+    if (hasAuthority(user, ROLE.BUSINESS_OPERATIONS)) return "/business/dashboard";
+    // Khong thay doi duong dan cua Warehouse va role khac.
     return "/warehouse/dashboard";
 }
 
 export function getBusinessRoleLabel(user) {
-    if (hasAuthority(user, ROLE.BUSINESS_MANAGER)) return "Quản lý kinh doanh";
-    if (hasAuthority(user, ROLE.BUSINESS_STAFF)) return "Nhân viên kinh doanh";
-    return null;
+    return hasAuthority(user, ROLE.BUSINESS_OPERATIONS) ? "Nghiệp vụ kinh doanh" : null;
 }

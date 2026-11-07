@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { createProduct, getCategoryOptions, getProduct, listProducts, productErrorMessage, requestProductUpdate, uploadProductImage } from "../../../api/business/products";
+import { createProduct, getCategoryOptions, getProduct, listProducts, productErrorMessage, updateProduct, uploadProductImage } from "../../../api/business/products";
 import { businessStaffMenuItems } from "../../../components/icons/businessMenuItems";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -12,7 +12,7 @@ import Input from "../../../components/ui/Input";
 import Spinner from "../../../components/ui/Spinner";
 import TextArea from "../../../components/ui/TextArea";
 
-const ROOT = "/business-staff/products";
+const ROOT = "/business/products";
 const EMPTY_FORM = {
     productCode: "", barcode: "", imageUrl: "", name: "", categoryId: "",
     brandId: "", baseUnit: "", purchasePrice: "", sellingPrice: "", requestReason: "",
@@ -108,7 +108,7 @@ export default function ProductFormPage() {
                 if (editing) {
                     if (product.status !== "ACTIVE" && product.status !== "INACTIVE") {
                         setLoadFailed(true);
-                        setError("Chỉ có thể đề nghị sửa sản phẩm đang hoạt động hoặc đang tạm ẩn.");
+                        setError("Chỉ có thể sửa sản phẩm đang hoạt động hoặc đang tạm ẩn.");
                     } else {
                         setForm(Object.fromEntries(Object.keys(EMPTY_FORM).map((key) => [key, product[key] == null ? "" : String(product[key])])));
                     }
@@ -159,29 +159,30 @@ export default function ProductFormPage() {
         setSaving(true);
         setError("");
         try {
-            const request = editing
-                ? await requestProductUpdate(productId, toPayload(form))
+            // Sau khi BE trả thành công, thay đổi đã được lưu và ghi nhật ký.
+            const product = editing
+                ? await updateProduct(productId, toPayload(form))
                 : await createProduct(toPayload(form));
-            const destinationId = editing ? productId : request?.product?.id;
+            const destinationId = product?.id ?? (editing ? productId : null);
             const notice = editing
-                ? "Đã gửi yêu cầu sửa để quản lý kinh doanh xét duyệt. Thông tin sản phẩm chưa thay đổi."
-                : "Đã gửi sản phẩm mới đến quản lý kinh doanh để chờ xét duyệt. Sản phẩm chưa được đưa vào sử dụng.";
-            navigate(destinationId ? `${ROOT}/${destinationId}` : `${ROOT}/requests`, {
+                ? "Cập nhật sản phẩm thành công. Lịch sử thay đổi đã được lưu."
+                : "Tạo sản phẩm thành công. Sản phẩm đang hoạt động và có thể sử dụng.";
+            navigate(destinationId ? `${ROOT}/${destinationId}` : ROOT, {
                 replace: true,
                 state: { notice },
             });
         } catch (requestError) {
-            setError(productErrorMessage(requestError, "Không thể gửi yêu cầu sản phẩm."));
+            setError(productErrorMessage(requestError, "Không thể lưu sản phẩm."));
         } finally {
             setSaving(false);
         }
     };
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title={editing ? "Đề nghị sửa sản phẩm" : "Thêm sản phẩm"}
-                    description={editing ? "Thông tin mới chỉ có hiệu lực sau khi quản lý kinh doanh phê duyệt." : "Sản phẩm mới cần được phê duyệt trước khi có thể sử dụng."}
+                <PageHeader title={editing ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
+                    description={editing ? "Lưu thay đổi trực tiếp; hệ thống ghi lại người thao tác và dữ liệu trước/sau." : "Thông tin hợp lệ sẽ được lưu ngay và chuyển trạng thái đang hoạt động."}
                     actions={<Button variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>← Quay lại</Button>}
                 />
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
@@ -191,13 +192,13 @@ export default function ProductFormPage() {
                     <Card><Button variant="outline" onClick={() => navigate(ROOT)}>Về danh sách</Button></Card>
                 ) : (
                     <Card className="max-w-6xl">
-                        <Alert type="info">Mã sản phẩm và mã vạch không được trùng với sản phẩm khác. Hệ thống sẽ kiểm tra khi bạn gửi yêu cầu.</Alert>
+                        <Alert type="info">Mã sản phẩm và mã vạch không được trùng với sản phẩm khác. Hệ thống sẽ kiểm tra trước khi lưu.</Alert>
                         {categoryApiWarning && (
                             <div className="mt-4"><Alert type="warning">Không tải được danh mục sản phẩm: {categoryApiWarning} Có thể nhập mã danh mục đang sử dụng ở bên dưới (hệ thống sẽ kiểm tra lại).</Alert></div>
                         )}
                         <form onSubmit={submit} noValidate className="mt-6 space-y-6">
                             <div className="grid gap-5 md:grid-cols-2">
-                                <Input label="Mã sản phẩm *" required maxLength={50} value={form.productCode} onChange={change("productCode")} error={errors.productCode} placeholder="VD: SP-TOY-001" />
+                                <Input label="Mã sản phẩm *" required maxLength={50} value={form.productCode} onChange={change("productCode")} error={errors.productCode} placeholder="Ví dụ: SP-TOY-001" />
                                 <Input label="Mã vạch *" required maxLength={100} value={form.barcode} onChange={change("barcode")} error={errors.barcode} placeholder="Mã vạch duy nhất" />
                                 <div className="md:col-span-2"><Input label="Tên sản phẩm *" required maxLength={200} value={form.name} onChange={change("name")} error={errors.name} placeholder="Tên sản phẩm" /></div>
                                 <div>
@@ -210,7 +211,7 @@ export default function ProductFormPage() {
                                     <datalist id="product-brand-options">{brandSuggestions.map((item) => <option key={item.value} value={item.value} label={item.label} />)}</datalist>
                                     <p className="mt-1 text-xs text-slate-500">{brandSuggestions.length ? `Gợi ý từ sản phẩm hiện có: ${brandSuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "Chưa có danh sách thương hiệu để chọn. Bạn có thể nhập mã thương hiệu đã có."}</p>
                                 </div>
-                                <Input label="Đơn vị cơ sở *" maxLength={30} required value={form.baseUnit} onChange={change("baseUnit")} error={errors.baseUnit} placeholder="VD: PCS, BAG, BOX" />
+                                <Input label="Đơn vị cơ sở *" maxLength={30} required value={form.baseUnit} onChange={change("baseUnit")} error={errors.baseUnit} placeholder="Ví dụ: Cái, túi, hộp" />
                                 <Input label="Giá nhập (VND) *" type="number" min="0.01" step="0.01" required value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} placeholder="120000" />
                                 <Input label="Giá bán (VND) *" type="number" min="0.01" step="0.01" required value={form.sellingPrice} onChange={change("sellingPrice")} error={errors.sellingPrice} placeholder="150000" />
                                 <div className="md:col-span-2"><Input label="URL hình ảnh (nếu có)" maxLength={500} type="url" value={form.imageUrl} onChange={change("imageUrl")} error={errors.imageUrl} placeholder="https://..." /></div>
@@ -224,13 +225,13 @@ export default function ProductFormPage() {
                                 </div>
                                 {form.imageUrl && <img src={form.imageUrl} alt="Ảnh xem trước" className="mt-3 h-28 max-w-full rounded-lg border object-contain" />}
                             </div>
-                            <TextArea label="Lý do đề nghị (nếu có)" rows={3} maxLength={500} value={form.requestReason} onChange={change("requestReason")} error={errors.requestReason} placeholder="Lý do tạo hoặc sửa sản phẩm" />
+                            <TextArea label="Ghi chú thay đổi (nếu có)" rows={3} maxLength={500} value={form.requestReason} onChange={change("requestReason")} error={errors.requestReason} placeholder="Mô tả mục đích thêm hoặc sửa sản phẩm" />
                             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi đã kiểm tra và đồng ý gửi yêu cầu cho quản lý kinh doanh xét duyệt." />
+                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi đã kiểm tra thông tin và đồng ý lưu thay đổi trực tiếp vào hệ thống." />
                             </div>
                             <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
                                 <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>Hủy</Button>
-                                <Button type="submit" disabled={!confirmed || uploading || saving}>{saving ? "Đang gửi..." : editing ? "Gửi đề nghị sửa" : "Tạo và gửi duyệt"}</Button>
+                                <Button type="submit" disabled={!confirmed || uploading || saving}>{saving ? "Đang lưu..." : editing ? "Lưu thay đổi" : "Tạo sản phẩm"}</Button>
                             </div>
                         </form>
                     </Card>

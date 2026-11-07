@@ -51,20 +51,23 @@ export async function submitPurchaseOrder(orderId) {
     return response.data;
 }
 
-export async function cancelPurchaseOrder(orderId, reason) {
+export async function cancelPurchaseOrder(orderId, reason, supplierAgreed = false) {
+    // Business Operations: huy truc tiep, backend kiem tra GR/hoa don.
     const response = await api.patch(`/purchase-orders/${encodeURIComponent(orderId)}/cancel`, {
         reason: String(reason).trim(),
+        supplierAgreed: Boolean(supplierAgreed),
     });
+    return response.data;
+}
+
+export async function getPurchaseOrderCancellationHistory(orderId, signal) {
+    // Lấy nhật ký hủy từ activity_logs: chỉ danh tính và thời gian.
+    const response = await api.get(`/purchase-orders/${encodeURIComponent(orderId)}/cancellation-history`, { signal });
     return response.data;
 }
 
 export async function listPurchaseOrderCancellationRequests(orderId, signal) {
     const response = await api.get(`/purchase-orders/${encodeURIComponent(orderId)}/cancellation-requests`, { signal });
-    return response.data;
-}
-
-export async function requestPurchaseOrderCancellation(orderId, payload) {
-    const response = await api.post(`/purchase-orders/${encodeURIComponent(orderId)}/cancellation-requests`, payload);
     return response.data;
 }
 

@@ -25,7 +25,7 @@ import TextArea from "../../components/ui/TextArea";
 
 const PAGE_SIZE = 10;
 const REQUEST_TYPES = {
-    CREATE: "Thêm mới",
+    CREATE: "Tạo mới",
     UPDATE: "Chỉnh sửa",
     DEACTIVATE: "Ẩn sản phẩm",
 };
@@ -38,7 +38,7 @@ const FIELD_LABELS = {
     brandId: "Mã thương hiệu",
     brandName: "Tên thương hiệu",
     baseUnit: "Đơn vị cơ sở",
-    purchasePrice: "Giá nhập",
+    purchasePrice: "Giá mua",
     sellingPrice: "Giá bán",
     imageUrl: "Đường dẫn hình ảnh",
     description: "Mô tả sản phẩm",
@@ -256,7 +256,7 @@ export default function ProductApprovalsPage() {
     ];
 
     return (
-        <MainLayout title="Business Manager" items={businessManagerMenuItems}>
+        <MainLayout title="Business Operations" items={businessManagerMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title="Duyệt sản phẩm"

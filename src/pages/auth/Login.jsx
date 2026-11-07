@@ -212,7 +212,7 @@ export default function Login() {
 
 
                     <h1 className="mt-5 text-3xl font-bold tracking-tight text-slate-900">
-                        Toy Storage System
+                        Hệ thống Toy Storage
                     </h1>
 
 

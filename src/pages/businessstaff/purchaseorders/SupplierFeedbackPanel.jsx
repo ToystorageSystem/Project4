@@ -37,7 +37,7 @@ const ORDER_STATUSES = [
 ];
 
 const ITEM_STATUSES = [
-    { value: "PENDING", label: "Đang chờ" },
+    { value: "PENDING", label: "Chờ xử lý" },
     { value: "AVAILABLE", label: "Có hàng" },
     { value: "PARTIALLY_AVAILABLE", label: "Có một phần" },
     { value: "OUT_OF_STOCK", label: "Hết hàng" },
@@ -762,7 +762,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                             {!SUPPLIER_FEEDBACK_WRITE_ENABLED
                                 ? "Xác nhận lưu (chưa kích hoạt)"
                                 : saving
-                                ? "Đang lưu..."
+                                ? "Saving..."
                                 : "Xác nhận lưu"}
                         </Button>
 
@@ -806,7 +806,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
 
                             <p>
                                 Ghi chú toàn đơn:{" "}
-                                {preview?.supplierResponseNote || "Không có"}
+                                {preview?.supplierResponseNote || "None"}
                             </p>
                         </div>
 
@@ -864,7 +864,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
 
                                             <p>
                                                 Ghi chú:{" "}
-                                                {item.supplierResponseNote || "Không có"}
+                                                {item.supplierResponseNote || "None"}
                                             </p>
                                         </div>
                                     );

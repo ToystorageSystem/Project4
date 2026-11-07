@@ -23,7 +23,7 @@ import TextArea from "../../../components/ui/TextArea";
 import { formatPurchaseOrderMoney } from "./purchaseOrderFormat";
 import { toPurchaseOrderPayload, todayVietnamIso, validatePurchaseOrderDraft } from "./purchaseOrderDraft";
 
-const ROOT = "/business-staff/purchase-orders";
+const ROOT = "/business/purchase-orders";
 const blankRow = (clientKey) => ({ clientKey, productId: "", orderedQuantity: "" });
 const initialForm = () => ({
     supplierId: "",
@@ -236,7 +236,7 @@ export default function PurchaseOrderFormPage() {
     const warehouseSelectOptions = [{ value: "", label: "-- Chọn kho tổng --" }, ...warehouseOptions.map((item) => ({ value: String(item.id), label: `${item.name} (${item.code})` }))];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title={editing ? `Sửa đơn nháp ${detail?.orderCode || ""}` : "Tạo đơn mua hàng"}
@@ -247,7 +247,7 @@ export default function PurchaseOrderFormPage() {
                 {loadError && <div role="alert"><Alert type="danger">{loadError}</Alert></div>}
                 {productError && <div role="alert"><Alert type="danger">{productError}</Alert></div>}
                 {saveError && <div role="alert"><Alert type="danger">{saveError}</Alert></div>}
-                {saveProblems.length > 0 && <div role="alert"><Alert type="danger"><strong>Thông tin chưa hợp lệ:</strong><ul className="mt-2 list-disc space-y-1 pl-5">{saveProblems.map((text, index) => <li key={index}>{text}</li>)}</ul></Alert></div>}
+                {saveProblems.length > 0 && <div role="alert"><Alert type="danger"><strong>Thông tin không hợp lệ:</strong><ul className="mt-2 list-disc space-y-1 pl-5">{saveProblems.map((text, index) => <li key={index}>{text}</li>)}</ul></Alert></div>}
 
                 {loading ? <Card className="flex items-center gap-3"><Spinner /> Đang tải thông tin đơn mua hàng...</Card> : blocked ? null : (
                     <form onSubmit={save} className="space-y-6">
@@ -258,7 +258,7 @@ export default function PurchaseOrderFormPage() {
                                 <Select label="Kho tổng nhận hàng *" value={form.warehouseId} options={warehouseSelectOptions} disabled={saving} onChange={(event) => setField("warehouseId", event.target.value)} />
                                 <Input label="Ngày dự kiến giao hàng *" type="date" min={todayVietnamIso()} value={form.expectedDeliveryDate} disabled={saving} onChange={(event) => setField("expectedDeliveryDate", event.target.value)} />
                             </div>
-                            <TextArea label="Ghi chú (nếu có)" value={form.note} disabled={saving} rows={3} onChange={(event) => setField("note", event.target.value)} />
+                            <TextArea label="Ghi chú (không bắt buộc)" value={form.note} disabled={saving} rows={3} onChange={(event) => setField("note", event.target.value)} />
                             {editing && <p className="text-sm text-slate-500">Chỉ đơn nháp mới được chỉnh sửa. Nếu đổi nhà cung cấp, bạn cần chọn lại danh sách sản phẩm.</p>}
                         </Card>
 
@@ -331,7 +331,7 @@ export default function PurchaseOrderFormPage() {
                             </div>
                             <div className="flex flex-wrap justify-end gap-3">
                                 <Button type="button" variant="outline" onClick={() => navigate(editing ? `${ROOT}/${orderId}` : ROOT)}>Hủy</Button>
-                                <Button type="submit" disabled={saving || loadingProducts || !!productError || !confirmed || (priceDiffers && !confirmedPriceChange)}>{saving ? "Đang lưu..." : editing ? "Lưu thay đổi đơn nháp" : "Tạo đơn nháp"}</Button>
+                                <Button type="submit" disabled={saving || loadingProducts || !!productError || !confirmed || (priceDiffers && !confirmedPriceChange)}>{saving ? "Saving..." : editing ? "Lưu thay đổi đơn nháp" : "Tạo đơn nháp"}</Button>
                             </div>
                         </Card>
                     </form>

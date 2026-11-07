@@ -26,7 +26,7 @@ import {
     PurchaseOrderStatusBadge,
 } from "./purchaseOrderFormat";
 
-const ROOT = "/business-staff/purchase-orders";
+const ROOT = "/business/purchase-orders";
 const PAGE_SIZE = 10;
 const EMPTY_FILTERS = {
     keyword: "",
@@ -121,10 +121,10 @@ export default function PurchaseOrderListPage() {
             ),
         },
         { key: "supplierName", label: "Nhà cung cấp", render: (value) => value || "—" },
-        { key: "warehouseName", label: "Kho nhận", render: (value) => value || "—" },
+        { key: "warehouseName", label: "Kho/cửa hàng nhận", render: (value) => value || "—" },
         { key: "status", label: "Trạng thái", render: (value) => <PurchaseOrderStatusBadge status={value} /> },
         { key: "totalProducts", label: "Số SP", render: (value) => value ?? "—" },
-        { key: "totalOrderedQuantity", label: "SL đặt", render: (value) => value ?? "—" },
+        { key: "totalOrderedQuantity", label: "Số lượng đặt", render: (value) => value ?? "—" },
         { key: "totalAmount", label: "Tổng tiền", render: (value) => <span className="whitespace-nowrap font-semibold">{formatPurchaseOrderMoney(value)}</span> },
         { key: "expectedDeliveryDate", label: "Dự kiến giao", render: formatExpectedDeliveryDate },
         { key: "createdAt", label: "Ngày tạo", render: formatPurchaseOrderDate },
@@ -143,7 +143,7 @@ export default function PurchaseOrderListPage() {
     ];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title="Quản lý đơn hàng nhập"
@@ -189,7 +189,7 @@ export default function PurchaseOrderListPage() {
                             onChange={(event) => setDraft((value) => ({ ...value, createdTo: event.target.value }))}
                         />
                         <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-5">
-                            <Button type="submit">Tìm kiếm / Lọc</Button>
+                            <Button type="submit">Tìm kiếm / Bộ lọc</Button>
                             <Button type="button" variant="outline" onClick={resetFilters}>Xóa bộ lọc</Button>
                             <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Làm mới</Button>
                         </div>
@@ -203,7 +203,7 @@ export default function PurchaseOrderListPage() {
                         <Spinner /> Đang tải danh sách đơn mua hàng...
                     </div>
                 ) : error ? null : orders.length === 0 ? (
-                    <EmptyState title="Không tìm thấy đơn mua hàng" description="Hãy thử thay đổi bộ lọc." />
+                    <EmptyState title="Không tìm thấy đơn mua hàng" description="Hãy điều chỉnh bộ lọc và thử lại." />
                 ) : (
                     <div className="space-y-4">
                         <Table columns={columns} data={visibleOrders} />

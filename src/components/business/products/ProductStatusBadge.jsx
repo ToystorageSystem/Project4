@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 const STATUS = {
     PENDING: { label: "Chờ duyệt", color: "bg-amber-100 text-amber-800" },
     PENDING_CREATE: { label: "Chờ duyệt tạo", color: "bg-amber-100 text-amber-800" },
@@ -10,7 +11,7 @@ const STATUS = {
 };
 
 export default function ProductStatusBadge({ status }) {
-    const item = STATUS[status] || { label: status || "—", color: "bg-slate-100 text-slate-700" };
+    const item = STATUS[status] || { label: status ? formatBusinessStatus(status) : "—", color: "bg-slate-100 text-slate-700" };
     return (
         <span className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${item.color}`}>
             {item.label}

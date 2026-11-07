@@ -107,7 +107,7 @@ export function inTransitShipmentErrorMessage(
     }
 
     if (!error?.response) {
-        return "Không thể kết nối hệ thống. Vui lòng thử lại.";
+        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
     }
 
     const data = error.response.data;

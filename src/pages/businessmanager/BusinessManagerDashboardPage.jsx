@@ -33,7 +33,7 @@ export default function BusinessManagerDashboardPage() {
     }, []);
 
     return (
-        <MainLayout title="Business Manager" items={businessManagerMenuItems}>
+        <MainLayout title="Business Operations" items={businessManagerMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title="Tổng quan kinh doanh"
@@ -47,7 +47,7 @@ export default function BusinessManagerDashboardPage() {
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                             <MetricCard label="Sản phẩm trong kho" value={formatCount(report.totalProducts)} />
                             <MetricCard label="Tổng tồn vật lý" value={formatCount(report.totalQuantity)} />
-                            <MetricCard label="Tồn khả dụng" value={formatCount(report.totalAvailableQuantity)} />
+                            <MetricCard label="Tồn kho khả dụng" value={formatCount(report.totalAvailableQuantity)} />
                             <MetricCard label="Tồn giữ chỗ" value={formatCount(report.totalReservedQuantity)} />
                         </div>
                         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

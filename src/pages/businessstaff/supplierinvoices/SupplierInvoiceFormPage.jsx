@@ -31,7 +31,7 @@ import {
     SupplierInvoiceStatusBadge,
 } from "./supplierInvoiceFormat";
 
-const ROOT = "/business-staff/supplier-invoices";
+const ROOT = "/business/supplier-invoices";
 const EDITABLE = new Set(["DRAFT", "PENDING_VERIFICATION"]);
 
 const FILE_EXTENSION_PATTERN = /\.(pdf|xml|jpe?g|png|webp)$/i;
@@ -350,10 +350,10 @@ export default function SupplierInvoiceFormPage() {
                         uploadError?.response || uploadError?.request
                             ? supplierInvoiceErrorMessage(
                                   uploadError,
-                                  "Tải file không thành công."
+                                  "Tải tệp lên thất bại."
                               )
                             : uploadError?.message ||
-                              "Tải file không thành công.";
+                              "Tải tệp lên thất bại.";
 
                     setSavedInvoiceId(Number(saved.id));
 
@@ -388,7 +388,7 @@ export default function SupplierInvoiceFormPage() {
 
     return (
         <MainLayout
-            title="Business Staff"
+            title="Business Operations"
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
@@ -420,9 +420,9 @@ export default function SupplierInvoiceFormPage() {
 
                 <Alert type="info">
                     Tạo hóa đơn mới ở trạng thái{" "}
-                    <strong>DRAFT</strong>. Chỉ hóa đơn{" "}
-                    <strong>DRAFT</strong> hoặc{" "}
-                    <strong>PENDING_VERIFICATION</strong> mới được
+                    <strong>Nháp</strong>. Chỉ hóa đơn{" "}
+                    <strong>Nháp</strong> hoặc{" "}
+                    <strong>Chờ xác minh</strong> mới được
                     sửa. Mọi thao tác lưu sẽ ghi dữ liệu thật lên
                     hệ thống và cần xác nhận riêng.
                 </Alert>
@@ -464,7 +464,7 @@ export default function SupplierInvoiceFormPage() {
                 {problems.length > 0 && (
                     <div role="alert">
                         <Alert type="danger">
-                            <strong>Thông tin chưa hợp lệ:</strong>
+                            <strong>Thông tin không hợp lệ:</strong>
 
                             <ul className="mt-2 list-disc space-y-1 pl-5">
                                 {problems.map((item, index) => (
@@ -903,7 +903,7 @@ export default function SupplierInvoiceFormPage() {
                                         }
                                     >
                                         {saving
-                                            ? "Đang lưu..."
+                                            ? "Saving..."
                                             : editing
                                               ? "Lưu thay đổi hóa đơn"
                                               : attachmentFile

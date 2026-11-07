@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getProduct, productErrorMessage } from "../../../api/business/products";
 import ProductStatusBadge, { formatProductDate, formatProductPrice } from "../../../components/business/products/ProductStatusBadge";
 import SupplierProductLinksPanel from "../../../components/business/supplierProducts/SupplierProductLinksPanel";
+import ProductActivityHistory from "../../../components/business/products/ProductActivityHistory";
 import { businessStaffMenuItems } from "../../../components/icons/businessMenuItems";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -11,7 +12,7 @@ import Button from "../../../components/ui/Button";
 import Card from "../../../components/ui/Card";
 import Spinner from "../../../components/ui/Spinner";
 
-const ROOT = "/business-staff/products";
+const ROOT = "/business/products";
 const DetailField = ({ label, children }) => (
     <div className="space-y-1 rounded-xl border border-slate-100 bg-slate-50 p-4">
         <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
@@ -41,14 +42,14 @@ export default function ProductDetailPage() {
     }, [productId]);
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Chi tiết sản phẩm" description="Sản phẩm chỉ được đưa vào sử dụng sau khi quản lý kinh doanh phê duyệt."
+                <PageHeader title="Chi tiết sản phẩm" description="Xem thông tin, chỉnh sửa trực tiếp và truy lại lịch sử thay đổi sản phẩm."
                     actions={
                         <div className="flex flex-wrap gap-2">
-                            <Button variant="ghost" onClick={() => navigate(ROOT)}>← Danh sách</Button>
+                            <Button variant="ghost" onClick={() => navigate(ROOT)}>← Quay lại danh sách</Button>
                             {(product?.status === "ACTIVE" || product?.status === "INACTIVE") && (
-                                <Button onClick={() => navigate(`${ROOT}/${productId}/edit`)}>Đề nghị sửa</Button>
+                                <Button onClick={() => navigate(`${ROOT}/${productId}/edit`)}>Chỉnh sửa sản phẩm</Button>
                             )}
                         </div>
                     }
@@ -59,10 +60,10 @@ export default function ProductDetailPage() {
                 {!loading && product && !error && (
                     <>
                         {(product.status === "PENDING_CREATE" || product.status === "PENDING_UPDATE" || product.status === "PENDING") && (
-                            <Alert type="warning">Sản phẩm hoặc yêu cầu thay đổi đang chờ quản lý kinh doanh duyệt, chưa được dùng như sản phẩm đã duyệt.</Alert>
+                            <Alert type="warning">Sản phẩm này thuộc quy trình chờ duyệt cũ. Để tránh thay đổi nhầm dữ liệu, vui lòng xử lý hồ sơ tồn trước khi cập nhật.</Alert>
                         )}
                         {product.status === "REJECTED" && (
-                            <Alert type="danger">Sản phẩm bị từ chối. Lý do: {product.rejectionReason || "Chưa có thông tin lý do."} Bạn có thể theo dõi yêu cầu tại “Yêu cầu của tôi”.</Alert>
+                            <Alert type="danger">Sản phẩm bị từ chối. Lý do: {product.rejectionReason || "Chưa có thông tin lý do."} Đây là hồ sơ từ quy trình cũ và được giữ lại để tra cứu.</Alert>
                         )}
                         <Card>
                             <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
@@ -78,10 +79,9 @@ export default function ProductDetailPage() {
                                 <DetailField label="Đơn vị cơ sở">{product.baseUnit}</DetailField>
                                 <DetailField label="Danh mục">{product.categoryName ? `${product.categoryName} (mã ${product.categoryId})` : `Mã ${product.categoryId}`}</DetailField>
                                 <DetailField label="Thương hiệu">{product.brandId ? `${product.brandName || "Thương hiệu"} (mã ${product.brandId})` : "Không có"}</DetailField>
-                                <DetailField label="Giá nhập">{formatProductPrice(product.purchasePrice)}</DetailField>
+                                <DetailField label="Giá mua">{formatProductPrice(product.purchasePrice)}</DetailField>
                                 <DetailField label="Giá bán">{formatProductPrice(product.sellingPrice)}</DetailField>
                                 <DetailField label="Người tạo">{product.createdByName || "—"}</DetailField>
-                                <DetailField label="Người phê duyệt">{product.approvedByName || "Chưa duyệt"}</DetailField>
                                 <DetailField label="Ngày tạo">{formatProductDate(product.createdAt)}</DetailField>
                                 <DetailField label="Ngày cập nhật">{formatProductDate(product.updatedAt)}</DetailField>
                             </div>
@@ -93,9 +93,7 @@ export default function ProductDetailPage() {
                             )}
                         </Card>
                         <SupplierProductLinksPanel productId={productId} productStatus={product.status} />
-                        <Card>
-                            <p className="text-sm text-slate-600">Đề nghị sửa sản phẩm được lưu riêng và chỉ áp dụng lên sản phẩm khi được quản lý kinh doanh phê duyệt. Để kiểm tra trạng thái yêu cầu, mở <button type="button" onClick={() => navigate(`${ROOT}/requests`)} className="font-semibold text-[#c94810] hover:underline">Yêu cầu của tôi</button>.</p>
-                        </Card>
+                        <ProductActivityHistory productId={productId} />
                     </>
                 )}
             </div>

@@ -1,7 +1,8 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 export const PURCHASE_ORDER_STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
     { value: "DRAFT", label: "Đơn nháp" },
-    { value: "ORDERED", label: "Đã gửi nhà cung cấp" },
+    { value: "ORDERED", label: "Đã đặt hàng" },
     { value: "PARTIALLY_RECEIVED", label: "Đã nhận một phần" },
     { value: "COMPLETED", label: "Đã nhận đủ hàng" },
     { value: "CANCELLED", label: "Đã hủy" },
@@ -25,7 +26,7 @@ const statusStyles = {
 export function PurchaseOrderStatusBadge({ status }) {
     return (
         <span className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[status] || "bg-slate-100 text-slate-700"}`}>
-            {statusLabels[status] || status || "—"}
+            {statusLabels[status] || (status ? formatBusinessStatus(status) : "—")}
         </span>
     );
 }

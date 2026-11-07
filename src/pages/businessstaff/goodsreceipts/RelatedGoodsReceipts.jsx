@@ -37,22 +37,22 @@ export default function RelatedGoodsReceipts({ purchaseOrderId }) {
                 <p className="mt-1 text-sm text-slate-500">Một đơn mua hàng có thể được giao thành nhiều đợt. Lập phiếu chưa làm tăng tồn kho.</p>
             </div>
             <Link className="font-semibold text-[#c94810] hover:underline"
-                to={`/business-staff/goods-receipts/list?purchaseOrderId=${purchaseOrderId}`}>
+                to={`/business/goods-receipts/list?purchaseOrderId=${purchaseOrderId}`}>
                 Xem tất cả ({total})
             </Link>
         </div>
-        {loading ? <p className="text-sm text-slate-500">Đang tải phiếu nhập...</p>
+        {loading ? <p className="text-sm text-slate-500">Đang tải phiếu nhập kho...</p>
             : error ? <p role="alert" className="text-sm text-red-700">{error}</p>
                 : items.length === 0 ? <p className="text-sm text-slate-500">Đơn mua hàng này chưa có phiếu nhận hàng.</p>
                     : <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 text-slate-600"><tr>
-                                <th className="p-3">Mã phiếu</th><th className="p-3">Ngày tạo</th>
-                                <th className="p-3">SL dự kiến</th><th className="p-3">Trạng thái</th>
+                                <th className="p-3">Mã chứng từ</th><th className="p-3">Ngày tạo</th>
+                                <th className="p-3">Số lượng dự kiến</th><th className="p-3">Trạng thái</th>
                             </tr></thead>
                             <tbody>{items.map((item) => <tr className="border-t" key={item.id}>
                                 <td className="p-3"><Link className="font-semibold text-[#c94810] hover:underline"
-                                    to={`/business-staff/goods-receipts/${item.id}`}>{item.receiptCode}</Link></td>
+                                    to={`/business/goods-receipts/${item.id}`}>{item.receiptCode}</Link></td>
                                 <td className="p-3">{formatReceiptDate(item.createdAt)}</td>
                                 <td className="p-3">{item.totalExpectedQuantity ?? 0}</td>
                                 <td className="p-3">{receiptStatusLabels[item.status] || item.status}</td>

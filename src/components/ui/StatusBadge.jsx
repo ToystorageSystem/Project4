@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../utils/viStatus";
 import Badge from "./Badge";
 
 const map = {
@@ -29,5 +30,5 @@ const map = {
 };
 
 export default function StatusBadge({ status, label }) {
-    return <Badge variant={map[status] || "default"}>{label || status || "-"}</Badge>;
+    return <Badge variant={map[status] || "default"}>{label || (status ? formatBusinessStatus(status) : "-")}</Badge>;
 }

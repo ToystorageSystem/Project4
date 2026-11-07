@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -16,7 +17,7 @@ import Spinner from "../../../components/ui/Spinner";
 import { TRANSFER_REASONS, canEditStockTransfer } from "./stockTransferDraft";
 import StockTransferActionDialog from "./StockTransferActionDialog";
 
-const ROOT = "/business-staff/stock-transfers";
+const ROOT = "/business/stock-transfers";
 const CANCELLABLE_STATUSES = new Set(["DRAFT", "CREATED", "PENDING_SOURCE_CONFIRMATION"]);
 const numberFormatter = new Intl.NumberFormat("vi-VN");
 const quantity = (value) => value == null ? "—" : numberFormatter.format(Number(value));
@@ -152,7 +153,7 @@ export default function StockTransferDetailPage() {
     const statusClass = detail?.status === "DRAFT" ? "bg-slate-100 text-slate-700" : "bg-blue-100 text-blue-700";
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title="Chi tiết phiếu điều chuyển hàng"
@@ -177,11 +178,11 @@ export default function StockTransferDetailPage() {
                                 <p className="text-sm text-slate-500">Mã phiếu điều chuyển</p>
                                 <h2 className="text-xl font-bold text-slate-900">{detail.transferCode || `#${detail.id}`}</h2>
                             </div>
-                            <span className={`rounded-full px-3 py-1 text-sm font-semibold ${statusClass}`}>{detail.status || "—"}</span>
+                            <span className={`rounded-full px-3 py-1 text-sm font-semibold ${statusClass}`}>{detail.status ? formatBusinessStatus(detail.status) : "—"}</span>
                         </div>
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            <InfoField label="Điểm xuất" value={`${detail.fromWarehouseName || "—"} (${detail.fromWarehouseCode || "—"})`} />
-                            <InfoField label="Điểm nhận" value={`${detail.toWarehouseName || "—"} (${detail.toWarehouseCode || "—"})`} />
+                            <InfoField label="Điểm xuất phát" value={`${detail.fromWarehouseName || "—"} (${detail.fromWarehouseCode || "—"})`} />
+                            <InfoField label="Điểm đến" value={`${detail.toWarehouseName || "—"} (${detail.toWarehouseCode || "—"})`} />
                             <InfoField label="Loại điều chuyển" value={detail.transferType || "—"} />
                             <InfoField label="Ngày xuất dự kiến" value={dateText(detail.expectedShipmentDate)} />
                             <InfoField label="Ngày nhận dự kiến" value={dateText(detail.expectedReceiptDate)} />
@@ -205,7 +206,7 @@ export default function StockTransferDetailPage() {
                             <table className="min-w-[900px] w-full text-left text-sm">
                                 <thead className="bg-orange-50 text-xs uppercase text-slate-600">
                                     <tr>
-                                        {["Mã SP", "Tên sản phẩm", "Đơn vị", "SL yêu cầu", "SL duyệt", "Đã lấy", "Đã đóng", "Đã xuất", "Đã nhận"].map((label) => <th className="px-3 py-3" key={label}>{label}</th>)}
+                                        {["Mã SKU", "Tên sản phẩm", "Đơn vị", "Số lượng yêu cầu", "SL duyệt", "Picked", "Đã đóng", "Đã xuất hàng", "Đã nhận"].map((label) => <th className="px-3 py-3" key={label}>{label}</th>)}
                                     </tr>
                                 </thead>
                                 <tbody>

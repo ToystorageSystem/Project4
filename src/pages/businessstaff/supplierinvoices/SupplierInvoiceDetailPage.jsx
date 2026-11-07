@@ -25,7 +25,7 @@ import {
     SupplierInvoiceStatusBadge,
 } from "./supplierInvoiceFormat";
 
-const ROOT = "/business-staff/supplier-invoices";
+const ROOT = "/business/supplier-invoices";
 
 function DetailField({ label, value }) {
     return (
@@ -87,8 +87,8 @@ export default function SupplierInvoiceDetailPage() {
     const lineColumns = [
         { key: "productCode", label: "Mã sản phẩm", render: (value) => value || "—" },
         { key: "productName", label: "Sản phẩm", render: (value) => value || "—" },
-        { key: "orderedQuantity", label: "SL đặt", render: (value) => value ?? "—" },
-        { key: "receivedQuantity", label: "SL nhận", render: (value) => value ?? "—" },
+        { key: "orderedQuantity", label: "Số lượng đặt", render: (value) => value ?? "—" },
+        { key: "receivedQuantity", label: "Số lượng đã nhận", render: (value) => value ?? "—" },
         { key: "unitPrice", label: "Giá PO", render: formatSupplierInvoiceMoney },
         { key: "lineTotal", label: "Thành tiền đơn mua hàng", render: formatSupplierInvoiceMoney },
     ];
@@ -100,13 +100,13 @@ export default function SupplierInvoiceDetailPage() {
     ].filter((entry) => typeof entry.url === "string" && /^https:\/\/[^\s]+$/i.test(entry.url)) : [];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title="Chi tiết hóa đơn nhà cung cấp"
                     description="Xem thông tin hóa đơn và đối chiếu với đơn mua hàng liên quan. Chỉ hóa đơn chưa được xác nhận mới có thể chỉnh sửa."
                     actions={<>
-                        <Button type="button" variant="outline" onClick={() => navigate(ROOT)}>← Danh sách</Button>
+                        <Button type="button" variant="outline" onClick={() => navigate(ROOT)}>← Quay lại danh sách</Button>
                         {detail && supplierInvoiceCanChange(detail) && (
                             <Button type="button" onClick={() => navigate(`${ROOT}/${detail.id}/edit`)}>Sửa hóa đơn</Button>
                         )}
@@ -135,7 +135,7 @@ export default function SupplierInvoiceDetailPage() {
                                 <DetailField label="Nhà cung cấp" value={detail.supplierName || "—"} />
                                 <DetailField label="Mã nhà cung cấp / Mã số thuế" value={`${detail.supplierCode || "—"} / ${detail.supplierTaxCode || "—"}`} />
                                 <DetailField label="Đơn mua hàng liên kết" value={detail.purchaseOrderId ? (
-                                    <Link className="text-[#c94810] hover:underline" to={`/business-staff/purchase-orders/${detail.purchaseOrderId}`}>
+                                    <Link className="text-[#c94810] hover:underline" to={`/business/purchase-orders/${detail.purchaseOrderId}`}>
                                         {detail.purchaseOrderCode || `PO #${detail.purchaseOrderId}`}
                                     </Link>
                                 ) : "—"} />

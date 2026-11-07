@@ -12,8 +12,8 @@ import Pagination from "../../../components/ui/Pagination";
 import Spinner from "../../../components/ui/Spinner";
 import Table from "../../../components/ui/Table";
 
-const ROOT = "/business-staff/products";
-const TYPES = { CREATE: "Tạo mới", UPDATE: "Đề nghị sửa", DEACTIVATE: "Ẩn" };
+const ROOT = "/business/products";
+const TYPES = { CREATE: "Tạo mới", UPDATE: "Yêu cầu chỉnh sửa", DEACTIVATE: "Ngừng hoạt động" };
 
 export default function ProductRequestsPage() {
     const navigate = useNavigate();
@@ -52,10 +52,10 @@ export default function ProductRequestsPage() {
     ];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader title="Yêu cầu sản phẩm của tôi" description="Theo dõi yêu cầu thêm hoặc sửa sản phẩm, kết quả xét duyệt và lý do nếu bị từ chối."
-                    actions={<div className="flex gap-2"><Button variant="ghost" onClick={() => navigate(ROOT)}>← Danh sách</Button><Button variant="outline" onClick={() => setReload((v) => v + 1)}>Làm mới</Button></div>}
+                    actions={<div className="flex gap-2"><Button variant="ghost" onClick={() => navigate(ROOT)}>← Quay lại danh sách</Button><Button variant="outline" onClick={() => setReload((v) => v + 1)}>Làm mới</Button></div>}
                 />
                 <Alert type="info">Chỉ khi quản lý kinh doanh đồng ý thì thông tin sản phẩm mới được cập nhật. Những yêu cầu đang chờ sẽ được xét duyệt sau.</Alert>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}

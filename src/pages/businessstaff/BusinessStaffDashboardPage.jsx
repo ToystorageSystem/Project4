@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../utils/viStatus";
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -15,25 +16,25 @@ const QUICK_ACTIONS = [
     {
         title: "Thêm sản phẩm",
         description: "Tạo yêu cầu sản phẩm mới",
-        to: "/business-staff/products/new",
+        to: "/business/products/new",
         iconPath: "M12 5v14M5 12h14",
     },
     {
         title: "Tạo đơn mua hàng",
         description: "Lập đơn mua từ nhà cung cấp",
-        to: "/business-staff/purchase-orders/new",
+        to: "/business/purchase-orders/new",
         iconPath: "M8 3h8l4 4v14H4V3h4m8 0v5h4M8 12h8M8 16h8",
     },
     {
         title: "Tạo phiếu điều chuyển",
         description: "Điều chuyển hàng giữa các kho",
-        to: "/business-staff/stock-transfers/new",
+        to: "/business/stock-transfers/new",
         iconPath: "M4 7h16m0 0-4-4m4 4-4 4M20 17H4m0 0 4-4m-4 4 4 4",
     },
     {
         title: "Quản lý nhà cung cấp",
         description: "Xem và cập nhật nhà cung cấp",
-        to: "/business-staff/suppliers",
+        to: "/business/suppliers",
         iconPath: "M3 21h18M5 21V7l7-4 7 4v14M9 11h6M9 15h6M9 19h6",
     },
 ];
@@ -138,7 +139,7 @@ export default function BusinessStaffDashboardPage() {
 
     return (
         <MainLayout
-            title="Business Staff"
+            title="Business Operations"
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
@@ -261,7 +262,7 @@ export default function BusinessStaffDashboardPage() {
 
                             <div className="grid gap-3 lg:grid-cols-2">
                                 <Link
-                                    to="/business-staff/purchase-orders"
+                                    to="/business/purchase-orders"
                                     className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-orange-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
                                 >
                                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
@@ -286,7 +287,7 @@ export default function BusinessStaffDashboardPage() {
 
                                         <span className="mt-1 block text-xs leading-5 text-slate-500">
                                             {extraStats.draftOrders === null
-                                                ? "Chưa tải được số liệu."
+                                                ? "Chưa có dữ liệu."
                                                 : extraStats.draftOrders > 0
                                                     ? "Có đơn nháp cần tiếp tục hoàn thiện."
                                                     : "Hiện không có đơn nháp."}
@@ -306,7 +307,7 @@ export default function BusinessStaffDashboardPage() {
                                 </Link>
 
                                 <Link
-                                    to="/business-staff/products/rejected"
+                                    to="/business/products/rejected"
                                     className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-orange-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
                                 >
                                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
@@ -331,7 +332,7 @@ export default function BusinessStaffDashboardPage() {
 
                                         <span className="mt-1 block text-xs leading-5 text-slate-500">
                                             {extraStats.rejectedRequests === null
-                                                ? "Chưa tải được số liệu."
+                                                ? "Chưa có dữ liệu."
                                                 : extraStats.rejectedRequests > 0
                                                     ? "Xem lý do từ chối và chỉnh sửa để gửi lại."
                                                     : "Không có yêu cầu bị từ chối."}
@@ -360,7 +361,7 @@ export default function BusinessStaffDashboardPage() {
                                     </h2>
 
                                     <Link
-                                        to="/business-staff/suppliers"
+                                        to="/business/suppliers"
                                         className="text-sm font-semibold text-[#c94810] hover:underline"
                                     >
                                         Xem tất cả →
@@ -397,7 +398,7 @@ export default function BusinessStaffDashboardPage() {
                                                         {supplier.email || "—"}
                                                     </td>
                                                     <td className="px-5 py-3">
-                                                        {supplier.status || "—"}
+                                                        {supplier.status ? formatBusinessStatus(supplier.status) : "—"}
                                                     </td>
                                                 </tr>
                                             ))}

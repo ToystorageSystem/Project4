@@ -21,7 +21,7 @@ export default function StockTransferActionDialog({
                 </div>
                 <div className="space-y-4 px-6 py-5 text-sm text-slate-700">
                     {isSubmit ? <p>
-                        Phiếu <strong>{transferCode}</strong> sẽ được gửi cho bộ phận kho xử lý.
+                        Chứng từ <strong>{transferCode}</strong> sẽ được gửi cho bộ phận kho xử lý.
                         Hệ thống sẽ kiểm tra số lượng có thể xuất và <strong>tạm giữ số hàng cần điều chuyển tại kho xuất</strong>.
                         Sau khi gửi, việc chỉnh sửa phiếu sẽ bị hạn chế.
                     </p> : <>

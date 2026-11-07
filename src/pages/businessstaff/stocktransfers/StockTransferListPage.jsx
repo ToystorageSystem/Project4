@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -21,7 +22,7 @@ import Select from "../../../components/ui/Select";
 import Spinner from "../../../components/ui/Spinner";
 import Table from "../../../components/ui/Table";
 
-const ROOT = "/business-staff/stock-transfers";
+const ROOT = "/business/stock-transfers";
 const PAGE_SIZE = 10;
 
 // Chuyen trang thai Backend thanh ten de hieu tren giao dien.
@@ -30,12 +31,12 @@ const STATUS_LABELS = {
     PENDING_SOURCE_CONFIRMATION: "Chờ kho xuất xác nhận",
     CREATED: "Đã gửi, chờ kho xử lý",
     PICKING: "Đang lấy hàng",
-    PACKING: "Đang đóng gói",
-    PACKED: "Đã đóng gói",
+    PACKING: "Đang đóng kiện",
+    PACKED: "Đã đóng kiện",
     SHIPPED: "Đang vận chuyển",
     RECEIVING: "Đang kiểm nhận",
     RECEIVED: "Đã nhận",
-    COMPLETED: "Hoàn tất",
+    COMPLETED: "Đã hoàn thành",
     REJECTED: "Bị từ chối",
     CANCELLED: "Đã hủy",
 };
@@ -91,7 +92,7 @@ function StatusBadge({ status }) {
         <span
             className={`inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${className}`}
         >
-            {STATUS_LABELS[status] || status || "—"}
+            {STATUS_LABELS[status] || (status ? formatBusinessStatus(status) : "—")}
         </span>
     );
 }
@@ -201,7 +202,7 @@ export default function StockTransferListPage() {
     const columns = [
         {
             key: "transferCode",
-            label: "Mã phiếu",
+            label: "Mã chứng từ",
             render: (value, item) => (
                 <Link
                     to={`${ROOT}/${item.id}`}
@@ -213,12 +214,12 @@ export default function StockTransferListPage() {
         },
         {
             key: "fromWarehouseName",
-            label: "Điểm xuất",
+            label: "Điểm xuất phát",
             render: (value) => value || "—",
         },
         {
             key: "toWarehouseName",
-            label: "Điểm nhận",
+            label: "Điểm đến",
             render: (value) => value || "—",
         },
         {
@@ -230,12 +231,12 @@ export default function StockTransferListPage() {
         },
         {
             key: "expectedShipmentDate",
-            label: "Dự kiến xuất",
+            label: "Dự kiến xuất kho",
             render: formatDate,
         },
         {
             key: "expectedReceiptDate",
-            label: "Dự kiến nhận",
+            label: "Dự kiến nhận hàng",
             render: formatDate,
         },
         {
@@ -259,7 +260,7 @@ export default function StockTransferListPage() {
 
     return (
         <MainLayout
-            title="Business Staff"
+            title="Business Operations"
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
@@ -304,7 +305,7 @@ export default function StockTransferListPage() {
 
                         <div className="flex flex-wrap items-center gap-2 md:col-span-2">
                             <Button type="submit">
-                                Tìm kiếm / Lọc
+                                Tìm kiếm / Bộ lọc
                             </Button>
 
                             <Button

@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { formatBusinessStatus } from "../../../utils/viStatus";
 
 import {
     getShipmentManifestDetail,
@@ -17,7 +18,7 @@ import EmptyState from "../../../components/ui/EmptyState";
 import Spinner from "../../../components/ui/Spinner";
 import Table from "../../../components/ui/Table";
 
-const ROOT = "/business-staff/shipment-manifests";
+const ROOT = "/business/shipment-manifests";
 
 const formatNumber = (value) =>
     Number(value ?? 0).toLocaleString("vi-VN");
@@ -42,12 +43,12 @@ const transportLabels = {
     CREATED: "Mới tạo",
     ASSIGNED: "Đã phân công",
     ACCEPTED: "Đã nhận chuyến",
-    REJECTED: "Đã từ chối",
-    READY_TO_SHIP: "Sẵn sàng giao",
+    REJECTED: "Bị từ chối",
+    READY_TO_SHIP: "Sẵn sàng giao hàng",
     IN_TRANSIT: "Đang vận chuyển",
     ARRIVED: "Đã đến nơi",
-    DELIVERED: "Đã giao",
-    FAILED: "Giao thất bại",
+    DELIVERED: "Đã giao hàng",
+    FAILED: "Giao hàng thất bại",
     CANCELLED: "Đã hủy",
 };
 
@@ -65,7 +66,7 @@ function StatusBadge({ status }) {
                 colors[status] || "bg-slate-100 text-slate-700"
             }`}
         >
-            {transportLabels[status] || status || "Chưa có chuyến giao"}
+            {transportLabels[status] || formatBusinessStatus(status)}
         </span>
     );
 }
@@ -89,7 +90,7 @@ const transferColumns = [
         label: "Mã phiếu điều chuyển",
         render: (value, item) => (
             <Link
-                to={`/business-staff/stock-transfers/${item.transferId}`}
+                to={`/business/stock-transfers/${item.transferId}`}
                 className="font-semibold text-[#c94810] hover:underline"
             >
                 {value}
@@ -103,6 +104,7 @@ const transferColumns = [
     {
         key: "transferStatus",
         label: "Trạng thái",
+        render: (value) => value ? formatBusinessStatus(value) : "—",
     },
     {
         key: "totalProducts",
@@ -111,17 +113,17 @@ const transferColumns = [
     },
     {
         key: "totalRequestedQuantity",
-        label: "SL yêu cầu",
+        label: "Số lượng yêu cầu",
         render: formatNumber,
     },
     {
         key: "expectedShipmentDate",
-        label: "Dự kiến xuất",
+        label: "Dự kiến xuất kho",
         render: (value) => formatLocalDate(value),
     },
     {
         key: "expectedReceiptDate",
-        label: "Dự kiến nhận",
+        label: "Dự kiến nhận hàng",
         render: (value) => formatLocalDate(value),
     },
 ];
@@ -137,7 +139,7 @@ const productColumns = [
     },
     {
         key: "barcode",
-        label: "Barcode",
+        label: "Mã vạch",
     },
     {
         key: "baseUnit",
@@ -197,7 +199,7 @@ export default function ShipmentManifestDetailPage() {
 
     return (
         <MainLayout
-            title="Business Staff"
+            title="Business Operations"
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
@@ -278,10 +280,10 @@ export default function ShipmentManifestDetailPage() {
                         <div className="grid gap-4 md:grid-cols-2">
                             <Card>
                                 <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                    Điểm xuất
+                                    Điểm xuất phát
                                 </h3>
                                 <InfoItem
-                                    label="Kho / cửa hàng"
+                                    label="Kho / Cửa hàng"
                                     value={manifest.fromWarehouseName}
                                 />
                                 <div className="mt-3">
@@ -300,10 +302,10 @@ export default function ShipmentManifestDetailPage() {
 
                             <Card>
                                 <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                    Điểm nhận
+                                    Điểm đến
                                 </h3>
                                 <InfoItem
-                                    label="Kho / cửa hàng"
+                                    label="Kho / Cửa hàng"
                                     value={manifest.toWarehouseName}
                                 />
                                 <div className="mt-3">
@@ -323,7 +325,7 @@ export default function ShipmentManifestDetailPage() {
 
                         <div className="grid gap-4 sm:grid-cols-3">
                             {[
-                                ["Tổng phiếu điều chuyển", manifest.totalTransfers],
+                                ["Tổng số phiếu điều chuyển", manifest.totalTransfers],
                                 ["Tổng số kiện", manifest.totalPackages],
                                 ["Tổng số lượng sản phẩm", manifest.totalProductQuantity],
                             ].map(([label, value]) => (

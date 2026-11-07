@@ -29,8 +29,8 @@ const PAGE_SIZE = 10;
 
 const STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
-    { value: "ACTIVE", label: "Hoạt động" },
-    { value: "INACTIVE", label: "Đã ẩn" },
+    { value: "ACTIVE", label: "Đang hoạt động" },
+    { value: "INACTIVE", label: "Ngừng hoạt động" },
 ];
 
 const EMPTY_FORM = {
@@ -313,7 +313,7 @@ export default function CategoryListPage() {
                             : "inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
                     }
                 >
-                    {value === "ACTIVE" ? "Hoạt động" : "Đã ẩn"}
+                    {value === "ACTIVE" ? "Đang hoạt động" : "Ngừng hoạt động"}
                 </span>
             ),
         },
@@ -336,7 +336,7 @@ export default function CategoryListPage() {
                             variant="danger"
                             onClick={() => openVisibility(category, false)}
                         >
-                            Ẩn
+                            Ngừng hoạt động
                         </Button>
                     )}
 
@@ -356,7 +356,7 @@ export default function CategoryListPage() {
 
     return (
         <MainLayout
-            title="Business Staff"
+            title="Business Operations"
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
@@ -489,7 +489,7 @@ export default function CategoryListPage() {
                                 disabled={!formConfirmed || saving}
                                 onClick={saveCategory}
                             >
-                                {saving ? "Đang lưu..." : "Lưu danh mục"}
+                                {saving ? "Saving..." : "Lưu danh mục"}
                             </Button>
                         </>
                     }

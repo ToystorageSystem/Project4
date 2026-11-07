@@ -1,3 +1,4 @@
+import { formatBusinessStatus } from "../../../utils/viStatus";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getGoodsReceiptById, goodsReceiptErrorMessage } from "../../../api/business/goodsReceipts";
@@ -11,7 +12,7 @@ import Spinner from "../../../components/ui/Spinner";
 import Table from "../../../components/ui/Table";
 import { formatReceiptDate, formatReceiptMoney, receiptStatusLabels, receiptText as T } from "./receiptText";
 
-const ROOT = "/business-staff/goods-receipts";
+const ROOT = "/business/goods-receipts";
 const LIST = `${ROOT}/list`;
 
 function StatusBadge({ status }) {
@@ -21,7 +22,7 @@ function StatusBadge({ status }) {
             ? "bg-red-100 text-red-800"
             : "bg-amber-100 text-amber-800";
     return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${style}`}>
-        {receiptStatusLabels[status] || status || "-"}
+        {receiptStatusLabels[status] || (status ? formatBusinessStatus(status) : "-")}
     </span>;
 }
 
@@ -63,7 +64,7 @@ export default function GoodsReceiptDetailPage() {
     }, [receiptId, reload]);
 
     const columns = [
-        { key: "productCode", label: "SKU" },
+        { key: "productCode", label: "Mã SKU" },
         { key: "productName", label: T.product },
         { key: "expectedQuantity", label: T.quantity },
         { key: "unitPrice", label: T.price, render: (value) => formatReceiptMoney(value) },
@@ -71,7 +72,7 @@ export default function GoodsReceiptDetailPage() {
     ];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader title={T.detailTitle} description={T.draftNote}
                     actions={<div className="flex gap-2">

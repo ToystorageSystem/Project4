@@ -43,7 +43,7 @@ const MOCK_PRICE_DECISION_ITEM = {
 
 
 const RESPONSE_STATUS_LABELS = {
-    PENDING: "Đang chờ",
+    PENDING: "Chờ xử lý",
     AVAILABLE: "Có hàng",
     PARTIALLY_AVAILABLE: "Có một phần",
     OUT_OF_STOCK: "Hết hàng",
@@ -141,7 +141,7 @@ const columns = [
     },
     {
         key: "orderedQuantity",
-        label: "SL đặt",
+        label: "Số lượng đặt",
         render: formatNumber,
     },
     {

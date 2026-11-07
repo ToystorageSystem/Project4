@@ -16,12 +16,12 @@ import Spinner from "../../../components/ui/Spinner";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import Table from "../../../components/ui/Table";
 
-const ROOT = "/business-staff/suppliers";
+const ROOT = "/business/suppliers";
 const PAGE_SIZE = 10;
 const STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
     { value: "ACTIVE", label: "Đang hoạt động" },
-    { value: "INACTIVE", label: "Đã ẩn" },
+    { value: "INACTIVE", label: "Ngừng hoạt động" },
 ];
 const SORT_OPTIONS = [
     { value: "createdAt", label: "Ngày tạo" },
@@ -129,7 +129,7 @@ export default function SupplierListPage() {
                         size="sm"
                         onClick={() => { setError(""); setNotice(""); setAction(supplier); }}
                     >
-                        {supplier.status === "ACTIVE" ? "Ẩn" : "Khôi phục"}
+                        {supplier.status === "ACTIVE" ? "Ngừng hoạt động" : "Khôi phục"}
                     </Button>
                 </div>
             ),
@@ -137,7 +137,7 @@ export default function SupplierListPage() {
     ];
 
     return (
-        <MainLayout title="Business Staff" items={businessStaffMenuItems}>
+        <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
                     title="Quản lý nhà cung cấp"
