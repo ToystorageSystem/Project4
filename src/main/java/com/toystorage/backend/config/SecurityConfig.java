@@ -1,18 +1,27 @@
+
 package com.toystorage.backend.config;
 
 import com.toystorage.backend.config.security.CustomUserDetailsService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import org.springframework.http.HttpMethod;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -58,6 +67,8 @@ public class SecurityConfig {
     ) throws Exception {
 
         http
+                // Tam giu cau hinh CSRF cua Backend hien tai.
+                // Can hoan thien CSRF protection truoc production.
                 .csrf(csrf -> csrf.disable())
 
                 .authenticationProvider(
@@ -66,8 +77,27 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        // Login va cac buoc 2FA.
+                        // Service phai kiem tra PendingLogin.
                         .requestMatchers(
+                                HttpMethod.POST,
                                 "/api/auth/login",
+                                "/api/auth/logout",
+                                "/api/auth/2fa/setup",
+                                "/api/auth/2fa/confirm",
+                                "/api/auth/2fa/verify"
+                        )
+                        .permitAll()
+
+                        // Doi mat khau trong phien dang nhap tam.
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/auth/change-password"
+                        )
+                        .permitAll()
+
+                        // Giu nguyen Swagger.
+                        .requestMatchers(
                                 "/swagger",
                                 "/swagger/**",
                                 "/swagger-ui/**",
@@ -75,6 +105,7 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
+                        // API nghiep vu phai co Authentication.
                         .anyRequest()
                         .authenticated()
                 )

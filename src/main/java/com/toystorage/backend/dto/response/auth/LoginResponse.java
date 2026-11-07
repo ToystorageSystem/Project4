@@ -1,3 +1,4 @@
+
 package com.toystorage.backend.dto.response.auth;
 
 import lombok.Builder;
@@ -18,4 +19,10 @@ public class LoginResponse {
     private String email;
 
     private Set<String> authorities;
+
+    // Tai khoan co bat buoc doi mat khau hay khong
+    private boolean mustChangePassword;
+
+    // Trang thai xac thuc Login va Google Authenticator
+    private String loginStatus;
 }
