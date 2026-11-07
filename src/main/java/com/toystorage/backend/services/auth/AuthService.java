@@ -8,6 +8,7 @@ import com.toystorage.backend.dto.request.auth.LoginRequest;
 import com.toystorage.backend.dto.response.auth.LoginResponse;
 
 import com.toystorage.backend.entity.users.Users;
+import com.toystorage.backend.entity.users.ActivityLogs;
 
 import com.toystorage.backend.enums.users.ActivityAction;
 
@@ -18,11 +19,13 @@ import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.repository.users.UserRepository;
 
 import com.toystorage.backend.services.users.ActivityLogService;
+import com.toystorage.backend.services.users.SuspiciousLoginDetectionService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -50,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -63,6 +67,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     private final ActivityLogService activityLogService;
+    private final SuspiciousLoginDetectionService suspiciousLoginDetectionService;
 
 
     // =========================================================
@@ -107,15 +112,22 @@ public class AuthService {
             // nên log vẫn được commit trước khi throw Unauthorized.
             // =================================================
 
-            activityLogService
-                    .logAuthenticationAttempt(
+            ActivityLogs failedLog = activityLogService.logAuthenticationAttempt(
+                    request.getEmail(),
+                    httpRequest,
+                    ActivityAction.LOGIN_FAILED
+            );
 
-                            request.getEmail(),
-
-                            httpRequest,
-
-                            ActivityAction.LOGIN_FAILED
-                    );
+            // Kiem tra dang nhap bat thuong.
+            try {
+                suspiciousLoginDetectionService.detectAfterFailedLogin(failedLog);
+            } catch (RuntimeException detectionEx) {
+                log.error(
+                        "Suspicious login detection failed for activity log ID: {}",
+                        failedLog.getId(),
+                        detectionEx
+                );
+            }
 
 
             throw new Unauthorized(
