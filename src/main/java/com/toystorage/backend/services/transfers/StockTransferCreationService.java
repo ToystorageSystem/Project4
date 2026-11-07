@@ -1928,7 +1928,7 @@ public class StockTransferCreationService {
 
                 .anyMatch(
                         authority ->
-                                "ROLE_ROLE-BIZ-MANAGER"
+                                "ROLE_ROLE-BIZ-OPS"
                                         .equals(authority)
 
                                         || "ROLE_ROLE-ADMIN"

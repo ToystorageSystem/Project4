@@ -6,6 +6,7 @@ import com.toystorage.backend.dto.request.products.CreateProductRequest;
 import com.toystorage.backend.dto.request.products.RejectProductRequest;
 import com.toystorage.backend.dto.request.products.UpdateProductRequest;
 import com.toystorage.backend.dto.response.products.ProductChangeRequestResponse;
+import com.toystorage.backend.dto.response.products.ProductActivityResponse;
 import com.toystorage.backend.dto.response.products.ProductPageResponse;
 import com.toystorage.backend.dto.response.products.ProductResponse;
 import com.toystorage.backend.entity.products.Brands;
@@ -16,6 +17,7 @@ import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.enums.products.ProductChangeRequestStatus;
 import com.toystorage.backend.enums.products.ProductStatus;
 import com.toystorage.backend.exceptions.BadRequest;
+import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.mapper.products.ProductMapper;
@@ -34,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -45,149 +48,62 @@ public class ProductService {
     private final UserRepository userRepository;
     private final ProductValidationService validationService;
     private final ProductMapper productMapper;
+    private final ProductAuditService productAuditService;
     private final ObjectMapper objectMapper;
 
     /**
-     * Business Staff tạo sản phẩm mới và gửi yêu cầu phê duyệt.
+     * Business Operations tạo sản phẩm trực tiếp.
+     * Luồng: Validate -> kiểm tra danh mục/thương hiệu -> INSERT products (ACTIVE)
+     *      -> INSERT activity_logs -> trả ProductResponse.
+     * Không tạo ProductChangeRequests chờ duyệt.
      */
     @Transactional
-    public ProductChangeRequestResponse createProduct(
-            CreateProductRequest request
-    ) {
+    public ProductResponse createProduct(CreateProductRequest request) {
         validationService.validateCreateRequest(request);
+        Categories category = validationService.getActiveCategory(request.getCategoryId());
+        Brands brand = validationService.getActiveBrand(request.getBrandId());
+        Users actor = getCurrentUser();
 
-        Categories category =
-                validationService.getActiveCategory(
-                        request.getCategoryId()
-                );
+        Products product = productMapper.toEntity(request, category, brand, actor);
+        product.setStatus(ProductStatus.ACTIVE);
+        product.setApprovedBy(null); // Không giả lập có người duyệt.
+        product.setRejectionReason(null);
+        product = productRepository.saveAndFlush(product);
 
-        Brands brand =
-                validationService.getActiveBrand(
-                        request.getBrandId()
-                );
-
-        Users currentUser = getCurrentUser();
-
-        Products product = productMapper.toEntity(
-                request,
-                category,
-                brand,
-                currentUser
-        );
-
-        product = productRepository.save(product);
-
-        ProductChangeRequests changeRequest =
-                ProductChangeRequests.builder()
-                        .productChangeRequestsCode(
-                                generateRequestCode()
-                        )
-                        .product(product)
-                        .createdBy(currentUser)
-                        .oldValue(null)
-                        .newValue(
-                                toJson(
-                                        productMapper.toResponse(
-                                                product
-                                        )
-                                )
-                        )
-                        .requestReason(
-                                normalizeNullable(
-                                        request.getRequestReason()
-                                )
-                        )
-                        .status(
-                                ProductChangeRequestStatus.PENDING
-                        )
-                        .build();
-
-        changeRequest =
-                changeRequestRepository.save(changeRequest);
-
-        return productMapper.toChangeRequestResponse(
-                changeRequest
-        );
+        productAuditService.logCreate(product, actor, request.getRequestReason());
+        return productMapper.toResponse(product);
     }
 
     /**
-     * Business Staff gửi yêu cầu chỉnh sửa sản phẩm.
-     *
-     * Dữ liệu trong bảng products chưa bị thay đổi.
-     * Dữ liệu cũ và mới được lưu vào product_change_requests
-     * để Business Manager kiểm tra và phê duyệt.
+     * Cập nhật trực tiếp dữ liệu sản phẩm ACTIVE/INACTIVE.
+     * Giữ nguyên quy tắc mã/barcode không trùng và danh mục đang hoạt động.
+     * Yêu cầu chờ duyệt cũ (nếu có) vẫn cần được xử lý để tránh ghi đè chồng chéo.
      */
     @Transactional
-    public ProductChangeRequestResponse requestProductUpdate(
-            Long productId,
-            UpdateProductRequest request
-    ) {
-        Products product =
-                validationService.getProduct(productId);
+    public ProductResponse updateProduct(Long productId, UpdateProductRequest request) {
+        Products product = validationService.getProduct(productId);
+        validationService.validateProductCanBeChanged(product);
+        validationService.validateUpdateRequest(productId, request);
 
-        validationService.validateProductCanBeChanged(
-                product
-        );
+        Categories category = validationService.getActiveCategory(request.getCategoryId());
+        Brands brand = validationService.getActiveBrand(request.getBrandId());
+        Users actor = getCurrentUser();
+        java.util.Map<String, Object> before = productAuditService.snapshot(product);
 
-        validationService.validateUpdateRequest(
-                productId,
-                request
-        );
+        ProductResponse updated = productMapper.toProposedResponse(
+                product, request, category, brand);
+        applyApprovedUpdate(product, updated); // Hàm cũ kiểm tra và gán field, tái sử dụng an toàn.
+        product.setRejectionReason(null);
+        product = productRepository.saveAndFlush(product);
 
-        Categories category =
-                validationService.getActiveCategory(
-                        request.getCategoryId()
-                );
+        productAuditService.logUpdate(product, actor, before, request.getRequestReason());
+        return productMapper.toResponse(product);
+    }
 
-        Brands brand =
-                validationService.getActiveBrand(
-                        request.getBrandId()
-                );
-
-        Users currentUser = getCurrentUser();
-
-        ProductResponse oldProduct =
-                productMapper.toResponse(product);
-
-        ProductResponse proposedProduct =
-                productMapper.toProposedResponse(
-                        product,
-                        request,
-                        category,
-                        brand
-                );
-
-        ProductChangeRequests changeRequest =
-                ProductChangeRequests.builder()
-                        .productChangeRequestsCode(
-                                generateRequestCode()
-                        )
-                        .product(product)
-                        .createdBy(currentUser)
-                        .oldValue(
-                                toJson(oldProduct)
-                        )
-                        .newValue(
-                                toJson(proposedProduct)
-                        )
-                        .requestReason(
-                                normalizeNullable(
-                                        request.getRequestReason()
-                                )
-                        )
-                        .status(
-                                ProductChangeRequestStatus.PENDING
-                        )
-                        .build();
-
-        changeRequest =
-                changeRequestRepository.save(
-                        changeRequest
-                );
-
-        return productMapper.toChangeRequestResponse(
-                changeRequest
-        );
+    @Transactional(readOnly = true)
+    public Page<ProductActivityResponse> getProductHistory(Long productId, int page, int size) {
+        validationService.getProduct(productId); // Trả 404 nếu sản phẩm không tồn tại.
+        return productAuditService.getHistory(productId, page, size);
     }
 
     /**
@@ -295,6 +211,9 @@ public class ProductService {
         Products product = changeRequest.getProduct();
         Users currentUser = getCurrentUser();
 
+        // Cả hai API phê duyệt sản phẩm đều phải kiểm tra người duyệt khác người tạo.
+        ensureDifferentReviewer(changeRequest, currentUser);
+
         /*
          * oldValue null nghĩa là yêu cầu tạo mới.
          */
@@ -354,6 +273,9 @@ public class ProductService {
         Products product = changeRequest.getProduct();
         Users currentUser = getCurrentUser();
 
+        // Cả hai API phê duyệt sản phẩm đều phải kiểm tra người duyệt khác người tạo.
+        ensureDifferentReviewer(changeRequest, currentUser);
+
         String rejectionReason =
                 request.getRejectionReason().trim();
 
@@ -390,6 +312,17 @@ public class ProductService {
     }
 
     /**
+     * Ngăn tự duyệt: quy tắc nghiệp vụ áp dụng cho cả endpoint /api/products.
+     * Giữ quy tắc trong Service để không thể bỏ qua bằng cách gọi API khác.
+     */
+    private void ensureDifferentReviewer(ProductChangeRequests changeRequest, Users reviewer) {
+        if (changeRequest.getCreatedBy() != null
+                && Objects.equals(changeRequest.getCreatedBy().getId(), reviewer.getId())) {
+            throw new Forbidden("You cannot approve or reject your own product change request.");
+        }
+    }
+
+    /**
      * Business Staff ẩn sản phẩm đang hoạt động.
      *
      * Không xóa sản phẩm khỏi cơ sở dữ liệu,
@@ -406,10 +339,10 @@ public class ProductService {
             );
         }
 
+        java.util.Map<String, Object> before = productAuditService.snapshot(product);
         product.setStatus(ProductStatus.INACTIVE);
-
         product = productRepository.saveAndFlush(product);
-
+        productAuditService.logUpdate(product, getCurrentUser(), before, "Ẩn sản phẩm");
         return productMapper.toResponse(product);
     }
 
@@ -429,10 +362,10 @@ public class ProductService {
             );
         }
 
+        java.util.Map<String, Object> before = productAuditService.snapshot(product);
         product.setStatus(ProductStatus.ACTIVE);
-
         product = productRepository.saveAndFlush(product);
-
+        productAuditService.logUpdate(product, getCurrentUser(), before, "Khôi phục sản phẩm");
         return productMapper.toResponse(product);
     }
 

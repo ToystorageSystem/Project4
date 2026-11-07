@@ -19,6 +19,7 @@ import com.toystorage.backend.enums.products.ProductStatus;
 import com.toystorage.backend.enums.users.ActivityAction;
 import com.toystorage.backend.enums.users.ActivityEntityType;
 import com.toystorage.backend.exceptions.BadRequest;
+import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.mapper.products.ProductApprovalMapper;
@@ -42,6 +43,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -173,6 +175,9 @@ public class ProductApprovalService {
                         requestId
                 );
 
+        // Người tạo và người duyệt phải khác nhau dù chỉ dùng một role.
+        ensureDifferentReviewer(changeRequest, manager);
+
         Products product =
                 changeRequest.getProduct();
 
@@ -290,6 +295,9 @@ public class ProductApprovalService {
                 getPendingChangeRequest(
                         requestId
                 );
+
+        // Người tạo và người duyệt phải khác nhau dù chỉ dùng một role.
+        ensureDifferentReviewer(changeRequest, manager);
 
         String reason =
                 normalizeRejectionReason(
@@ -917,6 +925,17 @@ public class ProductApprovalService {
     // =====================================================
     // GET REQUEST
     // =====================================================
+
+    /**
+     * Quy tắc bốn mắt: một tài khoản Business Operations không được
+     * tự phê duyệt hoặc tự từ chối yêu cầu do mình lập.
+     */
+    private void ensureDifferentReviewer(ProductChangeRequests changeRequest, Users reviewer) {
+        if (changeRequest.getCreatedBy() != null
+                && Objects.equals(changeRequest.getCreatedBy().getId(), reviewer.getId())) {
+            throw new Forbidden("You cannot approve or reject your own product change request.");
+        }
+    }
 
     private ProductChangeRequests getChangeRequest(
             Long requestId

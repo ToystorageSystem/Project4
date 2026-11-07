@@ -188,7 +188,7 @@ public class PurchaseOrderCancellationService {
     }
 
     private boolean isManagerOrAdmin() {
-        return hasRole("ROLE_ROLE-BIZ-MANAGER") || hasRole("ROLE_ROLE-ADMIN");
+        return hasRole("ROLE_ROLE-BIZ-OPS") || hasRole("ROLE_ROLE-ADMIN");
     }
 
     private boolean hasRole(String role) {

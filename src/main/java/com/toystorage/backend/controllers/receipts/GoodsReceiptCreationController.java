@@ -36,7 +36,7 @@ public class GoodsReceiptCreationController {
     // BUSINESS STAFF - Theo doi phieu nhap, tim theo GR/PO va loc trang thai.
     // Khong gioi han "cua toi" vi goods_receipts chua luu created_by.
     @GetMapping("/business")
-    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-STAFF', 'ROLE_ROLE-BIZ-MANAGER', 'ROLE_ROLE-ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<GoodsReceiptTrackingPageResponse> getBusinessGoodsReceipts(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long purchaseOrderId,
@@ -60,7 +60,7 @@ public class GoodsReceiptCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'GOODS_RECEIPT_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -86,7 +86,7 @@ public class GoodsReceiptCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'GOODS_RECEIPT_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -108,7 +108,7 @@ public class GoodsReceiptCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'GOODS_RECEIPT_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -158,7 +158,7 @@ public class GoodsReceiptCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'GOODS_RECEIPT_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_WH_MANAGER',
                 'ROLE_STAFF',
                 'ROLE_ROLE-ADMIN'

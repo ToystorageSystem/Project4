@@ -529,7 +529,7 @@ public class InventoryReportService {
 
 
         if (hasAuthority(
-                "ROLE_ROLE-BIZ-MANAGER"
+                "ROLE_ROLE-BIZ-OPS"
         )) {
 
             return null;
@@ -537,7 +537,7 @@ public class InventoryReportService {
 
 
         if (hasAuthority(
-                "ROLE_ROLE-BIZ-STAFF"
+                "ROLE_ROLE-BIZ-OPS"
         )) {
 
             if (currentUser.getWarehouse()

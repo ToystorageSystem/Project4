@@ -17,8 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/business-staff/purchase-orders")
 @RequiredArgsConstructor
 @PreAuthorize(
-    "hasAnyAuthority('ROLE_ROLE-BIZ-STAFF', " +
-    "'ROLE_ROLE-BIZ-MANAGER', 'ROLE_ROLE-ADMIN')"
+    "hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')"
 )
 public class BusinessSupplierFeedbackController {
 

@@ -24,7 +24,7 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/business-manager/reports")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-MANAGER')")
+@PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
 public class BusinessActivityReportController {
 
     private final BusinessActivityReportService reportService;

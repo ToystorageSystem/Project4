@@ -4,6 +4,7 @@ package com.toystorage.backend.controllers.receipts;
 import com.toystorage.backend.dto.request.receipts.CancelPurchaseOrderRequest;
 import com.toystorage.backend.dto.request.receipts.CreatePurchaseOrderRequest;
 import com.toystorage.backend.dto.request.receipts.UpdatePurchaseOrderRequest;
+import com.toystorage.backend.dto.response.receipts.PurchaseOrderCancellationHistoryResponse;
 import com.toystorage.backend.dto.response.receipts.PurchaseOrderDetailResponse;
 import com.toystorage.backend.dto.response.receipts.PurchaseOrderOptionResponse;
 import com.toystorage.backend.dto.response.receipts.PurchaseOrderProductOptionResponse;
@@ -38,8 +39,7 @@ public class PurchaseOrderController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PURCHASE_ORDER_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -83,8 +83,7 @@ public class PurchaseOrderController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PURCHASE_ORDER_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -108,8 +107,7 @@ public class PurchaseOrderController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PURCHASE_ORDER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -135,8 +133,7 @@ public class PurchaseOrderController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PURCHASE_ORDER_UPDATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -168,8 +165,7 @@ public class PurchaseOrderController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PURCHASE_ORDER_SUBMIT',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -188,7 +184,7 @@ public class PurchaseOrderController {
     // =====================================================
 
     @PatchMapping("/{orderId}/cancel")
-    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-STAFF', 'ROLE_ROLE-ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<PurchaseOrderDetailResponse>
     cancelPurchaseOrder(
 
@@ -208,6 +204,14 @@ public class PurchaseOrderController {
         );
     }
 
+    // Lịch sử hủy PO: xem ai đã hủy và thời điểm hủy.
+    @GetMapping("/{orderId}/cancellation-history")
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
+    public ResponseEntity<List<PurchaseOrderCancellationHistoryResponse>>
+    getPurchaseOrderCancellationHistory(@PathVariable Long orderId) {
+        return ResponseEntity.ok(purchaseOrderService.getCancellationHistory(orderId));
+    }
+
     // =====================================================
     // GET SUPPLIER OPTIONS
     // =====================================================
@@ -217,8 +221,7 @@ public class PurchaseOrderController {
             hasAnyAuthority(
                 'PURCHASE_ORDER_VIEW',
                 'PURCHASE_ORDER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -239,8 +242,7 @@ public class PurchaseOrderController {
             hasAnyAuthority(
                 'PURCHASE_ORDER_VIEW',
                 'PURCHASE_ORDER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -261,8 +263,7 @@ public class PurchaseOrderController {
             hasAnyAuthority(
                 'PURCHASE_ORDER_VIEW',
                 'PURCHASE_ORDER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)

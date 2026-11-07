@@ -61,7 +61,7 @@ public class ApproveStoreReturnService {
     private final UserRepository userRepository;
 
     @Transactional
-    @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-MANAGER')")
+    @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
     public void approve(
             Long returnId,
             ApproveStoreReturnRequest request

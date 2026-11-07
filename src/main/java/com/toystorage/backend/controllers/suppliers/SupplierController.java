@@ -39,8 +39,8 @@ public class SupplierController {
             hasAnyAuthority(
                 'SUPPLIER_VIEW',
                 'ROLE_ROLE-ADMIN',
-                'ROLE_ROLE-BIZ-MANAGER',
-                'ROLE_ROLE-BIZ-STAFF'
+                'ROLE_ROLE-BIZ-OPS',
+                'ROLE_ROLE-BIZ-OPS'
             )
             """)
     public ResponseEntity<SupplierPageResponse>
@@ -88,8 +88,8 @@ public class SupplierController {
             hasAnyAuthority(
                 'SUPPLIER_VIEW',
                 'ROLE_ROLE-ADMIN',
-                'ROLE_ROLE-BIZ-MANAGER',
-                'ROLE_ROLE-BIZ-STAFF'
+                'ROLE_ROLE-BIZ-OPS',
+                'ROLE_ROLE-BIZ-OPS'
             )
             """)
     public ResponseEntity<SupplierResponse>
@@ -115,8 +115,8 @@ public class SupplierController {
                 'SUPPLIER_CREATE',
                 'SUPPLIER_MANAGE',
                 'ROLE_ROLE-ADMIN',
-                'ROLE_ROLE-BIZ-MANAGER',
-                'ROLE_ROLE-BIZ-STAFF'
+                'ROLE_ROLE-BIZ-OPS',
+                'ROLE_ROLE-BIZ-OPS'
             )
             """)
     public ResponseEntity<SupplierResponse>
@@ -165,8 +165,8 @@ public class SupplierController {
                 'SUPPLIER_UPDATE',
                 'SUPPLIER_MANAGE',
                 'ROLE_ROLE-ADMIN',
-                'ROLE_ROLE-BIZ-MANAGER',
-                'ROLE_ROLE-BIZ-STAFF'
+                'ROLE_ROLE-BIZ-OPS',
+                'ROLE_ROLE-BIZ-OPS'
             )
             """)
     public ResponseEntity<SupplierResponse>
@@ -207,8 +207,8 @@ public class SupplierController {
                 'SUPPLIER_STATUS_UPDATE',
                 'SUPPLIER_MANAGE',
                 'ROLE_ROLE-ADMIN',
-                'ROLE_ROLE-BIZ-MANAGER',
-                'ROLE_ROLE-BIZ-STAFF'
+                'ROLE_ROLE-BIZ-OPS',
+                'ROLE_ROLE-BIZ-OPS'
             )
             """)
     public ResponseEntity<SupplierResponse>
@@ -244,8 +244,8 @@ public class SupplierController {
                 'SUPPLIER_STATUS_UPDATE',
                 'SUPPLIER_MANAGE',
                 'ROLE_ROLE-ADMIN',
-                'ROLE_ROLE-BIZ-MANAGER',
-                'ROLE_ROLE-BIZ-STAFF'
+                'ROLE_ROLE-BIZ-OPS',
+                'ROLE_ROLE-BIZ-OPS'
             )
             """)
     public ResponseEntity<SupplierResponse>

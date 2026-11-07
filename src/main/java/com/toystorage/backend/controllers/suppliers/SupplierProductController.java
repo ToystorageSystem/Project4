@@ -29,8 +29,7 @@ public class SupplierProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_SUPPLIER_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -54,8 +53,7 @@ public class SupplierProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_SUPPLIER_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -79,8 +77,7 @@ public class SupplierProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_SUPPLIER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -107,8 +104,7 @@ public class SupplierProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_SUPPLIER_UPDATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -135,8 +131,7 @@ public class SupplierProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_SUPPLIER_UPDATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -160,8 +155,7 @@ public class SupplierProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_SUPPLIER_DELETE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)

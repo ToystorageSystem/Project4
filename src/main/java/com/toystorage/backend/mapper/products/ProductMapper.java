@@ -51,7 +51,7 @@ public class ProductMapper {
                 .sellingPrice(
                         request.getSellingPrice()
                 )
-                .status(ProductStatus.PENDING_CREATE)
+                .status(ProductStatus.ACTIVE)
                 .createdBy(createdBy)
                 .build();
     }

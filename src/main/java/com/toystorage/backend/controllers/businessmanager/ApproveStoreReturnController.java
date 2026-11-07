@@ -20,7 +20,7 @@ public class ApproveStoreReturnController {
 
     // Issue #19: Business Manager approves Store Return
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-MANAGER')")
+    @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
     public ResponseEntity<Void> approveStoreReturn(
             @PathVariable Long id,
             @Valid @RequestBody ApproveStoreReturnRequest request

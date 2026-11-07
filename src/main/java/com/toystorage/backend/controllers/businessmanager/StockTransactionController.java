@@ -26,7 +26,7 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/business-manager/stock-transactions")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-MANAGER')")
+@PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
 public class StockTransactionController {
 
     private final StockTransactionService stockTransactionService;

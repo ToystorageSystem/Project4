@@ -48,8 +48,7 @@ public class ShipmentManifestController {
     @GetMapping
     @PreAuthorize("""
             hasAnyAuthority(
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -123,8 +122,7 @@ public class ShipmentManifestController {
     @GetMapping("/{manifestId}")
     @PreAuthorize("""
             hasAnyAuthority(
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)

@@ -48,8 +48,7 @@ public class StockTransferCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -72,8 +71,7 @@ public class StockTransferCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -97,8 +95,7 @@ public class StockTransferCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -126,8 +123,7 @@ public class StockTransferCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -164,8 +160,7 @@ public class StockTransferCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -202,8 +197,7 @@ public class StockTransferCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -232,8 +226,7 @@ public class StockTransferCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -261,8 +254,7 @@ public class StockTransferCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -295,8 +287,7 @@ public class StockTransferCreationController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)

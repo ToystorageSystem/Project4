@@ -4,6 +4,7 @@ import com.toystorage.backend.dto.request.products.CreateProductRequest;
 import com.toystorage.backend.dto.request.products.RejectProductRequest;
 import com.toystorage.backend.dto.request.products.UpdateProductRequest;
 import com.toystorage.backend.dto.response.products.ProductChangeRequestResponse;
+import com.toystorage.backend.dto.response.products.ProductActivityResponse;
 import com.toystorage.backend.dto.response.products.ProductImageUploadResponse;
 import com.toystorage.backend.dto.response.products.ProductPageResponse;
 import com.toystorage.backend.dto.response.products.ProductResponse;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,17 +42,17 @@ public class ProductController {
     private final ProductImageService productImageService;
 
     /**
-     * Business Staff tạo sản phẩm và gửi yêu cầu duyệt.
+     * Business Operations tạo trực tiếp sản phẩm ACTIVE, có nhật ký thao tác.
      */
     @PostMapping
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
-    public ResponseEntity<ProductChangeRequestResponse>
+    public ResponseEntity<ProductResponse>
     createProduct(
             @Valid
             @RequestBody CreateProductRequest request
@@ -63,34 +65,31 @@ public class ProductController {
     }
 
     /**
-     * Business Staff gửi yêu cầu chỉnh sửa sản phẩm.
-     *
-     * Sản phẩm chỉ được cập nhật sau khi
-     * Business Manager phê duyệt.
+     * API cập nhật trực tiếp. Không tạo phiếu chờ xét duyệt.
+     * Giữ đường dẫn API cũ ở dạng 410 để client cũ không tạo dữ liệu chờ mới.
      */
-    @PostMapping("/{productId}/change-requests")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_UPDATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
-    public ResponseEntity<ProductChangeRequestResponse>
-    requestProductUpdate(
+    @PutMapping("/{productId}")
+    @PreAuthorize("hasAnyAuthority('PRODUCT_UPDATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable Long productId,
+            @Valid @RequestBody UpdateProductRequest request) {
+        return ResponseEntity.ok(productService.updateProduct(productId, request));
+    }
 
-            @Valid
-            @RequestBody UpdateProductRequest request
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(
-                        productService.requestProductUpdate(
-                                productId,
-                                request
-                        )
-                );
+    @PostMapping("/{productId}/change-requests")
+    @PreAuthorize("hasAnyAuthority('PRODUCT_UPDATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    public ResponseEntity<Void> deprecatedChangeRequest(@PathVariable Long productId) {
+        return ResponseEntity.status(HttpStatus.GONE).build();
+    }
+
+    /** Nhật ký thay đổi sản phẩm, chỉ đọc; dữ liệu lấy từ activity_logs. */
+    @GetMapping("/{productId}/history")
+    @PreAuthorize("hasAnyAuthority('PRODUCT_VIEW','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    public ResponseEntity<Page<ProductActivityResponse>> getProductHistory(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(productService.getProductHistory(productId, page, size));
     }
 
     /**
@@ -100,8 +99,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -132,8 +130,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -153,7 +150,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_UPDATE',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -173,7 +170,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_UPDATE',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -193,7 +190,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_APPROVE',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -220,7 +217,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_APPROVE',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -242,7 +239,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_APPROVE',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -264,7 +261,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_APPROVE',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -297,7 +294,7 @@ public class ProductController {
             hasAnyAuthority(
                 'PRODUCT_CREATE',
                 'PRODUCT_UPDATE',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -321,7 +318,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -347,7 +344,7 @@ public class ProductController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'PRODUCT_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)

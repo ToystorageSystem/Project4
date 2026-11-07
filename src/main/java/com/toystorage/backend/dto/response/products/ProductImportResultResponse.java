@@ -21,6 +21,6 @@ public class ProductImportResultResponse {
     private int importedRows;
 
     @Builder.Default
-    private List<ProductChangeRequestResponse> changeRequests =
+    private List<ProductResponse> products =
             new ArrayList<>();
 }

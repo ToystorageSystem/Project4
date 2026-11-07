@@ -5,6 +5,7 @@ import com.toystorage.backend.entity.auth.Roles;
 import com.toystorage.backend.entity.auth.UserRoles;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.enums.auth.PermissionStatus;
+import com.toystorage.backend.enums.auth.RoleStatus;
 import com.toystorage.backend.repository.auth.UserRoleRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +51,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
             Roles role = userRole.getRole();
 
-            if (role == null) {
+            // Bỏ qua role ngừng hoạt động để không còn cấp quyền từ role cũ.
+            if (role == null || role.getStatus() != RoleStatus.ACTIVE) {
                 continue;
             }
 

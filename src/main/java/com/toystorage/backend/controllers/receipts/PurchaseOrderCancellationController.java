@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,22 +23,24 @@ public class PurchaseOrderCancellationController {
     private final PurchaseOrderCancellationService service;
 
     @PostMapping("/{orderId}/cancellation-requests")
-    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-STAFF', 'ROLE_ROLE-ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<PurchaseOrderCancellationResponse> create(
             @PathVariable Long orderId,
             @Valid @RequestBody RequestPurchaseOrderCancellation request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.requestCancellation(orderId, request));
+        // Khong nhan yeu cau cho duyet moi; API da duoc thay bang PATCH /{id}/cancel.
+        throw new ResponseStatusException(HttpStatus.GONE,
+                "Cancellation approvals are retired. Use PATCH /api/purchase-orders/{orderId}/cancel");
     }
 
     @GetMapping("/{orderId}/cancellation-requests")
-    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-STAFF', 'ROLE_ROLE-BIZ-MANAGER', 'ROLE_ROLE-ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<List<PurchaseOrderCancellationResponse>> listForOrder(@PathVariable Long orderId) {
         return ResponseEntity.ok(service.listForOrder(orderId));
     }
 
     @GetMapping("/cancellation-requests")
-    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-MANAGER', 'ROLE_ROLE-ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<List<PurchaseOrderCancellationResponse>> listForManager(
             @RequestParam(required = false) PurchaseOrderCancellationStatus status
     ) {
@@ -45,7 +48,7 @@ public class PurchaseOrderCancellationController {
     }
 
     @PatchMapping("/cancellation-requests/{requestId}/approve")
-    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-MANAGER', 'ROLE_ROLE-ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ROLE-ADMIN')")
     public ResponseEntity<PurchaseOrderCancellationResponse> approve(
             @PathVariable Long requestId,
             @Valid @RequestBody ReviewPurchaseOrderCancellation request
@@ -54,7 +57,7 @@ public class PurchaseOrderCancellationController {
     }
 
     @PatchMapping("/cancellation-requests/{requestId}/reject")
-    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-MANAGER', 'ROLE_ROLE-ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ROLE-ADMIN')")
     public ResponseEntity<PurchaseOrderCancellationResponse> reject(
             @PathVariable Long requestId,
             @Valid @RequestBody ReviewPurchaseOrderCancellation request

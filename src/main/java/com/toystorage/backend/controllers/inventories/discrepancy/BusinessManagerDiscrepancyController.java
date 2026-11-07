@@ -27,7 +27,7 @@ public class BusinessManagerDiscrepancyController {
     @GetMapping
     @PreAuthorize(
             "hasAnyAuthority(" +
-                    "'ROLE_ROLE-BIZ-MANAGER'," +
+                    "'ROLE_ROLE-BIZ-OPS'," +
                     "'ROLE_ROLE-ADMIN'" +
                     ")"
     )
@@ -62,7 +62,7 @@ public class BusinessManagerDiscrepancyController {
     @GetMapping("/{discrepancyId}")
     @PreAuthorize(
             "hasAnyAuthority(" +
-                    "'ROLE_ROLE-BIZ-MANAGER'," +
+                    "'ROLE_ROLE-BIZ-OPS'," +
                     "'ROLE_ROLE-ADMIN'" +
                     ")"
     )
@@ -87,7 +87,7 @@ public class BusinessManagerDiscrepancyController {
     @PatchMapping("/{discrepancyId}/resolve")
     @PreAuthorize(
             "hasAnyAuthority(" +
-                    "'ROLE_ROLE-BIZ-MANAGER'," +
+                    "'ROLE_ROLE-BIZ-OPS'," +
                     "'ROLE_ROLE-ADMIN'" +
                     ")"
     )

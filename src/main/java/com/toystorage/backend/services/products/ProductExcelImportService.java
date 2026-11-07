@@ -1,7 +1,7 @@
 package com.toystorage.backend.services.products;
 
 import com.toystorage.backend.dto.request.products.CreateProductRequest;
-import com.toystorage.backend.dto.response.products.ProductChangeRequestResponse;
+import com.toystorage.backend.dto.response.products.ProductResponse;
 import com.toystorage.backend.dto.response.products.ProductImportPreviewResponse;
 import com.toystorage.backend.dto.response.products.ProductImportResultResponse;
 import com.toystorage.backend.dto.response.products.ProductImportRowResponse;
@@ -128,23 +128,24 @@ public class ProductExcelImportService {
             );
         }
 
-        List<ProductChangeRequestResponse> changeRequests =
+        // Trong một transaction: nếu một dòng lỗi, toàn bộ sản phẩm đã nhập sẽ rollback.
+        List<ProductResponse> createdProducts =
                 new ArrayList<>();
 
         for (ProductImportRowResponse row : preview.getRows()) {
             CreateProductRequest request =
                     toCreateProductRequest(row);
 
-            ProductChangeRequestResponse response =
+            ProductResponse response =
                     productService.createProduct(request);
 
-            changeRequests.add(response);
+            createdProducts.add(response);
         }
 
         return ProductImportResultResponse.builder()
                 .totalRows(preview.getTotalRows())
-                .importedRows(changeRequests.size())
-                .changeRequests(changeRequests)
+                .importedRows(createdProducts.size())
+                .products(createdProducts)
                 .build();
     }
 

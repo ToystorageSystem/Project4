@@ -1,6 +1,7 @@
 package com.toystorage.backend.entity.auth;
 
 import jakarta.persistence.*;
+import com.toystorage.backend.enums.auth.RoleStatus;
 import lombok.*;
 
 import java.util.HashSet;
@@ -30,6 +31,11 @@ public class Roles {
 
     @Column(name = "roles_code", nullable = false, length = 50)
     private String roleCode;
+
+    // Trạng thái của vai trò trong DB; role INACTIVE không được cấp quyền.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private RoleStatus status;
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

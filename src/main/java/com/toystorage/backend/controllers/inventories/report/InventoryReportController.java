@@ -51,8 +51,7 @@ public class InventoryReportController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -113,8 +112,7 @@ public class InventoryReportController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -200,8 +198,7 @@ public class InventoryReportController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -235,8 +232,7 @@ public class InventoryReportController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -264,8 +260,7 @@ public class InventoryReportController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -293,8 +288,7 @@ public class InventoryReportController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)

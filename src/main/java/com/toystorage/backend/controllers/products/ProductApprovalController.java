@@ -27,7 +27,7 @@ public class ProductApprovalController {
     @PreAuthorize(
             "hasAnyAuthority(" +
                     "'PRODUCT_APPROVE'," +
-                    "'ROLE_ROLE-BIZ-MANAGER'," +
+                    "'ROLE_ROLE-BIZ-OPS'," +
                     "'ROLE_ROLE-ADMIN'" +
                     ")"
     )
@@ -62,8 +62,7 @@ public class ProductApprovalController {
     @GetMapping("/my-requests")
     @PreAuthorize(
             "hasAnyAuthority(" +
-                    "'ROLE_ROLE-BIZ-STAFF'," +
-                    "'ROLE_ROLE-BIZ-MANAGER'," +
+                    "'ROLE_ROLE-BIZ-OPS'," +
                     "'ROLE_ROLE-ADMIN'" +
                     ")"
     )
@@ -99,7 +98,7 @@ public class ProductApprovalController {
     @PreAuthorize(
             "hasAnyAuthority(" +
                     "'PRODUCT_APPROVE'," +
-                    "'ROLE_ROLE-BIZ-MANAGER'," +
+                    "'ROLE_ROLE-BIZ-OPS'," +
                     "'ROLE_ROLE-ADMIN'" +
                     ")"
     )
@@ -127,7 +126,7 @@ public class ProductApprovalController {
     @PreAuthorize(
             "hasAnyAuthority(" +
                     "'PRODUCT_APPROVE'," +
-                    "'ROLE_ROLE-BIZ-MANAGER'," +
+                    "'ROLE_ROLE-BIZ-OPS'," +
                     "'ROLE_ROLE-ADMIN'" +
                     ")"
     )
@@ -155,7 +154,7 @@ public class ProductApprovalController {
     @PreAuthorize(
             "hasAnyAuthority(" +
                     "'PRODUCT_APPROVE'," +
-                    "'ROLE_ROLE-BIZ-MANAGER'," +
+                    "'ROLE_ROLE-BIZ-OPS'," +
                     "'ROLE_ROLE-ADMIN'" +
                     ")"
     )

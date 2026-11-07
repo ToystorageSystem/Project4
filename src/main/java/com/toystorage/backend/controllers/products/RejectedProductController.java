@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @PreAuthorize(
         "hasAnyAuthority(" +
-                "'ROLE_ROLE-BIZ-STAFF'," +
+                "'ROLE_ROLE-BIZ-OPS'," +
                 "'ROLE_ROLE-ADMIN'" +
                 ")"
 )
@@ -98,27 +98,8 @@ public class RejectedProductController {
     // =====================================================
 
     @PostMapping("/{requestId}/resubmit")
-    public ResponseEntity<ProductApprovalRequestResponse>
-    resubmitRejectedProduct(
-
-            @PathVariable
-            Long requestId,
-
-            @Valid
-            @RequestBody
-            ResubmitRejectedProductRequest request
-    ) {
-
-        return ResponseEntity
-                .status(
-                        HttpStatus.CREATED
-                )
-                .body(
-                        rejectedProductService
-                                .resubmit(
-                                        requestId,
-                                        request
-                                )
-                );
+    public ResponseEntity<Void> resubmitRejectedProduct(@PathVariable Long requestId) {
+        // Quy trình cũ đã ngừng nhận yêu cầu mới; lịch sử vẫn đọc được.
+        return ResponseEntity.status(HttpStatus.GONE).build();
     }
 }

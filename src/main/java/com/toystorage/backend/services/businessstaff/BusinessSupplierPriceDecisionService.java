@@ -88,6 +88,14 @@ public class BusinessSupplierPriceDecisionService {
                         )
                 );
 
+        // ACCEPT cập nhật cả giá PO và bảng giá NCC; cần người thứ hai kiểm tra.
+        // REJECT không sửa giá nên vẫn cho phép người lập PO từ chối báo giá.
+        if (decision == SupplierPriceDecisionAction.ACCEPT
+                && order.getCreatedBy() != null
+                && order.getCreatedBy().getId().equals(actor.getId())) {
+            throw new BadRequest("Purchase order creator cannot accept supplier price changes.");
+        }
+
         if (order.getStatus() != PurchaseOrderStatus.ORDERED) {
             throw new BadRequest(
                     "Price decision is allowed only for ORDERED orders"

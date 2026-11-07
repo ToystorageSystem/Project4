@@ -10,4 +10,7 @@ public class CancelPurchaseOrderRequest {
 
     @NotBlank(message = "Cancel reason is required")
     private String reason;
+
+    // Với ORDERED, người dùng phải xác nhận nhà cung cấp đồng ý hủy.
+    private Boolean supplierAgreed;
 }

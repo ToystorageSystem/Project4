@@ -44,8 +44,7 @@ public class SupplierInvoiceController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'SUPPLIER_INVOICE_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -81,8 +80,7 @@ public class SupplierInvoiceController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'SUPPLIER_INVOICE_VIEW',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -110,8 +108,7 @@ public class SupplierInvoiceController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'SUPPLIER_INVOICE_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -147,8 +144,7 @@ public class SupplierInvoiceController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'SUPPLIER_INVOICE_UPDATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -181,8 +177,7 @@ public class SupplierInvoiceController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'SUPPLIER_INVOICE_CANCEL',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -220,8 +215,7 @@ public class SupplierInvoiceController {
     @PreAuthorize("""
             hasAnyAuthority(
                 'SUPPLIER_INVOICE_UPDATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -254,8 +248,7 @@ public class SupplierInvoiceController {
             hasAnyAuthority(
                 'SUPPLIER_INVOICE_VIEW',
                 'SUPPLIER_INVOICE_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
@@ -282,8 +275,7 @@ public class SupplierInvoiceController {
             hasAnyAuthority(
                 'SUPPLIER_INVOICE_VIEW',
                 'SUPPLIER_INVOICE_CREATE',
-                'ROLE_ROLE-BIZ-STAFF',
-                'ROLE_ROLE-BIZ-MANAGER',
+                'ROLE_ROLE-BIZ-OPS',
                 'ROLE_ROLE-ADMIN'
             )
             """)
