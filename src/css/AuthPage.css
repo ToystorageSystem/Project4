@@ -1,0 +1,442 @@
+
+/* =========================================
+   TOYSTORAGE SYSTEM - AUTHENTICATION
+   CSS rieng cho Login, Password va 2FA.
+   Khong anh huong giao dien cu.
+   ========================================= */
+
+/* Trang Authentication */
+
+.auth-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 16px;
+
+  background:
+    radial-gradient(
+      circle at 10% 15%,
+      rgba(68, 103, 238, 0.11),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #f4f7fd,
+      #edf2fb
+    );
+
+  font-family: Inter, Arial, sans-serif;
+  color: #1e293b;
+}
+
+.auth-page *,
+.auth-page *::before,
+.auth-page *::after {
+  box-sizing: border-box;
+}
+
+/* =========================================
+   MAIN AUTH CARD
+   ========================================= */
+
+.auth-page .auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 40px 36px;
+
+  background: #ffffff;
+  border: 1px solid #e6ebf3;
+  border-radius: 20px;
+
+  box-shadow:
+    0 18px 55px rgba(30, 48, 88, 0.09);
+}
+
+/* =========================================
+   BRAND
+   ========================================= */
+
+.auth-page .auth-brand {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-page .auth-brand h1 {
+  margin: 0;
+
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+
+  color: #335de0;
+}
+
+.auth-page .auth-brand p {
+  margin: 9px 0 0;
+
+  font-size: 12px;
+  line-height: 1.5;
+
+  color: #8793a8;
+}
+
+/* =========================================
+   HEADING
+   ========================================= */
+
+.auth-page .auth-heading {
+  margin-bottom: 28px;
+}
+
+.auth-page .auth-heading h2 {
+  margin: 0 0 8px;
+
+  font-size: 23px;
+  font-weight: 750;
+  line-height: 1.35;
+  letter-spacing: -0.5px;
+
+  color: #19273c;
+}
+
+.auth-page .auth-heading p {
+  margin: 0;
+
+  color: #8290a5;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   AUTH FORM
+   ========================================= */
+
+.auth-page .auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-page .auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-page .auth-field > label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #344259;
+}
+
+.auth-page .auth-field > input {
+  width: 100%;
+  height: 46px;
+
+  padding: 0 14px;
+
+  border: 1px solid #dce3ee;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #243247;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.auth-page .auth-field > input::placeholder {
+  color: #a0aabd;
+}
+
+.auth-page .auth-field > input:focus {
+  border-color: #4467ee;
+
+  box-shadow:
+    0 0 0 3px rgba(68, 103, 238, 0.12);
+}
+
+.auth-page .auth-field > input:disabled {
+  background: #f4f6fa;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.auth-page .auth-field > input[readonly] {
+  background: #f8faff;
+  color: #334155;
+  cursor: text;
+}
+
+/* =========================================
+   SHOW PASSWORD
+   ========================================= */
+
+.auth-page .auth-field > label.auth-show-password {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+
+  margin-top: 4px;
+
+  cursor: pointer;
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.auth-page .auth-show-password input {
+  width: 15px;
+  height: 15px;
+
+  margin: 0;
+  accent-color: #4467ee;
+
+  cursor: pointer;
+}
+
+.auth-page .auth-show-password input:disabled {
+  cursor: not-allowed;
+}
+
+/* =========================================
+   ERROR MESSAGE
+   ========================================= */
+
+.auth-page .auth-error {
+  width: 100%;
+
+  padding: 12px 14px;
+
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+
+  background: #fff5f5;
+  color: #b91c1c;
+
+  font-size: 12px;
+  line-height: 1.6;
+
+  overflow-wrap: anywhere;
+}
+
+/* =========================================
+   SUBMIT BUTTON
+   ========================================= */
+
+.auth-page .auth-submit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  width: 100%;
+  min-height: 46px;
+
+  padding: 12px 16px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #4467ee;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.auth-page .auth-submit:hover:not(:disabled) {
+  background: #3154d7;
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 5px 14px rgba(68, 103, 238, 0.2);
+}
+
+.auth-page .auth-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.auth-page .auth-submit:focus-visible {
+  outline: 3px solid rgba(68, 103, 238, 0.3);
+  outline-offset: 3px;
+}
+
+.auth-page .auth-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   GOOGLE AUTHENTICATOR SETUP
+   ========================================= */
+
+/* Can giua ma QR */
+
+.auth-page .auth-brand svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* Khoang cach cho truong Manual Setup Key */
+
+.auth-page .auth-card > .auth-field {
+  margin-bottom: 20px;
+}
+
+.auth-page .auth-field > input[readonly] {
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+/* =========================================
+   OTP VERIFICATION
+   ========================================= */
+
+.auth-page .auth-field > input.auth-otp-input {
+  height: 54px;
+
+  padding: 0 12px;
+
+  text-align: center;
+  letter-spacing: 6px;
+
+  font-size: 20px;
+  font-weight: 700;
+
+  color: #243b70;
+  font-variant-numeric: tabular-nums;
+}
+
+.auth-page .auth-field > input.auth-otp-input::placeholder {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: #a0aabd;
+}
+
+/* =========================================
+   BACK TO LOGIN BUTTON
+   ========================================= */
+
+.auth-page .auth-back-button {
+  display: block;
+
+  width: 100%;
+  margin-top: 18px;
+  padding: 10px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+  color: #4467ee;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+
+  text-align: center;
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.auth-page .auth-back-button:hover:not(:disabled) {
+  color: #3154d7;
+  background: #f1f5ff;
+}
+
+.auth-page .auth-back-button:focus-visible {
+  outline: 2px solid #4467ee;
+  outline-offset: 2px;
+}
+
+.auth-page .auth-back-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   FOOTER
+   ========================================= */
+
+.auth-page .auth-footer {
+  margin-top: 30px;
+  padding-top: 20px;
+
+  border-top: 1px solid #edf0f5;
+
+  text-align: center;
+
+  color: #8c9aaf;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   RESPONSIVE - TABLET / MOBILE
+   ========================================= */
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: 16px;
+  }
+
+  .auth-page .auth-card {
+    padding: 30px 22px;
+    border-radius: 16px;
+  }
+
+  .auth-page .auth-heading h2 {
+    font-size: 21px;
+  }
+
+  .auth-page .auth-brand h1 {
+    font-size: 23px;
+  }
+
+  .auth-page .auth-field > input.auth-otp-input {
+    font-size: 18px;
+    letter-spacing: 4px;
+  }
+
+  .auth-page .auth-footer {
+    margin-top: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-page .auth-submit,
+  .auth-page .auth-back-button,
+  .auth-page .auth-field > input {
+    transition: none;
+  }
+
+  .auth-page .auth-submit:hover:not(:disabled) {
+    transform: none;
+  }
+}
