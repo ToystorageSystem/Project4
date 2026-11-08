@@ -150,7 +150,8 @@ export default function PurchaseOrderDetailPage() {
         return () => controller.abort();
     }, [detail?.id, detail?.status, refresh]);
 
-    const canSubmit = detail?.status === "DRAFT" && Array.isArray(detail.items) && detail.items.length > 0;
+    const canSubmit = detail?.status === "DRAFT" && Boolean(detail.expectedDeliveryDate)
+        && Array.isArray(detail.items) && detail.items.length > 0;
     // Business Operations được hủy PO do bất kỳ nhân viên Business nào lập.
     // Backend vẫn kiểm tra GR, hóa đơn và trạng thái trong một transaction.
     const hasPendingCancellation = cancellationRequests.some((row) => row.status === "PENDING");
@@ -257,6 +258,14 @@ export default function PurchaseOrderDetailPage() {
                         </div>
                     }
                 />
+                {detail?.status === "DRAFT" && !detail.expectedDeliveryDate && (
+                    <Alert type="warning">
+                        Vui lòng bổ sung ngày nhận hàng mong muốn trước khi gửi đơn.
+                        <Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/${orderId}/edit`)}>
+                            Sửa đơn nháp
+                        </Button>
+                    </Alert>
+                )}
                 {location.state?.notice && <Alert type="success">{location.state.notice}</Alert>}
                 {actionSuccess && <div role="status"><Alert type="success">{actionSuccess}</Alert></div>}
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
@@ -281,7 +290,9 @@ export default function PurchaseOrderDetailPage() {
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <DetailField label="Nhà cung cấp" value={detail.supplierName} />
                                 <DetailField label="Kho/cửa hàng nhận" value={detail.warehouseName} />
-                                <DetailField label="Dự kiến giao hàng" value={formatExpectedDeliveryDate(detail.expectedDeliveryDate)} />
+                                <DetailField label="Ngày nhận hàng mong muốn" value={formatExpectedDeliveryDate(detail.expectedDeliveryDate)} />
+                                <DetailField label="Ngày NCC đề xuất" value={formatExpectedDeliveryDate(detail.supplierProposedDeliveryDate)} />
+                                <DetailField label="Ngày giao đã thống nhất" value={formatExpectedDeliveryDate(detail.agreedDeliveryDate)} />
                                 <DetailField label="Người tạo" value={detail.createdByName} />
                                 <DetailField label="Ngày tạo" value={formatPurchaseOrderDate(detail.createdAt)} />
                                 <DetailField label="Cập nhật lần cuối" value={formatPurchaseOrderDate(detail.updatedAt)} />
@@ -349,7 +360,7 @@ export default function PurchaseOrderDetailPage() {
                         <RelatedGoodsReceipts purchaseOrderId={detail.id} />
 
                         {/* Issue #16 - Supplier Price Comparison */}
-                        <SupplierFeedbackPanel purchaseOrder={detail} />
+                        <SupplierFeedbackPanel purchaseOrder={detail} onSaved={() => setRefresh((value) => value + 1)} />
                         <SupplierPriceComparisonPanel
                             purchaseOrderId={detail.id}
                             purchaseOrderStatus={detail.status}

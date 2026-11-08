@@ -226,7 +226,6 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
         { key: "supplierProductCode", label: "Mã sản phẩm phía nhà cung cấp", render: display },
         { key: "purchasePrice", label: "Giá nhập", render: formatMoney },
         { key: "minimumOrderQuantity", label: "Đặt tối thiểu", render: display },
-        { key: "leadTimeDays", label: "Giao (ngày)", render: display },
         { key: "status", label: "Liên kết", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} label={businessStatusLabel(value)} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ Nhà cung cấp ưu tiên</div>}</div> },
         {
             key: "id", label: "Thao tác",
@@ -248,7 +247,9 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h2 className="text-lg font-bold text-slate-900">Nhà cung cấp liên kết ({links.length})</h2>
-                        <p className="mt-1 text-sm text-slate-500">Theo dõi giá mua, số lượng đặt tối thiểu, thời gian giao hàng và nhà cung cấp ưu tiên</p>
+                        <p className="mt-1 text-sm text-slate-500">
+                            Theo dõi giá mua, số lượng đặt tối thiểu và nhà cung cấp ưu tiên
+                        </p>
                     </div>
                     <Button type="button" disabled={!canManage} onClick={() => openAction("create")}>+ Liên kết nhà cung cấp</Button>
                 </div>
@@ -333,7 +334,6 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                             ) : <p className="text-sm text-slate-700">Liên kết với <strong>{action.link?.supplierName}</strong> (mã liên kết {action.link?.id}). Muốn đổi NCC, hãy tạo liên kết mới.</p>}
                             <Input label="Mã sản phẩm do nhà cung cấp sử dụng (tối đa 100 ký tự)" value={form.supplierProductCode} maxLength={100} onChange={change("supplierProductCode")} error={errors.supplierProductCode} />
                             <Input label="Giá nhập *" type="number" min="0.01" step="0.01" value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} />
-                            <Input label="Thời gian giao hàng (ngày) *" type="number" min="0" step="1" value={form.leadTimeDays} onChange={change("leadTimeDays")} error={errors.leadTimeDays} />
                             <Input label="Số lượng đặt tối thiểu *" type="number" min="1" step="1" value={form.minimumOrderQuantity} onChange={change("minimumOrderQuantity")} error={errors.minimumOrderQuantity} />
                             {creating ? <Checkbox checked={form.defaultSupplier} onChange={change("defaultSupplier")} label="Đặt làm nhà cung cấp mặc định ngay khi tạo (sẽ bỏ mặc định cũ)." />
                                 : <Select label="Trạng thái liên kết" value={form.status} onChange={change("status")} error={errors.status} options={[{ value: "ACTIVE", label: "Đang hoạt động" }, { value: "INACTIVE", label: "Tạm ngừng" }]} />}

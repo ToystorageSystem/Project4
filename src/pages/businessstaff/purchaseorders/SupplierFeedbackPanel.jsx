@@ -16,6 +16,7 @@ import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import Spinner from "../../../components/ui/Spinner";
 import TextArea from "../../../components/ui/TextArea";
+import { todayVietnamIso } from "./purchaseOrderDraft";
 
 // Issue #16 - Supplier Feedback.
 // Giai doan 1: Nhap va xem truoc du lieu.
@@ -26,7 +27,6 @@ const SUPPLIER_FEEDBACK_WRITE_ENABLED =
     import.meta.env.VITE_ENABLE_SUPPLIER_FEEDBACK_WRITE === "true";
 const ORDER_STATUSES = [
     { value: "", label: "-- Chọn trạng thái --" },
-    { value: "PENDING_RESPONSE", label: "Đang chờ phản hồi" },
     { value: "AVAILABLE", label: "Có đủ hàng" },
     { value: "PARTIALLY_AVAILABLE", label: "Có một phần hàng" },
     { value: "OUT_OF_STOCK", label: "Hết hàng" },
@@ -65,11 +65,64 @@ function parsePrice(text) {
     return Number.isFinite(number) ? number : NaN;
 }
 
-function validateAndBuild(rows, orderStatus, orderNote) {
+function isIsoDate(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const date = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+// Tinh ngay som nhat NCC duoc phep de xuat.
+function minSupplierProposedDate(status, requestedDate) {
+    const today = todayVietnamIso();
+
+    // Neu NCC giao tre, ngay moi phai sau ngay doanh nghiep yeu cau.
+    if (status !== "DELAYED" || !isIsoDate(requestedDate)) {
+        return today;
+    }
+
+    const date = new Date(`${requestedDate}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + 1);
+
+    const firstLateDate = date.toISOString().slice(0, 10);
+
+    return firstLateDate > today ? firstLateDate : today;
+}
+
+function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate, requestedDate) {
     const errors = [];
 
+    if (proposedDate && proposedDate < todayVietnamIso()) {
+    errors.push("Ngày NCC đề xuất không được ở quá khứ.");
+    }
+
+    if (agreedDate && agreedDate < todayVietnamIso()) {
+        errors.push("Ngày giao đã thống nhất không được ở quá khứ.");
+    }
+
+    if (
+        orderStatus === "DELAYED" &&
+        agreedDate &&
+        requestedDate &&
+        agreedDate <= requestedDate
+    ) {
+        errors.push(
+            "Ngày giao đã thống nhất phải sau ngày nhận hàng mong muốn khi NCC báo giao trễ."
+        );
+    }
+
     if (!orderStatus) {
-        errors.push("Chưa chọn trạng thái phản hồi toàn đơn.");
+        errors.push("Select a supplier response status.");
+    }
+    if (proposedDate && !isIsoDate(proposedDate)) errors.push("Invalid supplier proposed date.");
+    if (agreedDate && !isIsoDate(agreedDate)) errors.push("Invalid agreed delivery date.");
+    if (orderStatus === "DELAYED") {
+        if (!proposedDate) errors.push("Ngày NCC đề xuất is required for delayed delivery.");
+        else if (isIsoDate(proposedDate) && requestedDate && proposedDate <= requestedDate) {
+            errors.push("Ngày NCC đề xuất must be after the requested delivery date.");
+        }
+    }
+    if (agreedDate && ["PENDING_RESPONSE", "DECLINED"].includes(orderStatus)) {
+        errors.push("An agreed delivery date cannot be recorded for pending or declined feedback.");
     }
 
     const items = rows.map((row) => {
@@ -232,15 +285,19 @@ function validateAndBuild(rows, orderStatus, orderNote) {
         payload: {
             supplierResponseStatus: orderStatus,
             supplierResponseNote: orderNote.trim(),
+            supplierProposedDeliveryDate: proposedDate || null,
+            agreedDeliveryDate: agreedDate || null,
             items,
         },
     };
 }
 
-export default function SupplierFeedbackPanel({ purchaseOrder }) {
+export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
     const [rows, setRows] = useState([]);
     const [orderStatus, setOrderStatus] = useState("");
     const [orderNote, setOrderNote] = useState("");
+    const [proposedDate, setProposedDate] = useState("");
+    const [agreedDate, setAgreedDate] = useState("");
 
     const [loading, setLoading] = useState(false);
     const [loadError, setLoadError] = useState("");
@@ -265,6 +322,8 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
         setRows([]);
         setOrderStatus("");
         setOrderNote("");
+        setProposedDate("");
+        setAgreedDate("");
         setErrors([]);
         setPreview(null);
         setConfirmOpen(false);
@@ -318,12 +377,15 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
 
                 // Khoi phuc trang thai va ghi chu toan don.
                 setOrderStatus(
-                    data.supplierResponseStatus ?? ""
+                    data.supplierResponseStatus === "PENDING_RESPONSE"
+                        ? "" : data.supplierResponseStatus ?? ""
                 );
 
                 setOrderNote(
                     data.supplierResponseNote ?? ""
                 );
+                setProposedDate(data.supplierProposedDeliveryDate ?? "");
+                setAgreedDate(data.agreedDeliveryDate ?? "");
 
                 // Khoi phuc phan hoi tung san pham.
                 setRows(
@@ -407,7 +469,10 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
         const result = validateAndBuild(
             rows,
             orderStatus,
-            orderNote
+            orderNote,
+            proposedDate,
+            agreedDate,
+            purchaseOrder.expectedDeliveryDate
         );
 
         setErrors(result.errors);
@@ -436,7 +501,10 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
         const result = validateAndBuild(
             rows,
             orderStatus,
-            orderNote
+            orderNote,
+            proposedDate,
+            agreedDate,
+            purchaseOrder.expectedDeliveryDate
         );
 
         if (result.errors.length > 0) {
@@ -476,8 +544,9 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                 "Đã ghi nhận phản hồi nhà cung cấp thành công."
             );
 
-            // Doc lai du lieu moi nhat tu Backend.
+            // Doc lai du lieu moi nhat tu Backend va cap nhat trang chi tiet PO.
             setReload((value) => value + 1);
+            onSaved?.();
         } catch (error) {
             setSaveError(
                 supplierFeedbackErrorMessage(
@@ -604,6 +673,43 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                             </div>
                         </div>
 
+                        <p className="text-sm text-slate-600">
+                            Ngày nhận hàng mong muốn: <strong>{purchaseOrder.expectedDeliveryDate || "Not specified"}</strong>
+                        </p>
+                        {purchaseOrder.status === "ORDERED" && !orderStatus && (
+                            <p className="text-sm text-amber-700">
+                                Đang chờ nhà cung cấp xác nhận. Chỉ ghi nhận phản hồi khi nhà cung cấp đã trả lời.
+                            </p>
+                        )}
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <Input
+                                type="date"
+                                label="Ngày giao hàng NCC đề xuất"
+                                min={minSupplierProposedDate(
+                                    orderStatus,
+                                    purchaseOrder.expectedDeliveryDate
+                                )}
+                                value={proposedDate}
+                                onChange={(event) => {
+                                    setProposedDate(event.target.value);
+                                    setAgreedDate("");
+                                    setPreview(null);
+                                }}
+                            />
+                            <Input
+                                type="date"
+                                label="Ngày giao đã thống nhất (chỉ nhập khi hai bên đồng ý)"
+                                min={minSupplierProposedDate(
+                                    orderStatus,
+                                    purchaseOrder.expectedDeliveryDate
+                                )}
+                                value={agreedDate}
+                                onChange={(event) => {
+                                    setAgreedDate(event.target.value);
+                                    setPreview(null);
+                                }}
+                            />
+                        </div>
                         <TextArea
                             label="Ghi chú phản hồi toàn đơn"
                             rows={3}
@@ -808,6 +914,8 @@ export default function SupplierFeedbackPanel({ purchaseOrder }) {
                                 Ghi chú toàn đơn:{" "}
                                 {preview?.supplierResponseNote || "None"}
                             </p>
+                            <p>Supplier proposed delivery: {preview?.supplierProposedDeliveryDate || "—"}</p>
+                            <p>Agreed delivery: {preview?.agreedDeliveryDate || "—"}</p>
                         </div>
 
                         <div className="border-t border-slate-200 pt-3">

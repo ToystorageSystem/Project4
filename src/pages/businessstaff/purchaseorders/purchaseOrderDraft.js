@@ -23,9 +23,9 @@ export function validatePurchaseOrderDraft(form, productOptions) {
     const problems = [];
     if (!isPositiveId(form.supplierId)) problems.push("Chọn nhà cung cấp hợp lệ.");
     if (!isPositiveId(form.warehouseId)) problems.push("Chọn kho tổng nhận hàng hợp lệ.");
-    if (!isDate(form.expectedDeliveryDate)) {
-        problems.push("Vui lòng chọn ngày giao hàng hợp lệ.");
-    } else if (form.expectedDeliveryDate < todayVietnamIso()) {
+    if (form.expectedDeliveryDate && !isDate(form.expectedDeliveryDate)) {
+        problems.push("Requested delivery date is invalid.");
+    } else if (form.expectedDeliveryDate && form.expectedDeliveryDate < todayVietnamIso()) {
         problems.push("Ngày giao hàng dự kiến không được trước ngày hôm nay.");
     }
     if (!Array.isArray(form.items) || form.items.length === 0) {
@@ -64,7 +64,7 @@ export function toPurchaseOrderPayload(form) {
     return {
         supplierId: Number(form.supplierId),
         warehouseId: Number(form.warehouseId),
-        expectedDeliveryDate: form.expectedDeliveryDate,
+        expectedDeliveryDate: form.expectedDeliveryDate || null,
         note: form.note.trim() || null,
         items: form.items.map((row) => ({
             productId: Number(row.productId),

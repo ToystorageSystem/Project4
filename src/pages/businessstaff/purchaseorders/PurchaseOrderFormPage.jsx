@@ -256,7 +256,7 @@ export default function PurchaseOrderFormPage() {
                             <div className="grid gap-4 md:grid-cols-2">
                                 <Select label="Nhà cung cấp *" value={form.supplierId} options={supplierSelectOptions} disabled={saving} onChange={(event) => changeSupplier(event.target.value)} />
                                 <Select label="Kho tổng nhận hàng *" value={form.warehouseId} options={warehouseSelectOptions} disabled={saving} onChange={(event) => setField("warehouseId", event.target.value)} />
-                                <Input label="Ngày dự kiến giao hàng *" type="date" min={todayVietnamIso()} value={form.expectedDeliveryDate} disabled={saving} onChange={(event) => setField("expectedDeliveryDate", event.target.value)} />
+                                <Input label="Requested delivery date (optional for DRAFT)" type="date" min={todayVietnamIso()} value={form.expectedDeliveryDate} disabled={saving} onChange={(event) => setField("expectedDeliveryDate", event.target.value)} />
                             </div>
                             <TextArea label="Ghi chú (không bắt buộc)" value={form.note} disabled={saving} rows={3} onChange={(event) => setField("note", event.target.value)} />
                             {editing && <p className="text-sm text-slate-500">Chỉ đơn nháp mới được chỉnh sửa. Nếu đổi nhà cung cấp, bạn cần chọn lại danh sách sản phẩm.</p>}
