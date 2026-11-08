@@ -55,4 +55,10 @@ public class CustomUserDetails implements UserDetails {
     public Users getUser() {
         return user;
     }
+    @Override
+    public boolean equals(Object other) {
+        return this == other || other instanceof CustomUserDetails p && java.util.Objects.equals(getId(), p.getId());
+    }
+    @Override
+    public int hashCode() { return java.util.Objects.hashCode(getId()); }
 }

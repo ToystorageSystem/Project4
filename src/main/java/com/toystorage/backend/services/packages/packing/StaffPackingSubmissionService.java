@@ -58,6 +58,27 @@ public class StaffPackingSubmissionService {
             mapper;
 
 
+    /** List the actual PACKING queue for the authenticated source warehouse. */
+    @Transactional(readOnly = true)
+    public List<StaffPackingSubmissionResponse> getPackingQueue() {
+        Users staff = packingValidationService.getCurrentUser();
+        if (staff.getWarehouse() == null) {
+            throw new com.toystorage.backend.exceptions.Forbidden("User is not assigned to warehouse");
+        }
+        return stockTransferRepository
+                .findByFromWarehouseIdAndStatusInOrderByCreatedAtDesc(
+                        staff.getWarehouse().getId(), List.of(TransferStatus.PACKING))
+                .stream().map(transfer -> StaffPackingSubmissionResponse.builder()
+                        .transferId(transfer.getId())
+                        .transferCode(transfer.getTransferCode())
+                        .status(transfer.getStatus().name())
+                        .fromWarehouseId(transfer.getFromWarehouse().getId())
+                        .fromWarehouseName(transfer.getFromWarehouse().getName())
+                        .toWarehouseId(transfer.getToWarehouse() == null ? null : transfer.getToWarehouse().getId())
+                        .toWarehouseName(transfer.getToWarehouse() == null ? null : transfer.getToWarehouse().getName())
+                        .build()).toList();
+    }
+
     // =====================================================
     // PREVIEW BEFORE SUBMIT
     // =====================================================

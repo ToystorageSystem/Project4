@@ -146,9 +146,8 @@ public class PutawayExecutionValidationService {
             ExecutePutawayItemRequest request
     ) {
 
-        if (!item.getProduct()
-                .getBarcode()
-                .equals(request.getProductBarcode())) {
+        if (item.getProduct().getBarcode() == null
+                || !item.getProduct().getBarcode().equals(request.getProductBarcode())) {
 
             throw new BadRequest(
                     "Scanned product does not match "

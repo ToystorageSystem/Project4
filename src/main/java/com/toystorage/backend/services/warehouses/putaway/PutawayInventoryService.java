@@ -55,6 +55,10 @@ public class PutawayInventoryService {
                 item.getToLocation();
 
 
+        if (from == null || to == null) {
+            throw new BadRequest("Putaway source or destination location is missing. Contact warehouse manager.");
+        }
+
         if (quantity <= 0) {
             throw new BadRequest("Putaway quantity must be greater than 0");
         }

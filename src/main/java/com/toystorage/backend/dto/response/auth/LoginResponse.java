@@ -8,6 +8,12 @@ import java.util.Set;
 @Getter
 @Builder
 public class LoginResponse {
+    private String stage;
+    private boolean mustChangePassword;
+    private boolean twoFactorRequired;
+    private boolean twoFactorSetupRequired;
+    private java.util.List<String> recoveryCodes;
+
 
     private Long id;
 

@@ -332,7 +332,7 @@ public class PutawayExecutionService {
 
 
         int newQuantity =
-                item.getPutawayQuantity()
+                (item.getPutawayQuantity() == null ? 0 : item.getPutawayQuantity())
                         + request.getQuantity();
 
         item.setPutawayQuantity(
