@@ -3,6 +3,7 @@ package com.toystorage.backend.enums.users;
 public enum ActivityEntityType {
     USER,
     ROLE,
+    CATEGORY,
     PERMISSION,
     USER_ROLE,
     ROLE_PERMISSION,

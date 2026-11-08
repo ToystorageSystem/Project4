@@ -63,6 +63,11 @@ public class Categories {
             length = 150
     )
     private String name;
+    @Column(
+            name = "description",
+            columnDefinition = "TEXT"
+    )
+    private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(
@@ -70,6 +75,8 @@ public class Categories {
             nullable = false,
             length = 30
     )
+    @Lob
+
     private CommonStatus status;
 
     @PrePersist

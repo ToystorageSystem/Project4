@@ -8,6 +8,7 @@ import com.toystorage.backend.enums.transfers.TransferType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,10 +17,22 @@ import java.util.List;
 @Table(
         name = "stock_transfers",
         indexes = {
-                @Index(name = "idx_stock_transfers_from_warehouse", columnList = "from_warehouse_id"),
-                @Index(name = "idx_stock_transfers_to_warehouse", columnList = "to_warehouse_id"),
-                @Index(name = "idx_stock_transfers_status", columnList = "status"),
-                @Index(name = "idx_stock_transfers_created_at", columnList = "created_at")
+                @Index(
+                        name = "idx_stock_transfers_from_warehouse",
+                        columnList = "from_warehouse_id"
+                ),
+                @Index(
+                        name = "idx_stock_transfers_to_warehouse",
+                        columnList = "to_warehouse_id"
+                ),
+                @Index(
+                        name = "idx_stock_transfers_status",
+                        columnList = "status"
+                ),
+                @Index(
+                        name = "idx_stock_transfers_created_at",
+                        columnList = "created_at"
+                )
         }
 )
 @Getter
@@ -33,7 +46,12 @@ public class StockTransfer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "transfer_code", nullable = false, unique = true, length = 50)
+    @Column(
+            name = "transfer_code",
+            nullable = false,
+            unique = true,
+            length = 50
+    )
     private String transferCode;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -65,7 +83,10 @@ public class StockTransfer {
     @OneToMany(
             mappedBy = "stockTransfer",
             fetch = FetchType.LAZY,
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE}
+            cascade = {
+                    CascadeType.PERSIST,
+                    CascadeType.MERGE
+            }
     )
     @Builder.Default
     private List<StockTransferItems> items = new ArrayList<>();
@@ -96,7 +117,23 @@ public class StockTransfer {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    /*
+     * Ngày kho dự kiến xuất hàng.
+     */
+    @Column(name = "expected_shipment_date")
+    private LocalDate expectedShipmentDate;
+
+    /*
+     * Ngày nơi nhận dự kiến nhận hàng.
+     */
+    @Column(name = "expected_receipt_date")
+    private LocalDate expectedReceiptDate;
+
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false
+    )
     private LocalDateTime createdAt;
 
     @Column(name = "shipped_at")
@@ -105,14 +142,22 @@ public class StockTransfer {
     @Column(name = "received_at")
     private LocalDateTime receivedAt;
 
-    @Column(name = "stock_transfers_code", nullable = false, unique = true, length = 50)
+    @Column(
+            name = "stock_transfers_code",
+            nullable = false,
+            unique = true,
+            length = 50
+    )
     private String stockTransfersCode;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     public void addItem(StockTransferItems item) {
-        if (item == null) return;
+        if (item == null) {
+            return;
+        }
+
         items.add(item);
         item.setStockTransfer(this);
     }
@@ -120,10 +165,22 @@ public class StockTransfer {
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
-        if (createdAt == null) createdAt = now;
-        if (updatedAt == null) updatedAt = now;
-        if (status == null) status = TransferStatus.DRAFT;
-        if (transferType == null) transferType = TransferType.NORMAL;
+
+        if (createdAt == null) {
+            createdAt = now;
+        }
+
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+
+        if (status == null) {
+            status = TransferStatus.DRAFT;
+        }
+
+        if (transferType == null) {
+            transferType = TransferType.NORMAL;
+        }
     }
 
     @PreUpdate

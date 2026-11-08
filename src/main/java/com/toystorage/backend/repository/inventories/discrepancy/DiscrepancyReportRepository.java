@@ -1,5 +1,6 @@
 package com.toystorage.backend.repository.inventories.discrepancy;
 
+import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.enums.inventories.DiscrepancyReferenceType;
 import com.toystorage.backend.enums.inventories.DiscrepancyStatus;
 import com.toystorage.backend.enums.inventories.DiscrepancyType;
@@ -8,18 +9,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface DiscrepancyReportRepository
-        extends JpaRepository<
-        com.toystorage.backend.entity.inventories.DiscrepancyReports,
-        Long
-        > {
+        extends JpaRepository<DiscrepancyReports, Long> {
 
-    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
+    List<DiscrepancyReports>
     findByWarehouseIdAndStatusInOrderByCreatedAtDesc(
             Long warehouseId,
             List<DiscrepancyStatus> statuses
     );
 
-    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
+    List<DiscrepancyReports>
     findByReferenceTypeAndReferenceId(
             DiscrepancyReferenceType referenceType,
             Long referenceId
@@ -40,21 +38,27 @@ public interface DiscrepancyReportRepository
             List<DiscrepancyStatus> statuses
     );
 
-    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
+    List<DiscrepancyReports>
     findByReportedByIdOrderByCreatedAtDesc(
             Long userId
     );
 
-    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
+    List<DiscrepancyReports>
     findByWarehouseIdAndResponsiblePartyAndStatusOrderByCreatedAtDesc(
             Long warehouseId,
             String responsibleParty,
             DiscrepancyStatus status
     );
 
-    List<com.toystorage.backend.entity.inventories.DiscrepancyReports>
+    List<DiscrepancyReports>
     findByWarehouseIdAndStatusOrderByCreatedAtDesc(
             Long warehouseId,
             DiscrepancyStatus status
+    );
+
+    // Business Manager lấy các báo cáo được chuyển cho mình.
+    List<DiscrepancyReports>
+    findByResponsiblePartyOrderByCreatedAtDesc(
+            String responsibleParty
     );
 }

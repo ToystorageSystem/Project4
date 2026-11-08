@@ -107,6 +107,17 @@ public class PurchaseOrders {
      */
     @Column(name = "expected_delivery_date")
     private LocalDate expectedDeliveryDate;
+    /*
+     * Ngày giao hàng do nhà cung cấp đề xuất.
+     */
+    @Column(name = "supplier_proposed_delivery_date")
+    private LocalDate supplierProposedDeliveryDate;
+
+    /*
+     * Ngày giao hàng mà hai bên đã thống nhất.
+     */
+    @Column(name = "agreed_delivery_date")
+    private LocalDate agreedDeliveryDate;
 
     /*
      * Ghi chú chung của đơn mua hàng.
