@@ -5,6 +5,7 @@ import com.toystorage.backend.enums.suppliers.SupplierResponseStatus;
 import com.toystorage.backend.enums.suppliers.SupplierItemResponseStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,6 +15,9 @@ public record SupplierFeedbackResponse(
         SupplierResponseStatus supplierResponseStatus,
         String supplierResponseNote,
         LocalDateTime supplierRespondedAt,
+        LocalDate requestedDeliveryDate,
+        LocalDate supplierProposedDeliveryDate,
+        LocalDate agreedDeliveryDate,
         List<ItemResponse> items
 ) {
     public record ItemResponse(

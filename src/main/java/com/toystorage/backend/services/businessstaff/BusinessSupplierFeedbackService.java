@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -105,6 +106,25 @@ public class BusinessSupplierFeedbackService {
             );
         }
 
+        // Phan biet ngay doanh nghiep yeu cau voi ngay NCC de xuat va ngay da chot.
+        LocalDate proposed = request.supplierProposedDeliveryDate() != null
+                ? request.supplierProposedDeliveryDate()
+                : order.getSupplierProposedDeliveryDate();
+        if (request.supplierResponseStatus() == SupplierResponseStatus.DELAYED) {
+            if (proposed == null) {
+                throw new BadRequest("Supplier proposed delivery date is required for DELAYED feedback");
+            }
+            if (order.getExpectedDeliveryDate() != null
+                    && !proposed.isAfter(order.getExpectedDeliveryDate())) {
+                throw new BadRequest("Supplier proposed date must be after the requested delivery date");
+            }
+        }
+        if (request.agreedDeliveryDate() != null
+                && (request.supplierResponseStatus() == SupplierResponseStatus.PENDING_RESPONSE
+                    || request.supplierResponseStatus() == SupplierResponseStatus.DECLINED)) {
+            throw new BadRequest("Cannot agree on a delivery date for pending or declined feedback");
+        }
+
         String oldValue = snapshot(order, orderItems);
 
         Map<Long, PurchaseOrderItems> itemMap = new HashMap<>();
@@ -175,6 +195,20 @@ public class BusinessSupplierFeedbackService {
                 request.supplierResponseStatus(),
                 orderItems
         );
+
+        // Chi cap nhat ngay khi nguoi dung thuc su gui ngay moi.
+        // Giu nguyen ngay yeu cau goc tren Purchase Order.
+        if (request.supplierProposedDeliveryDate() != null) {
+            // Ngay NCC de xuat thay doi thi phai chot lai, khong giu cam ket cu.
+            if (!request.supplierProposedDeliveryDate().equals(order.getSupplierProposedDeliveryDate())
+                    && request.agreedDeliveryDate() == null) {
+                order.setAgreedDeliveryDate(null);
+            }
+            order.setSupplierProposedDeliveryDate(request.supplierProposedDeliveryDate());
+        }
+        if (request.agreedDeliveryDate() != null) {
+            order.setAgreedDeliveryDate(request.agreedDeliveryDate());
+        }
 
         order.setSupplierResponseStatus(
                 request.supplierResponseStatus()
@@ -455,6 +489,10 @@ public class BusinessSupplierFeedbackService {
 
         data.put("purchaseOrderId", order.getId());
 
+        data.put("requestedDeliveryDate", order.getExpectedDeliveryDate() == null ? null : order.getExpectedDeliveryDate().toString());
+        data.put("supplierProposedDeliveryDate", order.getSupplierProposedDeliveryDate() == null ? null : order.getSupplierProposedDeliveryDate().toString());
+        data.put("agreedDeliveryDate", order.getAgreedDeliveryDate() == null ? null : order.getAgreedDeliveryDate().toString());
+
         data.put("supplierResponseStatus",
                 order.getSupplierResponseStatus());
 
@@ -518,6 +556,9 @@ public class BusinessSupplierFeedbackService {
                 order.getSupplierResponseStatus(),
                 order.getSupplierResponseNote(),
                 order.getSupplierRespondedAt(),
+                order.getExpectedDeliveryDate(),
+                order.getSupplierProposedDeliveryDate(),
+                order.getAgreedDeliveryDate(),
                 results
         );
     }

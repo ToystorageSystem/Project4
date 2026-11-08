@@ -108,6 +108,14 @@ public class PurchaseOrders {
     @Column(name = "expected_delivery_date")
     private LocalDate expectedDeliveryDate;
 
+    // Ngay NCC de nghi giao, khong thay the ngay doanh nghiep yeu cau.
+    @Column(name = "supplier_proposed_delivery_date")
+    private LocalDate supplierProposedDeliveryDate;
+
+    // Ngay hai ben da dong y (co the rong neu chua thoa thuan).
+    @Column(name = "agreed_delivery_date")
+    private LocalDate agreedDeliveryDate;
+
     /*
      * Ghi chú chung của đơn mua hàng.
      */

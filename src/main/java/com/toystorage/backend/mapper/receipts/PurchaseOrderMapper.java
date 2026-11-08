@@ -414,6 +414,9 @@ public class PurchaseOrderMapper {
                         order.getExpectedDeliveryDate()
                 )
 
+                .supplierProposedDeliveryDate(order.getSupplierProposedDeliveryDate())
+                .agreedDeliveryDate(order.getAgreedDeliveryDate())
+
                 .note(
                         order.getNote()
                 )

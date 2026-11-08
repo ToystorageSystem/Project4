@@ -38,6 +38,10 @@ public class PurchaseOrderDetailResponse {
 
     private LocalDate expectedDeliveryDate;
 
+    private LocalDate supplierProposedDeliveryDate;
+
+    private LocalDate agreedDeliveryDate;
+
     private String note;
 
     private String rejectionReason;

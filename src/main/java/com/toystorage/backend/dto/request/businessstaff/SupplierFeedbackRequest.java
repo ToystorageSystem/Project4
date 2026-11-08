@@ -5,6 +5,7 @@ import com.toystorage.backend.enums.suppliers.SupplierResponseStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public record SupplierFeedbackRequest(
@@ -15,6 +16,10 @@ public record SupplierFeedbackRequest(
         String supplierResponseNote,
 
         @Valid
-        List<SupplierItemFeedbackRequest> items
+        List<SupplierItemFeedbackRequest> items,
+
+        LocalDate supplierProposedDeliveryDate,
+
+        LocalDate agreedDeliveryDate
 
 ) {}

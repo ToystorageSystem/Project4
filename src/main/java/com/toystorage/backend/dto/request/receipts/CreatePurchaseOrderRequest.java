@@ -24,7 +24,7 @@ public class CreatePurchaseOrderRequest {
     private Long warehouseId;
 
 
-    @NotNull(message = "Expected delivery date is required")
+    // Co the bo trong luc tao/sua DRAFT. Khi submit bat buoc phai co ngay.
     private LocalDate expectedDeliveryDate;
 
 

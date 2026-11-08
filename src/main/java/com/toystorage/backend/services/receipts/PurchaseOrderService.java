@@ -317,7 +317,7 @@ public class PurchaseOrderService {
             CreatePurchaseOrderRequest request
     ) {
 
-        validateExpectedDeliveryDate(request.getExpectedDeliveryDate());
+        validateOptionalExpectedDeliveryDate(request.getExpectedDeliveryDate());
 
         Users currentUser =
                 getCurrentUser();
@@ -441,7 +441,7 @@ public class PurchaseOrderService {
             );
         }
 
-        validateExpectedDeliveryDate(request.getExpectedDeliveryDate());
+        validateOptionalExpectedDeliveryDate(request.getExpectedDeliveryDate());
 
         Users currentUser =
                 getCurrentUser();
@@ -1427,6 +1427,12 @@ public class PurchaseOrderService {
     // =====================================================
     // VALIDATE EXPECTED DELIVERY DATE
     // =====================================================
+
+    private void validateOptionalExpectedDeliveryDate(LocalDate expectedDeliveryDate) {
+        if (expectedDeliveryDate != null) {
+            validateExpectedDeliveryDate(expectedDeliveryDate);
+        }
+    }
 
     private void validateExpectedDeliveryDate(LocalDate expectedDeliveryDate) {
         if (expectedDeliveryDate == null) {
