@@ -9,10 +9,10 @@ import lombok.Setter;
 @Setter
 public class RejectProductRequest {
 
-    @NotBlank(message = "Lý do từ chối không được để trống")
+    @NotBlank(message = "Rejection reason is required")
     @Size(
             max = 500,
-            message = "Lý do từ chối không được vượt quá 500 ký tự"
+            message = "Rejection reason cannot exceed 500 characters"
     )
     private String rejectionReason;
 }

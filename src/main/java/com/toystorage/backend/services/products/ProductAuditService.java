@@ -54,7 +54,7 @@ public class ProductAuditService {
 
     public Page<ProductActivityResponse> getHistory(Long productId, int page, int size) {
         if (page < 0 || size < 1 || size > 100) {
-            throw new com.toystorage.backend.exceptions.BadRequest("Số trang hoặc kích thước trang không hợp lệ");
+            throw new com.toystorage.backend.exceptions.BadRequest("Invalid page number or page size");
         }
         return activityLogRepository.findByEntityTypeAndEntityId(
                         ActivityEntityType.PRODUCT,
@@ -63,7 +63,7 @@ public class ProductAuditService {
                 .map(log -> ProductActivityResponse.builder()
                         .id(log.getId())
                         .action(log.getAction().name())
-                        .changedByName(log.getUser() == null ? "Hệ thống" : log.getUser().getName())
+                        .changedByName(log.getUser() == null ? "System" : log.getUser().getName())
                         .createdAt(log.getCreatedAt())
                         .oldValue(log.getOldValue())
                         .newValue(log.getNewValue())
@@ -91,7 +91,7 @@ public class ProductAuditService {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Không thể ghi nhật ký thay đổi sản phẩm", e);
+            throw new IllegalStateException("Unable to record product change history", e);
         }
     }
 }

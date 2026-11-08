@@ -179,7 +179,7 @@ public class PutawayExecutionService {
          * migration enum/database.
          *
          * ASSIGNED bây giờ hiểu là:
-         * "task sẵn sàng cho Staff claim".
+         * "task ready for staff claim".
          */
         if (task.getStatus()
                 != PutawayTaskStatus.AVAILABLE) {

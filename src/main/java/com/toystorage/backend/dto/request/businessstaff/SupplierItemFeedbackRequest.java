@@ -23,7 +23,7 @@ public record SupplierItemFeedbackRequest(
 
         @DecimalMin(
             value = "0.01",
-            message = "Gia xac nhan phai lon hon 0"
+            message = "Confirmed unit price must be greater than 0"
         )
         BigDecimal confirmedUnitPrice,
 

@@ -11,47 +11,47 @@ import lombok.Setter;
 @Setter
 public class CreateSupplierRequest {
 
-    @NotBlank(message = "Tên nhà cung cấp không được để trống")
+    @NotBlank(message = "Supplier name is required")
     @Size(
             max = 200,
-            message = "Tên nhà cung cấp không được vượt quá 200 ký tự"
+            message = "Supplier name cannot exceed 200 characters"
     )
     private String name;
 
     @Size(
             max = 50,
-            message = "Mã số thuế không được vượt quá 50 ký tự"
+            message = "Tax ID cannot exceed 50 characters"
     )
     private String taxCode;
 
     @Size(
             max = 150,
-            message = "Tên người liên hệ không được vượt quá 150 ký tự"
+            message = "Contact person's name cannot exceed 150 characters"
     )
     private String contactPerson;
 
     @Size(
             max = 100,
-            message = "Chức vụ người liên hệ không được vượt quá 100 ký tự"
+            message = "Contact position cannot exceed 100 characters"
     )
     private String contactPosition;
 
     @Pattern(
             regexp = "^$|^\\+?[0-9]{9,15}$",
-            message = "Số điện thoại phải có từ 9 đến 15 chữ số"
+            message = "Phone number must contain 9 to 15 digits"
     )
     private String phone;
 
-    @Email(message = "Email không đúng định dạng")
+    @Email(message = "Invalid email address format")
     @Size(
             max = 150,
-            message = "Email không được vượt quá 150 ký tự"
+            message = "Email cannot exceed 150 characters"
     )
     private String email;
 
     @Size(
             max = 255,
-            message = "Địa chỉ không được vượt quá 255 ký tự"
+            message = "Address cannot exceed 255 characters"
     )
     private String address;
 

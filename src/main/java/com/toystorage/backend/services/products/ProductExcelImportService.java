@@ -70,7 +70,7 @@ public class ProductExcelImportService {
         ) {
             if (workbook.getNumberOfSheets() == 0) {
                 throw new BadRequest(
-                        "File Excel không có sheet dữ liệu"
+                        "Excel file does not contain a data worksheet"
                 );
             }
 
@@ -83,7 +83,7 @@ public class ProductExcelImportService {
 
             if (rows.isEmpty()) {
                 throw new BadRequest(
-                        "File Excel không có dòng dữ liệu sản phẩm"
+                        "Excel file contains no product rows"
                 );
             }
 
@@ -104,11 +104,11 @@ public class ProductExcelImportService {
             throw exception;
         } catch (IOException exception) {
             throw new BadRequest(
-                    "Không thể đọc file Excel"
+                    "Unable to read Excel file"
             );
         } catch (Exception exception) {
             throw new BadRequest(
-                    "File Excel không đúng định dạng"
+                    "Invalid Excel file format"
             );
         }
     }
@@ -121,10 +121,10 @@ public class ProductExcelImportService {
 
         if (preview.getInvalidRows() > 0) {
             throw new BadRequest(
-                    "File Excel còn "
+                    "Excel file contains "
                             + preview.getInvalidRows()
-                            + " dòng không hợp lệ. "
-                            + "Vui lòng sửa lỗi và preview lại trước khi nhập"
+                            + " invalid rows. "
+                            + "Correct the errors and preview again before importing"
             );
         }
 
@@ -322,7 +322,7 @@ public class ProductExcelImportService {
                                 )
         ) {
             errors.add(
-                    "productCode: Mã sản phẩm đã tồn tại"
+                    "productCode: Product code already exists"
             );
         }
 
@@ -334,7 +334,7 @@ public class ProductExcelImportService {
                         )
         ) {
             errors.add(
-                    "barcode: Barcode đã tồn tại"
+                    "barcode: Barcode already exists"
             );
         }
 
@@ -348,8 +348,8 @@ public class ProductExcelImportService {
                                 .isEmpty()
         ) {
             errors.add(
-                    "categoryId: Danh mục không tồn tại "
-                            + "hoặc không hoạt động"
+                    "categoryId: Category does not exist "
+                            + "or is inactive"
             );
         }
 
@@ -363,8 +363,8 @@ public class ProductExcelImportService {
                                 .isEmpty()
         ) {
             errors.add(
-                    "brandId: Thương hiệu không tồn tại "
-                            + "hoặc không hoạt động"
+                    "brandId: Brand does not exist "
+                            + "or is inactive"
             );
         }
     }
@@ -424,8 +424,8 @@ public class ProductExcelImportService {
             ) {
                 addError(
                         row,
-                        "productCode: Mã sản phẩm bị trùng "
-                                + "trong file Excel"
+                        "productCode: Duplicate product code "
+                                + "in the Excel file"
                 );
             }
 
@@ -438,8 +438,8 @@ public class ProductExcelImportService {
             ) {
                 addError(
                         row,
-                        "barcode: Barcode bị trùng "
-                                + "trong file Excel"
+                        "barcode: Duplicate barcode "
+                                + "in the Excel file"
                 );
             }
 
@@ -459,7 +459,7 @@ public class ProductExcelImportService {
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BadRequest(
-                    "Vui lòng chọn file Excel"
+                    "Please select an Excel file"
             );
         }
 
@@ -467,7 +467,7 @@ public class ProductExcelImportService {
 
         if (fileName == null) {
             throw new BadRequest(
-                    "Tên file Excel không hợp lệ"
+                    "Invalid Excel filename"
             );
         }
 
@@ -479,7 +479,7 @@ public class ProductExcelImportService {
                         && !lowerCaseName.endsWith(".xls")
         ) {
             throw new BadRequest(
-                    "Chỉ chấp nhận file Excel .xlsx hoặc .xls"
+                    "Only .xlsx or .xls Excel files are supported"
             );
         }
     }
@@ -487,7 +487,7 @@ public class ProductExcelImportService {
     private void validateHeader(Row headerRow) {
         if (headerRow == null) {
             throw new BadRequest(
-                    "File Excel thiếu dòng tiêu đề"
+                    "Excel file is missing the header row"
             );
         }
 
@@ -509,9 +509,9 @@ public class ProductExcelImportService {
 
             if (!expectedHeader.equals(actualHeader)) {
                 throw new BadRequest(
-                        "Cột Excel thứ "
+                        "Excel column "
                                 + (index + 1)
-                                + " phải có tên: "
+                                + " must be named: "
                                 + expectedHeader
                 );
             }
@@ -527,7 +527,7 @@ public class ProductExcelImportService {
         if (value == null || value.isBlank()) {
             if (required) {
                 errors.add(
-                        fieldName + ": Không được để trống"
+                        fieldName + ": Required field"
                 );
             }
 
@@ -541,7 +541,7 @@ public class ProductExcelImportService {
             return number.longValueExact();
         } catch (Exception exception) {
             errors.add(
-                    fieldName + ": Phải là số nguyên hợp lệ"
+                    fieldName + ": Must be a valid integer"
             );
 
             return null;
@@ -555,7 +555,7 @@ public class ProductExcelImportService {
     ) {
         if (value == null || value.isBlank()) {
             errors.add(
-                    fieldName + ": Không được để trống"
+                    fieldName + ": Required field"
             );
 
             return null;
@@ -567,7 +567,7 @@ public class ProductExcelImportService {
             );
         } catch (NumberFormatException exception) {
             errors.add(
-                    fieldName + ": Phải là số hợp lệ"
+                    fieldName + ": Must be a valid number"
             );
 
             return null;

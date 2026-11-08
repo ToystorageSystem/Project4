@@ -159,7 +159,7 @@ public class BusinessActivityReportController {
         );
 
         return excelResponse(
-                data, "bao-cao-nhap-hang.xlsx"
+                data, "goods-receipt-report.xlsx"
         );
     }
 
@@ -187,7 +187,7 @@ public class BusinessActivityReportController {
         );
 
         return excelResponse(
-                data, "bao-cao-xuat-hang.xlsx"
+                data, "outbound-stock-report.xlsx"
         );
     }
 
@@ -215,7 +215,7 @@ public class BusinessActivityReportController {
         );
 
         return excelResponse(
-                data, "bao-cao-dieu-chuyen.xlsx"
+                data, "stock-transfer-report.xlsx"
         );
     }
 
@@ -235,7 +235,7 @@ public class BusinessActivityReportController {
         );
 
         return excelResponse(
-                data, "bao-cao-ton-kho.xlsx"
+                data, "inventory-report.xlsx"
         );
     }
 

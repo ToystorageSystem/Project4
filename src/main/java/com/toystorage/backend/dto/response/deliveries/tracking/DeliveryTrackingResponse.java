@@ -84,7 +84,7 @@ public class DeliveryTrackingResponse {
      *
      * Frontend có thể hiển thị:
      *
-     * "Mất kết nối - cập nhật lần cuối 15 giây trước"
+     * "Connection lost - last updated 15 seconds ago"
      */
     private Boolean stale;
 }

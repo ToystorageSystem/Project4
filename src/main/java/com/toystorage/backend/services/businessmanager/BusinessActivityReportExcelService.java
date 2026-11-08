@@ -51,13 +51,13 @@ public class BusinessActivityReportExcelService {
         Map<String, Object> summary =
                 createFilters(fromDate, toDate, warehouseId);
 
-        summary.put("Tong phieu nhap",
+        summary.put("Total Goods Receipts",
                 report.getTotalReceipts());
 
-        summary.put("Phieu da hoan thanh",
+        summary.put("Completed Receipts",
                 report.getCompletedReceipts());
 
-        summary.put("Tong so luong da nhan",
+        summary.put("Total Accepted Quantity",
                 report.getTotalAcceptedQuantity());
 
         List<Object[]> rows = new ArrayList<>();
@@ -79,17 +79,17 @@ public class BusinessActivityReportExcelService {
 
         String[] headers = {
             "ID",
-            "Ma phieu nhap",
-            "ID kho",
-            "Ten kho",
-            "Trang thai",
-            "Ngay tao",
-            "Ngay nhan",
-            "So luong accepted"
+            "Goods Receipt Code",
+            "Warehouse ID",
+            "Warehouse Name",
+            "Status",
+            "Created At",
+            "Received At",
+            "Accepted Quantity"
         };
 
         return createWorkbook(
-                "BAO CAO NHAP HANG",
+                "GOODS RECEIPT REPORT",
                 summary, headers, rows
         );
     }
@@ -112,13 +112,13 @@ public class BusinessActivityReportExcelService {
         Map<String, Object> summary =
                 createFilters(fromDate, toDate, warehouseId);
 
-        summary.put("Tong phieu xuat",
+        summary.put("Total Outbound Transfers",
                 report.getTotalExports());
 
-        summary.put("Phieu da shipped",
+        summary.put("Shipped Transfers",
                 report.getShippedExports());
 
-        summary.put("Tong so luong shipped",
+        summary.put("Total Shipped Quantity",
                 report.getTotalShippedQuantity());
 
         List<Object[]> rows = new ArrayList<>();
@@ -142,19 +142,19 @@ public class BusinessActivityReportExcelService {
 
         String[] headers = {
             "ID",
-            "Ma phieu",
-            "ID kho gui",
-            "Ten kho gui",
-            "ID kho nhan",
-            "Ten kho nhan",
-            "Trang thai",
-            "Ngay tao",
-            "Ngay shipped",
-            "So luong shipped"
+            "Stock Transfer Code",
+            "Source Warehouse ID",
+            "Source Warehouse",
+            "Destination Warehouse ID",
+            "Destination Warehouse",
+            "Status",
+            "Created At",
+            "Shipped At",
+            "Shipped Quantity"
         };
 
         return createWorkbook(
-                "BAO CAO XUAT HANG",
+                "OUTBOUND STOCK REPORT",
                 summary, headers, rows
         );
     }
@@ -177,20 +177,20 @@ public class BusinessActivityReportExcelService {
         Map<String, Object> summary =
                 createFilters(fromDate, toDate, warehouseId);
 
-        summary.put("Tong phieu dieu chuyen",
+        summary.put("Total Stock Transfers",
                 report.getTotalTransfers());
 
-        summary.put("Phieu da hoan thanh",
+        summary.put("Completed Transfers",
                 report.getCompletedTransfers());
 
-        summary.put("Tong so luong shipped",
+        summary.put("Total Shipped Quantity",
                 report.getTotalShippedQuantity());
 
         for (Map.Entry<String, Long> entry
                 : report.getTransfersByStatus().entrySet()) {
 
             summary.put(
-                    "Trang thai " + entry.getKey(),
+                    "Status " + entry.getKey(),
                     entry.getValue()
             );
         }
@@ -216,19 +216,19 @@ public class BusinessActivityReportExcelService {
 
         String[] headers = {
             "ID",
-            "Ma phieu",
-            "ID kho gui",
-            "Ten kho gui",
-            "ID kho nhan",
-            "Ten kho nhan",
-            "Trang thai",
-            "Ngay tao",
-            "Ngay shipped",
-            "So luong shipped"
+            "Stock Transfer Code",
+            "Source Warehouse ID",
+            "Source Warehouse",
+            "Destination Warehouse ID",
+            "Destination Warehouse",
+            "Status",
+            "Created At",
+            "Shipped At",
+            "Shipped Quantity"
         };
 
         return createWorkbook(
-                "BAO CAO DIEU CHUYEN",
+                "STOCK TRANSFER REPORT",
                 summary, headers, rows
         );
     }
@@ -244,25 +244,25 @@ public class BusinessActivityReportExcelService {
 
         Map<String, Object> summary = new LinkedHashMap<>();
 
-        summary.put("Thoi diem bao cao",
+        summary.put("Snapshot At",
                 report.getSnapshotAt());
 
-        summary.put("ID kho",
-                warehouseId == null ? "Tat ca" : warehouseId);
+        summary.put("Warehouse ID",
+                warehouseId == null ? "All" : warehouseId);
 
-        summary.put("So san pham khac nhau",
+        summary.put("Distinct Products",
                 report.getTotalProducts());
 
-        summary.put("So dong ton kho",
+        summary.put("Inventory Location Records",
                 report.getTotalBalanceRecords());
 
-        summary.put("Tong ton vat ly",
+        summary.put("Total Physical Stock",
                 report.getTotalQuantity());
 
-        summary.put("Tong ton giu cho",
+        summary.put("Total Reserved Stock",
                 report.getTotalReservedQuantity());
 
-        summary.put("Tong ton kha dung",
+        summary.put("Total Available Stock",
                 report.getTotalAvailableQuantity());
 
         List<Object[]> rows = new ArrayList<>();
@@ -288,23 +288,23 @@ public class BusinessActivityReportExcelService {
         }
 
         String[] headers = {
-            "ID ton kho",
-            "ID kho",
-            "Ten kho",
-            "ID vi tri",
-            "Ma vi tri",
-            "Ten vi tri",
-            "Loai vi tri",
-            "ID san pham",
-            "Ma san pham",
-            "Ten san pham",
-            "Ton vat ly",
-            "Ton giu cho",
-            "Ton kha dung"
+            "Inventory Balance ID",
+            "Warehouse ID",
+            "Warehouse Name",
+            "Location ID",
+            "Location Code",
+            "Location Name",
+            "Location Type",
+            "Product ID",
+            "Product Code",
+            "Product Name",
+            "Physical Stock",
+            "Reserved Stock",
+            "Available Stock"
         };
 
         return createWorkbook(
-                "BAO CAO TON KHO HIEN TAI",
+                "CURRENT INVENTORY REPORT",
                 summary, headers, rows
         );
     }
@@ -321,14 +321,14 @@ public class BusinessActivityReportExcelService {
 
         Map<String, Object> filters = new LinkedHashMap<>();
 
-        filters.put("Tu ngay",
-                fromDate == null ? "Tat ca" : fromDate);
+        filters.put("From Date",
+                fromDate == null ? "All" : fromDate);
 
-        filters.put("Den ngay",
-                toDate == null ? "Tat ca" : toDate);
+        filters.put("To Date",
+                toDate == null ? "All" : toDate);
 
-        filters.put("ID kho",
-                warehouseId == null ? "Tat ca" : warehouseId);
+        filters.put("Warehouse ID",
+                warehouseId == null ? "All" : warehouseId);
 
         return filters;
     }
@@ -364,7 +364,7 @@ public class BusinessActivityReportExcelService {
 
             // SHEET 1: TONG QUAN
             Sheet summarySheet =
-                    workbook.createSheet("Tong quan");
+                    workbook.createSheet("Summary");
 
             Row titleRow = summarySheet.createRow(0);
             Cell titleCell = titleRow.createCell(0);
@@ -388,7 +388,7 @@ public class BusinessActivityReportExcelService {
 
             // SHEET 2: CHI TIET
             Sheet detailSheet =
-                    workbook.createSheet("Chi tiet");
+                    workbook.createSheet("Details");
 
             Row headerRow = detailSheet.createRow(0);
 

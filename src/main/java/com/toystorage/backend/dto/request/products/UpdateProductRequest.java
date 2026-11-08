@@ -14,64 +14,64 @@ import java.math.BigDecimal;
 @Setter
 public class UpdateProductRequest {
 
-    @NotBlank(message = "Mã sản phẩm không được để trống")
+    @NotBlank(message = "Product code is required")
     @Size(
             max = 50,
-            message = "Mã sản phẩm không được vượt quá 50 ký tự"
+            message = "Product code cannot exceed 50 characters"
     )
     private String productCode;
 
-    @NotBlank(message = "Barcode không được để trống")
+    @NotBlank(message = "Barcode is required")
     @Size(
             max = 100,
-            message = "Barcode không được vượt quá 100 ký tự"
+            message = "Barcode cannot exceed 100 characters"
     )
     private String barcode;
 
     @Size(
             max = 500,
-            message = "Đường dẫn hình ảnh không được vượt quá 500 ký tự"
+            message = "Image URL cannot exceed 500 characters"
     )
     private String imageUrl;
 
-    @NotBlank(message = "Tên sản phẩm không được để trống")
+    @NotBlank(message = "Product name is required")
     @Size(
             max = 200,
-            message = "Tên sản phẩm không được vượt quá 200 ký tự"
+            message = "Product name cannot exceed 200 characters"
     )
     private String name;
 
-    @NotNull(message = "Danh mục không được để trống")
-    @Positive(message = "ID danh mục phải lớn hơn 0")
+    @NotNull(message = "Category is required")
+    @Positive(message = "Category ID must be greater than 0")
     private Long categoryId;
 
-    @Positive(message = "ID thương hiệu phải lớn hơn 0")
+    @Positive(message = "Brand ID must be greater than 0")
     private Long brandId;
 
-    @NotBlank(message = "Đơn vị cơ sở không được để trống")
+    @NotBlank(message = "Base unit is required")
     @Size(
             max = 30,
-            message = "Đơn vị cơ sở không được vượt quá 30 ký tự"
+            message = "Base unit cannot exceed 30 characters"
     )
     private String baseUnit;
 
-    @NotNull(message = "Giá nhập không được để trống")
+    @NotNull(message = "Purchase price is required")
     @DecimalMin(
             value = "0.01",
-            message = "Giá nhập phải lớn hơn 0"
+            message = "Purchase price must be greater than 0"
     )
     private BigDecimal purchasePrice;
 
-    @NotNull(message = "Giá bán không được để trống")
+    @NotNull(message = "Selling price is required")
     @DecimalMin(
             value = "0.01",
-            message = "Giá bán phải lớn hơn 0"
+            message = "Selling price must be greater than 0"
     )
     private BigDecimal sellingPrice;
 
     @Size(
             max = 500,
-            message = "Lý do yêu cầu không được vượt quá 500 ký tự"
+            message = "Request reason cannot exceed 500 characters"
     )
     private String requestReason;
 }

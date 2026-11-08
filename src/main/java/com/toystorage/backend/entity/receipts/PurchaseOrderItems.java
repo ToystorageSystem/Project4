@@ -110,7 +110,7 @@ public class PurchaseOrderItems {
      * Purchase Order cũ phải giữ nguyên giá lịch sử.
      */
 
-    @NotNull(message = "Gia nhap khong duoc de trong")
+    @NotNull(message = "Purchase unit price is required")
     @DecimalMin(value = "0.0", inclusive = true)
     @Column(
             name = "unit_price",
@@ -124,7 +124,7 @@ public class PurchaseOrderItems {
      * Mã nội bộ của dòng sản phẩm trong đơn mua hàng.
      */
 
-    @NotBlank(message = "Ma dong san pham khong duoc de trong")
+    @NotBlank(message = "Purchase order item code is required")
     @Column(
             name = "purchase_order_items_code",
             nullable = false,

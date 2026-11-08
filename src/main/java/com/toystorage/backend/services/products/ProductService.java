@@ -335,14 +335,14 @@ public class ProductService {
 
         if (product.getStatus() != ProductStatus.ACTIVE) {
             throw new BadRequest(
-                    "Chỉ có thể ẩn sản phẩm đang hoạt động"
+                    "Only active products can be hidden"
             );
         }
 
         java.util.Map<String, Object> before = productAuditService.snapshot(product);
         product.setStatus(ProductStatus.INACTIVE);
         product = productRepository.saveAndFlush(product);
-        productAuditService.logUpdate(product, getCurrentUser(), before, "Ẩn sản phẩm");
+        productAuditService.logUpdate(product, getCurrentUser(), before, "Hide Product");
         return productMapper.toResponse(product);
     }
 
@@ -358,14 +358,14 @@ public class ProductService {
 
         if (product.getStatus() != ProductStatus.INACTIVE) {
             throw new BadRequest(
-                    "Chỉ có thể khôi phục sản phẩm đã bị ẩn"
+                    "Only hidden products can be restored"
             );
         }
 
         java.util.Map<String, Object> before = productAuditService.snapshot(product);
         product.setStatus(ProductStatus.ACTIVE);
         product = productRepository.saveAndFlush(product);
-        productAuditService.logUpdate(product, getCurrentUser(), before, "Khôi phục sản phẩm");
+        productAuditService.logUpdate(product, getCurrentUser(), before, "Restore Product");
         return productMapper.toResponse(product);
     }
 
@@ -377,7 +377,7 @@ public class ProductService {
             );
         } catch (JsonProcessingException exception) {
             throw new BadRequest(
-                    "Dữ liệu thay đổi sản phẩm không hợp lệ"
+                    "Invalid product change data"
             );
         }
     }
@@ -400,7 +400,7 @@ public class ProductService {
                         product.getId()
                 )) {
             throw new BadRequest(
-                    "Mã sản phẩm đã tồn tại"
+                    "Product code already exists"
             );
         }
 
@@ -409,7 +409,7 @@ public class ProductService {
                 product.getId()
         )) {
             throw new BadRequest(
-                    "Barcode đã tồn tại"
+                    "Barcode already exists"
             );
         }
 
@@ -429,7 +429,7 @@ public class ProductService {
         if (proposedStatus != ProductStatus.ACTIVE
                 && proposedStatus != ProductStatus.INACTIVE) {
             throw new BadRequest(
-                    "Trạng thái đề nghị của sản phẩm không hợp lệ"
+                    "Invalid requested product status"
             );
         }
 
@@ -471,7 +471,7 @@ public class ProductService {
                         authentication.getPrincipal()
                 )) {
             throw new Unauthorized(
-                    "Người dùng chưa đăng nhập"
+                    "User is not signed in"
             );
         }
 
@@ -479,7 +479,7 @@ public class ProductService {
                 .findByEmail(authentication.getName())
                 .orElseThrow(() ->
                         new NotFound(
-                                "Không tìm thấy tài khoản đang đăng nhập"
+                                "Signed-in user not found"
                         )
                 );
     }
@@ -508,7 +508,7 @@ public class ProductService {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException exception) {
             throw new BadRequest(
-                    "Không thể lưu dữ liệu yêu cầu sản phẩm"
+                    "Unable to save product request data"
             );
         }
     }
@@ -527,13 +527,13 @@ public class ProductService {
     ) {
         if (page < 0) {
             throw new BadRequest(
-                    "Số trang không được nhỏ hơn 0"
+                    "Page number cannot be negative"
             );
         }
 
         if (size < 1 || size > 100) {
             throw new BadRequest(
-                    "Kích thước trang phải từ 1 đến 100"
+                    "Page size must be between 1 and 100"
             );
         }
     }

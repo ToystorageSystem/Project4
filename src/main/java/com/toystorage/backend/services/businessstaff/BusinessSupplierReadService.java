@@ -55,7 +55,7 @@ public class BusinessSupplierReadService {
         return supplierRepository.findById(supplierId)
                 .orElseThrow(() ->
                         new NotFound(
-                                "Khong tim thay nha cung cap: " + supplierId
+                                "Supplier not found: " + supplierId
                         )
                 );
     }

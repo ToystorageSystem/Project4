@@ -66,7 +66,7 @@ public class ProductImageService {
         } catch (IOException e) {
 
             throw new RuntimeException(
-                    "Không thể tải ảnh sản phẩm lên Cloudinary",
+                    "Unable to upload product image to Cloudinary",
                     e
             );
         }
@@ -82,7 +82,7 @@ public class ProductImageService {
         if (image == null || image.isEmpty()) {
 
             throw new BadRequest(
-                    "Ảnh sản phẩm không được để trống"
+                    "Product image is required"
             );
         }
 
@@ -93,7 +93,7 @@ public class ProductImageService {
                 || !contentType.startsWith("image/")) {
 
             throw new BadRequest(
-                    "File tải lên phải là hình ảnh"
+                    "Uploaded file must be an image"
             );
         }
     }

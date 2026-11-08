@@ -321,9 +321,9 @@ public class SupplierService {
         if (hasUnfinishedOrder) {
 
             throw new Conflict(
-                    "Không thể ẩn nhà cung cấp "
-                            + "vì đang có đơn mua hàng "
-                            + "chưa hoàn tất"
+                    "Unable to deactivate supplier "
+                            + "because there are outstanding purchase orders "
+                            + "that are not completed"
             );
         }
 
@@ -425,8 +425,8 @@ public class SupplierService {
 
                 .orElseThrow(() ->
                         new NotFound(
-                                "Không tìm thấy nhà cung cấp "
-                                        + "có ID: "
+                                "Supplier not found "
+                                        + "with ID: "
                                         + supplierId
                         )
                 );
@@ -466,7 +466,7 @@ public class SupplierService {
             if (duplicatedEmail) {
 
                 throw new Conflict(
-                        "Email nhà cung cấp đã tồn tại"
+                        "Supplier email already exists"
                 );
             }
         }
@@ -496,7 +496,7 @@ public class SupplierService {
             if (duplicatedTaxCode) {
 
                 throw new Conflict(
-                        "Mã số thuế nhà cung cấp đã tồn tại"
+                        "Supplier tax ID already exists"
                 );
             }
         }

@@ -46,13 +46,13 @@ public class ProductValidationService {
                 .existsByProductsCodeIgnoreCase(productCode)) {
 
             throw new BadRequest(
-                    "Mã sản phẩm đã tồn tại"
+                    "Product code already exists"
             );
         }
 
         if (productRepository.existsByBarcode(barcode)) {
             throw new BadRequest(
-                    "Barcode đã tồn tại"
+                    "Barcode already exists"
             );
         }
     }
@@ -65,8 +65,8 @@ public class ProductValidationService {
                 )
                 .orElseThrow(() ->
                         new NotFound(
-                                "Không tìm thấy danh mục đang hoạt động "
-                                        + "có ID: "
+                                "Active category not found "
+                                        + "with ID: "
                                         + categoryId
                         )
                 );
@@ -84,8 +84,8 @@ public class ProductValidationService {
                 )
                 .orElseThrow(() ->
                         new NotFound(
-                                "Không tìm thấy thương hiệu đang hoạt động "
-                                        + "có ID: "
+                                "Active brand not found "
+                                        + "with ID: "
                                         + brandId
                         )
                 );
@@ -96,7 +96,7 @@ public class ProductValidationService {
                 .findById(productId)
                 .orElseThrow(() ->
                         new NotFound(
-                                "Không tìm thấy sản phẩm có ID: "
+                                "Product not found with ID: "
                                         + productId
                         )
                 );
@@ -112,8 +112,8 @@ public class ProductValidationService {
                 )
                 .orElseThrow(() ->
                         new NotFound(
-                                "Không tìm thấy yêu cầu đang chờ duyệt "
-                                        + "có ID: "
+                                "Pending approval request not found "
+                                        + "with ID: "
                                         + requestId
                         )
                 );
@@ -126,7 +126,7 @@ public class ProductValidationService {
                 != ProductStatus.PENDING_CREATE) {
 
             throw new BadRequest(
-                    "Sản phẩm không ở trạng thái chờ duyệt"
+                    "Product is not pending approval"
             );
         }
     }
@@ -147,7 +147,7 @@ public class ProductValidationService {
                 )) {
 
             throw new BadRequest(
-                    "Mã sản phẩm đã tồn tại"
+                    "Product code already exists"
             );
         }
 
@@ -156,7 +156,7 @@ public class ProductValidationService {
                 productId
         )) {
             throw new BadRequest(
-                    "Barcode đã tồn tại"
+                    "Barcode already exists"
             );
         }
     }
@@ -169,8 +169,8 @@ public class ProductValidationService {
                 != ProductStatus.INACTIVE) {
 
             throw new BadRequest(
-                    "Chỉ có thể thay đổi sản phẩm "
-                            + "đang hoạt động hoặc tạm ẩn"
+                    "Only products that are "
+                            + "active or hidden can be changed"
             );
         }
 
@@ -183,7 +183,7 @@ public class ProductValidationService {
 
         if (hasPendingRequest) {
             throw new BadRequest(
-                    "Sản phẩm đang có yêu cầu chờ duyệt"
+                    "This product has a pending approval request"
             );
         }
     }
