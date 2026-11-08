@@ -17,7 +17,7 @@ import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.mapper.inventories.report.InventoryReportMapper;
 import com.toystorage.backend.repository.inventories.InventoryBalanceRepository;
 import com.toystorage.backend.repository.products.ProductRepository;
-import com.toystorage.backend.repository.warehouses.WarehouseRepository;
+import com.toystorage.backend.repository.warehouses.business.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

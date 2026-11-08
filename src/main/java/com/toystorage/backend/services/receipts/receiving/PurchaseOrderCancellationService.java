@@ -1,8 +1,8 @@
 package com.toystorage.backend.services.receipts.receiving;
 
-import com.toystorage.backend.dto.request.receipts.RequestPurchaseOrderCancellation;
-import com.toystorage.backend.dto.request.receipts.ReviewPurchaseOrderCancellation;
-import com.toystorage.backend.dto.response.receipts.PurchaseOrderCancellationResponse;
+import com.toystorage.backend.dto.request.receipts.receiving.RequestPurchaseOrderCancellation;
+import com.toystorage.backend.dto.request.receipts.receiving.ReviewPurchaseOrderCancellation;
+import com.toystorage.backend.dto.response.receipts.receiving.PurchaseOrderCancellationResponse;
 import com.toystorage.backend.entity.receipts.PurchaseOrderCancellationRequests;
 import com.toystorage.backend.entity.receipts.PurchaseOrders;
 import com.toystorage.backend.entity.users.ActivityLogs;
@@ -15,8 +15,8 @@ import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
-import com.toystorage.backend.repository.receipts.PurchaseOrderCancellationRepository;
-import com.toystorage.backend.repository.receipts.PurchaseOrderRepository;
+import com.toystorage.backend.repository.receipts.business.PurchaseOrderCancellationRepository;
+import com.toystorage.backend.repository.receipts.business.PurchaseOrderRepository;
 import com.toystorage.backend.repository.users.ActivityLogRepository;
 import com.toystorage.backend.repository.users.UserRepository;
 import lombok.RequiredArgsConstructor;

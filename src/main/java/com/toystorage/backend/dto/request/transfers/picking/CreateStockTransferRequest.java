@@ -1,6 +1,6 @@
 package com.toystorage.backend.dto.request.transfers.picking;
 
-import com.toystorage.backend.dto.request.transfers.CreateStockTransferItemRequest;
+import com.toystorage.backend.dto.request.transfers.picking.CreateStockTransferItemRequest;
 import com.toystorage.backend.enums.transfers.TransferReasonCode;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;

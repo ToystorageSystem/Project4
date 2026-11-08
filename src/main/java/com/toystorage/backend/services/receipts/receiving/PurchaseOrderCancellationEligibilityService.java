@@ -3,7 +3,7 @@ package com.toystorage.backend.services.receipts.receiving;
 import com.toystorage.backend.entity.receipts.PurchaseOrders;
 import com.toystorage.backend.enums.suppliers.SupplierInvoiceStatus;
 import com.toystorage.backend.exceptions.BadRequest;
-import com.toystorage.backend.repository.receipts.PurchaseOrderItemRepository;
+import com.toystorage.backend.repository.receipts.business.PurchaseOrderItemRepository;
 import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.suppliers.SupplierInvoiceRepository;
 import lombok.RequiredArgsConstructor;

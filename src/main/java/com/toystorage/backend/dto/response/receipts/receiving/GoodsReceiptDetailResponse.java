@@ -1,6 +1,6 @@
 package com.toystorage.backend.dto.response.receipts.receiving;
 
-import com.toystorage.backend.dto.response.receipts.GoodsReceiptItemDetailResponse;
+import com.toystorage.backend.dto.response.receipts.receiving.GoodsReceiptItemDetailResponse;
 import lombok.*;
 
 import java.math.BigDecimal;

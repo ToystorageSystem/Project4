@@ -1,7 +1,7 @@
 package com.toystorage.backend.services.receipts.receiving;
 
-import com.toystorage.backend.dto.response.receipts.GoodsReceiptSummaryResponse;
-import com.toystorage.backend.dto.response.receipts.GoodsReceiptTrackingPageResponse;
+import com.toystorage.backend.dto.response.receipts.receiving.GoodsReceiptSummaryResponse;
+import com.toystorage.backend.dto.response.receipts.receiving.GoodsReceiptTrackingPageResponse;
 import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import com.toystorage.backend.entity.receipts.GoodsReceipts;
 import com.toystorage.backend.entity.receipts.PurchaseOrders;

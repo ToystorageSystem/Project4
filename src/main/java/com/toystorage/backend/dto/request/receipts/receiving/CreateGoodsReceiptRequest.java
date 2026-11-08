@@ -1,6 +1,5 @@
 package com.toystorage.backend.dto.request.receipts.receiving;
 
-import com.toystorage.backend.dto.request.receipts.CreateGoodsReceiptItemRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;

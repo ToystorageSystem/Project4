@@ -1,6 +1,6 @@
 package com.toystorage.backend.dto.response.transfers.delivery;
 
-import com.toystorage.backend.dto.response.transfers.StockTransferItemResponse;
+import com.toystorage.backend.dto.response.transfers.delivery.StockTransferItemResponse;
 import lombok.*;
 
 import java.time.LocalDate;

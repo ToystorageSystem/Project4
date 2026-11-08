@@ -1,6 +1,6 @@
 package com.toystorage.backend.mapper.receipts.bussiness;
 
-import com.toystorage.backend.dto.response.receipts.*;
+import com.toystorage.backend.dto.response.receipts.receiving.*;
 import com.toystorage.backend.entity.receipts.PurchaseOrderItems;
 import com.toystorage.backend.entity.receipts.PurchaseOrders;
 import com.toystorage.backend.entity.suppliers.SupplierProducts;

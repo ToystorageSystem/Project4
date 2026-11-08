@@ -1,7 +1,7 @@
 
 package com.toystorage.backend.services.transfers.business;
 
-import com.toystorage.backend.dto.response.transfers.StockTransferListResponse;
+import com.toystorage.backend.dto.response.transfers.delivery.StockTransferListResponse;
 import com.toystorage.backend.entity.transfers.StockTransfer;
 import com.toystorage.backend.entity.users.Users;
 import com.toystorage.backend.enums.transfers.TransferStatus;

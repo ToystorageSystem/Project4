@@ -1,12 +1,12 @@
 package com.toystorage.backend.services.transfers.business;
 
-import com.toystorage.backend.dto.request.transfers.CancelStockTransferRequest;
-import com.toystorage.backend.dto.request.transfers.CreateStockTransferItemRequest;
-import com.toystorage.backend.dto.request.transfers.CreateStockTransferRequest;
-import com.toystorage.backend.dto.request.transfers.UpdateStockTransferRequest;
-import com.toystorage.backend.dto.response.transfers.StockTransferDetailResponse;
-import com.toystorage.backend.dto.response.transfers.StockTransferProductOptionResponse;
-import com.toystorage.backend.dto.response.transfers.StockTransferWarehouseOptionResponse;
+import com.toystorage.backend.dto.request.transfers.picking.CancelStockTransferRequest;
+import com.toystorage.backend.dto.request.transfers.picking.CreateStockTransferItemRequest;
+import com.toystorage.backend.dto.request.transfers.picking.CreateStockTransferRequest;
+import com.toystorage.backend.dto.request.transfers.picking.UpdateStockTransferRequest;
+import com.toystorage.backend.dto.response.transfers.delivery.StockTransferDetailResponse;
+import com.toystorage.backend.dto.response.transfers.delivery.StockTransferProductOptionResponse;
+import com.toystorage.backend.dto.response.transfers.delivery.StockTransferWarehouseOptionResponse;
 import com.toystorage.backend.entity.inventories.InventoryBalances;
 import com.toystorage.backend.entity.inventories.InventoryTransactions;
 import com.toystorage.backend.entity.products.Products;
@@ -29,7 +29,7 @@ import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
-import com.toystorage.backend.mapper.transfers.StockTransferCreationMapper;
+import com.toystorage.backend.mapper.transfers.picking.StockTransferCreationMapper;
 import com.toystorage.backend.repository.inventories.InventoryBalanceRepository;
 import com.toystorage.backend.repository.inventories.InventoryTransactionRepository;
 import com.toystorage.backend.repository.products.ProductRepository;
@@ -37,7 +37,7 @@ import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepo
 import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
 import com.toystorage.backend.repository.users.ActivityLogRepository;
 import com.toystorage.backend.repository.users.UserRepository;
-import com.toystorage.backend.repository.warehouses.WarehouseRepository;
+import com.toystorage.backend.repository.warehouses.business.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;

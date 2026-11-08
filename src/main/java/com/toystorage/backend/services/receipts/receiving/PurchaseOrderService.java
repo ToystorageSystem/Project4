@@ -1,10 +1,10 @@
 package com.toystorage.backend.services.receipts.receiving;
 
-import com.toystorage.backend.dto.request.receipts.CancelPurchaseOrderRequest;
-import com.toystorage.backend.dto.request.receipts.CreatePurchaseOrderRequest;
-import com.toystorage.backend.dto.request.receipts.PurchaseOrderItemRequest;
-import com.toystorage.backend.dto.request.receipts.UpdatePurchaseOrderRequest;
-import com.toystorage.backend.dto.response.receipts.*;
+import com.toystorage.backend.dto.request.receipts.receiving.CancelPurchaseOrderRequest;
+import com.toystorage.backend.dto.request.receipts.receiving.CreatePurchaseOrderRequest;
+import com.toystorage.backend.dto.request.receipts.receiving.PurchaseOrderItemRequest;
+import com.toystorage.backend.dto.response.receipts.receiving.*;
+import com.toystorage.backend.dto.request.receipts.receiving.UpdatePurchaseOrderRequest;
 import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.receipts.PurchaseOrderItems;
 import com.toystorage.backend.entity.receipts.PurchaseOrders;
@@ -25,15 +25,16 @@ import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.Forbidden;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.exceptions.Unauthorized;
-import com.toystorage.backend.mapper.receipts.PurchaseOrderMapper;
-import com.toystorage.backend.repository.receipts.PurchaseOrderCancellationRepository;
-import com.toystorage.backend.repository.receipts.PurchaseOrderItemRepository;
-import com.toystorage.backend.repository.receipts.PurchaseOrderRepository;
+import com.toystorage.backend.mapper.receipts.bussiness.PurchaseOrderMapper;
+import com.toystorage.backend.repository.receipts.business.PurchaseOrderCancellationRepository;
+import com.toystorage.backend.repository.receipts.business.PurchaseOrderItemRepository;
+import com.toystorage.backend.repository.receipts.business.PurchaseOrderRepository;
 import com.toystorage.backend.repository.suppliers.SupplierProductRepository;
 import com.toystorage.backend.repository.suppliers.SupplierRepository;
 import com.toystorage.backend.repository.users.ActivityLogRepository;
 import com.toystorage.backend.repository.users.UserRepository;
-import com.toystorage.backend.repository.warehouses.WarehouseRepository;
+import com.toystorage.backend.repository.warehouses.business.WarehouseRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
