@@ -3,9 +3,19 @@ import api from "../api";
 
 // All requests use the group's session-cookie Axios client. Mutations are
 // only sent after an explicit user action; this file never seeds the database.
-export async function listProducts({ status = "", page = 0, size = 10 } = {}, signal) {
+export async function listProducts(
+    { status = "", keyword = "", categoryId = "", page = 0, size = 10 } = {},
+    signal
+) {
     const response = await api.get("/products", {
-        params: { status: status || undefined, page, size }, signal,
+        params: {
+            status: status || undefined,
+            keyword: keyword.trim() || undefined,
+            categoryId: categoryId || undefined,
+            page,
+            size,
+        },
+        signal,
     });
     return response.data;
 }
