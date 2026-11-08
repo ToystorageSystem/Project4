@@ -6,11 +6,10 @@ import com.toystorage.backend.dto.response.inventories.stockcount.StockCountItem
 import com.toystorage.backend.mapper.inventories.stockcount.manager.StockCountMapper;
 import com.toystorage.backend.repository.inventories.stockcount.StockCountItemRepository;
 import com.toystorage.backend.repository.inventories.stockcount.StockCountRepository;
-import com.toystorage.backend.stockcount.StockCountWorkflowService;
-import com.toystorage.backend.stockcount.StockCountDTO;
+import com.toystorage.backend.services.inventories.stockcount.StockCountWorkflowService;
+import com.toystorage.backend.dto.StockCountDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 
 // Compatibility layer: older /api/stock-counts endpoints share the safe workflow.

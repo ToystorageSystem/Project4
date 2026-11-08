@@ -1,6 +1,6 @@
 package com.toystorage.backend.repository.stockcount;
 
-import com.toystorage.backend.stockcount.StockCountAudit;
+import com.toystorage.backend.services.inventories.stockcount.StockCountAudit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
