@@ -31,7 +31,7 @@ public class Roles {
 
     @Column(name = "roles_code", nullable = false, length = 50)
     private String roleCode;
-    @Lob
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
