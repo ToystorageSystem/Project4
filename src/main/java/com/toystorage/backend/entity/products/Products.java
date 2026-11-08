@@ -197,7 +197,7 @@ public class Products {
         LocalDateTime now = LocalDateTime.now();
 
         if (status == null) {
-            status = ProductStatus.PENDING;
+            status = ProductStatus.PENDING_CREATE;
         }
 
         if (createdAt == null) {

@@ -40,7 +40,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+
 @PreAuthorize("hasAnyRole('BIZ_MANAGER', 'BIZ_STAFF')")
+
 public class AiChatHistoryService {
 
     private final AiChatConversationRepository conversationRepository;

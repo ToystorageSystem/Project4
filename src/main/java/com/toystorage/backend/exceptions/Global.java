@@ -12,12 +12,24 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class Global {
+
+    // =====================================================
+    // LOGGER
+    // Ghi lai loi chi tiet trong Backend Console.
+    // Khong hien thi stack trace cho Frontend.
+    // =====================================================
+
+    private static final Logger log =
+            LoggerFactory.getLogger(Global.class);
 
     // =====================================================
     // 400 - BAD REQUEST
@@ -205,6 +217,7 @@ public class Global {
 
     // =====================================================
     // 500 - INTERNAL SERVER ERROR
+    // Ghi stack trace vao Backend Console.
     // Khong lam lo chi tiet loi noi bo ra Frontend.
     // =====================================================
 
@@ -212,6 +225,9 @@ public class Global {
     public ResponseEntity<Map<String, Object>> handleException(
             Exception ex
     ) {
+
+        // Ghi lai exception va stack trace de tim nguyen nhan loi.
+        log.error("Unexpected server error.", ex);
 
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,

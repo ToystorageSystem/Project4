@@ -1,3 +1,4 @@
+
 package com.toystorage.backend.enums.users;
 
 public enum ActivityEntityType {
@@ -18,7 +19,13 @@ public enum ActivityEntityType {
 
     PRODUCT,
 
+    CATEGORY,
+
     SUPPLIER,
+
+    SUPPLIER_PRODUCT,
+
+    SUPPLIER_INVOICE,
 
     PURCHASE_ORDER,
 

@@ -1,3 +1,4 @@
+
 package com.toystorage.backend.services.users;
 
 import com.toystorage.backend.dto.response.users.ActivityLogResponse;
@@ -31,7 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -42,31 +45,20 @@ public class ActivityLogQueryService {
 
     private final UserRoleRepository userRoleRepository;
 
-
     // =========================================================
     // LIST + SEARCH + FILTER + PAGINATION
     // =========================================================
 
     public Page<ActivityLogResponse> getActivityLogs(
-
             String keyword,
-
             ActivityAction action,
-
             ActivityEntityType entityType,
-
             LocalDateTime fromDate,
-
             LocalDateTime toDate,
-
             Pageable pageable
     ) {
 
-        validateDateRange(
-                fromDate,
-                toDate
-        );
-
+        validateDateRange(fromDate, toDate);
 
         Specification<ActivityLogs> specification =
                 buildSpecification(
@@ -77,48 +69,37 @@ public class ActivityLogQueryService {
                         toDate
                 );
 
-
         return activityLogRepository
-                .findAll(
-                        specification,
-                        pageable
-                )
-                .map(
-                        this::toResponse
-                );
+                .findAll(specification, pageable)
+                .map(this::toResponse);
     }
 
-
     // =========================================================
-    // EXPORT
+    // EXPORT ACTIVITY LOGS
     //
-    // Lấy toàn bộ Activity Log phù hợp filter.
-    // Không phân trang.
+    // Lay toan bo nhat ky phu hop voi bo loc.
+    // Khong phan trang.
     //
-    // Dùng cho:
+    // Toi uu:
+    // Cache role theo User ID trong mot lan export.
+    // Tranh truy van role lap lai cho cung mot user.
     //
+    // API:
     // GET /api/admin/activity-logs/export
     // =========================================================
 
     public List<ActivityLogResponse> getActivityLogsForExport(
-
             String keyword,
-
             ActivityAction action,
-
             ActivityEntityType entityType,
-
             LocalDateTime fromDate,
-
             LocalDateTime toDate
     ) {
 
-        validateDateRange(
-                fromDate,
-                toDate
-        );
+        // Kiem tra khoang thoi gian
+        validateDateRange(fromDate, toDate);
 
-
+        // Tao dieu kien tim kiem va loc
         Specification<ActivityLogs> specification =
                 buildSpecification(
                         keyword,
@@ -128,34 +109,70 @@ public class ActivityLogQueryService {
                         toDate
                 );
 
+        // Sap xep nhat ky moi nhat truoc
+        Sort sort = Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("id")
+        );
 
-        Sort sort =
-                Sort.by(
+        /*
+         * Cache role cua user trong pham vi mot lan export.
+         *
+         * Key: User ID
+         * Value: Danh sach role code cua user.
+         *
+         * Vi du:
+         * User 10 -> [ROLE-ADMIN]
+         *
+         * Neu 100 nhat ky do cung User 10 tao ra,
+         * Backend chi can truy van role cua User 10
+         * mot lan thay vi 100 lan.
+         */
+        Map<Long, List<String>> roleCache =
+                new HashMap<>();
 
-                        Sort.Order.desc(
-                                "createdAt"
-                        ),
-
-                        Sort.Order.desc(
-                                "id"
-                        )
-                );
-
-
+        // Lay tat ca nhat ky phu hop bo loc
         return activityLogRepository
-                .findAll(
-                        specification,
-                        sort
-                )
+                .findAll(specification, sort)
                 .stream()
+                .map(log -> {
 
-                .map(
-                        this::toResponse
-                )
+                    // Lay nguoi thuc hien
+                    Users actor = log.getUser();
 
+                    List<String> actorRoles;
+
+                    if (actor == null) {
+
+                        // Nhat ky khong co user
+                        actorRoles = List.of();
+
+                    } else {
+
+                        Long actorId = actor.getId();
+
+                        /*
+                         * Neu cache da co role cua user:
+                         * Su dung lai ket qua.
+                         *
+                         * Neu chua co:
+                         * Truy van database va luu vao cache.
+                         */
+                        actorRoles =
+                                roleCache.computeIfAbsent(
+                                        actorId,
+                                        id -> getActorRoles(actor)
+                                );
+                    }
+
+                    // Map entity sang DTO voi role da cache
+                    return toResponse(
+                            log,
+                            actorRoles
+                    );
+                })
                 .toList();
     }
-
 
     // =========================================================
     // DETAIL
@@ -167,30 +184,21 @@ public class ActivityLogQueryService {
 
         ActivityLogs log =
                 activityLogRepository
-                        .findById(
-                                logId
-                        )
+                        .findById(logId)
                         .orElseThrow(
-                                () ->
-                                        new NotFound(
-                                                "Không tìm thấy nhật ký hoạt động"
-                                        )
+                                () -> new NotFound(
+                                        "Không tìm thấy nhật ký hoạt động"
+                                )
                         );
 
-
-        return toResponse(
-                log
-        );
+        return toResponse(log);
     }
-
 
     // =========================================================
     // USER ACTIVITY HISTORY
     //
-    // Dùng cho Task #27:
-    //
-    // Xem toàn bộ lịch sử hoạt động
-    // của User liên quan đến cảnh báo.
+    // Dung cho Task #27:
+    // Xem lich su hoat dong cua user lien quan canh bao.
     // =========================================================
 
     public List<ActivityLogResponse> getUserActivityHistory(
@@ -204,43 +212,29 @@ public class ActivityLogQueryService {
             );
         }
 
-
         return activityLogRepository
-                .findByUser_IdOrderByCreatedAtDesc(
-                        userId
-                )
+                .findByUser_IdOrderByCreatedAtDesc(userId)
                 .stream()
-
-                .map(
-                        this::toResponse
-                )
-
+                .map(this::toResponse)
                 .toList();
     }
-
 
     // =========================================================
     // BUILD SPECIFICATION
     //
-    // Dùng chung cho:
-    //
-    // - list
-    // - pagination
-    // - search
-    // - filter
-    // - export
+    // Dung chung cho:
+    // - List
+    // - Pagination
+    // - Search
+    // - Filter
+    // - Export
     // =========================================================
 
     private Specification<ActivityLogs> buildSpecification(
-
             String keyword,
-
             ActivityAction action,
-
             ActivityEntityType entityType,
-
             LocalDateTime fromDate,
-
             LocalDateTime toDate
     ) {
 
@@ -253,15 +247,13 @@ public class ActivityLogQueryService {
             List<Predicate> predicates =
                     new ArrayList<>();
 
-
             // =====================================================
             // SEARCH ACTOR
             //
-            // Search theo:
-            //
-            // - userCode
-            // - name
-            // - email
+            // Tim theo:
+            // - User Code
+            // - User Name
+            // - Email
             // =====================================================
 
             if (
@@ -276,9 +268,8 @@ public class ActivityLogQueryService {
                                 .toLowerCase()
                                 + "%";
 
-
                 // -------------------------------------------------
-                // USER CODE
+                // SEARCH USER CODE
                 // -------------------------------------------------
 
                 Predicate userCodePredicate =
@@ -293,9 +284,8 @@ public class ActivityLogQueryService {
                                 searchValue
                         );
 
-
                 // -------------------------------------------------
-                // USER NAME
+                // SEARCH USER NAME
                 // -------------------------------------------------
 
                 Predicate userNamePredicate =
@@ -310,9 +300,8 @@ public class ActivityLogQueryService {
                                 searchValue
                         );
 
-
                 // -------------------------------------------------
-                // EMAIL
+                // SEARCH EMAIL
                 // -------------------------------------------------
 
                 Predicate emailPredicate =
@@ -327,9 +316,7 @@ public class ActivityLogQueryService {
                                 searchValue
                         );
 
-
                 predicates.add(
-
                         criteriaBuilder.or(
                                 userCodePredicate,
                                 userNamePredicate,
@@ -338,7 +325,6 @@ public class ActivityLogQueryService {
                 );
             }
 
-
             // =====================================================
             // FILTER BY ACTION
             // =====================================================
@@ -346,7 +332,6 @@ public class ActivityLogQueryService {
             if (action != null) {
 
                 predicates.add(
-
                         criteriaBuilder.equal(
                                 root.get("action"),
                                 action
@@ -354,22 +339,19 @@ public class ActivityLogQueryService {
                 );
             }
 
-
             // =====================================================
-            // FILTER BY ENTITY TYPE / FUNCTION
+            // FILTER BY ENTITY TYPE
             // =====================================================
 
             if (entityType != null) {
 
                 predicates.add(
-
                         criteriaBuilder.equal(
                                 root.get("entityType"),
                                 entityType
                         )
                 );
             }
-
 
             // =====================================================
             // FILTER FROM DATE
@@ -378,15 +360,12 @@ public class ActivityLogQueryService {
             if (fromDate != null) {
 
                 predicates.add(
-
-                        criteriaBuilder
-                                .greaterThanOrEqualTo(
-                                        root.get("createdAt"),
-                                        fromDate
-                                )
+                        criteriaBuilder.greaterThanOrEqualTo(
+                                root.get("createdAt"),
+                                fromDate
+                        )
                 );
             }
-
 
             // =====================================================
             // FILTER TO DATE
@@ -395,18 +374,14 @@ public class ActivityLogQueryService {
             if (toDate != null) {
 
                 predicates.add(
-
-                        criteriaBuilder
-                                .lessThanOrEqualTo(
-                                        root.get("createdAt"),
-                                        toDate
-                                )
+                        criteriaBuilder.lessThanOrEqualTo(
+                                root.get("createdAt"),
+                                toDate
+                        )
                 );
             }
 
-
             return criteriaBuilder.and(
-
                     predicates.toArray(
                             new Predicate[0]
                     )
@@ -414,15 +389,12 @@ public class ActivityLogQueryService {
         };
     }
 
-
     // =========================================================
     // VALIDATE DATE RANGE
     // =========================================================
 
     private void validateDateRange(
-
             LocalDateTime fromDate,
-
             LocalDateTime toDate
     ) {
 
@@ -438,28 +410,50 @@ public class ActivityLogQueryService {
         }
     }
 
-
     // =========================================================
     // ENTITY -> RESPONSE
+    //
+    // Su dung cho:
+    // - List
+    // - Detail
+    // - User Activity History
+    //
+    // Cac chuc nang cu van hoat dong nhu truoc.
     // =========================================================
 
     private ActivityLogResponse toResponse(
             ActivityLogs log
     ) {
 
-        Users actor =
-                log.getUser();
-
+        Users actor = log.getUser();
 
         List<String> actorRoles =
-                getActorRoles(
-                        actor
-                );
+                getActorRoles(actor);
 
+        return toResponse(
+                log,
+                actorRoles
+        );
+    }
+
+    // =========================================================
+    // ENTITY -> RESPONSE WITH CACHED ROLES
+    //
+    // Su dung cho Export CSV.
+    //
+    // Khong truy van lai role vi da nhan
+    // danh sach actorRoles tu cache.
+    // =========================================================
+
+    private ActivityLogResponse toResponse(
+            ActivityLogs log,
+            List<String> actorRoles
+    ) {
+
+        Users actor = log.getUser();
 
         return ActivityLogResponse
                 .builder()
-
 
                 // =================================================
                 // LOG INFORMATION
@@ -472,7 +466,6 @@ public class ActivityLogQueryService {
                 .activityLogCode(
                         log.getActivityLogsCode()
                 )
-
 
                 // =================================================
                 // ACTOR
@@ -506,7 +499,6 @@ public class ActivityLogQueryService {
                         actorRoles
                 )
 
-
                 // =================================================
                 // ACTION
                 // =================================================
@@ -516,7 +508,6 @@ public class ActivityLogQueryService {
                                 ? log.getAction().name()
                                 : null
                 )
-
 
                 // =================================================
                 // TARGET ENTITY
@@ -532,7 +523,6 @@ public class ActivityLogQueryService {
                         log.getEntityId()
                 )
 
-
                 // =================================================
                 // BEFORE / AFTER VALUE
                 // =================================================
@@ -544,7 +534,6 @@ public class ActivityLogQueryService {
                 .newValue(
                         log.getNewValue()
                 )
-
 
                 // =================================================
                 // CLIENT INFORMATION
@@ -558,7 +547,6 @@ public class ActivityLogQueryService {
                         log.getDeviceInfo()
                 )
 
-
                 // =================================================
                 // CREATED TIME
                 // =================================================
@@ -567,13 +555,13 @@ public class ActivityLogQueryService {
                         log.getCreatedAt()
                 )
 
-
                 .build();
     }
 
-
     // =========================================================
     // GET ACTOR ROLES
+    //
+    // Lay danh sach role cua nguoi thuc hien.
     // =========================================================
 
     private List<String> getActorRoles(
@@ -581,33 +569,17 @@ public class ActivityLogQueryService {
     ) {
 
         if (actor == null) {
-
             return List.of();
         }
 
-
         return userRoleRepository
-                .findByUser_Id(
-                        actor.getId()
-                )
+                .findByUser_Id(actor.getId())
                 .stream()
-
-                .map(
-                        UserRoles::getRole
-                )
-
-                .filter(
-                        role -> role != null
-                )
-
-                .map(
-                        role -> role.getRoleCode()
-                )
-
+                .map(UserRoles::getRole)
+                .filter(role -> role != null)
+                .map(role -> role.getRoleCode())
                 .distinct()
-
                 .sorted()
-
                 .toList();
     }
 }

@@ -1,15 +1,17 @@
+
 package com.toystorage.backend.services.auth;
 
 import com.toystorage.backend.config.security.CustomUserDetails;
 
 import com.toystorage.backend.dto.request.auth.ChangePasswordRequest;
 import com.toystorage.backend.dto.request.auth.LoginRequest;
-
 import com.toystorage.backend.dto.response.auth.LoginResponse;
 
+import com.toystorage.backend.entity.users.ActivityLogs;
 import com.toystorage.backend.entity.users.Users;
 
 import com.toystorage.backend.enums.users.ActivityAction;
+import com.toystorage.backend.enums.users.ActivityEntityType;
 
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
@@ -18,30 +20,26 @@ import com.toystorage.backend.exceptions.Unauthorized;
 import com.toystorage.backend.repository.users.UserRepository;
 
 import com.toystorage.backend.services.users.ActivityLogService;
+import com.toystorage.backend.services.users.SuspiciousLoginDetectionService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import org.springframework.security.core.session.SessionRegistry;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -50,20 +48,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final AuthenticationManager authenticationManager;
-
     private final UserRepository userRepository;
-
     private final SessionRegistry sessionRegistry;
-
     private final PasswordEncoder passwordEncoder;
-
     private final ActivityLogService activityLogService;
-
+    private final SuspiciousLoginDetectionService suspiciousLoginDetectionService;
 
     // =========================================================
     // LOGIN
@@ -71,208 +66,129 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public LoginResponse login(
-
             LoginRequest request,
-
             HttpServletRequest httpRequest
     ) {
 
         Authentication authentication;
 
-
-        // =====================================================
-        // 1. AUTHENTICATE
-        // =====================================================
-
+        // Bước 1: Xác thực email và mật khẩu.
         try {
 
-            authentication =
-                    authenticationManager.authenticate(
-
-                            new UsernamePasswordAuthenticationToken(
-                                    request.getEmail(),
-                                    request.getPassword()
-                            )
-                    );
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
 
         } catch (AuthenticationException ex) {
 
+            // Bước 2: Ghi lại lần đăng nhập thất bại.
+            // ActivityLogService dùng REQUIRES_NEW để lưu log
+            // ngay cả khi đăng nhập bị từ chối.
 
-            // =================================================
-            // LOGIN FAILED
-            //
-            // Không ghi password.
-            //
-            // logAuthenticationAttempt sử dụng REQUIRES_NEW
-            // nên log vẫn được commit trước khi throw Unauthorized.
-            // =================================================
-
-            activityLogService
-                    .logAuthenticationAttempt(
-
+            ActivityLogs failedLog =
+                    activityLogService.logAuthenticationAttempt(
                             request.getEmail(),
-
                             httpRequest,
-
                             ActivityAction.LOGIN_FAILED
                     );
 
+            // Bước 3: Phát hiện đăng nhập bất thường cho Task #27.
+            // Lỗi phát hiện cảnh báo không làm thay đổi kết quả Login.
+
+            try {
+
+                suspiciousLoginDetectionService
+                        .detectAfterFailedLogin(failedLog);
+
+            } catch (RuntimeException detectionEx) {
+
+                log.error(
+                        "Failed to evaluate suspicious login for activity log ID: {}",
+                        failedLog.getId(),
+                        detectionEx
+                );
+            }
 
             throw new Unauthorized(
-                    "Email hoặc mật khẩu không đúng, hoặc tài khoản không hoạt động"
+                    "Invalid email or password, or the account is inactive."
             );
         }
 
+        // =====================================================
+        // LOGIN SUCCESS
+        // =====================================================
 
-        // =====================================================
-        // 2. SECURITY CONTEXT
-        // =====================================================
+        // Bước 4: Tạo SecurityContext.
 
         SecurityContext securityContext =
-                SecurityContextHolder
-                        .createEmptyContext();
+                SecurityContextHolder.createEmptyContext();
 
+        securityContext.setAuthentication(authentication);
 
-        securityContext.setAuthentication(
-                authentication
-        );
+        SecurityContextHolder.setContext(securityContext);
 
+        // Bước 5: Tạo và cấu hình Session.
 
-        SecurityContextHolder.setContext(
-                securityContext
-        );
-
-
-        // =====================================================
-        // 3. HTTP SESSION
-        // =====================================================
-
-        HttpSession session =
-                httpRequest.getSession(
-                        true
-                );
-
+        HttpSession session = httpRequest.getSession(true);
 
         session.setAttribute(
-
                 HttpSessionSecurityContextRepository
                         .SPRING_SECURITY_CONTEXT_KEY,
-
                 securityContext
         );
 
+        // Session hết hạn sau 15 phút không hoạt động.
+        session.setMaxInactiveInterval(15 * 60);
 
-        // 15 phút không hoạt động
-        session.setMaxInactiveInterval(
-                15 * 60
+        // Bước 6: Đăng ký Session.
+
+        sessionRegistry.registerNewSession(
+                session.getId(),
+                authentication.getPrincipal()
         );
 
+        // Bước 7: Lấy thông tin người dùng.
 
-        // =====================================================
-        // 4. REGISTER SESSION
-        // =====================================================
-
-        sessionRegistry
-                .registerNewSession(
-
-                        session.getId(),
-
-                        authentication.getPrincipal()
+        Users user = userRepository
+                .findByEmail(request.getEmail())
+                .orElseThrow(
+                        () -> new NotFound(
+                                "User account not found."
+                        )
                 );
 
+        // Bước 8: Ghi Activity Log đăng nhập thành công.
 
-        // =====================================================
-        // 5. USER
-        // =====================================================
+        activityLogService.logAuthenticationAttempt(
+                request.getEmail(),
+                httpRequest,
+                ActivityAction.LOGIN
+        );
 
-        Users user =
-                userRepository
-                        .findByEmail(
-                                request.getEmail()
-                        )
-                        .orElseThrow(
-                                () ->
-                                        new NotFound(
-                                                "Không tìm thấy tài khoản"
-                                        )
-                        );
+        // Bước 9: Lấy danh sách quyền của người dùng.
 
+        Set<String> authorities = authentication
+                .getAuthorities()
+                .stream()
+                .map(authority -> authority.getAuthority())
+                .collect(Collectors.toSet());
 
-        // =====================================================
-        // 6. LOGIN SUCCESS ACTIVITY LOG
-        //
-        // Chỉ ghi:
-        //
-        // attemptedEmail
-        // result = SUCCESS
-        //
-        // Không ghi password.
-        // =====================================================
+        // Bước 10: Trả về dữ liệu đăng nhập.
 
-        activityLogService
-                .logAuthenticationAttempt(
-
-                        request.getEmail(),
-
-                        httpRequest,
-
-                        ActivityAction.LOGIN
-                );
-
-
-        // =====================================================
-        // 7. AUTHORITIES
-        // =====================================================
-
-        Set<String> authorities =
-                authentication
-                        .getAuthorities()
-                        .stream()
-
-                        .map(
-                                authority ->
-                                        authority.getAuthority()
-                        )
-
-                        .collect(
-                                Collectors.toSet()
-                        );
-
-
-        // =====================================================
-        // 8. RESPONSE
-        // =====================================================
-
-        return LoginResponse
-                .builder()
-
-                .id(
-                        user.getId()
-                )
-
-                .userCode(
-                        user.getUserCode()
-                )
-
-                .name(
-                        user.getName()
-                )
-
-                .email(
-                        user.getEmail()
-                )
-
-                .authorities(
-                        authorities
-                )
-
+        return LoginResponse.builder()
+                .id(user.getId())
+                .userCode(user.getUserCode())
+                .name(user.getName())
+                .email(user.getEmail())
+                .authorities(authorities)
                 .mustChangePassword(
                         user.isMustChangePassword()
                 )
-
                 .build();
     }
-
 
     // =========================================================
     // CHANGE PASSWORD
@@ -280,185 +196,112 @@ public class AuthService {
 
     @Transactional
     public void changePassword(
-
             ChangePasswordRequest request,
-
             Authentication authentication
     ) {
 
-        // =====================================================
-        // 1. CHECK AUTHENTICATION
-        // =====================================================
+        // Bước 1: Kiểm tra người dùng đã đăng nhập.
 
-        if (
-                authentication == null
-                        || !authentication.isAuthenticated()
-        ) {
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
 
             throw new Unauthorized(
-                    "Bạn chưa đăng nhập"
+                    "You are not logged in."
             );
         }
 
+        Object principal = authentication.getPrincipal();
 
-        Object principal =
-                authentication.getPrincipal();
-
-
-        if (
-                !(principal instanceof CustomUserDetails userDetails)
-        ) {
+        if (!(principal instanceof CustomUserDetails userDetails)) {
 
             throw new Unauthorized(
-                    "Phiên đăng nhập không hợp lệ"
+                    "Invalid login session."
             );
         }
 
+        Long userId = userDetails.getId();
 
-        Long userId =
-                userDetails.getId();
-
-
-        Users user =
-                userRepository
-                        .findById(
-                                userId
+        Users user = userRepository
+                .findById(userId)
+                .orElseThrow(
+                        () -> new NotFound(
+                                "User account not found."
                         )
-                        .orElseThrow(
-                                () ->
-                                        new NotFound(
-                                                "Không tìm thấy tài khoản"
-                                        )
-                        );
-
-
-        // =====================================================
-        // 2. CHECK OLD PASSWORD
-        // =====================================================
-
-        boolean oldPasswordCorrect =
-                passwordEncoder.matches(
-
-                        request.getOldPassword(),
-
-                        user.getPassword()
                 );
 
+        // Bước 2: Kiểm tra mật khẩu hiện tại.
+
+        boolean oldPasswordCorrect = passwordEncoder.matches(
+                request.getOldPassword(),
+                user.getPassword()
+        );
 
         if (!oldPasswordCorrect) {
 
             throw new BadRequest(
-                    "Mật khẩu hiện tại không đúng"
+                    "Current password is incorrect."
             );
         }
 
+        // Bước 3: Mật khẩu mới phải khác mật khẩu cũ.
 
-        // =====================================================
-        // 3. NEW PASSWORD MUST DIFFER
-        // =====================================================
-
-        boolean samePassword =
-                passwordEncoder.matches(
-
-                        request.getNewPassword(),
-
-                        user.getPassword()
-                );
-
+        boolean samePassword = passwordEncoder.matches(
+                request.getNewPassword(),
+                user.getPassword()
+        );
 
         if (samePassword) {
 
             throw new BadRequest(
-                    "Mật khẩu mới phải khác mật khẩu hiện tại"
+                    "New password must be different from the current password."
             );
         }
 
+        // Bước 4: Lưu trạng thái trước khi thay đổi.
+        // Tuyệt đối không lưu mật khẩu hoặc password hash.
 
-        // =====================================================
-        // 4. OLD VALUE
-        //
-        // TUYỆT ĐỐI KHÔNG ghi:
-        //
-        // - oldPassword
-        // - newPassword
-        // - password hash
-        // =====================================================
-
-        Map<String, Object> oldValue =
-                new LinkedHashMap<>();
-
+        Map<String, Object> oldValue = new LinkedHashMap<>();
 
         oldValue.put(
                 "mustChangePassword",
                 user.isMustChangePassword()
         );
 
-
-        // =====================================================
-        // 5. SAVE NEW PASSWORD
-        // =====================================================
+        // Bước 5: Mã hóa và lưu mật khẩu mới.
 
         user.setPassword(
-
                 passwordEncoder.encode(
                         request.getNewPassword()
                 )
         );
 
+        user.setMustChangePassword(false);
 
-        user.setMustChangePassword(
-                false
-        );
+        Users savedUser = userRepository.save(user);
 
+        // Bước 6: Lưu trạng thái sau khi thay đổi.
 
-        Users savedUser =
-                userRepository.save(
-                        user
-                );
+        Map<String, Object> newValue = new LinkedHashMap<>();
 
-
-        // =====================================================
-        // 6. NEW VALUE
-        // =====================================================
-
-        Map<String, Object> newValue =
-                new LinkedHashMap<>();
-
-
-        newValue.put(
-                "passwordChanged",
-                true
-        );
-
+        newValue.put("passwordChanged", true);
 
         newValue.put(
                 "mustChangePassword",
                 savedUser.isMustChangePassword()
         );
 
-
-        // =====================================================
-        // 7. ACTIVITY LOG
-        // =====================================================
+        // Bước 7: Ghi Activity Log.
 
         activityLogService.log(
-
                 authentication,
-
                 getCurrentHttpRequest(),
-
                 ActivityAction.CHANGE_PASSWORD,
-
-                com.toystorage.backend.enums.users.ActivityEntityType.USER,
-
+                ActivityEntityType.USER,
                 savedUser.getId(),
-
                 oldValue,
-
                 newValue
         );
     }
-
 
     // =========================================================
     // GET CURRENT HTTP REQUEST
@@ -466,15 +309,11 @@ public class AuthService {
 
     private HttpServletRequest getCurrentHttpRequest() {
 
-        if (
-                RequestContextHolder
-                        .getRequestAttributes()
-                        instanceof ServletRequestAttributes attributes
-        ) {
+        if (RequestContextHolder.getRequestAttributes()
+                instanceof ServletRequestAttributes attributes) {
 
             return attributes.getRequest();
         }
-
 
         return null;
     }
