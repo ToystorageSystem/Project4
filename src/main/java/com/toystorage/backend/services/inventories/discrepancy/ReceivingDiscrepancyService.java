@@ -264,12 +264,71 @@ public class ReceivingDiscrepancyService {
             throw new BadRequest("Receiving task claim is required");
         }
 
-        List<ReceiptInspections> problems =
-                receiptInspectionRepository.findByTaskClaimId(taskClaim.getId())
+
+        // Lay toan bo ket qua kiem dem cua phien lam viec.
+        List<ReceiptInspections> taskInspections =
+                receiptInspectionRepository
+                        .findByTaskClaimId(taskClaim.getId());
+
+        if (taskInspections.isEmpty()) {
+            throw new BadRequest(
+                    "No receipt inspections found for task claim: "
+                            + taskClaim.getId()
+            );
+        }
+
+        // Lay ID cac ket qua kiem dem thuc su thuoc phieu nhap.
+        List<Long> receiptInspectionIds =
+                receiptInspectionRepository
+                        .findByGoodsReceiptId(receipt.getId())
                         .stream()
-                        .filter(i -> i.getInspectedResult() != null
-                                && !"MATCHED".equals(i.getInspectedResult().name()))
+                        .map(ReceiptInspections::getId)
                         .toList();
+
+        // Kiem tra tung ket qua truoc khi thay doi bao cao cu.
+        for (ReceiptInspections inspection : taskInspections) {
+
+            if (!receiptInspectionIds.contains(inspection.getId())) {
+                throw new BadRequest(
+                        "Inspection does not belong to goods receipt: "
+                                + receipt.getId()
+                );
+            }
+
+            Long productId =
+                    inspection.getProduct() == null
+                            ? null
+                            : inspection.getProduct().getId();
+
+            if (productId == null) {
+                throw new BadRequest(
+                        "Inspection product is required"
+                );
+            }
+
+            if (goodsReceiptItemRepository
+                    .findByGoodsReceiptIdAndProductId(
+                            receipt.getId(),
+                            productId
+                    )
+                    .isEmpty()) {
+
+                throw new BadRequest(
+                        "Inspection product does not belong to goods receipt: "
+                                + productId
+                );
+            }
+        }
+
+        // Chi tao bao cao cho cac san pham co chenh lech.
+        List<ReceiptInspections> problems =
+                taskInspections.stream()
+                        .filter(i -> i.getInspectedResult() != null
+                                && !"MATCHED".equals(
+                                        i.getInspectedResult().name()
+                                ))
+                        .toList();
+
 
         // A new attempt supersedes unresolved reports from the previous attempt.
         List<DiscrepancyReports> previous =
