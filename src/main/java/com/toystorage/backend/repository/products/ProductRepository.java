@@ -12,7 +12,7 @@ import com.toystorage.backend.entity.products.Brands;
 import com.toystorage.backend.entity.products.Products;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
+import java.util.Optional;
 @Repository
 public interface ProductRepository extends JpaRepository<Products, Long> {
 
@@ -90,5 +90,30 @@ public interface ProductRepository extends JpaRepository<Products, Long> {
             Long categoryId,
             java.util.Collection<ProductStatus> statuses
     );
-
+    @Query("""
+        select p
+        from Products p
+        left join fetch p.category c
+        left join fetch p.brand b
+        where p.status = :status
+          and (:keyword is null
+               or lower(p.name) like lower(concat('%', :keyword, '%'))
+               or lower(p.productsCode) like lower(concat('%', :keyword, '%'))
+               or lower(p.barcode) like lower(concat('%', :keyword, '%')))
+          and (:categoryId is null or c.id = :categoryId)
+        """)
+    Page<Products> searchActive(
+            @Param("status") ProductStatus status,
+            @Param("keyword") String keyword,
+            @Param("categoryId") Long categoryId,
+            Pageable pageable
+    );
+    Optional<Products> findByBarcodeAndStatus(
+            String barcode,
+            ProductStatus status
+    );
+    Optional<Products> findByIdAndStatus(
+            Long id,
+            ProductStatus status
+    );
 }

@@ -4,6 +4,8 @@ import com.toystorage.backend.entity.receipts.StoreReceipts;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -13,5 +15,9 @@ public interface StoreReceiptRepository
     Optional<StoreReceipts>
     findFirstByStockTransferIdOrderByCreatedAtDesc(
             Long stockTransferId
+    );
+
+    List<StoreReceipts> findByStockTransfer_IdIn(
+            Collection<Long> stockTransferIds
     );
 }
