@@ -4,6 +4,9 @@ import com.toystorage.backend.dto.request.auth.LoginRequest;
 import com.toystorage.backend.dto.request.auth.MfaRequests;
 import com.toystorage.backend.dto.response.auth.LoginResponse;
 import com.toystorage.backend.services.auth.AuthService;
+import org.springframework.http.CacheControl;
+import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import jakarta.servlet.http.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,9 +41,22 @@ public class AuthController {
         return service.recover(body.code(), http);
     }
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest http, HttpServletResponse output) {
-        if (http.getSession(false) != null) http.getSession(false).invalidate();
-        SecurityContextHolder.clearContext();
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> logout(
+            HttpServletRequest http,
+            HttpServletResponse output
+    ) {
+        var authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        new SecurityContextLogoutHandler()
+                .logout(http, output, authentication);
+
+        new CookieClearingLogoutHandler("JSESSIONID")
+                .logout(http, output, authentication);
+
+        return ResponseEntity.noContent()
+                .cacheControl(CacheControl.noStore())
+                .build();
     }
 }
