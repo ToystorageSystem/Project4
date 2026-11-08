@@ -240,6 +240,11 @@ public class SupplierInvoices {
             nullable = false
     )
     private LocalDateTime updatedAt;
+    /*
+     * Hạn thanh toán hóa đơn.
+     */
+    @Column(name = "due_date")
+    private LocalDate dueDate;
 
     @PrePersist
     protected void onCreate() {

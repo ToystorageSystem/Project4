@@ -78,6 +78,14 @@ public class SupplierProducts {
             )
     )
     private Products product;
+    /**
+    * Mã sản phẩm do nhà cung cấp sử dụng.
+    */
+   @Column(
+           name = "supplier_product_code",
+           length = 100
+   )
+   private String supplierProductCode;
 
     /**
      * Giá sản phẩm do nhà cung cấp này báo.
@@ -107,6 +115,15 @@ public class SupplierProducts {
             nullable = false
     )
     private Integer minimumOrderQuantity;
+    /**
+    * Đánh dấu nhà cung cấp mặc định của sản phẩm.
+    */
+   @Builder.Default
+   @Column(
+           name = "is_default",
+           nullable = false
+   )
+   private Boolean isDefault = false;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -130,6 +147,9 @@ public class SupplierProducts {
 
         if (status == null) {
             status = CommonStatus.ACTIVE;
+        }
+        if (isDefault == null) {
+            isDefault = false;
         }
     }
 }

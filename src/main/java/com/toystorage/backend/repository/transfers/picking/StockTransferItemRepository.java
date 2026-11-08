@@ -35,4 +35,18 @@ public interface StockTransferItemRepository
             @Param("transferId") Long transferId,
             @Param("barcode") String barcode
     );
+    @Query("""
+    SELECT item
+    FROM StockTransferItems item
+    JOIN FETCH item.product
+    WHERE item.stockTransfer.id = :transferId
+    ORDER BY item.id ASC
+""")
+    List<StockTransferItems> findDetailsByStockTransferId(
+            @Param("transferId") Long transferId
+    );
+
+    boolean existsByStockTransferItemsCode(
+            String stockTransferItemsCode
+    );
 }

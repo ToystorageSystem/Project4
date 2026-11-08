@@ -2,6 +2,9 @@ package com.toystorage.backend.repository.receipts.receiving;
 
 import com.toystorage.backend.entity.receipts.GoodsReceiptItems;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -19,9 +22,18 @@ public interface GoodsReceiptItemRepository
     );
     boolean existsByGoodsReceiptIdAndProductId(
             Long goodsReceiptId,
-            Long productId
+            Long productIdc
     );
 
     long countByGoodsReceiptId(Long goodsReceiptId);
-
+    @Query("""
+    SELECT item
+    FROM GoodsReceiptItems item
+    JOIN FETCH item.product
+    WHERE item.goodsReceipt.id = :goodsReceiptId
+    ORDER BY item.id ASC
+""")
+    List<GoodsReceiptItems> findDetailsByGoodsReceiptId(
+            @Param("goodsReceiptId") Long goodsReceiptId
+    );
 }

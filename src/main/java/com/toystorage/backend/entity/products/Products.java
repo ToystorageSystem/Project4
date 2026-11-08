@@ -78,6 +78,9 @@ public class Products {
     )
     private String barcode;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     @Column(
             name = "name",
             nullable = false,
@@ -135,6 +138,9 @@ public class Products {
             scale = 2
     )
     private BigDecimal sellingPrice;
+
+    @Column(name = "purchase_price", nullable = false, precision = 18, scale = 2)
+    private BigDecimal purchasePrice;
 
     @Enumerated(EnumType.STRING)
     @Column(

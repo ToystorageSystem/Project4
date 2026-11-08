@@ -110,6 +110,10 @@ public class InventoryBalances {
     )
     private Integer reservedQuantity;
 
+    @Builder.Default
+    @Column(name = "minimum_stock_level", nullable = false)
+    private Integer minimumStockLevel = 0;
+
     /**
      * Số lượng có thể tiếp tục sử dụng.
      *
@@ -148,10 +152,6 @@ public class InventoryBalances {
     }
 
     private void calculateAvailableQuantity() {
-        availableQuantity = getAvailableQuantity();
-    }
-
-    public Integer getAvailableQuantity() {
 
         int currentQuantity =
                 quantity == null
@@ -168,13 +168,27 @@ public class InventoryBalances {
          * Hàng ở khu cách ly hoặc khu hàng hỏng
          * tuyệt đối không được tính là available.
          */
-        if (location == null || location.getLocationType() != WarehouseLocationType.NORMAL) {
-
-            return 0;
+        if (
+                location != null
+                && (
+                    location.getLocationType()
+                            == WarehouseLocationType.QUARANTINE
+                    ||
+                    location.getLocationType()
+                            == WarehouseLocationType.DAMAGED
+                    ||
+                    location.getLocationType()
+                            == WarehouseLocationType.RECEIVING
+                )
+        ) {
+            availableQuantity = 0;
+            return;
         }
 
 
-        return Math.max(
+
+        availableQuantity =
+                Math.max(
                         0,
                         currentQuantity
                                 - currentReservedQuantity

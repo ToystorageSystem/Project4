@@ -1,5 +1,7 @@
 package com.toystorage.backend.repository.shipments;
 
+import java.util.List;
+import org.springframework.data.jpa.repository.EntityGraph;
 import com.toystorage.backend.entity.shipments.ShipmentManifestTransfer;
 
 import org.springframework.data.domain.Page;
@@ -54,4 +56,32 @@ public interface ShipmentManifestTransferRepository
 
             Pageable pageable
     );
+
+
+    // Methods restored for legacy business APIs without replacing existing repository logic.
+
+    /*
+         * Task #14:
+         * lấy toàn bộ phiếu điều chuyển thuộc một bảng kê.
+         *
+         * Fetch luôn StockTransfer và items để mapper có thể
+         * tính totalProducts và totalRequestedQuantity.
+         */
+        @EntityGraph(attributePaths = {
+                "transfer",
+                "transfer.items",
+                "transfer.items.product"
+        })
+        List<ShipmentManifestTransfer>
+        findByManifest_Id(
+                Long manifestId
+        );
+
+    /*
+         * Task #14:
+         * đếm số phiếu điều chuyển thuộc bảng kê.
+         */
+        long countByManifest_Id(
+                Long manifestId
+        );
 }
