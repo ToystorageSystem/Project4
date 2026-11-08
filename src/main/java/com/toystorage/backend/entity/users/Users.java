@@ -99,7 +99,8 @@ public class Users {
         updatedAt = LocalDateTime.now();
     }
 
-
-
+    public boolean isMustChangePassword() {
+        return Boolean.TRUE.equals(mustChangePassword);
+    }
 
 }

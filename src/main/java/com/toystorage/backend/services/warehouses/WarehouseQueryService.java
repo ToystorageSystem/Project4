@@ -4,8 +4,7 @@ import com.toystorage.backend.dto.response.warehouses.WarehouseResponse;
 import com.toystorage.backend.entity.warehouses.Warehouses;
 import com.toystorage.backend.enums.warehouses.WarehouseStatus;
 import com.toystorage.backend.enums.warehouses.WarehouseType;
-import com.toystorage.backend.repository.warehouses.WarehouseRepository;
-
+import com.toystorage.backend.repository.warehouses.business.WarehouseRepository;
 import jakarta.persistence.criteria.Predicate;
 
 import lombok.RequiredArgsConstructor;

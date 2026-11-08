@@ -10,7 +10,8 @@ public enum ActivityEntityType {
 
     PRODUCT,
     CATEGORY,
-
+    WAREHOUSE,
+    SUSPICIOUS_ALERT,
     SUPPLIER,
     SUPPLIER_PRODUCT,
     SUPPLIER_INVOICE,

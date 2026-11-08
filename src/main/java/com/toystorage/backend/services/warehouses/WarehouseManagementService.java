@@ -2,7 +2,7 @@ package com.toystorage.backend.services.warehouses;
 
 import com.toystorage.backend.dto.request.warehouses.CreateWarehouseRequest;
 import com.toystorage.backend.dto.request.warehouses.UpdateWarehouseRequest;
-
+import com.toystorage.backend.repository.warehouses.business.WarehouseRepository;
 import com.toystorage.backend.dto.response.warehouses.WarehouseDeactivationImpactResponse;
 import com.toystorage.backend.dto.response.warehouses.WarehouseResponse;
 
@@ -16,8 +16,6 @@ import com.toystorage.backend.enums.warehouses.WarehouseType;
 
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
-
-import com.toystorage.backend.repository.warehouses.WarehouseRepository;
 
 import com.toystorage.backend.services.users.ActivityLogService;
 

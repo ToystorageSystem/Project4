@@ -109,7 +109,8 @@ public class Warehouses {
             nullable = false
     )
     private LocalDateTime updatedAt;
-
+    @Column(name = "phone", length = 20)
+    private String phone;
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();

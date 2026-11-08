@@ -59,7 +59,13 @@ public class ActivityLogs {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
+    @Column(
+            name = "activity_logs_code",
+            nullable = false,
+            unique = true,
+            length = 50
+    )
+    private String activityLogsCode;
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {

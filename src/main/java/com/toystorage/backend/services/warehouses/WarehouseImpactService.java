@@ -1,12 +1,10 @@
 package com.toystorage.backend.services.warehouses;
 
 import com.toystorage.backend.dto.response.warehouses.WarehouseDeactivationImpactResponse;
-
+import com.toystorage.backend.repository.warehouses.business.WarehouseRepository;
 import com.toystorage.backend.entity.warehouses.Warehouses;
 
 import com.toystorage.backend.exceptions.NotFound;
-
-import com.toystorage.backend.repository.warehouses.WarehouseRepository;
 
 import lombok.RequiredArgsConstructor;
 

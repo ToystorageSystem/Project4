@@ -1,5 +1,6 @@
 package com.toystorage.backend.entity.auth;
 
+import com.toystorage.backend.enums.auth.RoleStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,7 +31,14 @@ public class Roles {
 
     @Column(name = "roles_code", nullable = false, length = 50)
     private String roleCode;
+    @Lob
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "status", nullable = false, length = 20)
+    private RoleStatus status = RoleStatus.ACTIVE;
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<UserRoles> userRoles = new HashSet<>();

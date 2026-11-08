@@ -14,9 +14,8 @@ import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.repository.auth.UserRoleRepository;
 import com.toystorage.backend.repository.users.UserRepository;
-import com.toystorage.backend.repository.warehouses.WarehouseRepository;
 import com.toystorage.backend.services.users.ActivityLogService;
-
+import com.toystorage.backend.repository.warehouses.business.WarehouseRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

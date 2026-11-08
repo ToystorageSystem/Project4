@@ -4,7 +4,7 @@ import com.toystorage.backend.dto.request.users.CreateUserRequest;
 import com.toystorage.backend.dto.request.users.ResetPasswordRequest;
 import com.toystorage.backend.dto.request.users.UpdateUserRequest;
 import com.toystorage.backend.dto.request.users.UpdateUserRolesRequest;
-
+import com.toystorage.backend.repository.warehouses.business.WarehouseRepository;
 import com.toystorage.backend.dto.response.auth.UserRoleResponse;
 import com.toystorage.backend.dto.response.users.UserResponse;
 
@@ -24,7 +24,6 @@ import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.repository.auth.RoleRepository;
 import com.toystorage.backend.repository.auth.UserRoleRepository;
 import com.toystorage.backend.repository.users.UserRepository;
-import com.toystorage.backend.repository.warehouses.WarehouseRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 
