@@ -72,9 +72,9 @@ export async function getMyProductRequests({ page = 0, size = 10 } = {}, signal)
     return response.data;
 }
 
-export function productErrorMessage(error, fallback = "Không thực hiện được thao tác. Vui lòng thử lại.") {
-    if (error?.response?.status === 403) return "Bạn không có quyền thực hiện thao tác này.";
-    if (!error?.response) return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+export function productErrorMessage(error, fallback = "Unable to complete the action. Please try again.") {
+    if (error?.response?.status === 403) return "You do not have permission to perform this action.";
+    if (!error?.response) return "Unable to connect to the system. Check your network connection and try again.";
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;
     return friendlyBusinessError(error, fallback);

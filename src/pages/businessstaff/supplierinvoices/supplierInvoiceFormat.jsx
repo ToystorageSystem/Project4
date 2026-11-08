@@ -1,13 +1,13 @@
 import { formatBusinessStatus } from "../../../utils/viStatus";
 export const SUPPLIER_INVOICE_STATUS_OPTIONS = [
-    { value: "", label: "Tất cả trạng thái" },
-    { value: "DRAFT", label: "Đơn nháp" },
-    { value: "PENDING_VERIFICATION", label: "Chờ kiểm tra" },
-    { value: "VERIFIED", label: "Đã xác nhận" },
-    { value: "PARTIALLY_PAID", label: "Đã thanh toán một phần" },
-    { value: "PAID", label: "Đã thanh toán" },
-    { value: "OVERDUE", label: "Quá hạn thanh toán" },
-    { value: "CANCELLED", label: "Đã hủy" },
+    { value: "", label: "All Statuses" },
+    { value: "DRAFT", label: "Draft Order" },
+    { value: "PENDING_VERIFICATION", label: "Pending Verification" },
+    { value: "VERIFIED", label: "Confirmed" },
+    { value: "PARTIALLY_PAID", label: "Partially Paid" },
+    { value: "PAID", label: "Paid" },
+    { value: "OVERDUE", label: "Payment Overdue" },
+    { value: "CANCELLED", label: "Cancelled" },
 ];
 
 const statusLabels = Object.fromEntries(
@@ -38,7 +38,7 @@ export function formatSupplierInvoiceMoney(value) {
     if (value === null || value === undefined || value === "") return "—";
     const number = Number(value);
     return Number.isFinite(number)
-        ? `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(number)} đ`
+        ? `${new Intl.NumberFormat("en-GB", { maximumFractionDigits: 2 }).format(number)} VND`
         : "—";
 }
 
@@ -53,27 +53,27 @@ export function formatSupplierInvoiceDate(value, includeTime = false) {
 
 export function SupplierInvoiceReconciliation({ invoice }) {
     if (invoice.purchaseOrderMatched === true) {
-        return <span className="font-semibold text-emerald-700">Khớp với đơn mua hàng</span>;
+        return <span className="font-semibold text-emerald-700">Matches Purchase Order</span>;
     }
 
     if (invoice.purchaseOrderMatched === false) {
         const difference = Number(invoice.amountDifference);
         const amount = Number.isFinite(difference)
             ? formatSupplierInvoiceMoney(Math.abs(difference))
-            : "chưa rõ số tiền";
+            : "amount unknown";
         return (
             <div className="space-y-1" title={invoice.comparisonWarning || undefined}>
-                <span className="font-semibold text-rose-700">Chưa khớp đơn mua hàng</span>
-                <p className="text-xs text-rose-700">Lệch {amount} (trước thuế)</p>
+                <span className="font-semibold text-rose-700">Does Not Match Purchase Order</span>
+                <p className="text-xs text-rose-700">Difference {amount} (before tax)</p>
             </div>
         );
     }
 
-    return <span className="text-slate-500">Chưa có kết quả</span>;
+    return <span className="text-slate-500">No Result Yet</span>;
 }
 
 export function SupplierInvoiceMatchBadge({ matched }) {
-    if (matched === true) return <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Khớp với đơn mua hàng</span>;
-    if (matched === false) return <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Khác đơn mua hàng</span>;
-    return <span className="text-xs text-slate-500">Chưa có kết quả</span>;
+    if (matched === true) return <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Matches Purchase Order</span>;
+    if (matched === false) return <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Differs from Purchase Order</span>;
+    return <span className="text-xs text-slate-500">No Result Yet</span>;
 }

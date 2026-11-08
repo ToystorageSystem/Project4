@@ -18,7 +18,7 @@ function buildParams(filters = {}) {
 export async function listBusinessManagerPurchaseOrders(filters = {}, signal) {
     const response = await api.get(BASE, { params: buildParams(filters), signal });
     if (!Array.isArray(response.data)) {
-        throw new Error("Phản hồi danh sách đơn mua hàng không đúng định dạng.");
+        throw new Error("Invalid purchase order list response.");
     }
     return response.data;
 }
@@ -31,7 +31,7 @@ export async function listPurchaseOrderCancellationApprovals(status = "PENDING",
 }
 
 export async function reviewPurchaseOrderCancellation(requestId, action, note = "") {
-    if (!["approve", "reject"].includes(action)) throw new Error("Quyết định xét duyệt chưa hợp lệ");
+    if (!["approve", "reject"].includes(action)) throw new Error("Invalid review decision");
     const response = await api.patch(`${BASE}/cancellation-requests/${encodeURIComponent(requestId)}/${action}`, {
         note: String(note).trim(),
     });
@@ -40,7 +40,7 @@ export async function reviewPurchaseOrderCancellation(requestId, action, note = 
 
 export async function getBusinessManagerPurchaseOrderDetail(id, signal) {
     if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0) {
-        throw new Error("Mã đơn mua hàng không hợp lệ.");
+        throw new Error("Invalid purchase order ID.");
     }
     const response = await api.get(`${BASE}/${id}`, { signal });
     return response.data;

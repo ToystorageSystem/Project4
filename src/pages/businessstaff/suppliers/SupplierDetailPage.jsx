@@ -14,7 +14,7 @@ import StatusBadge from "../../../components/ui/StatusBadge";
 
 const ROOT = "/business/suppliers";
 const show = (value) => value == null || value === "" ? "—" : value;
-const formatDate = (value) => value ? new Date(value).toLocaleString("vi-VN") : "—";
+const formatDate = (value) => value ? new Date(value).toLocaleString("en-GB") : "—";
 
 function InfoItem({ label, value }) {
     return (
@@ -44,7 +44,7 @@ export default function SupplierDetailPage() {
         getSupplier(supplierId, controller.signal)
             .then((data) => { if (!controller.signal.aborted) setSupplier(data); })
             .catch((requestError) => {
-                if (!controller.signal.aborted) setError(supplierErrorMessage(requestError, "Không tải được thông tin nhà cung cấp."));
+                if (!controller.signal.aborted) setError(supplierErrorMessage(requestError, "Unable to load supplier details."));
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false); });
         return () => controller.abort();
@@ -58,10 +58,10 @@ export default function SupplierDetailPage() {
         try {
             const updated = await changeSupplierStatus(supplierId, supplier.status === "INACTIVE");
             setSupplier(updated);
-            setNotice(updated.status === "ACTIVE" ? "Khôi phục nhà cung cấp thành công." : "Đã ẩn nhà cung cấp.");
+            setNotice(updated.status === "ACTIVE" ? "Supplier restored successfully." : "Supplier deactivated.");
             setConfirmOpen(false);
         } catch (requestError) {
-            setError(supplierErrorMessage(requestError, "Không thay đổi được trạng thái nhà cung cấp."));
+            setError(supplierErrorMessage(requestError, "Unable to change supplier status."));
             setConfirmOpen(false);
         } finally {
             setSavingStatus(false);
@@ -72,14 +72,14 @@ export default function SupplierDetailPage() {
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
-                    title="Chi tiết nhà cung cấp"
-                    description="Thông tin nhà cung cấp và những sản phẩm đang được nhà cung cấp này cung ứng."
-                    actions={<Button type="button" variant="ghost" onClick={() => navigate(ROOT)}>← Quay lại danh sách</Button>}
+                    title="Supplier Details"
+                    description="Supplier information and products currently supplied by this supplier."
+                    actions={<Button type="button" variant="ghost" onClick={() => navigate(ROOT)}>← Back to List</Button>}
                 />
                 {notice && <div role="status"><Alert type="success">{notice}</Alert></div>}
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 {loading ? (
-                    <div role="status" className="flex items-center gap-3 rounded-xl bg-white p-8 text-sm text-slate-600"><Spinner /> Đang tải nhà cung cấp...</div>
+                    <div role="status" className="flex items-center gap-3 rounded-xl bg-white p-8 text-sm text-slate-600"><Spinner /> Loading supplier...</div>
                 ) : supplier && (
                     <>
                         <Card>
@@ -90,54 +90,54 @@ export default function SupplierDetailPage() {
                                     <StatusBadge status={supplier.status} />
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    <Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/${supplierId}/edit`)}>Chỉnh sửa</Button>
+                                    <Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/${supplierId}/edit`)}>Edit</Button>
                                     <Button type="button" variant={supplier.status === "ACTIVE" ? "danger" : "secondary"} onClick={() => setConfirmOpen(true)}>
-                                        {supplier.status === "ACTIVE" ? "Ẩn nhà cung cấp" : "Khôi phục"}
+                                        {supplier.status === "ACTIVE" ? "Deactivate Supplier" : "Restore"}
                                     </Button>
                                 </div>
                             </div>
                             <dl className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                                <InfoItem label="Mã số thuế" value={supplier.taxCode} />
-                                <InfoItem label="Người liên hệ" value={supplier.contactPerson} />
-                                <InfoItem label="Chức vụ" value={supplier.contactPosition} />
-                                <InfoItem label="Số điện thoại" value={supplier.phone} />
+                                <InfoItem label="Tax ID" value={supplier.taxCode} />
+                                <InfoItem label="Contact Person" value={supplier.contactPerson} />
+                                <InfoItem label="Position" value={supplier.contactPosition} />
+                                <InfoItem label="Phone Number" value={supplier.phone} />
                                 <InfoItem label="Email" value={supplier.email} />
-                                <InfoItem label="Địa chỉ" value={supplier.address} />
-                                <InfoItem label="Ngày tạo" value={formatDate(supplier.createdAt)} />
-                                <InfoItem label="Cập nhật lần cuối" value={formatDate(supplier.updatedAt)} />
+                                <InfoItem label="Address" value={supplier.address} />
+                                <InfoItem label="Created At" value={formatDate(supplier.createdAt)} />
+                                <InfoItem label="Last Updated" value={formatDate(supplier.updatedAt)} />
                             </dl>
                             <div className="mt-6 border-t border-slate-100 pt-5">
-                                <h3 className="font-semibold text-slate-900">Ghi chú</h3>
+                                <h3 className="font-semibold text-slate-900">Notes</h3>
                                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{show(supplier.note)}</p>
                             </div>
                         </Card>
 
                         <SupplierProductsPanel supplierId={supplierId} />
                         <div className="rounded-xl bg-slate-100 p-4 text-xs leading-5 text-slate-600">
-                            Các thay đổi về sản phẩm do nhà cung cấp cung ứng được lưu lại. Lịch sử chi tiết hiện chưa hiển thị trên trang này.
+                            Changes to supplied products are recorded. Detailed history is not yet shown on this page.
                         </div>
                     </>
                 )}
             </div>
             <Modal
                 open={confirmOpen}
-                title={supplier?.status === "ACTIVE" ? "Xác nhận ẩn nhà cung cấp" : "Xác nhận khôi phục"}
+                title={supplier?.status === "ACTIVE" ? "Confirm Supplier Deactivation" : "Confirm Restoration"}
                 onClose={() => { if (!savingStatus) setConfirmOpen(false); }}
                 footer={(
                     <>
-                        <Button type="button" variant="ghost" disabled={savingStatus} onClick={() => setConfirmOpen(false)}>Hủy</Button>
+                        <Button type="button" variant="ghost" disabled={savingStatus} onClick={() => setConfirmOpen(false)}>Cancel</Button>
                         <Button type="button" variant={supplier?.status === "ACTIVE" ? "danger" : "primary"} disabled={savingStatus} onClick={handleStatusChange}>
-                            {savingStatus ? "Đang xử lý..." : "Xác nhận"}
+                            {savingStatus ? "Processing..." : "Confirm"}
                         </Button>
                     </>
                 )}
             >
                 <p className="text-sm text-slate-700">
                     {supplier?.status === "ACTIVE"
-                        ? "Không thể ngừng sử dụng nhà cung cấp nếu vẫn còn đơn mua hàng chưa hoàn thành."
-                        : "Bạn muốn khôi phục nhà cung cấp này về trạng thái hoạt động?"}
+                        ? "Suppliers with outstanding purchase orders cannot be deactivated."
+                        : "Restore this supplier to Active status?"}
                 </p>
-                <p className="mt-3 text-xs text-amber-700">Đây là thay đổi thật trên database chung của nhóm.</p>
+                <p className="mt-3 text-xs text-amber-700">This change will affect the team's shared database.</p>
             </Modal>
         </MainLayout>
     );

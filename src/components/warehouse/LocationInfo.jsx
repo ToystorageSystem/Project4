@@ -1,6 +1,6 @@
 import Card from "../ui/Card";
 export default function LocationInfo( {
-    title="Vị trí",code,name,address
+    title="Location",code,name,address
 }
 ) {
     return <Card>
@@ -9,7 +9,7 @@ export default function LocationInfo( {
     }
 </h3>
 <div className="mt-2 space-y-1 text-sm text-slate-600"> {
-    code&&<div>Mã:  {
+    code&&<div>Code:  {
         code
     }
 </div>

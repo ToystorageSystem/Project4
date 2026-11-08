@@ -19,7 +19,7 @@ import StockTransferActionDialog from "./StockTransferActionDialog";
 
 const ROOT = "/business/stock-transfers";
 const CANCELLABLE_STATUSES = new Set(["DRAFT", "CREATED", "PENDING_SOURCE_CONFIRMATION"]);
-const numberFormatter = new Intl.NumberFormat("vi-VN");
+const numberFormatter = new Intl.NumberFormat("en-GB");
 const quantity = (value) => value == null ? "—" : numberFormatter.format(Number(value));
 const dateText = (value) => {
     if (!value) return "—";
@@ -29,7 +29,7 @@ const dateText = (value) => {
         return `${d}/${m}/${y}`;
     }
     const date = new Date(text);
-    return Number.isNaN(date.getTime()) ? text : date.toLocaleString("vi-VN");
+    return Number.isNaN(date.getTime()) ? text : date.toLocaleString("en-GB");
 };
 
 function InfoField({ label, value }) {
@@ -62,7 +62,7 @@ export default function StockTransferDetailPage() {
         setLoading(true);
         setError("");
         if (!Number.isSafeInteger(id) || id <= 0) {
-            setError("Mã định danh phiếu điều chuyển không hợp lệ.");
+            setError("Invalid stock transfer identifier.");
             setLoading(false);
             return () => controller.abort();
         }
@@ -70,12 +70,12 @@ export default function StockTransferDetailPage() {
             .then((data) => {
                 if (controller.signal.aborted) return;
                 if (!data || typeof data !== "object" || Number(data.id) !== id || !Array.isArray(data.items)) {
-                    throw new Error("Dữ liệu chi tiết phiếu không đúng định dạng.");
+                    throw new Error("Invalid transfer details format.");
                 }
                 setDetail(data);
             })
             .catch((requestError) => {
-                if (!controller.signal.aborted) setError(stockTransferErrorMessage(requestError, "Không tải được chi tiết phiếu điều chuyển."));
+                if (!controller.signal.aborted) setError(stockTransferErrorMessage(requestError, "Unable to load stock transfer details."));
             })
             .finally(() => {
                 if (!controller.signal.aborted) setLoading(false);
@@ -109,15 +109,15 @@ export default function StockTransferDetailPage() {
             // A fresh GET avoids acting on a status changed by another session.
             const latest = await getStockTransferDetail(detail.id);
             if (Number(latest?.id) !== Number(detail.id) || latest.status !== detail.status) {
-                setActionError("Phiếu đã thay đổi trạng thái ở nơi khác. Hãy đóng hộp thoại và làm mới chi tiết.");
+                setActionError("Transfer status changed elsewhere. Close this dialog and refresh the details.");
                 return;
             }
             if (type === "submit" && latest.status !== "DRAFT") {
-                setActionError("Chỉ phiếu nháp mới được gửi.");
+                setActionError("Only draft transfers can be submitted.");
                 return;
             }
             if (type === "cancel" && !CANCELLABLE_STATUSES.has(latest.status)) {
-                setActionError("Trạng thái hiện tại không cho phép hủy phiếu.");
+                setActionError("The current status does not allow cancellation.");
                 return;
             }
             requestSent = true;
@@ -127,21 +127,21 @@ export default function StockTransferDetailPage() {
             const expectedStatus = type === "submit" ? "CREATED" : "CANCELLED";
             if (!result || Number(result.id) !== Number(detail.id) || result.status !== expectedStatus) {
                 setActionUncertain(true);
-                setActionError("Chưa thể xác nhận phiếu đã đổi trạng thái. Vui lòng kiểm tra lại chi tiết trước khi thao tác lần nữa.");
+                setActionError("Unable to confirm the transfer status changed. Check the details before retrying.");
                 return;
             }
             setActionNotice(type === "submit"
-                ? "Đã gửi phiếu điều chuyển thành công. Số hàng cần chuyển đã được tạm giữ tại kho xuất."
-                : "Đã hủy phiếu điều chuyển. Hàng đang tạm giữ (nếu có) đã được trả lại số lượng có thể sử dụng.");
+                ? "Stock transfer submitted. The required stock has been reserved at the source warehouse."
+                : "Stock transfer cancelled. Reserved stock, if any, has been released back to available stock.");
             setDetail(result);
             setActionType("");
             setRefresh((value) => value + 1);
         } catch (requestError) {
             if (requestSent && !requestError?.response) {
                 setActionUncertain(true);
-                setActionError("Mất kết nối sau khi gửi yêu cầu. Phiếu có thể đã được xử lý; KHÔNG bấm gửi/hủy lại.");
+                setActionError("Connection lost after submitting the request. The transfer may have been processed. DO NOT submit or cancel again.");
             } else {
-                setActionError(stockTransferErrorMessage(requestError, "Không thể thực hiện thao tác này với trạng thái hiện tại của phiếu."));
+                setActionError(stockTransferErrorMessage(requestError, "This action is not allowed for the transfer's current status."));
             }
         } finally {
             actionInFlight.current = false;
@@ -156,57 +156,57 @@ export default function StockTransferDetailPage() {
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
-                    title="Chi tiết phiếu điều chuyển hàng"
-                    description="Theo dõi quá trình điều chuyển hàng. Bạn chỉ có thể sửa hoặc hủy phiếu trước khi bộ phận kho bắt đầu lấy hàng."
+                    title="Stock Transfer Details"
+                    description="Track stock transfer progress. Transfers can be edited or cancelled only before warehouse picking begins."
                     actions={<div className="flex flex-wrap items-center gap-2">
-                        <Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/new`)}>← Tạo phiếu khác</Button>
+                        <Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/new`)}>← Create Another Transfer</Button>
                         {detail && canEditStockTransfer(detail.status) &&
-                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => navigate(`${ROOT}/${detail.id}/edit`)}>Sửa phiếu</Button>}
+                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => navigate(`${ROOT}/${detail.id}/edit`)}>Edit Transfer</Button>}
                         {detail?.status === "DRAFT" &&
-                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => openAction("submit")}>Gửi phiếu cho kho</Button>}
-                        {detail && CANCELLABLE_STATUSES.has(detail.status) && <Button type="button" variant="outline" disabled={actionBusy || actionUncertain} onClick={() => openAction("cancel")}>Hủy phiếu</Button>}
-                        <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Làm mới</Button>
+                            <Button type="button" disabled={actionBusy || actionUncertain} onClick={() => openAction("submit")}>Submit Transfer to Warehouse</Button>}
+                        {detail && CANCELLABLE_STATUSES.has(detail.status) && <Button type="button" variant="outline" disabled={actionBusy || actionUncertain} onClick={() => openAction("cancel")}>Cancel Transfer</Button>}
+                        <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Refresh</Button>
                     </div>}
                 />
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 {actionNotice && <Alert type="success">{actionNotice}</Alert>}
-                {actionUncertain && <Alert type="warning">Yêu cầu trước có kết quả chưa rõ ràng. Không lặp lại thao tác. Hãy kiểm tra trạng thái với nhóm.</Alert>}
-                {loading ? <Card className="flex items-center gap-3"><Spinner /> Đang tải chi tiết phiếu...</Card> : detail && <>
+                {actionUncertain && <Alert type="warning">The previous request's outcome is uncertain. Do not repeat the action. Confirm the status with the team.</Alert>}
+                {loading ? <Card className="flex items-center gap-3"><Spinner /> Loading transfer details...</Card> : detail && <>
                     <Card className="space-y-5">
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
                             <div>
-                                <p className="text-sm text-slate-500">Mã phiếu điều chuyển</p>
+                                <p className="text-sm text-slate-500">Stock Transfer Code</p>
                                 <h2 className="text-xl font-bold text-slate-900">{detail.transferCode || `#${detail.id}`}</h2>
                             </div>
                             <span className={`rounded-full px-3 py-1 text-sm font-semibold ${statusClass}`}>{detail.status ? formatBusinessStatus(detail.status) : "—"}</span>
                         </div>
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            <InfoField label="Điểm xuất phát" value={`${detail.fromWarehouseName || "—"} (${detail.fromWarehouseCode || "—"})`} />
-                            <InfoField label="Điểm đến" value={`${detail.toWarehouseName || "—"} (${detail.toWarehouseCode || "—"})`} />
-                            <InfoField label="Loại điều chuyển" value={detail.transferType || "—"} />
-                            <InfoField label="Ngày xuất dự kiến" value={dateText(detail.expectedShipmentDate)} />
-                            <InfoField label="Ngày nhận dự kiến" value={dateText(detail.expectedReceiptDate)} />
-                            <InfoField label="Lý do điều chuyển" value={reason?.label || detail.reasonCode || "—"} />
-                            <InfoField label="Người tạo" value={detail.createdByName || detail.createdByCode || "—"} />
-                            <InfoField label="Ngày tạo" value={dateText(detail.createdAt)} />
-                            <InfoField label="Cập nhật lần cuối" value={dateText(detail.updatedAt)} />
-                            <InfoField label="Số sản phẩm" value={quantity(detail.totalProducts)} />
-                            <InfoField label="Tổng số lượng yêu cầu" value={quantity(detail.totalRequestedQuantity)} />
-                            <InfoField label="Người xác nhận" value={detail.confirmedByName || "—"} />
-                            <InfoField label="Ngày xác nhận" value={dateText(detail.confirmedAt)} />
+                            <InfoField label="Origin" value={`${detail.fromWarehouseName || "—"} (${detail.fromWarehouseCode || "—"})`} />
+                            <InfoField label="Destination" value={`${detail.toWarehouseName || "—"} (${detail.toWarehouseCode || "—"})`} />
+                            <InfoField label="Transfer Type" value={detail.transferType || "—"} />
+                            <InfoField label="Expected Ship Date" value={dateText(detail.expectedShipmentDate)} />
+                            <InfoField label="Expected Receipt Date" value={dateText(detail.expectedReceiptDate)} />
+                            <InfoField label="Transfer Reason" value={reason?.label || detail.reasonCode || "—"} />
+                            <InfoField label="Created By" value={detail.createdByName || detail.createdByCode || "—"} />
+                            <InfoField label="Created At" value={dateText(detail.createdAt)} />
+                            <InfoField label="Last Updated" value={dateText(detail.updatedAt)} />
+                            <InfoField label="Product Count" value={quantity(detail.totalProducts)} />
+                            <InfoField label="Total Requested Quantity" value={quantity(detail.totalRequestedQuantity)} />
+                            <InfoField label="Confirmed By" value={detail.confirmedByName || "—"} />
+                            <InfoField label="Confirmed At" value={dateText(detail.confirmedAt)} />
                         </div>
-                        {detail.reasonNote && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Diễn giải:</strong> {detail.reasonNote}</p>}
-                        {detail.notes && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Ghi chú:</strong> {detail.notes}</p>}
+                        {detail.reasonNote && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Reason Notes:</strong> {detail.reasonNote}</p>}
+                        {detail.notes && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Notes:</strong> {detail.notes}</p>}
                         {detail.status === "CANCELLED" && (detail.cancelReason || detail.rejectionReason) &&
-                            <p className="rounded-xl bg-orange-50 p-4 text-sm text-slate-800"><strong>Lý do hủy:</strong> {detail.cancelReason || detail.rejectionReason}</p>}
+                            <p className="rounded-xl bg-orange-50 p-4 text-sm text-slate-800"><strong>Cancellation Reason:</strong> {detail.cancelReason || detail.rejectionReason}</p>}
                     </Card>
                     <Card className="space-y-4">
-                        <h2 className="text-lg font-semibold text-slate-900">Sản phẩm điều chuyển ({detail.items.length})</h2>
+                        <h2 className="text-lg font-semibold text-slate-900">Transfer Items ({detail.items.length})</h2>
                         <div className="overflow-x-auto rounded-xl border border-slate-200">
                             <table className="min-w-[900px] w-full text-left text-sm">
                                 <thead className="bg-orange-50 text-xs uppercase text-slate-600">
                                     <tr>
-                                        {["Mã SKU", "Tên sản phẩm", "Đơn vị", "Số lượng yêu cầu", "SL duyệt", "Picked", "Đã đóng", "Đã xuất hàng", "Đã nhận"].map((label) => <th className="px-3 py-3" key={label}>{label}</th>)}
+                                        {["SKU", "Product Name", "Unit", "Requested Quantity", "Approved Qty", "Picked", "Closed", "Shipped", "Received"].map((label) => <th className="px-3 py-3" key={label}>{label}</th>)}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -227,11 +227,11 @@ export default function StockTransferDetailPage() {
                     </Card>
                     <Alert type="info">
                         {detail.status === "DRAFT"
-                            ? "Phiếu nháp chưa tạm giữ hàng. Bạn có thể sửa, gửi hoặc hủy phiếu."
+                            ? "Draft transfers do not reserve stock. You can edit, submit, or cancel this transfer."
                             : detail.status === "CREATED" || detail.status === "PENDING_SOURCE_CONFIRMATION"
-                                ? "Phiếu đã gửi nhưng kho chưa bắt đầu lấy hàng. Bạn có thể chỉnh sửa hoặc hủy theo quy định; số hàng tạm giữ sẽ được cập nhật tương ứng."
-                                : "Phiếu đang ở giai đoạn xử lý khác; không thể sửa hoặc hủy tại trang này."}
-                        {" "}Chỉ người tạo phiếu hoặc người quản lý được phân quyền mới có thể chỉnh sửa và hủy phiếu.
+                                ? "The transfer was submitted but warehouse picking has not started. Authorized edits or cancellation may be made, and reserved stock will be recalculated."
+                                : "This transfer is already being processed and cannot be edited or cancelled here."}
+                        {" "}Only the creator or an authorized manager may edit or cancel a transfer.
                     </Alert>
                 </>}
                 {actionType && detail && <StockTransferActionDialog

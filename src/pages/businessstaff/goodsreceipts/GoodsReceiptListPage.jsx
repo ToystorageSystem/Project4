@@ -25,7 +25,7 @@ const ROOT = "/business/goods-receipts";
 const PAGE_SIZE = 10;
 const BASE_FILTERS = { keyword: "", status: "", warehouseId: "", fromDate: "", toDate: "" };
 const STATUS_OPTIONS = [
-    { value: "", label: "Tất cả trạng thái" },
+    { value: "", label: "All Statuses" },
     ...Object.entries(receiptStatusLabels).map(([value, label]) => ({ value, label })),
 ];
 
@@ -62,7 +62,7 @@ export default function GoodsReceiptListPage() {
         getGoodsReceiptMainWarehouseOptions(controller.signal)
             .then((data) => { if (!controller.signal.aborted) setWarehouses(Array.isArray(data) ? data : []); })
             .catch((err) => {
-                if (!controller.signal.aborted) setOptionsError(goodsReceiptErrorMessage(err, "Không tải được danh sách kho."));
+                if (!controller.signal.aborted) setOptionsError(goodsReceiptErrorMessage(err, "Unable to load warehouses."));
             });
         return () => controller.abort();
     }, []);
@@ -74,7 +74,7 @@ export default function GoodsReceiptListPage() {
         getBusinessGoodsReceipts({ ...filters, purchaseOrderId, page, size: PAGE_SIZE }, controller.signal)
             .then((data) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(data?.items)) throw new Error("Dữ liệu danh sách phiếu nhập không hợp lệ.");
+                if (!Array.isArray(data?.items)) throw new Error("Invalid goods receipt list data.");
                 setResult(data);
             })
             .catch((err) => {
@@ -89,7 +89,7 @@ export default function GoodsReceiptListPage() {
     function applyFilters(event) {
         event.preventDefault();
         if (draft.fromDate && draft.toDate && draft.fromDate > draft.toDate) {
-            setFilterError("Từ ngày không được lớn hơn đến ngày.");
+            setFilterError("From date cannot be after to date.");
             return;
         }
         setFilterError("");
@@ -105,71 +105,69 @@ export default function GoodsReceiptListPage() {
     }
 
     const columns = [
-        { key: "receiptCode", label: "Mã phiếu nhập", render: (code, item) => (
+        { key: "receiptCode", label: "Goods Receipt Code", render: (code, item) => (
             <Link to={`${ROOT}/${item.id}`} className="font-semibold text-[#c94810] hover:underline">{code}</Link>
         ) },
-        { key: "purchaseOrderCode", label: "Đơn mua hàng", render: (code, item) => (
+        { key: "purchaseOrderCode", label: "Purchase Orders", render: (code, item) => (
             <Link to={`/business/purchase-orders/${item.purchaseOrderId}`} className="text-blue-700 hover:underline">
                 {code || "—"}
             </Link>
         ) },
-        { key: "supplierName", label: "Nhà cung cấp" },
-        { key: "warehouseName", label: "Kho/cửa hàng nhận" },
-        { key: "totalProducts", label: "Số dòng sản phẩm", render: (n) => n ?? 0 },
-        { key: "totalExpectedQuantity", label: "Số lượng dự kiến", render: (n) => n ?? 0 },
-        { key: "status", label: "Trạng thái", render: (status) => <ReceiptStatus status={status} /> },
-        { key: "createdAt", label: "Ngày tạo", render: formatReceiptDate },
-        { key: "id", label: "Thao tác", render: (id) => (
-            <Link to={`${ROOT}/${id}`} className="font-semibold text-[#c94810] hover:underline">Xem chi tiết</Link>
+        { key: "supplierName", label: "Supplier" },
+        { key: "warehouseName", label: "Destination Warehouse / Store" },
+        { key: "totalProducts", label: "Product Lines", render: (n) => n ?? 0 },
+        { key: "totalExpectedQuantity", label: "Expected Quantity", render: (n) => n ?? 0 },
+        { key: "status", label: "Status", render: (status) => <ReceiptStatus status={status} /> },
+        { key: "createdAt", label: "Created At", render: formatReceiptDate },
+        { key: "id", label: "Actions", render: (id) => (
+            <Link to={`${ROOT}/${id}`} className="font-semibold text-[#c94810] hover:underline">View Details</Link>
         ) },
     ];
 
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Theo dõi phiếu nhập kho"
-                    description="Theo dõi các phiếu nhận hàng và tiến độ xử lý tại kho."
+                <PageHeader title="Track Goods Receipts"
+                    description="Track goods receipts and warehouse receiving progress."
                     actions={<Link to={ROOT} className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700">
-                        + Tạo phiếu nhập kho
+                        + Create Goods Receipt
                     </Link>} />
                 <Alert type="info">
-                    Nhân viên kinh doanh có thể theo dõi các phiếu nhận hàng. Bộ phận kho sẽ kiểm tra và hoàn tất việc nhập hàng;
-                    số lượng tồn kho chỉ tăng sau khi phiếu được xác nhận hoàn tất.
-                    Danh sách hiển thị các phiếu nhận hàng của toàn hệ thống.
+                    Business Operations can track goods receipts. Warehouse staff inspect and complete receiving; stock balances increase only after the receipt is completed. The list covers all warehouses.
                 </Alert>
                 {purchaseOrderId && <Alert type="info">
-                    Đang xem phiếu nhận hàng liên kết với đơn mua hàng số {purchaseOrderId}. Để xem toàn bộ,
-                    <Link to={`${ROOT}/list`} className="ml-1 font-semibold underline">bấm vào đây</Link>.
+                    Viewing goods receipts linked to purchase order # {purchaseOrderId}. To view all receipts,
+                    <Link to={`${ROOT}/list`} className="ml-1 font-semibold underline">click here</Link>.
                 </Alert>}
                 {optionsError && <Alert type="warning">{optionsError}</Alert>}
                 {filterError && <Alert type="danger">{filterError}</Alert>}
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 <Card>
                     <form onSubmit={applyFilters} className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        <SearchInput label="Mã phiếu nhận hàng hoặc đơn mua hàng" placeholder="Nhập mã phiếu hoặc mã đơn..."
+                        <SearchInput label="Goods Receipt or Purchase Order Code" placeholder="Enter receipt or purchase order code..."
                             value={draft.keyword} onChange={(e) => setDraft((p) => ({ ...p, keyword: e.target.value }))} />
-                        <Select label="Trạng thái" value={draft.status} options={STATUS_OPTIONS}
+                        <Select label="Status" value={draft.status} options={STATUS_OPTIONS}
                             onChange={(e) => setDraft((p) => ({ ...p, status: e.target.value }))} />
-                        <Select label="Kho/cửa hàng nhận" value={draft.warehouseId}
-                            options={[{ value: "", label: "Tất cả kho tổng" }, ...warehouses.map((w) => ({ value: String(w.id), label: w.name }))]}
+                        <Select label="Destination Warehouse / Store" value={draft.warehouseId}
+                            options={[{ value: "", label: "All Main Warehouses" }, ...warehouses.map((w) => ({ value: String(w.id), label: w.name }))]}
                             onChange={(e) => setDraft((p) => ({ ...p, warehouseId: e.target.value }))} />
-                        <Input label="Từ ngày" type="date" value={draft.fromDate}
+                        <Input label="From Date" type="date" value={draft.fromDate}
                             onChange={(e) => setDraft((p) => ({ ...p, fromDate: e.target.value }))} />
-                        <Input label="Đến ngày" type="date" value={draft.toDate}
+                        <Input label="To Date" type="date" value={draft.toDate}
                             onChange={(e) => setDraft((p) => ({ ...p, toDate: e.target.value }))} />
                         <div className="flex flex-wrap gap-2 xl:col-span-3">
-                            <Button type="submit">Tìm kiếm / Bộ lọc</Button>
-                            <Button type="button" variant="outline" onClick={resetFilters}>Xóa bộ lọc</Button>
-                            <Button type="button" variant="ghost" onClick={() => setReload((n) => n + 1)}>Làm mới</Button>
+                            <Button type="submit">Search / Filters</Button>
+                            <Button type="button" variant="outline" onClick={resetFilters}>Clear Filters</Button>
+                            <Button type="button" variant="ghost" onClick={() => setReload((n) => n + 1)}>Refresh</Button>
                         </div>
                     </form>
                     <p className="mt-4 text-sm text-slate-500">
-                        {loading ? "Đang tải..." : `Tìm thấy ${result.totalElements ?? 0} phiếu nhập.`}
+                        {loading ? "Loading..." : `Found ${result.totalElements ?? 0} goods receipts.`}
                     </p>
                 </Card>
-                {loading ? <div className="flex items-center gap-2 rounded-xl bg-white p-6"><Spinner />Đang tải phiếu nhập kho...</div>
+                {loading ? <div className="flex items-center gap-2 rounded-xl bg-white p-6"><Spinner />Loading goods receipts...</div>
                     : error ? null
-                        : !result.items?.length ? <EmptyState title="Chưa có phiếu nhập phù hợp" description="Hãy điều chỉnh bộ lọc và thử lại." />
+                        : !result.items?.length ? <EmptyState title="No Matching Goods Receipts" description="Adjust the filters and try again." />
                             : <div className="space-y-4">
                                 <Table data={result.items} columns={columns} />
                                 <Pagination page={page + 1} totalPages={Math.max(1, result.totalPages || 0)}

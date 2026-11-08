@@ -64,7 +64,7 @@ export default function GoodsReceiptDetailPage() {
     }, [receiptId, reload]);
 
     const columns = [
-        { key: "productCode", label: "Mã SKU" },
+        { key: "productCode", label: "SKU" },
         { key: "productName", label: T.product },
         { key: "expectedQuantity", label: T.quantity },
         { key: "unitPrice", label: T.price, render: (value) => formatReceiptMoney(value) },
@@ -76,8 +76,8 @@ export default function GoodsReceiptDetailPage() {
             <div className="space-y-6">
                 <PageHeader title={T.detailTitle} description={T.draftNote}
                     actions={<div className="flex gap-2">
-                        <Button type="button" variant="outline" onClick={() => navigate(LIST)}>← Danh sách phiếu nhập</Button>
-                        <Button type="button" onClick={() => navigate(ROOT)}>+ Tạo phiếu khác</Button>
+                        <Button type="button" variant="outline" onClick={() => navigate(LIST)}>← Goods Receipts</Button>
+                        <Button type="button" onClick={() => navigate(ROOT)}>+ Create Another Receipt</Button>
                     </div>} />
                 {location.state?.notice && <div role="status"><Alert type="success">{location.state.notice}</Alert></div>}
                 {error && <div role="alert" className="space-y-2"><Alert type="danger">{error}</Alert>

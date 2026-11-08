@@ -72,12 +72,12 @@ export async function cancelStockTransfer(transferId, reason) {
     return response.data;
 }
 
-export function stockTransferErrorMessage(error, fallback = "Không thể tải dữ liệu phiếu điều chuyển.") {
-    if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-    if (error?.response?.status === 403) return "Bạn chưa được cấp quyền điều chuyển hàng.";
+export function stockTransferErrorMessage(error, fallback = "Unable to load stock transfer data.") {
+    if (error?.response?.status === 401) return "Your session has expired. Please sign in again.";
+    if (error?.response?.status === 403) return "You do not have permission to manage stock transfers.";
     if (!error?.response) {
         if (!error?.isAxiosError && error?.message) return error.message;
-        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+        return "Unable to connect to the system. Check your network connection and try again.";
     }
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;

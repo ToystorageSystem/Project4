@@ -22,19 +22,19 @@ function validate(form) {
     const errors = {};
     const limits = { productCode: 50, barcode: 100, imageUrl: 500, name: 200, baseUnit: 30, requestReason: 500 };
     for (const [field, maximum] of Object.entries(limits)) {
-        if (form[field].trim().length > maximum) errors[field] = `Tối đa ${maximum} ký tự.`;
+        if (form[field].trim().length > maximum) errors[field] = `Maximum ${maximum} characters.`;
     }
     for (const field of ["productCode", "barcode", "name", "baseUnit"]) {
-        if (!form[field].trim()) errors[field] = "Không được để trống.";
+        if (!form[field].trim()) errors[field] = "Required field.";
     }
-    if (!/^[1-9]\d*$/.test(form.categoryId.trim())) errors.categoryId = "Vui lòng chọn danh mục hợp lệ.";
-    if (form.brandId.trim() && !/^[1-9]\d*$/.test(form.brandId.trim())) errors.brandId = "Vui lòng nhập mã thương hiệu hợp lệ.";
+    if (!/^[1-9]\d*$/.test(form.categoryId.trim())) errors.categoryId = "Please select a valid category.";
+    if (form.brandId.trim() && !/^[1-9]\d*$/.test(form.brandId.trim())) errors.brandId = "Please enter a valid brand ID.";
     for (const field of ["purchasePrice", "sellingPrice"]) {
         if (!form[field].trim() || !Number.isFinite(Number(form[field])) || Number(form[field]) < 0.01) {
-            errors[field] = "Giá phải là số lớn hơn hoặc bằng 0,01.";
+            errors[field] = "Price must be at least 0.01.";
         }
     }
-    if (form.imageUrl.trim() && !/^https?:\/\//i.test(form.imageUrl.trim())) errors.imageUrl = "Đường dẫn ảnh phải bắt đầu bằng http:// hoặc https://.";
+    if (form.imageUrl.trim() && !/^https?:\/\//i.test(form.imageUrl.trim())) errors.imageUrl = "Image URL must start with http:// or https://.";
     return errors;
 }
 
@@ -88,7 +88,7 @@ export default function ProductFormPage() {
         const productPromise = editing ? getProduct(productId, controller.signal) : Promise.resolve(null);
         const categoryPromise = getCategoryOptions(controller.signal)
             .catch((requestError) => {
-                if (!controller.signal.aborted) setCategoryApiWarning(productErrorMessage(requestError, "Không tải được danh mục."));
+                if (!controller.signal.aborted) setCategoryApiWarning(productErrorMessage(requestError, "Unable to load categories."));
                 return [];
             });
         // No /api/brands endpoint exists in this BE snapshot. Suggestions
@@ -108,7 +108,7 @@ export default function ProductFormPage() {
                 if (editing) {
                     if (product.status !== "ACTIVE" && product.status !== "INACTIVE") {
                         setLoadFailed(true);
-                        setError("Chỉ có thể sửa sản phẩm đang hoạt động hoặc đang tạm ẩn.");
+                        setError("Only active or hidden products can be edited.");
                     } else {
                         setForm(Object.fromEntries(Object.keys(EMPTY_FORM).map((key) => [key, product[key] == null ? "" : String(product[key])])));
                     }
@@ -119,7 +119,7 @@ export default function ProductFormPage() {
             .catch((requestError) => {
                 if (!controller.signal.aborted) {
                     setLoadFailed(true);
-                    setError(productErrorMessage(requestError, "Không tải được dữ liệu sản phẩm."));
+                    setError(productErrorMessage(requestError, "Unable to load product data."));
                 }
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false); });
@@ -134,17 +134,17 @@ export default function ProductFormPage() {
 
     const upload = async () => {
         if (!imageFile || uploading) return;
-        if (!imageFile.type.startsWith("image/")) { setError("File được chọn phải là hình ảnh."); return; }
+        if (!imageFile.type.startsWith("image/")) { setError("The selected file must be an image."); return; }
         setUploading(true);
         setError("");
         try {
             const result = await uploadProductImage(imageFile);
-            if (!result?.imageUrl) throw new Error("Không nhận được đường dẫn hình ảnh");
+            if (!result?.imageUrl) throw new Error("No image URL was returned");
             setForm((old) => ({ ...old, imageUrl: result.imageUrl }));
             setConfirmed(false);
             setImageFile(null);
         } catch (requestError) {
-            setError(productErrorMessage(requestError, "Không thể tải ảnh lên."));
+            setError(productErrorMessage(requestError, "Unable to upload image."));
         } finally {
             setUploading(false);
         }
@@ -165,14 +165,14 @@ export default function ProductFormPage() {
                 : await createProduct(toPayload(form));
             const destinationId = product?.id ?? (editing ? productId : null);
             const notice = editing
-                ? "Cập nhật sản phẩm thành công. Lịch sử thay đổi đã được lưu."
-                : "Tạo sản phẩm thành công. Sản phẩm đang hoạt động và có thể sử dụng.";
+                ? "Product updated successfully. Change history was recorded."
+                : "Product created successfully. It is now active and available for use.";
             navigate(destinationId ? `${ROOT}/${destinationId}` : ROOT, {
                 replace: true,
                 state: { notice },
             });
         } catch (requestError) {
-            setError(productErrorMessage(requestError, "Không thể lưu sản phẩm."));
+            setError(productErrorMessage(requestError, "Unable to save product."));
         } finally {
             setSaving(false);
         }
@@ -181,57 +181,57 @@ export default function ProductFormPage() {
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title={editing ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
-                    description={editing ? "Lưu thay đổi trực tiếp; hệ thống ghi lại người thao tác và dữ liệu trước/sau." : "Thông tin hợp lệ sẽ được lưu ngay và chuyển trạng thái đang hoạt động."}
-                    actions={<Button variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>← Quay lại</Button>}
+                <PageHeader title={editing ? "Edit Product" : "Add Product"}
+                    description={editing ? "Save changes directly; the system records the user and before/after values." : "Valid product information will be saved immediately and the product will become active."}
+                    actions={<Button variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>← Back</Button>}
                 />
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 {loading ? (
-                    <div className="flex items-center gap-3 rounded-2xl bg-white p-6 text-sm"><Spinner /> Đang tải dữ liệu...</div>
+                    <div className="flex items-center gap-3 rounded-2xl bg-white p-6 text-sm"><Spinner /> Loading data...</div>
                 ) : loadFailed ? (
-                    <Card><Button variant="outline" onClick={() => navigate(ROOT)}>Về danh sách</Button></Card>
+                    <Card><Button variant="outline" onClick={() => navigate(ROOT)}>Back to List</Button></Card>
                 ) : (
                     <Card className="max-w-6xl">
-                        <Alert type="info">Mã sản phẩm và mã vạch không được trùng với sản phẩm khác. Hệ thống sẽ kiểm tra trước khi lưu.</Alert>
+                        <Alert type="info">Product code and barcode must be unique. The system checks for duplicates before saving.</Alert>
                         {categoryApiWarning && (
-                            <div className="mt-4"><Alert type="warning">Không tải được danh mục sản phẩm: {categoryApiWarning} Có thể nhập mã danh mục đang sử dụng ở bên dưới (hệ thống sẽ kiểm tra lại).</Alert></div>
+                            <div className="mt-4"><Alert type="warning">Unable to load product categories: {categoryApiWarning} You can enter an existing category ID below; the system will validate it.</Alert></div>
                         )}
                         <form onSubmit={submit} noValidate className="mt-6 space-y-6">
                             <div className="grid gap-5 md:grid-cols-2">
-                                <Input label="Mã sản phẩm *" required maxLength={50} value={form.productCode} onChange={change("productCode")} error={errors.productCode} placeholder="Ví dụ: SP-TOY-001" />
-                                <Input label="Mã vạch *" required maxLength={100} value={form.barcode} onChange={change("barcode")} error={errors.barcode} placeholder="Mã vạch duy nhất" />
-                                <div className="md:col-span-2"><Input label="Tên sản phẩm *" required maxLength={200} value={form.name} onChange={change("name")} error={errors.name} placeholder="Tên sản phẩm" /></div>
+                                <Input label="Product Code *" required maxLength={50} value={form.productCode} onChange={change("productCode")} error={errors.productCode} placeholder="Example: SP-TOY-001" />
+                                <Input label="Barcode *" required maxLength={100} value={form.barcode} onChange={change("barcode")} error={errors.barcode} placeholder="Unique barcode" />
+                                <div className="md:col-span-2"><Input label="Product Name *" required maxLength={200} value={form.name} onChange={change("name")} error={errors.name} placeholder="Product Name" /></div>
                                 <div>
-                                    <Input label="Danh mục sản phẩm *" type="number" min="1" step="1" required list="product-category-options" value={form.categoryId} onChange={change("categoryId")} error={errors.categoryId} placeholder="Nhập mã hoặc chọn danh mục" />
+                                    <Input label="Product Category *" type="number" min="1" step="1" required list="product-category-options" value={form.categoryId} onChange={change("categoryId")} error={errors.categoryId} placeholder="Enter a category ID or select a category" />
                                     <datalist id="product-category-options">{categorySuggestions.map((item) => <option key={item.value} value={item.value} label={item.label} />)}</datalist>
-                                    <p className="mt-1 text-xs text-slate-500">{categorySuggestions.length ? `Gợi ý: ${categorySuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "Chưa có danh mục gợi ý. Vui lòng nhập mã danh mục đang sử dụng."}</p>
+                                    <p className="mt-1 text-xs text-slate-500">{categorySuggestions.length ? `Suggestions: ${categorySuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "No category suggestions available. Enter an existing category ID."}</p>
                                 </div>
                                 <div>
-                                    <Input label="Thương hiệu (không bắt buộc)" type="number" min="1" step="1" list="product-brand-options" value={form.brandId} onChange={change("brandId")} error={errors.brandId} placeholder="Để trống hoặc nhập mã thương hiệu" />
+                                    <Input label="Brand (optional)" type="number" min="1" step="1" list="product-brand-options" value={form.brandId} onChange={change("brandId")} error={errors.brandId} placeholder="Leave blank or enter a brand ID" />
                                     <datalist id="product-brand-options">{brandSuggestions.map((item) => <option key={item.value} value={item.value} label={item.label} />)}</datalist>
-                                    <p className="mt-1 text-xs text-slate-500">{brandSuggestions.length ? `Gợi ý từ sản phẩm hiện có: ${brandSuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "Chưa có danh sách thương hiệu để chọn. Bạn có thể nhập mã thương hiệu đã có."}</p>
+                                    <p className="mt-1 text-xs text-slate-500">{brandSuggestions.length ? `Suggested from existing products: ${brandSuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "No brand list available. You may enter an existing brand ID."}</p>
                                 </div>
-                                <Input label="Đơn vị cơ sở *" maxLength={30} required value={form.baseUnit} onChange={change("baseUnit")} error={errors.baseUnit} placeholder="Ví dụ: Cái, túi, hộp" />
-                                <Input label="Giá nhập (VND) *" type="number" min="0.01" step="0.01" required value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} placeholder="120000" />
-                                <Input label="Giá bán (VND) *" type="number" min="0.01" step="0.01" required value={form.sellingPrice} onChange={change("sellingPrice")} error={errors.sellingPrice} placeholder="150000" />
-                                <div className="md:col-span-2"><Input label="URL hình ảnh (nếu có)" maxLength={500} type="url" value={form.imageUrl} onChange={change("imageUrl")} error={errors.imageUrl} placeholder="https://..." /></div>
+                                <Input label="Base Unit *" maxLength={30} required value={form.baseUnit} onChange={change("baseUnit")} error={errors.baseUnit} placeholder="Example: piece, bag, box" />
+                                <Input label="Purchase Price (VND) *" type="number" min="0.01" step="0.01" required value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} placeholder="120000" />
+                                <Input label="Selling Price (VND) *" type="number" min="0.01" step="0.01" required value={form.sellingPrice} onChange={change("sellingPrice")} error={errors.sellingPrice} placeholder="150000" />
+                                <div className="md:col-span-2"><Input label="Image URL (optional)" maxLength={500} type="url" value={form.imageUrl} onChange={change("imageUrl")} error={errors.imageUrl} placeholder="https://..." /></div>
                             </div>
                             <div className="rounded-xl border border-slate-200 p-4">
-                                <p className="text-sm font-semibold text-slate-800">Hoặc tải hình ảnh sản phẩm lên hệ thống</p>
-                                <p className="mb-3 mt-1 text-xs text-slate-500">Chỉ khi bạn bấm “Tải ảnh lên”, ảnh mới được gửi đến dịch vụ lưu trữ. Việc tải ảnh không tạo sản phẩm.</p>
+                                <p className="text-sm font-semibold text-slate-800">Or upload a product image</p>
+                                <p className="mb-3 mt-1 text-xs text-slate-500">Your image is uploaded to storage only when you select Upload Image. Uploading an image does not create a product.</p>
                                 <div className="flex flex-wrap items-center gap-3">
-                                    <input type="file" accept="image/*" aria-label="Chọn ảnh sản phẩm" onChange={(event) => setImageFile(event.target.files?.[0] || null)} className="max-w-full text-sm text-slate-600" />
-                                    <Button type="button" variant="outline" onClick={upload} disabled={!imageFile || uploading || saving}>{uploading ? "Đang tải ảnh..." : "Tải ảnh lên"}</Button>
+                                    <input type="file" accept="image/*" aria-label="Choose Product Image" onChange={(event) => setImageFile(event.target.files?.[0] || null)} className="max-w-full text-sm text-slate-600" />
+                                    <Button type="button" variant="outline" onClick={upload} disabled={!imageFile || uploading || saving}>{uploading ? "Uploading image..." : "Upload Image"}</Button>
                                 </div>
-                                {form.imageUrl && <img src={form.imageUrl} alt="Ảnh xem trước" className="mt-3 h-28 max-w-full rounded-lg border object-contain" />}
+                                {form.imageUrl && <img src={form.imageUrl} alt="Image Preview" className="mt-3 h-28 max-w-full rounded-lg border object-contain" />}
                             </div>
-                            <TextArea label="Ghi chú thay đổi (nếu có)" rows={3} maxLength={500} value={form.requestReason} onChange={change("requestReason")} error={errors.requestReason} placeholder="Mô tả mục đích thêm hoặc sửa sản phẩm" />
+                            <TextArea label="Change Notes (optional)" rows={3} maxLength={500} value={form.requestReason} onChange={change("requestReason")} error={errors.requestReason} placeholder="Describe the reason for adding or updating the product" />
                             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi đã kiểm tra thông tin và đồng ý lưu thay đổi trực tiếp vào hệ thống." />
+                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="I have reviewed the information and agree to save these changes directly." />
                             </div>
                             <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
-                                <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>Hủy</Button>
-                                <Button type="submit" disabled={!confirmed || uploading || saving}>{saving ? "Đang lưu..." : editing ? "Lưu thay đổi" : "Tạo sản phẩm"}</Button>
+                                <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>Cancel</Button>
+                                <Button type="submit" disabled={!confirmed || uploading || saving}>{saving ? "Saving..." : editing ? "Save Changes" : "Create Product"}</Button>
                             </div>
                         </form>
                     </Card>

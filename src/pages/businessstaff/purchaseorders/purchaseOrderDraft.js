@@ -21,40 +21,40 @@ export function todayVietnamIso() {
 
 export function validatePurchaseOrderDraft(form, productOptions) {
     const problems = [];
-    if (!isPositiveId(form.supplierId)) problems.push("Chọn nhà cung cấp hợp lệ.");
-    if (!isPositiveId(form.warehouseId)) problems.push("Chọn kho tổng nhận hàng hợp lệ.");
+    if (!isPositiveId(form.supplierId)) problems.push("Select a valid supplier.");
+    if (!isPositiveId(form.warehouseId)) problems.push("Select a valid receiving main warehouse.");
     if (form.expectedDeliveryDate && !isDate(form.expectedDeliveryDate)) {
         problems.push("Requested delivery date is invalid.");
     } else if (form.expectedDeliveryDate && form.expectedDeliveryDate < todayVietnamIso()) {
-        problems.push("Ngày giao hàng dự kiến không được trước ngày hôm nay.");
+        problems.push("Expected delivery date cannot be in the past.");
     }
     if (!Array.isArray(form.items) || form.items.length === 0) {
-        problems.push("Đơn mua hàng phải có ít nhất một sản phẩm.");
+        problems.push("Purchase order must contain at least one product.");
     }
 
     const seen = new Set();
     (form.items || []).forEach((row, index) => {
-        const label = `Dòng ${index + 1}`;
+        const label = `Row ${index + 1}`;
         const productId = Number(row.productId);
         if (!isPositiveId(row.productId)) {
-            problems.push(`${label}: Chọn sản phẩm.`);
+            problems.push(`${label}: Select a product.`);
             return;
         }
-        if (seen.has(productId)) problems.push(`${label}: Sản phẩm bị trùng trong đơn.`);
+        if (seen.has(productId)) problems.push(`${label}: Duplicate product on the order.`);
         seen.add(productId);
 
         const option = (productOptions || []).find((item) => Number(item.productId) === productId);
         if (!option) {
-            problems.push(`${label}: Sản phẩm không còn được phép mua từ nhà cung cấp này.`);
+            problems.push(`${label}: This supplier can no longer supply this product.`);
             return;
         }
         if (!isQuantity(row.orderedQuantity)) {
-            problems.push(`${label}: Số lượng phải là số nguyên từ 1 đến 2.147.483.647.`);
+            problems.push(`${label}: Quantity must be an integer between 1 and 2,147,483,647.`);
         } else if (Number(row.orderedQuantity) < Math.max(1, Number(option.minimumOrderQuantity || 1))) {
-            problems.push(`${label}: Số lượng đặt tối thiểu là ${option.minimumOrderQuantity || 1}.`);
+            problems.push(`${label}: Minimum order quantity is ${option.minimumOrderQuantity || 1}.`);
         }
         if (!Number.isFinite(Number(option.purchasePrice)) || Number(option.purchasePrice) <= 0) {
-            problems.push(`${label}: Giá mua từ nhà cung cấp chưa hợp lệ.`);
+            problems.push(`${label}: Invalid supplier purchase price.`);
         }
     });
     return problems;

@@ -1,6 +1,6 @@
 import Input from "../ui/Input";
 export default function QuantityInput( {
-    value,onChange,label="Số lượng",min=0
+    value,onChange,label="Quantity",min=0
 }
 ) {
     return <Input label= {

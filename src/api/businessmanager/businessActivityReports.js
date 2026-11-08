@@ -4,7 +4,7 @@ const BASE = "/business-manager/reports";
 const TYPES = new Set(["imports", "exports", "transfers", "inventory"]);
 
 function endpoint(type, excel = false) {
-    if (!TYPES.has(type)) throw new Error("Loại báo cáo không hợp lệ.");
+    if (!TYPES.has(type)) throw new Error("Invalid report type.");
     return `${BASE}/${type}${excel ? "/excel" : ""}`;
 }
 

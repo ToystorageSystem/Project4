@@ -24,22 +24,22 @@ import Table from "../../../components/ui/Table";
 const ROOT = "/business/in-transit-shipments";
 
 const STATUS_LABELS = {
-    CREATED: "Đã tạo",
-    ASSIGNED: "Đã phân công",
-    ACCEPTED: "Đã nhận chuyến",
-    REJECTED: "Bị từ chối",
-    READY_TO_SHIP: "Sẵn sàng giao hàng",
-    IN_TRANSIT: "Đang vận chuyển",
-    ARRIVED: "Đã đến điểm nhận",
-    DELIVERED: "Đã giao thành công",
-    FAILED: "Giao hàng thất bại",
-    CANCELLED: "Đã hủy",
+    CREATED: "Created",
+    ASSIGNED: "Assigned",
+    ACCEPTED: "Trip Accepted",
+    REJECTED: "Rejected",
+    READY_TO_SHIP: "Ready for Delivery",
+    IN_TRANSIT: "In Transit",
+    ARRIVED: "Arrived at Destination",
+    DELIVERED: "Delivered",
+    FAILED: "Delivery Failed",
+    CANCELLED: "Cancelled",
 };
 
 const TRANSFER_TYPE_LABELS = {
-    STORE_RETURN: "Cửa hàng trả về kho",
-    MAIN_TO_STORE: "Kho tổng đến cửa hàng",
-    STORE_TO_STORE: "Giữa các cửa hàng",
+    STORE_RETURN: "Store Return to Warehouse",
+    MAIN_TO_STORE: "Main Warehouse to Store",
+    STORE_TO_STORE: "Store to Store",
 };
 
 function formatNumber(value) {
@@ -48,7 +48,7 @@ function formatNumber(value) {
     const number = Number(value);
 
     return Number.isFinite(number)
-        ? number.toLocaleString("vi-VN")
+        ? number.toLocaleString("en-GB")
         : String(value);
 }
 
@@ -59,7 +59,7 @@ function formatDateTime(value) {
 
     return Number.isNaN(date.getTime())
         ? String(value)
-        : date.toLocaleString("vi-VN", {
+        : date.toLocaleString("en-GB", {
               hour12: false,
           });
 }
@@ -103,7 +103,7 @@ function InfoItem({ label, value }) {
 const transferColumns = [
     {
         key: "transferCode",
-        label: "Mã phiếu điều chuyển",
+        label: "Stock Transfer Code",
         render: (value, transfer) =>
             transfer.transferId != null ? (
                 <Link
@@ -118,33 +118,33 @@ const transferColumns = [
     },
     {
         key: "transferType",
-        label: "Loại điều chuyển",
+        label: "Transfer Type",
         render: (value) =>
             TRANSFER_TYPE_LABELS[value] || value || "—",
     },
     {
         key: "transferStatus",
-        label: "Trạng thái",
+        label: "Status",
         render: (value) => value ? formatBusinessStatus(value) : "—",
     },
     {
         key: "totalRequestedQuantity",
-        label: "Số lượng yêu cầu",
+        label: "Requested Quantity",
         render: formatNumber,
     },
     {
         key: "totalShippedQuantity",
-        label: "SL đã xuất",
+        label: "Shipped Qty",
         render: formatNumber,
     },
     {
         key: "totalReceivedQuantity",
-        label: "SL đã nhận",
+        label: "Received Qty",
         render: formatNumber,
     },
     {
         key: "expectedReceiptDate",
-        label: "Dự kiến nhận hàng",
+        label: "Expected Receipt Date",
         render: (value) => value || "—",
     },
 ];
@@ -153,43 +153,43 @@ const transferColumns = [
 const transferProductColumns = [
     {
         key: "productCode",
-        label: "Mã sản phẩm",
+        label: "Product Code",
     },
     {
         key: "productName",
-        label: "Tên sản phẩm",
+        label: "Product Name",
     },
     {
         key: "barcode",
-        label: "Mã vạch",
+        label: "Barcode",
     },
     {
         key: "baseUnit",
-        label: "Đơn vị",
+        label: "Unit",
     },
     {
         key: "requestedQuantity",
-        label: "Yêu cầu",
+        label: "Request",
         render: formatNumber,
     },
     {
         key: "approvedQuantity",
-        label: "Phê duyệt",
+        label: "Approve",
         render: formatNumber,
     },
     {
         key: "packedQuantity",
-        label: "Đóng kiện",
+        label: "Packing",
         render: formatNumber,
     },
     {
         key: "shippedQuantity",
-        label: "Đã xuất hàng",
+        label: "Shipped",
         render: formatNumber,
     },
     {
         key: "receivedQuantity",
-        label: "Đã nhận",
+        label: "Received",
         render: formatNumber,
     },
 ];
@@ -198,23 +198,23 @@ const transferProductColumns = [
 const packageProductColumns = [
     {
         key: "productCode",
-        label: "Mã sản phẩm",
+        label: "Product Code",
     },
     {
         key: "productName",
-        label: "Tên sản phẩm",
+        label: "Product Name",
     },
     {
         key: "barcode",
-        label: "Mã vạch",
+        label: "Barcode",
     },
     {
         key: "baseUnit",
-        label: "Đơn vị",
+        label: "Unit",
     },
     {
         key: "quantity",
-        label: "Số lượng trong kiện",
+        label: "Packed Quantity",
         render: formatNumber,
     },
 ];
@@ -243,7 +243,7 @@ export default function InTransitShipmentDetailPage() {
 
                 if (data?.deliveryId == null) {
                     throw new Error(
-                        "Dữ liệu chuyến vận chuyển không hợp lệ."
+                        "Invalid shipment data."
                     );
                 }
 
@@ -255,7 +255,7 @@ export default function InTransitShipmentDetailPage() {
                 const message = err?.isAxiosError
                     ? inTransitShipmentErrorMessage(err)
                     : err?.message ||
-                      "Không tải được chi tiết chuyến giao.";
+                      "Unable to load delivery trip details.";
 
                 setError(message);
             })
@@ -300,14 +300,14 @@ export default function InTransitShipmentDetailPage() {
         >
             <div className="space-y-6">
                 <PageHeader
-                    title="Chi tiết chuyến vận chuyển"
-                    description="Theo dõi thông tin giao hàng, sản phẩm, kiện hàng và lịch sử trạng thái."
+                    title="Shipment Details"
+                    description="Track deliveries, products, packages, and status history."
                     actions={
                         <Link
                             to={ROOT}
                             className="rounded-xl border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50"
                         >
-                            Quay lại danh sách
+                            Back to List
                         </Link>
                     }
                 />
@@ -318,7 +318,7 @@ export default function InTransitShipmentDetailPage() {
                         className="flex items-center gap-3 rounded-xl bg-white p-8 text-slate-600"
                     >
                         <Spinner />
-                        Đang tải chi tiết chuyến vận chuyển...
+                        Loading shipment details...
                     </div>
                 ) : error ? (
                     <div role="alert">
@@ -326,17 +326,14 @@ export default function InTransitShipmentDetailPage() {
                     </div>
                 ) : !delivery ? (
                     <EmptyState
-                        title="Không tìm thấy chuyến vận chuyển"
-                        description="Không có dữ liệu chi tiết để hiển thị."
+                        title="Shipment Not Found"
+                        description="No details available to display."
                     />
                 ) : (
                     <>
                         {/* Quyen han Business Staff */}
                         <Alert type="info">
-                            Nhân viên kinh doanh chỉ được xem và theo
-                            dõi chuyến vận chuyển. Việc cập
-                            nhật trạng thái giao hàng thuộc về
-                            các vai trò được phân quyền.
+                            Business Operations users can only view and track shipments. Delivery status updates are restricted to authorized roles.
                         </Alert>
 
                         {/* Canh bao qua han */}
@@ -344,14 +341,12 @@ export default function InTransitShipmentDetailPage() {
                             <div role="alert">
                                 <Alert type="danger">
                                     <strong>
-                                        Cảnh báo: Quá hạn giao hàng!
+                                        Warning: Delivery Overdue!
                                     </strong>{" "}
-                                    Chuyến vận chuyển đã vượt
-                                    thời gian dự kiến nhận:{" "}
+                                    This shipment has passed its expected delivery time:{" "}
                                     {formatDateTime(
                                         delivery.expectedDeliveryAt
-                                    )}.
-                                    Trạng thái hiện tại vẫn là{" "}
+                                    )}. Current status:{" "}
                                     {STATUS_LABELS[
                                         delivery.deliveryStatus
                                     ] || delivery.deliveryStatus}.
@@ -364,7 +359,7 @@ export default function InTransitShipmentDetailPage() {
                             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                                 <div>
                                     <p className="text-sm text-slate-500">
-                                        Mã chuyến giao
+                                        Delivery Trip Code
                                     </p>
 
                                     <h2 className="text-xl font-bold text-slate-900">
@@ -379,7 +374,7 @@ export default function InTransitShipmentDetailPage() {
 
                             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                                 <InfoItem
-                                    label="Mã bảng kê"
+                                    label="Manifest Code"
                                     value={
                                         delivery.manifestId != null ? (
                                             <Link
@@ -395,19 +390,19 @@ export default function InTransitShipmentDetailPage() {
                                 />
 
                                 <InfoItem
-                                    label="Trạng thái bảng kê"
+                                    label="Manifest Status"
                                     value={delivery.manifestStatus}
                                 />
 
                                 <InfoItem
-                                    label="Ngày tạo chuyến"
+                                    label="Trip Created At"
                                     value={formatDateTime(
                                         delivery.createdAt
                                     )}
                                 />
 
                                 <InfoItem
-                                    label="Cập nhật gần nhất"
+                                    label="Last Updated"
                                     value={formatDateTime(
                                         delivery.updatedAt
                                     )}
@@ -416,7 +411,7 @@ export default function InTransitShipmentDetailPage() {
 
                             {delivery.manifestNote && (
                                 <p className="mt-4 text-sm text-slate-600">
-                                    <strong>Ghi chú bảng kê:</strong>{" "}
+                                    <strong>Manifest Notes:</strong>{" "}
                                     {delivery.manifestNote}
                                 </p>
                             )}
@@ -426,22 +421,22 @@ export default function InTransitShipmentDetailPage() {
                         <div className="grid gap-4 md:grid-cols-2">
                             <Card>
                                 <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                    Điểm xuất phát
+                                    Origin
                                 </h3>
 
                                 <div className="space-y-4">
                                     <InfoItem
-                                        label="Kho / Cửa hàng"
+                                        label="Warehouse / Store"
                                         value={delivery.fromWarehouseName}
                                     />
 
                                     <InfoItem
-                                        label="Mã điểm xuất"
+                                        label="Origin Code"
                                         value={delivery.fromWarehouseCode}
                                     />
 
                                     <InfoItem
-                                        label="Địa chỉ"
+                                        label="Address"
                                         value={delivery.fromWarehouseAddress}
                                     />
                                 </div>
@@ -449,22 +444,22 @@ export default function InTransitShipmentDetailPage() {
 
                             <Card>
                                 <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                    Điểm đến
+                                    Destination
                                 </h3>
 
                                 <div className="space-y-4">
                                     <InfoItem
-                                        label="Kho / Cửa hàng"
+                                        label="Warehouse / Store"
                                         value={delivery.toWarehouseName}
                                     />
 
                                     <InfoItem
-                                        label="Mã điểm nhận"
+                                        label="Destination Code"
                                         value={delivery.toWarehouseCode}
                                     />
 
                                     <InfoItem
-                                        label="Địa chỉ"
+                                        label="Address"
                                         value={delivery.toWarehouseAddress}
                                     />
                                 </div>
@@ -475,15 +470,15 @@ export default function InTransitShipmentDetailPage() {
                         <div className="grid gap-4 sm:grid-cols-3">
                             {[
                                 [
-                                    "Tổng số phiếu điều chuyển",
+                                    "Total Stock Transfers",
                                     delivery.totalTransfers,
                                 ],
                                 [
-                                    "Tổng số kiện hàng",
+                                    "Total Packages",
                                     delivery.totalPackages,
                                 ],
                                 [
-                                    "Tổng số lượng sản phẩm",
+                                    "Total Product Quantity",
                                     delivery.totalProductQuantity,
                                 ],
                             ].map(([label, value]) => (
@@ -502,60 +497,60 @@ export default function InTransitShipmentDetailPage() {
                         {/* Thong tin nguoi phu trach */}
                         <Card>
                             <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                Tài xế và thông tin bàn giao
+                                Driver & Handover Details
                             </h3>
 
                             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                                 <InfoItem
-                                    label="Tài xế"
+                                    label="Driver"
                                     value={delivery.driverName}
                                 />
 
                                 <InfoItem
-                                    label="Mã tài xế"
+                                    label="Driver ID"
                                     value={delivery.driverCode}
                                 />
 
                                 <InfoItem
-                                    label="Người bàn giao"
+                                    label="Handed Over By"
                                     value={delivery.handedOverByName}
                                 />
 
                                 <InfoItem
-                                    label="Mã người bàn giao"
+                                    label="Handover User ID"
                                     value={delivery.handedOverByCode}
                                 />
 
                                 <InfoItem
-                                    label="Dự kiến lấy hàng"
+                                    label="Expected Pickup"
                                     value={formatDateTime(
                                         delivery.expectedPickupAt
                                     )}
                                 />
 
                                 <InfoItem
-                                    label="Thời gian bàn giao"
+                                    label="Handover Time"
                                     value={formatDateTime(
                                         delivery.handedOverAt
                                     )}
                                 />
 
                                 <InfoItem
-                                    label="Bắt đầu vận chuyển"
+                                    label="Departed At"
                                     value={formatDateTime(
                                         delivery.startedAt
                                     )}
                                 />
 
                                 <InfoItem
-                                    label="Dự kiến giao hàng"
+                                    label="Expected Delivery"
                                     value={formatDateTime(
                                         delivery.expectedDeliveryAt
                                     )}
                                 />
 
                                 <InfoItem
-                                    label="Thời gian giao hoàn tất"
+                                    label="Delivered At"
                                     value={formatDateTime(
                                         delivery.deliveredAt
                                     )}
@@ -566,12 +561,12 @@ export default function InTransitShipmentDetailPage() {
                         {/* Danh sach phieu dieu chuyen */}
                         <section className="space-y-4">
                             <h3 className="text-lg font-bold text-slate-800">
-                                Danh sách phiếu điều chuyển
+                                Stock Transfers
                             </h3>
 
                             {transfers.length === 0 ? (
                                 <EmptyState
-                                    title="Chưa có phiếu điều chuyển"
+                                    title="No Stock Transfers"
                                 />
                             ) : (
                                 <>
@@ -596,7 +591,7 @@ export default function InTransitShipmentDetailPage() {
                                             >
                                                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                                                     <h4 className="font-bold text-slate-800">
-                                                        Sản phẩm của phiếu{" "}
+                                                        Transfer Items{" "}
                                                         {transfer.transferCode}
                                                     </h4>
 
@@ -615,7 +610,7 @@ export default function InTransitShipmentDetailPage() {
                                                     />
                                                 ) : (
                                                     <EmptyState
-                                                        title="Phiếu chưa có sản phẩm"
+                                                        title="This transfer contains no products"
                                                     />
                                                 )}
                                             </Card>
@@ -628,12 +623,12 @@ export default function InTransitShipmentDetailPage() {
                         {/* Danh sach kien hang */}
                         <section className="space-y-4">
                             <h3 className="text-lg font-bold text-slate-800">
-                                Danh sách kiện hàng
+                                Packages
                             </h3>
 
                             {packages.length === 0 ? (
                                 <EmptyState
-                                    title="Chưa có kiện hàng"
+                                    title="No Packages"
                                 />
                             ) : (
                                 packages.map((pkg, index) => {
@@ -658,26 +653,26 @@ export default function InTransitShipmentDetailPage() {
 
                                             <div className="mb-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                                                 <InfoItem
-                                                    label="Mã niêm phong"
+                                                    label="Seal Code"
                                                     value={pkg.sealNumber}
                                                 />
 
                                                 <InfoItem
-                                                    label="Thời gian đóng kiện"
+                                                    label="Packed At"
                                                     value={formatDateTime(
                                                         pkg.packedAt
                                                     )}
                                                 />
 
                                                 <InfoItem
-                                                    label="Thời gian niêm phong"
+                                                    label="Sealed At"
                                                     value={formatDateTime(
                                                         pkg.sealedAt
                                                     )}
                                                 />
 
                                                 <InfoItem
-                                                    label="Tổng số lượng"
+                                                    label="Total Quantity"
                                                     value={formatNumber(
                                                         pkg.totalQuantity
                                                     )}
@@ -685,7 +680,7 @@ export default function InTransitShipmentDetailPage() {
                                             </div>
 
                                             <h5 className="mb-3 font-semibold text-slate-800">
-                                                Sản phẩm trong kiện
+                                                Package Items
                                             </h5>
 
                                             {products.length > 0 ? (
@@ -698,7 +693,7 @@ export default function InTransitShipmentDetailPage() {
                                                 />
                                             ) : (
                                                 <EmptyState
-                                                    title="Kiện chưa có sản phẩm"
+                                                    title="This package contains no products"
                                                 />
                                             )}
                                         </Card>
@@ -710,12 +705,12 @@ export default function InTransitShipmentDetailPage() {
                         {/* Timeline lich su trang thai */}
                         <Card>
                             <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                Lịch sử trạng thái vận chuyển
+                                Shipment Status History
                             </h3>
 
                             {history.length === 0 ? (
                                 <EmptyState
-                                    title="Chưa có lịch sử trạng thái"
+                                    title="No Status History"
                                 />
                             ) : (
                                 <ol className="space-y-4">
@@ -742,13 +737,13 @@ export default function InTransitShipmentDetailPage() {
                                             </div>
 
                                             <p className="mt-2 text-sm text-slate-700">
-                                                <strong>Người thực hiện:</strong>{" "}
-                                                {event.changedByName || "Không có thông tin"}
+                                                <strong>Performed by:</strong>{" "}
+                                                {event.changedByName || "No Information"}
                                             </p>
 
                                             {event.note && (
                                                 <p className="mt-1 text-sm text-slate-600">
-                                                    <strong>Ghi chú:</strong>{" "}
+                                                    <strong>Notes:</strong>{" "}
                                                     {event.note}
                                                 </p>
                                             )}
@@ -758,8 +753,7 @@ export default function InTransitShipmentDetailPage() {
                             )}
 
                             <p className="mt-4 text-xs text-slate-500">
-                                Lịch sử chỉ hiển thị những lần cập nhật
-                                đã được hệ thống ghi nhận.
+                                Only status updates recorded by the system are shown in the history.
                             </p>
                         </Card>
                     </>

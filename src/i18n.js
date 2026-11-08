@@ -16,13 +16,13 @@ const resources = {
 
     vi: {
         translation: {
-            returnsManagement: "Quản lý hàng trả",
-            supplierReturn: "Trả hàng nhà cung cấp",
-            storeReturn: "Hàng trả từ cửa hàng",
-            pending: "Chờ xử lý",
-            inProgress: "Đang xử lý",
-            completed: "Hoàn thành",
-            viewDetails: "Xem chi tiết",
+            returnsManagement: "Returns Management",
+            supplierReturn: "Supplier Returns",
+            storeReturn: "Store Returns",
+            pending: "Pending",
+            inProgress: "In Progress",
+            completed: "Completed",
+            viewDetails: "View Details",
         },
     },
 
@@ -43,8 +43,8 @@ i18n
     .use(initReactI18next)
     .init({
         resources,
-        lng: "vi",
-        fallbackLng: "vi",
+        lng: "en",
+        fallbackLng: "en",
         interpolation: {
             escapeValue: false,
         },

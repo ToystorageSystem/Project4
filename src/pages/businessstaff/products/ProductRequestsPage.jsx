@@ -13,7 +13,7 @@ import Spinner from "../../../components/ui/Spinner";
 import Table from "../../../components/ui/Table";
 
 const ROOT = "/business/products";
-const TYPES = { CREATE: "Tạo mới", UPDATE: "Yêu cầu chỉnh sửa", DEACTIVATE: "Ngừng hoạt động" };
+const TYPES = { CREATE: "Create New", UPDATE: "Update Request", DEACTIVATE: "Inactive" };
 
 export default function ProductRequestsPage() {
     const navigate = useNavigate();
@@ -30,37 +30,37 @@ export default function ProductRequestsPage() {
         getMyProductRequests({ page, size: 10 }, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(result?.items)) throw new Error("Danh sách yêu cầu chưa hợp lệ");
+                if (!Array.isArray(result?.items)) throw new Error("Invalid request list data");
                 setData(result);
             })
             .catch((requestError) => {
-                if (!controller.signal.aborted) setError(productErrorMessage(requestError, "Không lấy được danh sách yêu cầu."));
+                if (!controller.signal.aborted) setError(productErrorMessage(requestError, "Unable to load requests."));
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false); });
         return () => controller.abort();
     }, [page, reload]);
 
     const columns = [
-        { key: "requestCode", label: "Mã yêu cầu", render: (v) => <span className="font-medium text-slate-900">{v || "—"}</span> },
-        { key: "requestType", label: "Loại", render: (v) => TYPES[v] || v || "—" },
-        { key: "productCode", label: "Mã sản phẩm" },
-        { key: "productName", label: "Sản phẩm" },
-        { key: "status", label: "Trạng thái", render: (v) => <ProductStatusBadge status={v} /> },
-        { key: "rejectionReason", label: "Lý do từ chối", render: (v) => v || "—" },
-        { key: "createdAt", label: "Thời gian", render: formatProductDate },
-        { key: "productId", label: "Chi tiết", render: (v) => v ? <Link to={`${ROOT}/${v}`} className="text-[#c94810] hover:underline">Xem sản phẩm</Link> : "—" },
+        { key: "requestCode", label: "Request Code", render: (v) => <span className="font-medium text-slate-900">{v || "—"}</span> },
+        { key: "requestType", label: "Type", render: (v) => TYPES[v] || v || "—" },
+        { key: "productCode", label: "Product Code" },
+        { key: "productName", label: "Product" },
+        { key: "status", label: "Status", render: (v) => <ProductStatusBadge status={v} /> },
+        { key: "rejectionReason", label: "Rejection Reason", render: (v) => v || "—" },
+        { key: "createdAt", label: "Time", render: formatProductDate },
+        { key: "productId", label: "Details", render: (v) => v ? <Link to={`${ROOT}/${v}`} className="text-[#c94810] hover:underline">View Product</Link> : "—" },
     ];
 
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Yêu cầu sản phẩm của tôi" description="Theo dõi yêu cầu thêm hoặc sửa sản phẩm, kết quả xét duyệt và lý do nếu bị từ chối."
-                    actions={<div className="flex gap-2"><Button variant="ghost" onClick={() => navigate(ROOT)}>← Quay lại danh sách</Button><Button variant="outline" onClick={() => setReload((v) => v + 1)}>Làm mới</Button></div>}
+                <PageHeader title="My Product Requests" description="Track product creation and update requests, review results, and rejection reasons."
+                    actions={<div className="flex gap-2"><Button variant="ghost" onClick={() => navigate(ROOT)}>← Back to List</Button><Button variant="outline" onClick={() => setReload((v) => v + 1)}>Refresh</Button></div>}
                 />
-                <Alert type="info">Chỉ khi quản lý kinh doanh đồng ý thì thông tin sản phẩm mới được cập nhật. Những yêu cầu đang chờ sẽ được xét duyệt sau.</Alert>
+                <Alert type="info">Product information is updated only after Business Manager approval. Pending requests will be reviewed later.</Alert>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
-                {loading ? <div role="status" className="flex items-center gap-3 rounded-2xl bg-white p-5"><Spinner /> Đang tải yêu cầu...</div>
-                    : !error && (data?.items?.length || 0) === 0 ? <EmptyState title="Chưa có yêu cầu" description="Bạn chưa gửi yêu cầu nào trong danh sách này." />
+                {loading ? <div role="status" className="flex items-center gap-3 rounded-2xl bg-white p-5"><Spinner /> Loading requests...</div>
+                    : !error && (data?.items?.length || 0) === 0 ? <EmptyState title="No Requests" description="You have not submitted any requests in this list." />
                         : !error ? <Table columns={columns} data={data.items} /> : null}
                 {!loading && !error && data && data.totalPages > 0 && (
                     <Pagination page={page + 1} totalPages={data.totalPages} onChange={(value) => setPage(value - 1)} />

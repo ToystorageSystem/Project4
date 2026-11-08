@@ -82,7 +82,7 @@ export async function getInTransitShipmentDetail(
 // 4. Xu ly thong bao loi API.
 export function inTransitShipmentErrorMessage(
     error,
-    fallback = "Không tải được dữ liệu vận chuyển."
+    fallback = "Unable to load shipment data."
 ) {
     // Request bi huy khi chuyen trang / unmount.
     if (
@@ -95,19 +95,19 @@ export function inTransitShipmentErrorMessage(
     const status = error?.response?.status;
 
     if (status === 401) {
-        return "Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+        return "You are not signed in, or your session has expired. Please sign in again.";
     }
 
     if (status === 403) {
-        return "Tài khoản không có quyền xem hàng đang vận chuyển.";
+        return "You do not have permission to view in-transit shipments.";
     }
 
     if (status === 404) {
-        return "Không tìm thấy chuyến vận chuyển.";
+        return "Shipment not found.";
     }
 
     if (!error?.response) {
-        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+        return "Unable to connect to the system. Check your network connection and try again.";
     }
 
     const data = error.response.data;

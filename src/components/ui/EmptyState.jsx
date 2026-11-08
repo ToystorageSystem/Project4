@@ -1,5 +1,5 @@
 export default function EmptyState( {
-    title="Không có dữ liệu",description="Hiện chưa có dữ liệu để hiển thị."
+    title="No Data",description="There is no data to display yet."
 }
 ) {
     return <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">

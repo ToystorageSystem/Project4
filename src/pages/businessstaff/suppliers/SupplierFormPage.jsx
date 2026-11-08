@@ -36,18 +36,18 @@ function validate(form) {
     const errors = {};
     for (const [field, limit] of Object.entries(MAX_LENGTHS)) {
         if (form[field].trim().length > limit) {
-            errors[field] = `Không được vượt quá ${limit} ký tự.`;
+            errors[field] = `Must not exceed ${limit} characters.`;
         }
     }
-    if (!form.name.trim()) errors.name = "Vui lòng nhập tên nhà cung cấp.";
+    if (!form.name.trim()) errors.name = "Please enter a supplier name.";
 
     const phone = form.phone.trim();
     if (phone && !/^\+?[0-9]{9,15}$/.test(phone)) {
-        errors.phone = "Số điện thoại gồm 9–15 chữ số, có thể bắt đầu bằng dấu +.";
+        errors.phone = "Phone number must contain 9–15 digits and may start with +.";
     }
     const email = form.email.trim();
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        errors.email = "Email không đúng định dạng.";
+        errors.email = "Invalid email address format.";
     }
     return errors;
 }
@@ -102,7 +102,7 @@ export default function SupplierFormPage() {
             .catch((requestError) => {
                 if (!controller.signal.aborted) {
                     setLoadFailed(true);
-                    setError(supplierErrorMessage(requestError, "Không tải được thông tin nhà cung cấp."));
+                    setError(supplierErrorMessage(requestError, "Unable to load supplier details."));
                 }
             })
             .finally(() => {
@@ -131,10 +131,10 @@ export default function SupplierFormPage() {
                 : await createSupplier(toPayload(form));
             navigate(`${ROOT}/${saved.id}`, {
                 replace: true,
-                state: { notice: editing ? "Cập nhật nhà cung cấp thành công." : "Thêm nhà cung cấp thành công." },
+                state: { notice: editing ? "Supplier updated successfully." : "Supplier added successfully." },
             });
         } catch (requestError) {
-            setError(supplierErrorMessage(requestError, "Không thể lưu thông tin nhà cung cấp."));
+            setError(supplierErrorMessage(requestError, "Unable to save supplier details."));
         } finally {
             setSaving(false);
         }
@@ -144,43 +144,43 @@ export default function SupplierFormPage() {
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
-                    title={editing ? "Chỉnh sửa nhà cung cấp" : "Thêm nhà cung cấp"}
-                    description="Nhập thông tin nhà cung cấp. Các ô có dấu * là bắt buộc."
-                    actions={<Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${supplierId}` : ROOT)}>← Quay lại</Button>}
+                    title={editing ? "Edit Supplier" : "Add Supplier"}
+                    description="Enter supplier details. Fields marked * are required."
+                    actions={<Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${supplierId}` : ROOT)}>← Back</Button>}
                 />
                 {loading ? (
-                    <div role="status" className="flex items-center gap-3 rounded-2xl bg-white p-8 text-sm text-slate-600"><Spinner /> Đang tải thông tin...</div>
+                    <div role="status" className="flex items-center gap-3 rounded-2xl bg-white p-8 text-sm text-slate-600"><Spinner /> Loading information...</div>
                 ) : loadFailed ? (
                     <Card className="max-w-5xl">
                         <div role="alert"><Alert type="danger">{error}</Alert></div>
-                        <Button type="button" variant="ghost" className="mt-4" onClick={() => navigate(ROOT)}>← Về danh sách</Button>
+                        <Button type="button" variant="ghost" className="mt-4" onClick={() => navigate(ROOT)}>← Back to List</Button>
                     </Card>
                 ) : (
                     <Card className="max-w-5xl">
                         {error && <div role="alert" className="mb-5"><Alert type="danger">{error}</Alert></div>}
                         {editing && supplierCode && (
                             <div className="mb-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                                Mã nhà cung cấp (không thể sửa): <span className="font-semibold text-slate-900">{supplierCode}</span>
+                                Supplier Code (read-only): <span className="font-semibold text-slate-900">{supplierCode}</span>
                             </div>
                         )}
                         {!editing && (
                             <div className="mb-5 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-800">
-                                Mã nhà cung cấp sẽ được tạo tự động sau khi lưu.
+                                Supplier code will be generated automatically after saving.
                             </div>
                         )}
                         <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                             <div className="grid gap-5 md:grid-cols-2">
-                                <Input label="Tên nhà cung cấp *" required maxLength={200} value={form.name} onChange={change("name")} error={errors.name} placeholder="Nhập tên nhà cung cấp" />
-                                <Input label="Mã số thuế" maxLength={50} value={form.taxCode} onChange={change("taxCode")} error={errors.taxCode} placeholder="Mã số thuế (nếu có)" />
-                                <Input label="Người liên hệ" maxLength={150} value={form.contactPerson} onChange={change("contactPerson")} error={errors.contactPerson} placeholder="Họ và tên" />
-                                <Input label="Chức vụ người liên hệ" maxLength={100} value={form.contactPosition} onChange={change("contactPosition")} error={errors.contactPosition} placeholder="Chức vụ" />
-                                <Input label="Số điện thoại" type="tel" maxLength={16} value={form.phone} onChange={change("phone")} error={errors.phone} placeholder="09xxxxxxxx" />
+                                <Input label="Supplier Name *" required maxLength={200} value={form.name} onChange={change("name")} error={errors.name} placeholder="Enter supplier name" />
+                                <Input label="Tax ID" maxLength={50} value={form.taxCode} onChange={change("taxCode")} error={errors.taxCode} placeholder="Tax ID (optional)" />
+                                <Input label="Contact Person" maxLength={150} value={form.contactPerson} onChange={change("contactPerson")} error={errors.contactPerson} placeholder="Full Name" />
+                                <Input label="Contact Position" maxLength={100} value={form.contactPosition} onChange={change("contactPosition")} error={errors.contactPosition} placeholder="Position" />
+                                <Input label="Phone Number" type="tel" maxLength={16} value={form.phone} onChange={change("phone")} error={errors.phone} placeholder="09xxxxxxxx" />
                                 <Input label="Email" type="email" maxLength={150} value={form.email} onChange={change("email")} error={errors.email} placeholder="supplier@example.com" />
                                 <div className="md:col-span-2">
-                                    <Input label="Địa chỉ" maxLength={255} value={form.address} onChange={change("address")} error={errors.address} placeholder="Địa chỉ nhà cung cấp" />
+                                    <Input label="Address" maxLength={255} value={form.address} onChange={change("address")} error={errors.address} placeholder="Supplier Address" />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <TextArea label="Ghi chú" rows={4} value={form.note} onChange={change("note")} placeholder="Thông tin bổ sung (nếu có)" />
+                                    <TextArea label="Notes" rows={4} value={form.note} onChange={change("note")} placeholder="Additional Information (optional)" />
                                 </div>
                             </div>
 
@@ -188,13 +188,13 @@ export default function SupplierFormPage() {
                                 <Checkbox
                                     checked={confirmedSharedData}
                                     onChange={(event) => setConfirmedSharedData(event.target.checked)}
-                                    label="Tôi đã kiểm tra và đồng ý lưu thông tin nhà cung cấp."
+                                    label="I have reviewed and agree to save the supplier details."
                                 />
                             </div>
                             <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
-                                <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${supplierId}` : ROOT)}>Hủy</Button>
+                                <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${supplierId}` : ROOT)}>Cancel</Button>
                                 <Button type="submit" disabled={saving || !confirmedSharedData}>
-                                    {saving ? "Saving..." : editing ? "Lưu thay đổi" : "Tạo nhà cung cấp"}
+                                    {saving ? "Saving..." : editing ? "Save Changes" : "Create Supplier"}
                                 </Button>
                             </div>
                         </form>

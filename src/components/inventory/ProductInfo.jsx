@@ -10,7 +10,7 @@ export default function ProductInfo( {
             product.name||product.productName
         }
     </h3>
-    <p className="text-sm text-slate-500">Mã:  {
+    <p className="text-sm text-slate-500">Code:  {
         product.code||product.productCode||"-"
     }
 </p>

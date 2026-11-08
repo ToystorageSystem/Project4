@@ -1,6 +1,6 @@
 import LocationInfo from "./LocationInfo";
 export default function WarehouseInfo( {
-    warehouse,title="Kho"
+    warehouse,title="Warehouse"
 }
 ) {
     if(!warehouse)return null;

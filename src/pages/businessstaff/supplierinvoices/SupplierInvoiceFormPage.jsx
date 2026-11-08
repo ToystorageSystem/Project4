@@ -102,7 +102,7 @@ export default function SupplierInvoiceFormPage() {
             (!Number.isSafeInteger(Number(invoiceId)) ||
                 Number(invoiceId) <= 0)
         ) {
-            setLoadError("Mã hóa đơn không hợp lệ.");
+            setLoadError("Invalid invoice code.");
             setLoading(false);
             return () => controller.abort();
         }
@@ -118,7 +118,7 @@ export default function SupplierInvoiceFormPage() {
 
                 if (!Array.isArray(items)) {
                     throw new Error(
-                        "Danh sách nhà cung cấp không hợp lệ."
+                        "Invalid supplier list data."
                     );
                 }
 
@@ -127,7 +127,7 @@ export default function SupplierInvoiceFormPage() {
                 if (editing) {
                     if (!loaded || !EDITABLE.has(loaded.status)) {
                         setLoadError(
-                            "Chỉ hóa đơn nháp hoặc đang chờ kiểm tra mới được sửa."
+                            "Only Draft or Pending Verification invoices can be edited."
                         );
                         return;
                     }
@@ -159,7 +159,7 @@ export default function SupplierInvoiceFormPage() {
                     setLoadError(
                         supplierInvoiceErrorMessage(
                             err,
-                            "Không tải được dữ liệu tạo/sửa hóa đơn."
+                            "Unable to load invoice form data."
                         )
                     );
                 }
@@ -195,7 +195,7 @@ export default function SupplierInvoiceFormPage() {
 
                 if (!Array.isArray(items)) {
                     throw new Error(
-                        "Danh sách đơn mua hàng không hợp lệ."
+                        "Invalid purchase order list data."
                     );
                 }
 
@@ -206,7 +206,7 @@ export default function SupplierInvoiceFormPage() {
                     setOrderError(
                         supplierInvoiceErrorMessage(
                             err,
-                            "Không tải được đơn mua hàng của nhà cung cấp."
+                            "Unable to load supplier purchase orders."
                         )
                     );
                 }
@@ -258,7 +258,7 @@ export default function SupplierInvoiceFormPage() {
         attachmentFile &&
         (!FILE_EXTENSION_PATTERN.test(attachmentFile.name) ||
             attachmentFile.size <= 0)
-            ? "Vui lòng chọn file PDF, XML, JPG, JPEG, PNG hoặc WEBP không rỗng."
+            ? "Select a non-empty PDF, XML, JPG, JPEG, PNG, or WEBP file."
             : "";
 
     const changeField = (key, value) => {
@@ -323,7 +323,7 @@ export default function SupplierInvoiceFormPage() {
                 Number(saved.id) <= 0
             ) {
                 throw new Error(
-                    "Chưa nhận được mã hóa đơn. Vui lòng kiểm tra danh sách trước khi tạo lại."
+                    "No invoice code was returned. Check the invoice list before creating another one."
                 );
             }
 
@@ -341,7 +341,7 @@ export default function SupplierInvoiceFormPage() {
                         Number(uploaded.id) !== Number(saved.id)
                     ) {
                         throw new Error(
-                            "Chưa xác nhận được tệp đã đính kèm. Vui lòng kiểm tra chi tiết hóa đơn."
+                            "Unable to verify the attachment. Check the invoice details."
                         );
                     }
                 } catch (uploadError) {
@@ -350,20 +350,20 @@ export default function SupplierInvoiceFormPage() {
                         uploadError?.response || uploadError?.request
                             ? supplierInvoiceErrorMessage(
                                   uploadError,
-                                  "Tải tệp lên thất bại."
+                                  "File upload failed."
                               )
                             : uploadError?.message ||
-                              "Tải tệp lên thất bại.";
+                              "File upload failed.";
 
                     setSavedInvoiceId(Number(saved.id));
 
                     setAttachmentWarning(
-                        `Hóa đơn ${
+                        `Invoice ${
                             editing
-                                ? "đã được cập nhật"
-                                : "nháp đã được tạo"
-                        } thành công, nhưng chưa xác nhận được việc đính kèm file: ${message} ` +
-                            "Không tạo lại hóa đơn. Hãy mở chi tiết để kiểm tra và tải lại nếu cần."
+                                ? "was updated"
+                                : "draft was created"
+                        } successfully, but the attachment could not be verified: ${message} ` +
+                            "Do not create the invoice again. Open its details to check and retry the upload if needed."
                     );
 
                     return;
@@ -378,7 +378,7 @@ export default function SupplierInvoiceFormPage() {
             setSaveError(
                 supplierInvoiceErrorMessage(
                     err,
-                    "Không thể lưu hóa đơn. Hãy kiểm tra dữ liệu."
+                    "Unable to save invoice. Check the data."
                 )
             );
         } finally {
@@ -395,12 +395,12 @@ export default function SupplierInvoiceFormPage() {
                 <PageHeader
                     title={
                         editing
-                            ? `Sửa hóa đơn ${
+                            ? `Edit Invoice ${
                                   original?.invoiceNumber || ""
                               }`
-                            : "Tạo hóa đơn nhà cung cấp"
+                            : "Create Supplier Invoice"
                     }
-                    description="Chọn nhà cung cấp, đơn mua hàng và nhập thông tin hóa đơn. Tổng tiền được tính tự động từ số tiền trước thuế và tiền thuế."
+                    description="Select a supplier and purchase order, then enter invoice details. The total is calculated automatically from the subtotal and tax."
                     actions={
                         <Button
                             type="button"
@@ -413,18 +413,16 @@ export default function SupplierInvoiceFormPage() {
                                 )
                             }
                         >
-                            ← Quay lại
+                            ← Back
                         </Button>
                     }
                 />
 
                 <Alert type="info">
-                    Tạo hóa đơn mới ở trạng thái{" "}
-                    <strong>Nháp</strong>. Chỉ hóa đơn{" "}
-                    <strong>Nháp</strong> hoặc{" "}
-                    <strong>Chờ xác minh</strong> mới được
-                    sửa. Mọi thao tác lưu sẽ ghi dữ liệu thật lên
-                    hệ thống và cần xác nhận riêng.
+                    A new invoice is created with status{" "}
+                    <strong>Draft</strong>. Only invoices in{" "}
+                    <strong>Draft</strong> or{" "}
+                    <strong>Pending Verification</strong> can be edited. Saving changes updates the system and requires separate confirmation.
                 </Alert>
 
                 {loadError && (
@@ -454,7 +452,7 @@ export default function SupplierInvoiceFormPage() {
                                         )
                                     }
                                 >
-                                    Mở chi tiết hóa đơn để kiểm tra file
+                                    Open Invoice Details to verify the attachment
                                 </Button>
                             </div>
                         </Alert>
@@ -464,7 +462,7 @@ export default function SupplierInvoiceFormPage() {
                 {problems.length > 0 && (
                     <div role="alert">
                         <Alert type="danger">
-                            <strong>Thông tin không hợp lệ:</strong>
+                            <strong>Invalid information:</strong>
 
                             <ul className="mt-2 list-disc space-y-1 pl-5">
                                 {problems.map((item, index) => (
@@ -479,7 +477,7 @@ export default function SupplierInvoiceFormPage() {
                     <Card>
                         <span className="flex items-center gap-2 text-sm text-slate-600">
                             <Spinner />
-                            Đang tải dữ liệu...
+                            Loading data...
                         </span>
                     </Card>
                 ) : (
@@ -491,7 +489,7 @@ export default function SupplierInvoiceFormPage() {
                             {editing && original && (
                                 <Card className="flex items-center justify-between gap-3">
                                     <span className="text-sm text-slate-600">
-                                        Mã nội bộ:{" "}
+                                        Internal ID:{" "}
                                         <strong>
                                             {original.invoiceCode || "—"}
                                         </strong>
@@ -505,17 +503,17 @@ export default function SupplierInvoiceFormPage() {
 
                             <Card>
                                 <h2 className="mb-4 text-lg font-semibold text-slate-900">
-                                    Nhà cung cấp và đơn mua hàng
+                                    Supplier & Purchase Order
                                 </h2>
 
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <Select
-                                        label="Nhà cung cấp *"
+                                        label="Supplier *"
                                         value={form.supplierId}
                                         options={[
                                             {
                                                 value: "",
-                                                label: "-- Chọn nhà cung cấp --",
+                                                label: "-- Select Supplier --",
                                             },
                                             ...suppliers.map((item) => ({
                                                 value: String(item.id),
@@ -532,14 +530,14 @@ export default function SupplierInvoiceFormPage() {
                                     />
 
                                     <Select
-                                        label="Đơn mua hàng liên kết *"
+                                        label="Linked Purchase Order *"
                                         value={form.purchaseOrderId}
                                         options={[
                                             {
                                                 value: "",
                                                 label: loadingOrders
-                                                    ? "Đang tải đơn mua hàng..."
-                                                    : "-- Chọn đơn mua hàng --",
+                                                    ? "Loading purchase orders..."
+                                                    : "-- Select Purchase Order --",
                                             },
                                             ...(!loadingOrders &&
                                             editing &&
@@ -548,7 +546,7 @@ export default function SupplierInvoiceFormPage() {
                                                 ? [
                                                       {
                                                           value: form.purchaseOrderId,
-                                                          label: `Đơn mua hàng số ${form.purchaseOrderId} (không còn đủ điều kiện)`,
+                                                          label: `Purchase Order # ${form.purchaseOrderId} (no longer eligible)`,
                                                       },
                                                   ]
                                                 : []),
@@ -592,19 +590,19 @@ export default function SupplierInvoiceFormPage() {
                                     !orderError &&
                                     purchaseOrders.length === 0 && (
                                         <p className="mt-3 text-sm text-amber-700">
-                                            Nhà cung cấp này chưa có đơn mua hàng phù hợp để lập hóa đơn.
+                                            This supplier has no eligible purchase orders for invoicing.
                                         </p>
                                     )}
 
                                 {selectedOrder && (
                                     <p className="mt-3 text-sm text-slate-600">
-                                        Giá trị đơn mua hàng:{" "}
+                                        Purchase Order Amount:{" "}
                                         <strong>
                                             {formatSupplierInvoiceMoney(
                                                 selectedOrder.totalAmount
                                             )}
                                         </strong>
-                                        . Ngày giao dự kiến:{" "}
+                                        . Expected Delivery Date:{" "}
                                         {selectedOrder.expectedDeliveryDate ||
                                             "—"}
                                         .
@@ -614,15 +612,15 @@ export default function SupplierInvoiceFormPage() {
 
                             <Card>
                                 <h2 className="mb-4 text-lg font-semibold text-slate-900">
-                                    Thông tin hóa đơn
+                                    Invoice Information
                                 </h2>
 
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <Input
-                                        label="Số hóa đơn * (tối đa 100 ký tự)"
+                                        label="Invoice Number * (maximum 100 characters)"
                                         value={form.invoiceNumber}
                                         maxLength={100}
-                                        placeholder="Nhập số hóa đơn từ nhà cung cấp"
+                                        placeholder="Enter the supplier's invoice number"
                                         onChange={(event) =>
                                             changeField(
                                                 "invoiceNumber",
@@ -632,11 +630,11 @@ export default function SupplierInvoiceFormPage() {
                                     />
 
                                     <div className="self-end pb-2 text-sm text-slate-500">
-                                        Số hóa đơn không được trùng với hóa đơn khác của cùng nhà cung cấp.
+                                        Invoice number must be unique for each supplier.
                                     </div>
 
                                     <Input
-                                        label="Ngày phát hành hóa đơn *"
+                                        label="Invoice Issue Date *"
                                         type="date"
                                         value={form.invoiceDate}
                                         onChange={(event) =>
@@ -648,7 +646,7 @@ export default function SupplierInvoiceFormPage() {
                                     />
 
                                     <Input
-                                        label="Hạn thanh toán *"
+                                        label="Payment Due Date *"
                                         type="date"
                                         min={
                                             form.invoiceDate ||
@@ -672,27 +670,23 @@ export default function SupplierInvoiceFormPage() {
                                             className="mt-3 text-sm font-medium text-red-600"
                                             role="alert"
                                         >
-                                            Hạn thanh toán không được
-                                            trước ngày phát hành.
+                                            Payment due date cannot be before the invoice issue date.
                                         </p>
                                     )}
                             </Card>
 
                             <Card>
                                 <h2 className="mb-2 text-lg font-semibold text-slate-900">
-                                    Giá trị hóa đơn
+                                    Invoice Amount
                                 </h2>
 
                                 <p className="mb-4 text-sm text-slate-500">
-                                    Nhập tiền bằng số, không có dấu
-                                    phân cách hàng nghìn (ví dụ:
-                                    12000000). Hỗ trợ tối đa 2 chữ số
-                                    thập phân.
+                                    Enter amounts as numbers without thousands separators (e.g., 12000000). Up to two decimal places are supported.
                                 </p>
 
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                     <Input
-                                        label="Giá trị trước thuế (VND) *"
+                                        label="Subtotal Before Tax (VND) *"
                                         type="text"
                                         inputMode="decimal"
                                         value={form.subtotal}
@@ -706,7 +700,7 @@ export default function SupplierInvoiceFormPage() {
                                     />
 
                                     <Input
-                                        label="Tiền thuế (VND) *"
+                                        label="Tax Amount (VND) *"
                                         type="text"
                                         inputMode="decimal"
                                         value={form.taxAmount}
@@ -720,7 +714,7 @@ export default function SupplierInvoiceFormPage() {
                                     />
 
                                     <Input
-                                        label="Tổng tiền (tự tính)"
+                                        label="Total Amount (calculated)"
                                         type="text"
                                         value={
                                             totalCents === null
@@ -741,19 +735,19 @@ export default function SupplierInvoiceFormPage() {
                                     >
                                         <Alert type="warning">
                                             <strong>
-                                                Chênh lệch với đơn mua hàng (trước thuế):
+                                                Difference from Purchase Order (before tax):
                                             </strong>{" "}
                                             {moneyLabel(
                                                 amountDifference
                                             )}{" "}
-                                            (giá trị hóa đơn trừ giá trị đơn mua hàng).
+                                            (invoice subtotal minus purchase order amount).
 
                                             <p className="mt-1">
                                                 PO:{" "}
                                                 {formatSupplierInvoiceMoney(
                                                     selectedOrder.totalAmount
                                                 )}{" "}
-                                                · Hóa đơn trước thuế:{" "}
+                                                · Invoice Subtotal:{" "}
                                                 {moneyLabel(
                                                     subtotalCents
                                                 )}
@@ -774,7 +768,7 @@ export default function SupplierInvoiceFormPage() {
                                                                 .checked
                                                         )
                                                     }
-                                                    label="Tôi đã kiểm tra số tiền chênh lệch và vẫn muốn lưu hóa đơn."
+                                                    label="I have reviewed the amount difference and still wish to save the invoice."
                                                 />
                                             </div>
                                         </Alert>
@@ -784,8 +778,7 @@ export default function SupplierInvoiceFormPage() {
                                 {amountDifference === 0 && (
                                     <div className="mt-4">
                                         <Alert type="success">
-                                            Số tiền trước thuế khớp
-                                            với giá trị đơn mua hàng.
+                                            The invoice subtotal matches the purchase order amount.
                                         </Alert>
                                     </div>
                                 )}
@@ -794,20 +787,18 @@ export default function SupplierInvoiceFormPage() {
                             {/* Phần mới: Đính kèm chứng từ hóa đơn */}
                             <Card>
                                 <h2 className="mb-2 text-lg font-semibold text-slate-900">
-                                    Chứng từ hóa đơn
+                                    Invoice Supporting Document
                                 </h2>
 
                                 <p className="mb-4 text-sm text-slate-600">
-                                    Hỗ trợ tệp PDF, XML và ảnh (JPG, PNG, WEBP).
-                                    Bạn có thể đính kèm chứng từ ngay bây giờ
-                                    hoặc bổ sung sau tại trang chi tiết hóa đơn.
+                                    Supported files: PDF, XML, or images (JPG, PNG, WEBP). You can attach a document now or add it later on the invoice details page.
                                 </p>
 
                                 <label
                                     htmlFor="supplier-invoice-form-attachment"
                                     className="mb-2 block text-sm font-medium text-slate-800"
                                 >
-                                    Chọn file hóa đơn (tùy chọn)
+                                    Select Invoice File (optional)
                                 </label>
 
                                 <input
@@ -835,7 +826,7 @@ export default function SupplierInvoiceFormPage() {
 
                                 {attachmentFile && (
                                     <p className="mt-2 break-all text-xs text-slate-600">
-                                        Đã chọn:{" "}
+                                        Selected:{" "}
                                         {attachmentFile.name} (
                                         {(
                                             attachmentFile.size /
@@ -868,8 +859,8 @@ export default function SupplierInvoiceFormPage() {
                                         }
                                         label={
                                             attachmentFile
-                                                ? "Tôi đồng ý lưu hóa đơn và đính kèm tệp chứng từ."
-                                                : "Tôi đã kiểm tra và đồng ý lưu hóa đơn vào hệ thống."
+                                                ? "I agree to save the invoice and attach the supporting document."
+                                                : "I have reviewed and agree to save the invoice to the system."
                                         }
                                     />
                                 </div>
@@ -886,7 +877,7 @@ export default function SupplierInvoiceFormPage() {
                                             )
                                         }
                                     >
-                                        Hủy
+                                        Cancel
                                     </Button>
 
                                     <Button
@@ -905,18 +896,16 @@ export default function SupplierInvoiceFormPage() {
                                         {saving
                                             ? "Saving..."
                                             : editing
-                                              ? "Lưu thay đổi hóa đơn"
+                                              ? "Save Invoice Changes"
                                               : attachmentFile
-                                                ? "Tạo hóa đơn nháp và tải file"
-                                                : "Tạo hóa đơn nháp"}
+                                                ? "Create Draft Invoice and Upload File"
+                                                : "Create Draft Invoice"}
                                     </Button>
                                 </div>
 
                                 {liveProblems.length > 0 && (
                                     <p className="mt-3 text-xs text-slate-500">
-                                        Form cần điền đủ các trường
-                                        bắt buộc và giá trị hợp lệ
-                                        trước khi lưu.
+                                        Complete all required fields with valid information before saving.
                                     </p>
                                 )}
                             </Card>

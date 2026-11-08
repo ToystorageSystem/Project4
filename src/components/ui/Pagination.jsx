@@ -10,7 +10,7 @@ export default function Pagination( {
     onClick= {
         ()=>onChange?.(page-1)
     }
-    >Trước</Button>
+    >Previous</Button>
     <span className="text-sm text-slate-600"> {
         page
     }

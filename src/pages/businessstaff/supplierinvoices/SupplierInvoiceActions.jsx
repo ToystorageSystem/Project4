@@ -56,12 +56,12 @@ export function SupplierInvoiceCancelAction({ invoice, onUpdated }) {
         try {
             const updated = await cancelSupplierInvoice(invoice.id, reason.trim());
             if (!updated || Number(updated.id) !== Number(invoice.id) || updated.status !== "CANCELLED") {
-                throw new Error("Chưa xác nhận được hóa đơn đã hủy. Vui lòng tải lại để kiểm tra.");
+                throw new Error("Unable to confirm invoice cancellation. Reload to check its status.");
             }
             closeAfterSuccess();
-            onUpdated(updated, `Đã hủy hóa đơn ${invoice.invoiceNumber || invoice.invoiceCode}. Lý do được lưu trong lịch sử hóa đơn.`);
+            onUpdated(updated, `Invoice cancelled ${invoice.invoiceNumber || invoice.invoiceCode}. The reason was saved in the invoice history.`);
         } catch (requestError) {
-            setError(mutationError(requestError, "Không thể hủy hóa đơn. Hãy kiểm tra trạng thái hiện tại."));
+            setError(mutationError(requestError, "Unable to cancel invoice. Check its current status."));
         } finally {
             setSaving(false);
         }
@@ -76,29 +76,29 @@ export function SupplierInvoiceCancelAction({ invoice, onUpdated }) {
     return (
         <>
             <Button type="button" variant="danger" onClick={openModal}>
-                Hủy hóa đơn
+                Cancel Invoice
             </Button>
             <Modal
                 open={open}
-                title="Xác nhận hủy hóa đơn nhà cung cấp"
+                title="Confirm Supplier Invoice Cancellation"
                 onClose={close}
                 footer={
                     <>
-                        <Button type="button" variant="outline" onClick={close} disabled={saving}>Đóng</Button>
+                        <Button type="button" variant="outline" onClick={close} disabled={saving}>Close</Button>
                         <Button type="button" variant="danger" onClick={cancelInvoice} disabled={saving || !validReason || !confirmed}>
-                            {saving ? "Đang hủy..." : "Xác nhận hủy hóa đơn"}
+                            {saving ? "Cancelling..." : "Confirm Invoice Cancellation"}
                         </Button>
                     </>
                 }
             >
                 <div className="space-y-4">
                     <p className="text-sm leading-6 text-slate-700">
-                        Hóa đơn <strong>{invoice.invoiceNumber || invoice.invoiceCode}</strong> sẽ chuyển từ
-                        <strong> {formatBusinessStatus(invoice.status)}</strong> sang <strong>Đã hủy</strong>. Hóa đơn không bị xóa khỏi hệ thống.
+                        Invoice <strong>{invoice.invoiceNumber || invoice.invoiceCode}</strong> will change from
+                        <strong> {formatBusinessStatus(invoice.status)}</strong> sang <strong>Cancelled</strong>. The invoice will not be deleted.
                     </p>
                     <div>
                         <label htmlFor="supplier-invoice-cancel-reason" className="mb-2 block text-sm font-medium text-slate-800">
-                            Lý do hủy * (tối đa 500 ký tự)
+                            Cancellation Reason * (maximum 500 characters)
                         </label>
                         <textarea
                             id="supplier-invoice-cancel-reason"
@@ -111,15 +111,15 @@ export function SupplierInvoiceCancelAction({ invoice, onUpdated }) {
                             maxLength={500}
                             rows={4}
                             disabled={saving}
-                            placeholder="Nhập lý do hủy hóa đơn nháp sai..."
+                            placeholder="Enter the reason for cancelling an incorrect draft invoice..."
                             className="w-full resize-y rounded-xl border border-slate-300 p-3 text-sm text-slate-900 outline-none focus:border-[#f25d19] focus:ring-1 focus:ring-[#f25d19]"
                         />
-                        <p className="mt-1 text-right text-xs text-slate-500">{reason.length}/500 ký tự</p>
+                        <p className="mt-1 text-right text-xs text-slate-500">{reason.length}/500 characters</p>
                     </div>
                     <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-slate-700">
                         <input type="checkbox" className="mt-1 accent-[#f25d19]" checked={confirmed}
                             onChange={(event) => setConfirmed(event.target.checked)} disabled={saving} />
-                        <span>Tôi đã kiểm tra và đồng ý hủy hóa đơn này.</span>
+                        <span>I have reviewed and agree to cancel this invoice.</span>
                     </label>
                     {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 </div>
@@ -139,7 +139,7 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
     if (!supplierInvoiceCanChange(invoice)) return null;
 
     const fileError = file && (!FILE_EXTENSION_PATTERN.test(file.name) || file.size <= 0)
-        ? "Vui lòng chọn một tệp PDF, XML, JPG, JPEG, PNG hoặc WEBP không rỗng."
+        ? "Select a non-empty PDF, XML, JPG, JPEG, PNG, or WEBP file."
         : "";
 
     const upload = async () => {
@@ -150,15 +150,15 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
         try {
             const updated = await uploadSupplierInvoiceAttachment(invoice.id, file);
             if (!updated || Number(updated.id) !== Number(invoice.id)) {
-                throw new Error("Chưa thể xác nhận tệp đã được đính kèm. Vui lòng kiểm tra lại hóa đơn.");
+                throw new Error("Unable to confirm file attachment. Check the invoice again.");
             }
             setFile(null);
             setFileInputKey((value) => value + 1);
             setConfirmed(false);
-            setSuccess("Tải file thành công. Liên kết file được cập nhật ở phần trên.");
-            onUpdated(updated, "Đã đính kèm tệp chứng từ cho hóa đơn.");
+            setSuccess("File uploaded successfully. The attachment link has been updated above.");
+            onUpdated(updated, "Supporting document attached to the invoice.");
         } catch (requestError) {
-            setError(mutationError(requestError, "Không tải được tệp chứng từ. Vui lòng kiểm tra tệp và thử lại."));
+            setError(mutationError(requestError, "Unable to upload supporting document. Check the file and try again."));
         } finally {
             setSaving(false);
         }
@@ -166,13 +166,12 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
 
     return (
         <div className="mt-5 space-y-3 border-t border-slate-200 pt-5">
-            <h4 className="font-semibold text-slate-900">Tải tệp hóa đơn lên</h4>
+            <h4 className="font-semibold text-slate-900">Upload Invoice Document</h4>
             <p className="text-sm text-slate-600">
-                Hỗ trợ PDF, XML, JPG, JPEG, PNG, WEBP. Chọn file mới cùng loại sẽ cập nhật đường dẫn file hiện có.
-                Bạn có thể đính kèm tệp chứng từ cho hóa đơn. Chọn tệp có dung lượng phù hợp.
+                Supported formats: PDF, XML, JPG, JPEG, PNG, WEBP. Selecting a new file of the same type updates the existing attachment link. Attach a document of an appropriate file size.
             </p>
             <label htmlFor="supplier-invoice-attachment" className="block text-sm font-medium text-slate-800">
-                Chọn file hóa đơn *
+                Select Invoice File *
             </label>
             <input
                 key={fileInputKey}
@@ -188,18 +187,18 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
                 }}
                 className="block w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#fff1e9] file:px-3 file:py-2 file:font-semibold file:text-[#c94810]"
             />
-            {file && <p className="break-all text-xs text-slate-600">Đã chọn: {file.name} ({(file.size / 1024).toFixed(1)} KB)</p>}
+            {file && <p className="break-all text-xs text-slate-600">Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)</p>}
             {fileError && <div role="alert"><Alert type="danger">{fileError}</Alert></div>}
             <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-slate-700">
                 <input type="checkbox" className="mt-1 accent-[#f25d19]" checked={confirmed}
                     onChange={(event) => setConfirmed(event.target.checked)} disabled={saving} />
-                <span>Tôi đã kiểm tra và đồng ý đính kèm tệp vào hóa đơn.</span>
+                <span>I have reviewed and agree to attach this document to the invoice.</span>
             </label>
             {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
             {success && <div role="status"><Alert type="success">{success}</Alert></div>}
             <div className="flex justify-end">
                 <Button type="button" onClick={upload} disabled={saving || !file || !!fileError || !confirmed}>
-                    {saving ? "Đang tải file..." : "Tải tệp hóa đơn lên"}
+                    {saving ? "Uploading file..." : "Upload Invoice Document"}
                 </Button>
             </div>
         </div>

@@ -1,11 +1,11 @@
 import { formatBusinessStatus } from "../../../utils/viStatus";
 export const PURCHASE_ORDER_STATUS_OPTIONS = [
-    { value: "", label: "Tất cả trạng thái" },
-    { value: "DRAFT", label: "Đơn nháp" },
-    { value: "ORDERED", label: "Đã đặt hàng" },
-    { value: "PARTIALLY_RECEIVED", label: "Đã nhận một phần" },
-    { value: "COMPLETED", label: "Đã nhận đủ hàng" },
-    { value: "CANCELLED", label: "Đã hủy" },
+    { value: "", label: "All Statuses" },
+    { value: "DRAFT", label: "Draft Order" },
+    { value: "ORDERED", label: "Ordered" },
+    { value: "PARTIALLY_RECEIVED", label: "Partially Received" },
+    { value: "COMPLETED", label: "Fully Received" },
+    { value: "CANCELLED", label: "Cancelled" },
 ];
 
 const statusLabels = Object.fromEntries(
@@ -35,14 +35,14 @@ export function formatPurchaseOrderMoney(value) {
     if (value === null || value === undefined || value === "") return "—";
     const amount = Number(value);
     return Number.isFinite(amount)
-        ? `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(amount)} đ`
+        ? `${new Intl.NumberFormat("en-GB", { maximumFractionDigits: 2 }).format(amount)} VND`
         : "—";
 }
 
 export function formatPurchaseOrderDate(value) {
     if (!value) return "—";
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("vi-VN");
+    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("en-GB");
 }
 
 export function formatExpectedDeliveryDate(value) {

@@ -14,26 +14,26 @@ import { listRejectedProductRequests } from "../../api/business/rejectedProducts
 
 const QUICK_ACTIONS = [
     {
-        title: "Thêm sản phẩm",
-        description: "Tạo yêu cầu sản phẩm mới",
+        title: "Add Product",
+        description: "Submit New Product Request",
         to: "/business/products/new",
         iconPath: "M12 5v14M5 12h14",
     },
     {
-        title: "Tạo đơn mua hàng",
-        description: "Lập đơn mua từ nhà cung cấp",
+        title: "Create Purchase Order",
+        description: "Create Supplier Purchase Order",
         to: "/business/purchase-orders/new",
         iconPath: "M8 3h8l4 4v14H4V3h4m8 0v5h4M8 12h8M8 16h8",
     },
     {
-        title: "Tạo phiếu điều chuyển",
-        description: "Điều chuyển hàng giữa các kho",
+        title: "Create Stock Transfer",
+        description: "Transfer Stock Between Warehouses",
         to: "/business/stock-transfers/new",
         iconPath: "M4 7h16m0 0-4-4m4 4-4 4M20 17H4m0 0 4-4m-4 4 4 4",
     },
     {
-        title: "Quản lý nhà cung cấp",
-        description: "Xem và cập nhật nhà cung cấp",
+        title: "Supplier Management",
+        description: "View and update supplier information",
         to: "/business/suppliers",
         iconPath: "M3 21h18M5 21V7l7-4 7 4v14M9 11h6M9 15h6M9 19h6",
     },
@@ -110,7 +110,7 @@ export default function BusinessStaffDashboardPage() {
             .then((data) => {
                 if (!cancelled) {
                     if (!Array.isArray(data)) {
-                        throw new Error("Dữ liệu nhà cung cấp chưa hợp lệ");
+                        throw new Error("Invalid supplier data");
                     }
                     setSuppliers(data);
                 }
@@ -119,8 +119,8 @@ export default function BusinessStaffDashboardPage() {
                 if (!cancelled) {
                     setError(
                         err.response?.status === 403
-                            ? "Tài khoản chưa được cấp quyền xem nhà cung cấp."
-                            : "Không tải được danh sách nhà cung cấp. Vui lòng thử lại."
+                            ? "You do not have permission to view suppliers."
+                            : "Unable to load suppliers. Please try again."
                     );
                 }
             })
@@ -143,11 +143,11 @@ export default function BusinessStaffDashboardPage() {
             items={businessStaffMenuItems}
         >
             <div className="space-y-6">
-                <PageHeader title="Tổng quan công việc" />
+                <PageHeader title="Work Overview" />
 
                 {loading && (
                     <p role="status" className="text-sm text-slate-500">
-                        Đang tải dữ liệu nhà cung cấp...
+                        Loading supplier data...
                     </p>
                 )}
 
@@ -164,27 +164,27 @@ export default function BusinessStaffDashboardPage() {
                     <>
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                             <MetricCard
-                                label="Tổng nhà cung cấp"
+                                label="Total Suppliers"
                                 value={formatCount(suppliers.length)}
                             />
                             <MetricCard
-                                label="Đang hoạt động"
+                                label="Active"
                                 value={formatCount(activeCount)}
                             />
                             <MetricCard
-                                label="Ngừng hoạt động"
+                                label="Inactive"
                                 value={formatCount(suppliers.length - activeCount)}
                             />
                             <MetricCard
-                                label="Tổng sản phẩm"
+                                label="Total Products"
                                 value={formatCount(extraStats.products)}
                             />
                             <MetricCard
-                                label="Đơn mua hàng nháp"
+                                label="Draft Purchase Orders"
                                 value={formatCount(extraStats.draftOrders)}
                             />
                             <MetricCard
-                                label="Yêu cầu bị từ chối"
+                                label="Rejected Requests"
                                 value={formatCount(extraStats.rejectedRequests)}
                             />
                         </div>
@@ -199,10 +199,10 @@ export default function BusinessStaffDashboardPage() {
                                     id="quick-actions-title"
                                     className="text-lg font-bold text-slate-900"
                                 >
-                                    Thao tác nhanh
+                                    Quick Actions
                                 </h2>
                                 <p className="text-xs text-slate-500">
-                                    Truy cập nhanh các chức năng thường dùng
+                                    Quick access to frequently used features
                                 </p>
                             </div>
 
@@ -257,7 +257,7 @@ export default function BusinessStaffDashboardPage() {
                                 id="pending-tasks-title"
                                 className="text-lg font-bold text-slate-900"
                             >
-                                Công việc cần xử lý
+                                Action Required
                             </h2>
 
                             <div className="grid gap-3 lg:grid-cols-2">
@@ -282,15 +282,15 @@ export default function BusinessStaffDashboardPage() {
 
                                     <span className="min-w-0 flex-1">
                                         <span className="block text-sm font-semibold text-slate-900">
-                                            Đơn mua hàng nháp
+                                            Draft Purchase Orders
                                         </span>
 
                                         <span className="mt-1 block text-xs leading-5 text-slate-500">
                                             {extraStats.draftOrders === null
-                                                ? "Chưa có dữ liệu."
+                                                ? "No data available."
                                                 : extraStats.draftOrders > 0
-                                                    ? "Có đơn nháp cần tiếp tục hoàn thiện."
-                                                    : "Hiện không có đơn nháp."}
+                                                    ? "Draft purchase orders require completion."
+                                                    : "No draft purchase orders."}
                                         </span>
                                     </span>
 
@@ -327,15 +327,15 @@ export default function BusinessStaffDashboardPage() {
 
                                     <span className="min-w-0 flex-1">
                                         <span className="block text-sm font-semibold text-slate-900">
-                                            Yêu cầu sản phẩm bị từ chối
+                                            Rejected Product Requests
                                         </span>
 
                                         <span className="mt-1 block text-xs leading-5 text-slate-500">
                                             {extraStats.rejectedRequests === null
-                                                ? "Chưa có dữ liệu."
+                                                ? "No data available."
                                                 : extraStats.rejectedRequests > 0
-                                                    ? "Xem lý do từ chối và chỉnh sửa để gửi lại."
-                                                    : "Không có yêu cầu bị từ chối."}
+                                                    ? "Review rejection reasons and revise requests for resubmission."
+                                                    : "No rejected requests."}
                                         </span>
                                     </span>
 
@@ -357,31 +357,31 @@ export default function BusinessStaffDashboardPage() {
                             <div className="border-b border-slate-200 p-5">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h2 className="font-semibold text-slate-900">
-                                        Nhà cung cấp
+                                        Suppliers
                                     </h2>
 
                                     <Link
                                         to="/business/suppliers"
                                         className="text-sm font-semibold text-[#c94810] hover:underline"
                                     >
-                                        Xem tất cả →
+                                        View All →
                                     </Link>
                                 </div>
                             </div>
 
                             {suppliers.length === 0 ? (
                                 <p className="p-5 text-sm text-slate-500">
-                                    Không có nhà cung cấp nào.
+                                    No suppliers found.
                                 </p>
                             ) : (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-slate-50 text-slate-500">
                                             <tr>
-                                                <th className="px-5 py-3">Mã nhà cung cấp</th>
-                                                <th className="px-5 py-3">Tên nhà cung cấp</th>
+                                                <th className="px-5 py-3">Supplier Code</th>
+                                                <th className="px-5 py-3">Supplier Name</th>
                                                 <th className="px-5 py-3">Email</th>
-                                                <th className="px-5 py-3">Trạng thái</th>
+                                                <th className="px-5 py-3">Status</th>
                                             </tr>
                                         </thead>
 

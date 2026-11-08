@@ -17,7 +17,7 @@ export default function PutawayTaskHeader({
                         onClick={onBack}
                         className="mb-3 text-sm font-medium text-slate-600 transition hover:text-[#f25d19]"
                     >
-                        ← Quay lại Putaway
+                        ← Back to Putaway
                     </button>
 
                     <h1 className="text-2xl font-bold text-slate-900">
@@ -26,21 +26,21 @@ export default function PutawayTaskHeader({
 
                     <div className="mt-3 grid gap-x-8 gap-y-1 text-sm text-slate-600 sm:grid-cols-2">
                         <div>
-                            Phiếu nhập:{" "}
+                            Goods Receipt:{" "}
                             <span className="font-medium text-slate-900">
                                 {task.receiptCode || "-"}
                             </span>
                         </div>
 
                         <div>
-                            Kho:{" "}
+                            Warehouse:{" "}
                             <span className="font-medium text-slate-900">
                                 {task.warehouseName || "-"}
                             </span>
                         </div>
 
                         <div>
-                            Nhân viên:{" "}
+                            Staff Member:{" "}
                             <span className="font-medium text-slate-900">
                                 {task.assignedToName || "-"}
                             </span>
@@ -59,8 +59,8 @@ export default function PutawayTaskHeader({
                             disabled={starting}
                         >
                             {starting
-                                ? "Đang bắt đầu..."
-                                : "Bắt đầu Putaway"}
+                                ? "Starting..."
+                                : "Start Putaway"}
                         </Button>
                     )}
                 </div>

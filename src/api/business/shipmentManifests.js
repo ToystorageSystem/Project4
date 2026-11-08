@@ -84,26 +84,26 @@ export async function getShipmentManifestDetail(
 // 3. Xu ly thong bao loi.
 export function shipmentManifestErrorMessage(
     error,
-    fallback = "Không tải được danh sách bảng kê đi hàng."
+    fallback = "Unable to load shipment manifests."
 ) {
     if (error?.code === "ERR_CANCELED") {
         return "";
     }
 
     if (error?.response?.status === 401) {
-        return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+        return "Your session has expired. Please sign in again.";
     }
 
     if (error?.response?.status === 403) {
-        return "Tài khoản không có quyền xem bảng kê đi hàng.";
+        return "You do not have permission to view shipment manifests.";
     }
 
     if (error?.response?.status === 404) {
-        return "Không tìm thấy bảng kê đi hàng.";
+        return "Shipment manifest not found.";
     }
 
     if (!error?.response) {
-        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+        return "Unable to connect to the system. Check your network connection and try again.";
     }
 
     const data = error.response.data;

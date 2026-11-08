@@ -52,15 +52,15 @@ export async function uploadSupplierInvoiceAttachment(invoiceId, file) {
     return response.data;
 }
 
-export function supplierInvoiceErrorMessage(error, fallback = "Không tải được danh sách hóa đơn nhà cung cấp.") {
+export function supplierInvoiceErrorMessage(error, fallback = "Unable to load supplier invoices.") {
     if (error?.response?.status === 403) {
-        return "Bạn không có quyền thực hiện thao tác này.";
+        return "You do not have permission to perform this action.";
     }
     if (error?.response?.status === 401) {
-        return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+        return "Your session has expired. Please sign in again.";
     }
     if (!error?.response) {
-        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+        return "Unable to connect to the system. Check your network connection and try again.";
     }
     const body = error.response.data;
     const message = typeof body === "string" ? body : body?.message;

@@ -26,23 +26,23 @@ import { todayVietnamIso } from "./purchaseOrderDraft";
 const SUPPLIER_FEEDBACK_WRITE_ENABLED =
     import.meta.env.VITE_ENABLE_SUPPLIER_FEEDBACK_WRITE === "true";
 const ORDER_STATUSES = [
-    { value: "", label: "-- Chọn trạng thái --" },
-    { value: "AVAILABLE", label: "Có đủ hàng" },
-    { value: "PARTIALLY_AVAILABLE", label: "Có một phần hàng" },
-    { value: "OUT_OF_STOCK", label: "Hết hàng" },
-    { value: "DISCONTINUED", label: "Ngừng cung cấp" },
-    { value: "PRICE_CHANGED", label: "Thay đổi giá" },
-    { value: "DELAYED", label: "Giao hàng trễ" },
-    { value: "DECLINED", label: "Từ chối đơn hàng" },
+    { value: "", label: "-- Select Status --" },
+    { value: "AVAILABLE", label: "Fully Available" },
+    { value: "PARTIALLY_AVAILABLE", label: "Partially Available" },
+    { value: "OUT_OF_STOCK", label: "Out of Stock" },
+    { value: "DISCONTINUED", label: "Supply Discontinued" },
+    { value: "PRICE_CHANGED", label: "Price Change" },
+    { value: "DELAYED", label: "Delayed Delivery" },
+    { value: "DECLINED", label: "Order Rejected" },
 ];
 
 const ITEM_STATUSES = [
-    { value: "PENDING", label: "Chờ xử lý" },
-    { value: "AVAILABLE", label: "Có hàng" },
-    { value: "PARTIALLY_AVAILABLE", label: "Có một phần" },
-    { value: "OUT_OF_STOCK", label: "Hết hàng" },
-    { value: "DISCONTINUED", label: "Ngừng cung cấp" },
-    { value: "PRICE_CHANGED", label: "Thay đổi giá" },
+    { value: "PENDING", label: "Pending" },
+    { value: "AVAILABLE", label: "Available" },
+    { value: "PARTIALLY_AVAILABLE", label: "Partially Available" },
+    { value: "OUT_OF_STOCK", label: "Out of Stock" },
+    { value: "DISCONTINUED", label: "Supply Discontinued" },
+    { value: "PRICE_CHANGED", label: "Price Change" },
 ];
 
 function parseQuantity(text) {
@@ -92,11 +92,11 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
     const errors = [];
 
     if (proposedDate && proposedDate < todayVietnamIso()) {
-    errors.push("Ngày NCC đề xuất không được ở quá khứ.");
+    errors.push("Supplier proposed date cannot be in the past.");
     }
 
     if (agreedDate && agreedDate < todayVietnamIso()) {
-        errors.push("Ngày giao đã thống nhất không được ở quá khứ.");
+        errors.push("Agreed delivery date cannot be in the past.");
     }
 
     if (
@@ -106,7 +106,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
         agreedDate <= requestedDate
     ) {
         errors.push(
-            "Ngày giao đã thống nhất phải sau ngày nhận hàng mong muốn khi NCC báo giao trễ."
+            "For delayed deliveries, the agreed delivery date must be later than the requested delivery date."
         );
     }
 
@@ -116,9 +116,9 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
     if (proposedDate && !isIsoDate(proposedDate)) errors.push("Invalid supplier proposed date.");
     if (agreedDate && !isIsoDate(agreedDate)) errors.push("Invalid agreed delivery date.");
     if (orderStatus === "DELAYED") {
-        if (!proposedDate) errors.push("Ngày NCC đề xuất is required for delayed delivery.");
+        if (!proposedDate) errors.push("Supplier proposed date is required for delayed delivery.");
         else if (isIsoDate(proposedDate) && requestedDate && proposedDate <= requestedDate) {
-            errors.push("Ngày NCC đề xuất must be after the requested delivery date.");
+            errors.push("Supplier proposed date must be after the requested delivery date.");
         }
     }
     if (agreedDate && ["PENDING_RESPONSE", "DECLINED"].includes(orderStatus)) {
@@ -142,7 +142,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
                 quantity > ordered)
         ) {
             errors.push(
-                `${name}: số lượng xác nhận phải từ ${received} đến ${ordered}.`
+                `${name}: confirmed quantity must be between ${received} and ${ordered}.`
             );
         }
 
@@ -151,7 +151,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
             (!Number.isFinite(price) || price <= 0)
         ) {
             errors.push(
-                `${name}: giá xác nhận phải lớn hơn 0, tối đa 2 chữ số thập phân.`
+                `${name}: confirmed price must be greater than zero, with at most two decimal places.`
             );
         }
 
@@ -160,7 +160,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
             quantity !== ordered
         ) {
             errors.push(
-                `${name}: trạng thái Có hàng yêu cầu xác nhận đủ ${ordered}.`
+                `${name}: Available status requires confirmation of the full ordered quantity ${ordered}.`
             );
         }
 
@@ -170,7 +170,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
                 quantity >= ordered)
         ) {
             errors.push(
-                `${name}: trạng thái Có một phần cần số lượng lớn hơn 0 và nhỏ hơn số lượng đặt.`
+                `${name}: Partially Available status requires a confirmed quantity greater than zero and less than the ordered quantity.`
             );
         }
 
@@ -179,7 +179,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
             quantity !== received
         ) {
             errors.push(
-                `${name}: số lượng xác nhận phải bằng số đã nhận (${received}).`
+                `${name}: confirmed quantity must match the quantity already received (${received}).`
             );
         }
 
@@ -189,7 +189,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
                 price === originalPrice)
         ) {
             errors.push(
-                `${name}: khi thay đổi giá, giá mới phải khác giá hiện tại.`
+                `${name}: for a price change, the new price must differ from the current price.`
             );
         }
 
@@ -229,7 +229,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
 
         if (!hasShortage || !hasSupply) {
             errors.push(
-                "Có một phần hàng yêu cầu ít nhất một sản phẩm thiếu/hết/ngừng cung cấp và ít nhất một sản phẩm có số lượng xác nhận lớn hơn 0."
+                "Partially Available requires at least one item with a shortage, out-of-stock, or supply-discontinued status and at least one item with a positive confirmed quantity."
             );
         }
     }
@@ -240,7 +240,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
         statuses.some((status) => status !== "PENDING")
     ) {
         errors.push(
-            "Đang chờ phản hồi yêu cầu tất cả sản phẩm ở trạng thái Đang chờ."
+            "Pending Response requires all items to be Pending."
         );
     }
 
@@ -249,7 +249,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
         statuses.some((status) => status !== "AVAILABLE")
     ) {
         errors.push(
-            "Có đủ hàng yêu cầu tất cả sản phẩm ở trạng thái Có hàng."
+            "Fully Available requires all items to be Available."
         );
     }
 
@@ -258,7 +258,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
         statuses.some((status) => status !== "OUT_OF_STOCK")
     ) {
         errors.push(
-            "Hết hàng yêu cầu tất cả sản phẩm ở trạng thái Hết hàng."
+            "Out of Stock requires all items to be Out of Stock."
         );
     }
 
@@ -267,7 +267,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
         !statuses.includes("DISCONTINUED")
     ) {
         errors.push(
-            "Ngừng cung cấp cần ít nhất một sản phẩm ngừng cung cấp."
+            "Supply Discontinued requires at least one discontinued item."
         );
     }
 
@@ -276,7 +276,7 @@ function validateAndBuild(rows, orderStatus, orderNote, proposedDate, agreedDate
         !statuses.includes("PRICE_CHANGED")
     ) {
         errors.push(
-            "Thay đổi giá cần ít nhất một sản phẩm có giá thay đổi."
+            "Price Change requires at least one item with a changed price."
         );
     }
 
@@ -350,7 +350,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                         Number(purchaseOrder.id)
                 ) {
                     throw new Error(
-                        "Dữ liệu phản hồi không hợp lệ."
+                        "Invalid supplier response data."
                     );
                 }
 
@@ -371,7 +371,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                     )
                 ) {
                     throw new Error(
-                        "Dữ liệu sản phẩm trong đơn không khớp với phản hồi của nhà cung cấp."
+                        "Supplier response items do not match the purchase order items."
                     );
                 }
 
@@ -434,10 +434,10 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                     error?.isAxiosError
                         ? supplierFeedbackErrorMessage(
                               error,
-                              "Không tải được phản hồi sản phẩm."
+                              "Unable to load supplier item responses."
                           )
                         : error?.message ||
-                          "Không tải được phản hồi sản phẩm."
+                          "Unable to load supplier item responses."
                 );
             })
             .finally(() => {
@@ -522,7 +522,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
             setConfirmOpen(false);
             setPreview(null);
             setSaveError(
-                "Dữ liệu đã thay đổi. Vui lòng kiểm tra và xác nhận lại."
+                "The data has changed. Review and confirm again."
             );
             return;
         }
@@ -541,7 +541,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
             setPreview(null);
 
             setSaveSuccess(
-                "Đã ghi nhận phản hồi nhà cung cấp thành công."
+                "Supplier response recorded successfully."
             );
 
             // Doc lai du lieu moi nhat tu Backend va cap nhat trang chi tiet PO.
@@ -551,7 +551,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
             setSaveError(
                 supplierFeedbackErrorMessage(
                     error,
-                    "Không lưu được phản hồi nhà cung cấp."
+                    "Unable to save supplier response."
                 )
             );
         } finally {
@@ -565,7 +565,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
         return (
             <Card>
                 <h2 className="text-lg font-bold text-slate-900">
-                    Phản hồi nhà cung cấp
+                    Supplier Response
                 </h2>
 
                 <div className="mt-4">
@@ -587,8 +587,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                                     {saveSuccess}
                                 </div>
                             )}
-                        Chỉ có thể ghi nhận phản hồi cho đơn đã gửi nhà cung cấp
-                        hoặc đã nhận một phần hàng.
+                        Supplier responses can be recorded only for orders already submitted to the supplier or partially received.
                     </Alert>
                 </div>
             </Card>
@@ -601,11 +600,11 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h2 className="text-lg font-bold text-slate-900">
-                            Ghi nhận phản hồi nhà cung cấp
+                            Record Supplier Response
                         </h2>
 
                         <p className="mt-1 text-sm text-slate-500">
-                            Ghi nhận thông tin nhà cung cấp trả lời cho từng sản phẩm trong đơn.
+                            Record the supplier's response for each product on the purchase order.
                         </p>
                     </div>
 
@@ -615,7 +614,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                         disabled={loading}
                         onClick={() => setReload((value) => value + 1)}
                     >
-                        Tải lại
+                        Reload
                     </Button>
                 </div>
 
@@ -623,15 +622,14 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
 
                 <Alert type="info">
                     {SUPPLIER_FEEDBACK_WRITE_ENABLED
-                        ? "Phản hồi của nhà cung cấp được cập nhật khi bạn nhấn Xác nhận lưu."
-                        : "Bạn có thể xem và chỉnh sửa nội dung trước. Chức năng lưu hiện chưa khả dụng."}
+                        ? "Supplier feedback is updated when you select Confirm Save."
+                        : "You may review and edit the response first. Saving is currently unavailable."}
                 </Alert>
 
 
 
                 <p className="text-xs text-slate-500">
-                    Bạn có thể kiểm tra lại trạng thái, số lượng, đơn giá và ghi chú
-                    của những lần phản hồi trước khi cập nhật.
+                    You can review previous response statuses, quantities, unit prices, and notes before updating.
                 </p>
 
 
@@ -639,7 +637,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                     <div className="flex items-center gap-3 py-5">
                         <Spinner />
                         <span className="text-sm text-slate-600">
-                            Đang tải dữ liệu phản hồi...
+                            Loading supplier response data...
                         </span>
                     </div>
                 ) : loadError ? (
@@ -650,7 +648,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                     <>
                         <div className="grid gap-4 md:grid-cols-2">
                             <Select
-                                label="Trạng thái phản hồi toàn đơn *"
+                                label="Overall Supplier Response Status *"
                                 value={orderStatus}
                                 options={ORDER_STATUSES}
                                 onChange={(event) => {
@@ -662,7 +660,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
 
                             <div className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
                                 <p className="text-xs font-semibold text-slate-500">
-                                    ĐƠN MUA HÀNG
+                                    PURCHASE ORDER
                                 </p>
                                 <strong>
                                     {purchaseOrder.orderCode}
@@ -674,17 +672,17 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                         </div>
 
                         <p className="text-sm text-slate-600">
-                            Ngày nhận hàng mong muốn: <strong>{purchaseOrder.expectedDeliveryDate || "Not specified"}</strong>
+                            Requested Delivery Date: <strong>{purchaseOrder.expectedDeliveryDate || "Not specified"}</strong>
                         </p>
                         {purchaseOrder.status === "ORDERED" && !orderStatus && (
                             <p className="text-sm text-amber-700">
-                                Đang chờ nhà cung cấp xác nhận. Chỉ ghi nhận phản hồi khi nhà cung cấp đã trả lời.
+                                Awaiting supplier confirmation. Record a response only after the supplier has replied.
                             </p>
                         )}
                         <div className="grid gap-4 md:grid-cols-2">
                             <Input
                                 type="date"
-                                label="Ngày giao hàng NCC đề xuất"
+                                label="Supplier Proposed Delivery Date"
                                 min={minSupplierProposedDate(
                                     orderStatus,
                                     purchaseOrder.expectedDeliveryDate
@@ -698,7 +696,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                             />
                             <Input
                                 type="date"
-                                label="Ngày giao đã thống nhất (chỉ nhập khi hai bên đồng ý)"
+                                label="Agreed Delivery Date (only when both parties agree)"
                                 min={minSupplierProposedDate(
                                     orderStatus,
                                     purchaseOrder.expectedDeliveryDate
@@ -711,19 +709,19 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                             />
                         </div>
                         <TextArea
-                            label="Ghi chú phản hồi toàn đơn"
+                            label="Overall Response Notes"
                             rows={3}
                             value={orderNote}
                             onChange={(event) => {
                                 setOrderNote(event.target.value);
                                 setPreview(null);
                             }}
-                            placeholder="Ví dụ: Nhà cung cấp đồng ý giao hàng vào ngày đã hẹn..."
+                            placeholder="Example: Supplier agreed to deliver on the confirmed date..."
                         />
 
                         <div className="space-y-4">
                             <h3 className="font-semibold text-slate-900">
-                                Phản hồi từng sản phẩm
+                                Item-Level Responses
                             </h3>
 
                             {rows.map((row, index) => (
@@ -737,22 +735,19 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                                         </h4>
 
                                         <p className="mt-1 text-xs text-slate-500">
-                                            {row.productCode} |
-                                            Mã dòng hàng: {row.id}
+                                            {row.productCode} | Item ID: {row.id}
                                         </p>
 
                                         <p className="mt-2 text-sm text-slate-600">
-                                            Đặt: {row.orderedQuantity} |
-                                            Đã nhận: {row.receivedQuantity} |
-                                            Giá trong đơn: {Number(
+                                            Ordered: {row.orderedQuantity} | Received: {row.receivedQuantity} | Order Unit Price: {Number(
                                                 row.originalUnitPrice
-                                            ).toLocaleString("vi-VN")} đ
+                                            ).toLocaleString("en-GB")} VND
                                         </p>
                                     </div>
 
                                     <div className="grid gap-4 md:grid-cols-3">
                                         <Select
-                                            label="Trạng thái sản phẩm *"
+                                            label="Product Availability Status *"
                                             options={ITEM_STATUSES}
                                             value={row.status}
                                             onChange={(event) =>
@@ -768,7 +763,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                                             type="number"
                                             min="0"
                                             step="1"
-                                            label="SL xác nhận"
+                                            label="Confirmed Qty"
                                             value={row.confirmedQuantity}
                                             onChange={(event) =>
                                                 updateRow(
@@ -777,14 +772,14 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                                                     event.target.value
                                                 )
                                             }
-                                            placeholder="Nhập số lượng"
+                                            placeholder="Enter quantity"
                                         />
 
                                         <Input
                                             type="number"
                                             min="0.01"
                                             step="0.01"
-                                            label="Giá nhà cung cấp báo (VNĐ)"
+                                            label="Supplier Quoted Price (VND)"
                                             value={row.confirmedUnitPrice}
                                             onChange={(event) =>
                                                 updateRow(
@@ -793,12 +788,12 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                                                     event.target.value
                                                 )
                                             }
-                                            placeholder="Nhập giá mới"
+                                            placeholder="Enter new price"
                                         />
                                     </div>
 
                                     <TextArea
-                                        label="Ghi chú sản phẩm"
+                                        label="Item Notes"
                                         rows={2}
                                         value={row.note}
                                         onChange={(event) =>
@@ -808,7 +803,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                                                 event.target.value
                                             )
                                         }
-                                        placeholder="Ghi chú của nhà cung cấp về sản phẩm..."
+                                        placeholder="Supplier notes about this product..."
                                     />
                                 </div>
                             ))}
@@ -833,7 +828,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                                 onClick={handleReviewSave}
                                 disabled={loading || rows.length === 0}
                             >
-                                Lưu phản hồi
+                                Save Response
                             </Button>
                         </div>
                   </>
@@ -842,7 +837,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
 
             <Modal
                 open={confirmOpen && Boolean(preview)}
-                title="Xác nhận phản hồi nhà cung cấp"
+                title="Confirm Supplier Response"
                 onClose={() => setConfirmOpen(false)}
                 footer={
                     <div className="flex justify-end gap-3">
@@ -851,7 +846,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                             variant="outline"
                             onClick={() => setConfirmOpen(false)}
                         >
-                            Đóng
+                            Close
                         </Button>
 
 
@@ -866,10 +861,10 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                             }
                         >
                             {!SUPPLIER_FEEDBACK_WRITE_ENABLED
-                                ? "Xác nhận lưu (chưa kích hoạt)"
+                                ? "Confirm Save (disabled)"
                                 : saving
                                 ? "Saving..."
-                                : "Xác nhận lưu"}
+                                : "Confirm Save"}
                         </Button>
 
                     </div>
@@ -878,23 +873,23 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                 <div className="space-y-4">
                     <Alert type="info">
                         {SUPPLIER_FEEDBACK_WRITE_ENABLED
-                            ? "Vui lòng kiểm tra kỹ thông tin phản hồi. Khi nhấn Xác nhận lưu, dữ liệu sẽ được cập nhật vào hệ thống."
-                            : "Đây là bước xem trước xác nhận. Chức năng ghi dữ liệu chưa được kích hoạt."}
+                            ? "Review the response carefully. Selecting Confirm Save will update the system."
+                            : "This is a confirmation preview. Saving is not enabled."}
                     </Alert>
 
 
                     <p className="text-sm text-slate-700">
-                        Đơn mua hàng:{" "}
+                        Purchase Order:{" "}
                         <strong>{purchaseOrder.orderCode}</strong>
                     </p>
 
                     <p className="text-sm text-slate-700">
-                        Nhà cung cấp:{" "}
+                        Supplier:{" "}
                         <strong>{purchaseOrder.supplierName}</strong>
                     </p>
 
                     <p className="text-sm text-slate-700">
-                        Số sản phẩm phản hồi:{" "}
+                        Responded Items:{" "}
                         <strong>{preview?.items?.length ?? 0}</strong>
                     </p>
 
@@ -902,7 +897,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                     <div className="max-h-72 space-y-4 overflow-y-auto rounded-xl bg-slate-50 p-4">
                         <div className="space-y-2 text-sm">
                             <p>
-                                Trạng thái phản hồi:{" "}
+                                Response Status:{" "}
                                 <strong>
                                     {ORDER_STATUSES.find(
                                         (s) => s.value === preview?.supplierResponseStatus
@@ -911,7 +906,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                             </p>
 
                             <p>
-                                Ghi chú toàn đơn:{" "}
+                                Overall Notes:{" "}
                                 {preview?.supplierResponseNote || "None"}
                             </p>
                             <p>Supplier proposed delivery: {preview?.supplierProposedDeliveryDate || "—"}</p>
@@ -920,7 +915,7 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
 
                         <div className="border-t border-slate-200 pt-3">
                             <h4 className="mb-3 font-semibold text-slate-900">
-                                Chi tiết sản phẩm
+                                Product Details
                             </h4>
 
                             <div className="space-y-3">
@@ -937,11 +932,11 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                                             className="space-y-1 rounded-lg border border-slate-200 bg-white p-3 text-sm"
                                         >
                                             <p className="font-semibold text-slate-900">
-                                                {product?.productName || "Sản phẩm"}
+                                                {product?.productName || "Product"}
                                             </p>
 
                                             <p>
-                                                Trạng thái:{" "}
+                                                Status:{" "}
                                                 {ITEM_STATUSES.find(
                                                     (s) =>
                                                         s.value ===
@@ -950,28 +945,28 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
                                             </p>
 
                                             <p>
-                                                Số lượng xác nhận:{" "}
+                                                Confirmed Quantity:{" "}
                                                 {item.confirmedQuantity ?? "—"}
                                             </p>
 
                                             <p>
-                                                Giá mua ban đầu:{" "}
+                                                Original Purchase Price:{" "}
                                                 {Number(
                                                     product?.originalUnitPrice ?? 0
-                                                ).toLocaleString("vi-VN")} đ
+                                                ).toLocaleString("en-GB")} VND
                                             </p>
 
                                             <p>
-                                                Giá nhà cung cấp báo:{" "}
+                                                Supplier Quoted Price:{" "}
                                                 {item.confirmedUnitPrice == null
-                                                    ? "Chưa báo giá"
+                                                    ? "Not Quoted"
                                                     : `${Number(
                                                         item.confirmedUnitPrice
-                                                    ).toLocaleString("vi-VN")} đ`}
+                                                    ).toLocaleString("en-GB")} VND`}
                                             </p>
 
                                             <p>
-                                                Ghi chú:{" "}
+                                                Notes:{" "}
                                                 {item.supplierResponseNote || "None"}
                                             </p>
                                         </div>

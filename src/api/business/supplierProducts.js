@@ -33,10 +33,10 @@ export async function deleteSupplierProductLink(linkId) {
     await api.delete(`/supplier-products/${linkId}`);
 }
 
-export function supplierProductErrorMessage(error, fallback = "Không thực hiện được thao tác.") {
-    if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-    if (error?.response?.status === 403) return "Bạn chưa được cấp quyền thay đổi nhà cung cấp của sản phẩm.";
-    if (!error?.response) return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+export function supplierProductErrorMessage(error, fallback = "Unable to complete the action.") {
+    if (error?.response?.status === 401) return "Your session has expired. Please sign in again.";
+    if (error?.response?.status === 403) return "You do not have permission to change a product's supplier.";
+    if (!error?.response) return "Unable to connect to the system. Check your network connection and try again.";
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;
     return friendlyBusinessError(error, fallback);

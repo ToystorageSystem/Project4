@@ -10,8 +10,8 @@ export default function PutawayItemList({
     if (items.length === 0) {
         return (
             <EmptyState
-                title="Không có sản phẩm"
-                description="Putaway task này chưa có sản phẩm để thực hiện."
+                title="No Products"
+                description="This putaway task has no items to process."
             />
         );
     }

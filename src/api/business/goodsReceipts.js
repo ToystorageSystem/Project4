@@ -43,12 +43,12 @@ export async function getBusinessGoodsReceipts(filters = {}, signal) {
     return response.data;
 }
 
-export function goodsReceiptErrorMessage(error, fallback = "Không thể hoàn tất yêu cầu. Vui lòng thử lại.") {
+export function goodsReceiptErrorMessage(error, fallback = "Unable to complete your request. Please try again.") {
     if (error?.response?.status === 403) {
-        return "Bạn không có quyền thực hiện thao tác này.";
+        return "You do not have permission to perform this action.";
     }
     if (!error?.response) {
-        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+        return "Unable to connect to the system. Check your network connection and try again.";
     }
     const data = error.response.data;
     const message = typeof data === "string" ? data : data?.message;

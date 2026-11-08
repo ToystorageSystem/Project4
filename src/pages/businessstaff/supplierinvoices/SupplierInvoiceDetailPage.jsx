@@ -59,18 +59,18 @@ export default function SupplierInvoiceDetailPage() {
         setError("");
         setLoading(true);
         if (!Number.isSafeInteger(id) || id <= 0) {
-            setError("Mã hóa đơn không hợp lệ.");
+            setError("Invalid invoice code.");
             setLoading(false);
             return () => controller.abort();
         }
         getSupplierInvoiceDetail(id, controller.signal)
             .then((data) => {
                 if (controller.signal.aborted) return;
-                if (!data || typeof data !== "object" || !data.id) throw new Error("Thông tin hóa đơn chưa hợp lệ");
+                if (!data || typeof data !== "object" || !data.id) throw new Error("Invalid invoice information");
                 setDetail(data);
             })
             .catch((requestError) => {
-                if (!controller.signal.aborted) setError(supplierInvoiceErrorMessage(requestError, "Không tải được chi tiết hóa đơn."));
+                if (!controller.signal.aborted) setError(supplierInvoiceErrorMessage(requestError, "Unable to load invoice details."));
             })
             .finally(() => {
                 if (!controller.signal.aborted) setLoading(false);
@@ -85,17 +85,17 @@ export default function SupplierInvoiceDetailPage() {
     };
 
     const lineColumns = [
-        { key: "productCode", label: "Mã sản phẩm", render: (value) => value || "—" },
-        { key: "productName", label: "Sản phẩm", render: (value) => value || "—" },
-        { key: "orderedQuantity", label: "Số lượng đặt", render: (value) => value ?? "—" },
-        { key: "receivedQuantity", label: "Số lượng đã nhận", render: (value) => value ?? "—" },
-        { key: "unitPrice", label: "Giá PO", render: formatSupplierInvoiceMoney },
-        { key: "lineTotal", label: "Thành tiền đơn mua hàng", render: formatSupplierInvoiceMoney },
+        { key: "productCode", label: "Product Code", render: (value) => value || "—" },
+        { key: "productName", label: "Product", render: (value) => value || "—" },
+        { key: "orderedQuantity", label: "Ordered Quantity", render: (value) => value ?? "—" },
+        { key: "receivedQuantity", label: "Received Quantity", render: (value) => value ?? "—" },
+        { key: "unitPrice", label: "PO Unit Price", render: formatSupplierInvoiceMoney },
+        { key: "lineTotal", label: "Purchase Order Line Total", render: formatSupplierInvoiceMoney },
     ];
 
     const attachments = detail ? [
         { label: "Xem PDF", url: detail.pdfFileUrl },
-        { label: "Xem ảnh", url: detail.imageFileUrl },
+        { label: "View Image", url: detail.imageFileUrl },
         { label: "Xem XML", url: detail.xmlFileUrl },
     ].filter((entry) => typeof entry.url === "string" && /^https:\/\/[^\s]+$/i.test(entry.url)) : [];
 
@@ -103,105 +103,105 @@ export default function SupplierInvoiceDetailPage() {
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
-                    title="Chi tiết hóa đơn nhà cung cấp"
-                    description="Xem thông tin hóa đơn và đối chiếu với đơn mua hàng liên quan. Chỉ hóa đơn chưa được xác nhận mới có thể chỉnh sửa."
+                    title="Supplier Invoice Details"
+                    description="View invoice details and reconcile them against the related purchase order. Only unconfirmed invoices can be edited."
                     actions={<>
-                        <Button type="button" variant="outline" onClick={() => navigate(ROOT)}>← Quay lại danh sách</Button>
+                        <Button type="button" variant="outline" onClick={() => navigate(ROOT)}>← Back to List</Button>
                         {detail && supplierInvoiceCanChange(detail) && (
-                            <Button type="button" onClick={() => navigate(`${ROOT}/${detail.id}/edit`)}>Sửa hóa đơn</Button>
+                            <Button type="button" onClick={() => navigate(`${ROOT}/${detail.id}/edit`)}>Edit Invoice</Button>
                         )}
                         {detail && <SupplierInvoiceCancelAction invoice={detail} onUpdated={handleUpdated} />}
-                        <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Làm mới</Button>
+                        <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Refresh</Button>
                     </>}
                 />
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 {notice && <div role="status"><Alert type="success">{notice}</Alert></div>}
                 {loading ? (
                     <div className="flex items-center gap-3 rounded-2xl bg-white p-7 text-sm text-slate-600" role="status">
-                        <Spinner /> Đang tải chi tiết hóa đơn...
+                        <Spinner /> Loading invoice details...
                     </div>
                 ) : detail ? (
                     <>
                         <Card>
                             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
                                 <div>
-                                    <p className="text-sm text-slate-500">Số hóa đơn</p>
+                                    <p className="text-sm text-slate-500">Invoice Number</p>
                                     <h2 className="text-xl font-bold text-slate-900">{detail.invoiceNumber || "—"}</h2>
-                                    <p className="mt-1 text-sm text-slate-500">Mã hệ thống: {detail.invoiceCode || "—"}</p>
+                                    <p className="mt-1 text-sm text-slate-500">System ID: {detail.invoiceCode || "—"}</p>
                                 </div>
                                 <SupplierInvoiceStatusBadge status={detail.status} />
                             </div>
                             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                <DetailField label="Nhà cung cấp" value={detail.supplierName || "—"} />
-                                <DetailField label="Mã nhà cung cấp / Mã số thuế" value={`${detail.supplierCode || "—"} / ${detail.supplierTaxCode || "—"}`} />
-                                <DetailField label="Đơn mua hàng liên kết" value={detail.purchaseOrderId ? (
+                                <DetailField label="Supplier" value={detail.supplierName || "—"} />
+                                <DetailField label="Supplier Code / Tax ID" value={`${detail.supplierCode || "—"} / ${detail.supplierTaxCode || "—"}`} />
+                                <DetailField label="Linked Purchase Order" value={detail.purchaseOrderId ? (
                                     <Link className="text-[#c94810] hover:underline" to={`/business/purchase-orders/${detail.purchaseOrderId}`}>
                                         {detail.purchaseOrderCode || `PO #${detail.purchaseOrderId}`}
                                     </Link>
                                 ) : "—"} />
-                                <DetailField label="Trạng thái đơn mua hàng" value={detail.purchaseOrderStatus || "—"} />
-                                <DetailField label="Ngày phát hành" value={formatSupplierInvoiceDate(detail.invoiceDate)} />
-                                <DetailField label="Hạn thanh toán" value={formatSupplierInvoiceDate(detail.dueDate)} />
-                                <DetailField label="Ký hiệu hóa đơn" value={detail.invoiceSeries || "—"} />
-                                <DetailField label="Mã tra cứu" value={detail.lookupCode || "—"} />
-                                <DetailField label="Người tải lên" value={detail.uploadedByName || "—"} />
-                                <DetailField label="Ngày ghi nhận" value={formatSupplierInvoiceDate(detail.uploadedAt, true)} />
-                                <DetailField label="Cập nhật lần cuối" value={formatSupplierInvoiceDate(detail.updatedAt, true)} />
+                                <DetailField label="Purchase Order Status" value={detail.purchaseOrderStatus || "—"} />
+                                <DetailField label="Issue Date" value={formatSupplierInvoiceDate(detail.invoiceDate)} />
+                                <DetailField label="Due Date" value={formatSupplierInvoiceDate(detail.dueDate)} />
+                                <DetailField label="Invoice Series" value={detail.invoiceSeries || "—"} />
+                                <DetailField label="Verification Code" value={detail.lookupCode || "—"} />
+                                <DetailField label="Uploaded By" value={detail.uploadedByName || "—"} />
+                                <DetailField label="Recorded At" value={formatSupplierInvoiceDate(detail.uploadedAt, true)} />
+                                <DetailField label="Last Updated" value={formatSupplierInvoiceDate(detail.updatedAt, true)} />
                             </div>
-                            {detail.verificationNote && <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">Ghi chú xác nhận: {detail.verificationNote}</div>}
+                            {detail.verificationNote && <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">Confirmation Notes: {detail.verificationNote}</div>}
                         </Card>
                         <Card>
-                            <h3 className="mb-4 text-lg font-semibold text-slate-900">Giá trị hóa đơn</h3>
+                            <h3 className="mb-4 text-lg font-semibold text-slate-900">Invoice Amount</h3>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                <DetailField label="Trước thuế (subtotal)" value={formatSupplierInvoiceMoney(detail.subtotal)} />
-                                <DetailField label="Tiền thuế" value={formatSupplierInvoiceMoney(detail.taxAmount)} />
-                                <DetailField label="Tổng đã gồm thuế" value={formatSupplierInvoiceMoney(detail.totalAmount)} />
+                                <DetailField label="Subtotal (before tax)" value={formatSupplierInvoiceMoney(detail.subtotal)} />
+                                <DetailField label="Tax Amount" value={formatSupplierInvoiceMoney(detail.taxAmount)} />
+                                <DetailField label="Total Including Tax" value={formatSupplierInvoiceMoney(detail.totalAmount)} />
                             </div>
                         </Card>
                         <Card>
                             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                                <h3 className="text-lg font-semibold text-slate-900">Đối chiếu với đơn mua hàng</h3>
+                                <h3 className="text-lg font-semibold text-slate-900">Purchase Order Reconciliation</h3>
                                 <SupplierInvoiceMatchBadge matched={detail.purchaseOrderMatched} />
                             </div>
-                            <p className="mb-4 text-sm text-slate-500">Hệ thống so sánh số tiền <strong>trước thuế</strong> của hóa đơn với giá trị đơn mua hàng.</p>
+                            <p className="mb-4 text-sm text-slate-500">The system compares the invoice <strong>pre-tax amount</strong> with the purchase order amount.</p>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                <DetailField label="Giá trị đơn mua hàng" value={formatSupplierInvoiceMoney(detail.purchaseOrderAmount)} />
-                                <DetailField label="Hóa đơn trước thuế" value={formatSupplierInvoiceMoney(detail.subtotal)} />
-                                <DetailField label="Chênh lệch giá trị trước thuế" value={formatSupplierInvoiceMoney(detail.amountDifference)} />
+                                <DetailField label="Purchase Order Amount" value={formatSupplierInvoiceMoney(detail.purchaseOrderAmount)} />
+                                <DetailField label="Invoice Subtotal" value={formatSupplierInvoiceMoney(detail.subtotal)} />
+                                <DetailField label="Pre-Tax Amount Difference" value={formatSupplierInvoiceMoney(detail.amountDifference)} />
                             </div>
                             {detail.purchaseOrderMatched === false && <div className="mt-4" role="status"><Alert type="warning">
-                                Số tiền trước thuế của hóa đơn khác với đơn mua hàng. Vui lòng kiểm tra trước khi tiếp tục.
-                                {detail.comparisonWarning && <p className="mt-2 text-xs">Thông tin chi tiết: {detail.comparisonWarning}</p>}
+                                The invoice subtotal differs from the purchase order amount. Review before continuing.
+                                {detail.comparisonWarning && <p className="mt-2 text-xs">Details: {detail.comparisonWarning}</p>}
                             </Alert></div>}
-                            {detail.purchaseOrderMatched === true && <div className="mt-4"><Alert type="success">Giá trị trước thuế của hóa đơn khớp với đơn mua hàng.</Alert></div>}
+                            {detail.purchaseOrderMatched === true && <div className="mt-4"><Alert type="success">The invoice subtotal matches the purchase order amount.</Alert></div>}
                         </Card>
                         <Card>
-                            <h3 className="mb-4 text-lg font-semibold text-slate-900">Sản phẩm theo đơn mua hàng</h3>
-                            <p className="mb-4 text-sm text-slate-500">Danh sách sản phẩm được lấy từ đơn mua hàng đã liên kết.</p>
+                            <h3 className="mb-4 text-lg font-semibold text-slate-900">Purchase Order Items</h3>
+                            <p className="mb-4 text-sm text-slate-500">Items are loaded from the linked purchase order.</p>
                             {Array.isArray(detail.purchaseOrderItems) && detail.purchaseOrderItems.length > 0 ? (
                                 <Table columns={lineColumns} data={detail.purchaseOrderItems} />
                             ) : (
-                                <EmptyState title="Đơn mua hàng chưa có thông tin sản phẩm" />
+                                <EmptyState title="No purchase order item information available" />
                             )}
                         </Card>
                         <Card>
-                            <h3 className="mb-3 text-lg font-semibold text-slate-900">File hóa đơn</h3>
+                            <h3 className="mb-3 text-lg font-semibold text-slate-900">Invoice Attachment</h3>
                             {attachments.length > 0 ? (
                                 <div className="flex flex-wrap gap-4 text-sm">
                                     {attachments.map((entry) => <SafeAttachmentLink key={entry.label} label={entry.label} url={entry.url} />)}
                                 </div>
                             ) : (
-                                <p className="text-sm text-slate-500">Hóa đơn này chưa có tệp chứng từ đính kèm.</p>
+                                <p className="text-sm text-slate-500">No supporting document is attached to this invoice.</p>
                             )}
                             {supplierInvoiceCanChange(detail) ? (
                                 <SupplierInvoiceAttachmentUploader invoice={detail} onUpdated={handleUpdated} />
                             ) : (
-                                <p className="mt-4 text-xs text-slate-500">Chỉ hóa đơn nháp hoặc đang chờ kiểm tra mới có thể đính kèm hoặc thay tệp.</p>
+                                <p className="mt-4 text-xs text-slate-500">Attachments can be added or replaced only for Draft or Pending Verification invoices.</p>
                             )}
                         </Card>
-                        <Alert type="info">Chỉ hóa đơn nháp hoặc đang chờ kiểm tra mới được sửa, hủy và đính kèm tệp. Mỗi lần thay đổi đều cần xác nhận.</Alert>
+                        <Alert type="info">Only Draft or Pending Verification invoices can be edited, cancelled, or have attachments added. Confirmation is required for each change.</Alert>
                     </>
-                ) : !error ? <EmptyState title="Không tìm thấy hóa đơn nhà cung cấp" /> : null}
+                ) : !error ? <EmptyState title="Supplier Invoice Not Found" /> : null}
             </div>
         </MainLayout>
     );

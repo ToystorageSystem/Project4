@@ -5,7 +5,7 @@ from "react";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 export default function BarcodeInput( {
-    label="Mã barcode",placeholder="Quét hoặc nhập barcode",onScan
+    label="Barcode",placeholder="Scan or enter barcode",onScan
 }
 ) {
     const[value,setValue]=useState("");
@@ -40,6 +40,6 @@ export default function BarcodeInput( {
     <Button onClick= {
         submit
     }
-    >Xác nhận</Button>
+    >Confirm</Button>
 </div>
 }

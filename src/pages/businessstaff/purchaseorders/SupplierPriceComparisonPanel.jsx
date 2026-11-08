@@ -24,10 +24,10 @@ import TextArea from "../../../components/ui/TextArea";
 const PRICE_DECISION_WRITE_ENABLED =
     import.meta.env.VITE_ENABLE_SUPPLIER_PRICE_DECISION_WRITE === "true";
 const PRICE_CHANGE_LABELS = {
-    INCREASED: "Tăng giá",
-    DECREASED: "Giảm giá",
-    UNCHANGED: "Không thay đổi",
-    NOT_QUOTED: "Chưa báo giá",
+    INCREASED: "Price Increase",
+    DECREASED: "Price Decrease",
+    UNCHANGED: "No Change",
+    NOT_QUOTED: "Not Quoted",
 };
 
 const PRICE_DECISION_UI_PREVIEW =
@@ -36,19 +36,19 @@ const PRICE_DECISION_UI_PREVIEW =
 
 const MOCK_PRICE_DECISION_ITEM = {
     purchaseOrderItemId: -1,
-    productName: "Sản phẩm giả lập - chỉ kiểm thử giao diện",
+    productName: "Demo Product - UI Test Only",
     originalUnitPrice: 120000,
     confirmedUnitPrice: 130000,
 };
 
 
 const RESPONSE_STATUS_LABELS = {
-    PENDING: "Chờ xử lý",
-    AVAILABLE: "Có hàng",
-    PARTIALLY_AVAILABLE: "Có một phần",
-    OUT_OF_STOCK: "Hết hàng",
-    DISCONTINUED: "Ngừng sản xuất",
-    PRICE_CHANGED: "Thay đổi giá",
+    PENDING: "Pending",
+    AVAILABLE: "Available",
+    PARTIALLY_AVAILABLE: "Partially Available",
+    OUT_OF_STOCK: "Out of Stock",
+    DISCONTINUED: "Discontinued",
+    PRICE_CHANGED: "Price Change",
 };
 
 function formatNumber(value) {
@@ -59,7 +59,7 @@ function formatNumber(value) {
     const number = Number(value);
 
     return Number.isFinite(number)
-        ? number.toLocaleString("vi-VN")
+        ? number.toLocaleString("en-GB")
         : String(value);
 }
 
@@ -76,9 +76,9 @@ function formatMoney(value, signed = false) {
 
     const prefix = signed && number > 0 ? "+" : "";
 
-    return `${prefix}${number.toLocaleString("vi-VN", {
+    return `${prefix}${number.toLocaleString("en-GB", {
         maximumFractionDigits: 2,
-    })} đ`;
+    })} VND`;
 }
 
 function formatPercent(value) {
@@ -94,7 +94,7 @@ function formatPercent(value) {
 
     const prefix = number > 0 ? "+" : "";
 
-    return `${prefix}${number.toLocaleString("vi-VN", {
+    return `${prefix}${number.toLocaleString("en-GB", {
         maximumFractionDigits: 2,
     })}%`;
 }
@@ -121,67 +121,67 @@ function PriceChangeBadge({ value }) {
 const columns = [
     {
         key: "productName",
-        label: "Sản phẩm",
+        label: "Product",
         render: (value, item) => (
             <div className="space-y-1">
                 <p className="font-semibold text-slate-800">
                     {value || "—"}
                 </p>
                 <p className="text-xs text-slate-500">
-                    Mã sản phẩm: {item.productId ?? "—"}
+                    Product Code: {item.productId ?? "—"}
                 </p>
             </div>
         ),
     },
     {
         key: "supplierResponseStatus",
-        label: "Phản hồi nhà cung cấp",
+        label: "Supplier Response",
         render: (value) =>
             RESPONSE_STATUS_LABELS[value] || value || "—",
     },
     {
         key: "orderedQuantity",
-        label: "Số lượng đặt",
+        label: "Ordered Quantity",
         render: formatNumber,
     },
     {
         key: "receivedQuantity",
-        label: "SL đã nhận",
+        label: "Received Qty",
         render: formatNumber,
     },
     {
         key: "confirmedQuantity",
-        label: "SL xác nhận",
+        label: "Confirmed Qty",
         render: formatNumber,
     },
     {
         key: "originalUnitPrice",
-        label: "Giá ban đầu",
+        label: "Original Price",
         render: (value) => formatMoney(value),
     },
     {
         key: "confirmedUnitPrice",
-        label: "Giá nhà cung cấp báo",
+        label: "Supplier Quoted Price",
         render: (value) => formatMoney(value),
     },
     {
         key: "differencePerUnit",
-        label: "Chênh lệch / đơn vị",
+        label: "Price Difference / Unit",
         render: (value) => formatMoney(value, true),
     },
     {
         key: "differencePercent",
-        label: "Tỷ lệ chênh lệch",
+        label: "Price Difference (%)",
         render: formatPercent,
     },
     {
         key: "estimatedOrderDifference",
-        label: "Chênh lệch ước tính",
+        label: "Estimated Price Impact",
         render: (value) => formatMoney(value, true),
     },
     {
         key: "priceChange",
-        label: "Biến động",
+        label: "Change",
         render: (value) => <PriceChangeBadge value={value} />,
     },
 ];
@@ -212,7 +212,7 @@ export default function SupplierPriceComparisonPanel({
             !Number.isSafeInteger(numericId) ||
             numericId <= 0
         ) {
-            setError("Mã đơn mua hàng không hợp lệ.");
+            setError("Invalid purchase order ID.");
             setLoading(false);
             return () => controller.abort();
         }
@@ -226,7 +226,7 @@ export default function SupplierPriceComparisonPanel({
 
                 if (!Array.isArray(data?.items)) {
                     throw new Error(
-                        "Dữ liệu so sánh giá không hợp lệ."
+                        "Invalid price comparison data."
                     );
                 }
 
@@ -239,10 +239,10 @@ export default function SupplierPriceComparisonPanel({
                     requestError?.isAxiosError
                         ? supplierFeedbackErrorMessage(
                               requestError,
-                              "Không tải được bảng so sánh giá."
+                              "Unable to load price comparison."
                           )
                         : requestError?.message ||
-                          "Không tải được bảng so sánh giá.";
+                          "Unable to load price comparison.";
 
                 setError(message);
             })
@@ -352,7 +352,7 @@ export default function SupplierPriceComparisonPanel({
         const reason = decisionReason.trim();
 
         if (!reason) {
-            setDecisionError("Vui lòng nhập lý do quyết định.");
+            setDecisionError("Please enter a reason for your decision.");
             return;
         }
 
@@ -386,7 +386,7 @@ export default function SupplierPriceComparisonPanel({
 
         if (!validItem) {
             setDecisionError(
-                "Sản phẩm không còn đủ điều kiện quyết định giá. Vui lòng tải lại dữ liệu."
+                "This product is no longer eligible for a price decision. Reload the data."
             );
             return;
         }
@@ -407,8 +407,8 @@ export default function SupplierPriceComparisonPanel({
 
             setDecisionSuccess(
                 decisionDraft.decision === "ACCEPT"
-                    ? "Đã chấp nhận giá mới thành công."
-                    : "Đã từ chối giá mới thành công."
+                    ? "New supplier price accepted successfully."
+                    : "New supplier price rejected successfully."
             );
 
             setDecisionDraft(null);
@@ -420,7 +420,7 @@ export default function SupplierPriceComparisonPanel({
             setDecisionError(
                 supplierFeedbackErrorMessage(
                     error,
-                    "Không thực hiện được quyết định giá."
+                    "Unable to complete the price decision."
                 )
             );
         } finally {
@@ -433,7 +433,7 @@ export default function SupplierPriceComparisonPanel({
         ...columns,
         {
             key: "priceDecision",
-            label: "Quyết định giá",
+            label: "Price Decision",
             render: (_value, item) => {
                 const originalPrice = Number(item.originalUnitPrice);
                 const quotedPrice = Number(item.confirmedUnitPrice);
@@ -470,7 +470,7 @@ export default function SupplierPriceComparisonPanel({
                             disabled={!canReviewDecision}
                             onClick={() => openDecisionPreview(item, "ACCEPT")}
                         >
-                            Chấp nhận giá
+                            Accept Price
                         </Button>
 
 
@@ -481,7 +481,7 @@ export default function SupplierPriceComparisonPanel({
                             disabled={!canReviewDecision}
                             onClick={() => openDecisionPreview(item, "REJECT")}
                         >
-                            Từ chối giá
+                            Reject Price
                         </Button>
 
 
@@ -489,14 +489,14 @@ export default function SupplierPriceComparisonPanel({
 
                         <p className="text-xs text-slate-500">
                             {item.priceDecision === "ACCEPT"
-                                ? "Đã chấp nhận giá"
+                                ? "Price Accepted"
                                 : item.priceDecision === "REJECT"
-                                ? "Đã từ chối giá"
+                                ? "Price Rejected"
                                 : canReviewDecision
                                     ? PRICE_DECISION_WRITE_ENABLED
-                                        ? "Đủ điều kiện sơ bộ - có thể xem xét quyết định"
-                                        : "Đủ điều kiện sơ bộ - chỉ xem trước"
-                                    : "Chưa đủ điều kiện quyết định giá"}
+                                        ? "Preliminarily Eligible - Decision Available"
+                                        : "Preliminarily Eligible - Preview Only"
+                                    : "Not Eligible for Price Decision"}
                         </p>
 
 
@@ -512,10 +512,10 @@ export default function SupplierPriceComparisonPanel({
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h2 className="text-lg font-bold text-slate-900">
-                        So sánh giá nhà cung cấp
+                        Supplier Price Comparison
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
-                        So sánh giá mua ban đầu với mức giá mới nhà cung cấp đề nghị.
+                        Compare the original purchase price with the supplier's newly proposed price.
                     </p>
                 </div>
 
@@ -525,7 +525,7 @@ export default function SupplierPriceComparisonPanel({
                     disabled={loading}
                     onClick={() => setReload((v) => v + 1)}
                 >
-                    Làm mới
+                    Refresh
                 </Button>
             </div>
 
@@ -533,8 +533,8 @@ export default function SupplierPriceComparisonPanel({
 
                     <Alert type="info">
                         {PRICE_DECISION_WRITE_ENABLED
-                            ? "Bạn có thể chấp nhận hoặc từ chối mức giá mới. Nếu chấp nhận, đơn giá mua sẽ được cập nhật. Mọi quyết định đều được lưu lại."
-                            : "Giá mới hiện chỉ để tham khảo. Bạn chưa thể xác nhận thay đổi giá ở thời điểm này."}
+                            ? "You can accept or reject the new price. If accepted, the purchase unit price will be updated. Every decision is recorded."
+                            : "The proposed price is for reference only. Price changes cannot be confirmed at this time."}
                     </Alert>
 
             </div>
@@ -545,7 +545,7 @@ export default function SupplierPriceComparisonPanel({
                     className="flex items-center gap-3 py-6 text-sm text-slate-600"
                 >
                     <Spinner />
-                    Đang tải dữ liệu so sánh giá...
+                    Loading price comparison...
                 </div>
             ) : error ? (
                 <div role="alert">
@@ -553,20 +553,20 @@ export default function SupplierPriceComparisonPanel({
                 </div>
             ) : items.length === 0 ? (
                 <EmptyState
-                    title="Chưa có dữ liệu so sánh giá"
-                    description="Đơn mua hàng chưa có sản phẩm để so sánh."
+                    title="No Price Comparison Data"
+                    description="The purchase order contains no products to compare."
                 />
             ) : (
                 <div className="space-y-4">
                     <div className="text-sm text-slate-600">
                         <p>
-                            Đơn mua hàng:{" "}
+                            Purchase Order:{" "}
                             <strong>
                                 {comparison.orderCode || "—"}
                             </strong>
                         </p>
                         <p>
-                            Nhà cung cấp:{" "}
+                            Supplier:{" "}
                             <strong>
                                 {comparison.supplierName || "—"}
                             </strong>
@@ -576,12 +576,12 @@ export default function SupplierPriceComparisonPanel({
                     {/* Thong bao dieu kien quyet dinh gia */}
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                         {hasReceivedGoods
-                            ? "Không thể thay đổi giá của đơn đã nhận hàng. Vui lòng liên hệ người quản lý nếu cần xử lý thêm."
+                            ? "Prices cannot be changed after goods have been received. Contact a manager if further action is required."
                             : purchaseOrderStatus !== "ORDERED"
-                            ? "Chưa thể quyết định giá vì đơn chưa ở trạng thái đã gửi nhà cung cấp."
+                            ? "A price decision is not allowed until the order has been submitted to the supplier."
                             : !hasNoReceivedItems
-                                ? "Chưa thể quyết định giá: Chưa xác định đầy đủ số lượng hàng đã nhận."
-                                : "Chỉ những sản phẩm được nhà cung cấp đề nghị đổi giá và có báo giá hợp lệ mới có thể xét duyệt."}
+                                ? "A price decision is unavailable because received quantities have not been fully determined."
+                                : "Only products with a valid supplier price change proposal are eligible for review."}
                     </div>
 
                     {decisionSuccess && (
@@ -595,12 +595,11 @@ export default function SupplierPriceComparisonPanel({
                     {PRICE_DECISION_UI_PREVIEW && (
                         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
                             <p className="text-sm font-semibold text-amber-900">
-                                Chế độ kiểm thử giao diện - dữ liệu giả lập
+                                UI Test Mode - Sample Data
                             </p>
 
                             <p className="text-xs text-amber-800">
-                                Hai nút bên dưới chỉ mở Modal để kiểm tra.
-                                Chưa lưu thay đổi nào.
+                                The buttons below only open a preview dialog. No changes will be saved.
                             </p>
 
                             <div className="flex flex-wrap gap-2">
@@ -609,7 +608,7 @@ export default function SupplierPriceComparisonPanel({
                                     variant="outline"
                                     onClick={() => openMockDecisionPreview("ACCEPT")}
                                 >
-                                    Xem trước đồng ý giá
+                                    Preview Price Acceptance
                                 </Button>
 
                                 <Button
@@ -617,7 +616,7 @@ export default function SupplierPriceComparisonPanel({
                                     variant="outline"
                                     onClick={() => openMockDecisionPreview("REJECT")}
                                 >
-                                    Xem trước từ chối giá
+                                    Preview Price Rejection
                                 </Button>
                             </div>
                         </div>
@@ -634,11 +633,7 @@ export default function SupplierPriceComparisonPanel({
                     </div>
 
                     <p className="text-xs text-slate-500">
-                        Chênh lệch ước tính được hệ thống
-                        tính theo số lượng đặt mua.
-                        Nếu nhà cung cấp chỉ xác nhận một
-                        phần số lượng, giá trị này chưa
-                        phải tổng chênh lệch cuối cùng.
+                        The system estimates the price difference using the ordered quantity. If the supplier confirms only part of the quantity, this is not the final price impact.
                     </p>
                 </div>
             )}
@@ -647,8 +642,8 @@ export default function SupplierPriceComparisonPanel({
                 open={Boolean(decisionDraft)}
                 title={
                     decisionDraft?.decision === "ACCEPT"
-                        ? "Xác nhận chấp nhận giá mới"
-                        : "Xác nhận từ chối giá mới"
+                        ? "Confirm New Price Acceptance"
+                        : "Confirm New Price Rejection"
                 }
                 onClose={closeDecisionPreview}
                 footer={
@@ -658,7 +653,7 @@ export default function SupplierPriceComparisonPanel({
                             variant="outline"
                             onClick={closeDecisionPreview}
                         >
-                            Đóng
+                            Close
                         </Button>
 
 
@@ -675,10 +670,10 @@ export default function SupplierPriceComparisonPanel({
                             }
                         >
                             {!PRICE_DECISION_WRITE_ENABLED
-                                ? "Xác nhận quyết định (chưa kích hoạt)"
+                                ? "Confirm Decision (disabled)"
                                 : decisionSubmitting
-                                ? "Đang xử lý..."
-                                : "Xác nhận quyết định"}
+                                ? "Processing..."
+                                : "Confirm Decision"}
                         </Button>
 
                     </>
@@ -687,14 +682,14 @@ export default function SupplierPriceComparisonPanel({
                 {decisionDraft && (
                     <div className="space-y-4">
                         <p className="text-sm text-slate-700">
-                            Sản phẩm:{" "}
+                            Product:{" "}
                             <strong>
                                 {decisionDraft.item.productName}
                             </strong>
                         </p>
 
                         <p className="text-sm text-slate-700">
-                            Giá mua hiện tại:{" "}
+                            Current Purchase Price:{" "}
                             <strong>
                                 {formatMoney(
                                     decisionDraft.item.originalUnitPrice
@@ -703,7 +698,7 @@ export default function SupplierPriceComparisonPanel({
                         </p>
 
                         <p className="text-sm text-slate-700">
-                            Giá nhà cung cấp báo:{" "}
+                            Supplier Quoted Price:{" "}
                             <strong>
                                 {formatMoney(
                                     decisionDraft.item.confirmedUnitPrice
@@ -712,20 +707,20 @@ export default function SupplierPriceComparisonPanel({
                         </p>
 
                         <p className="text-sm font-medium text-slate-800">
-                            Quyết định:{" "}
+                            Decision:{" "}
                             {decisionDraft.decision === "ACCEPT"
-                                ? "CHẤP NHẬN"
-                                : "TỪ CHỐI"}
+                                ? "ACCEPT"
+                                : "REJECT"}
                         </p>
 
                         <TextArea
-                            label="Lý do quyết định *"
+                            label="Decision Reason *"
                             rows={3}
                             value={decisionReason}
                             onChange={(event) =>
                                 setDecisionReason(event.target.value)
                             }
-                            placeholder="Nhập lý do chấp nhận hoặc từ chối giá..."
+                            placeholder="Enter the reason for accepting or rejecting the price..."
                         />
                         {decisionError && (
                             <div role="alert">
@@ -739,10 +734,10 @@ export default function SupplierPriceComparisonPanel({
 
                         <Alert type="info">
                             {PRICE_DECISION_UI_PREVIEW
-                                ? "Đây là thông tin minh họa. Chưa có thay đổi nào được lưu."
+                                ? "This is sample data. No changes have been saved."
                                 : PRICE_DECISION_WRITE_ENABLED
-                                ? "Vui lòng kiểm tra mức giá và lý do trước khi xác nhận. Nếu đồng ý, giá mua trong đơn hàng và thông tin nhà cung cấp sẽ được cập nhật."
-                                : "Đây chỉ là bước xem trước. Chức năng gửi quyết định giá đang bị khóa."}
+                                ? "Review the price and reason before confirming. Acceptance will update the purchase order price and supplier information."
+                                : "This is a preview only. Price decisions are currently disabled."}
                         </Alert>
 
                     </div>

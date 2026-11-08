@@ -21,7 +21,7 @@ import Table from "../../../components/ui/Table";
 const ROOT = "/business/shipment-manifests";
 
 const formatNumber = (value) =>
-    Number(value ?? 0).toLocaleString("vi-VN");
+    Number(value ?? 0).toLocaleString("en-GB");
 
 function formatDate(value) {
     if (!value) return "—";
@@ -30,7 +30,7 @@ function formatDate(value) {
 
     return Number.isNaN(date.getTime())
         ? value
-        : date.toLocaleString("vi-VN");
+        : date.toLocaleString("en-GB");
 }
 
 function formatLocalDate(value) {
@@ -40,16 +40,16 @@ function formatLocalDate(value) {
 }
 
 const transportLabels = {
-    CREATED: "Mới tạo",
-    ASSIGNED: "Đã phân công",
-    ACCEPTED: "Đã nhận chuyến",
-    REJECTED: "Bị từ chối",
-    READY_TO_SHIP: "Sẵn sàng giao hàng",
-    IN_TRANSIT: "Đang vận chuyển",
-    ARRIVED: "Đã đến nơi",
-    DELIVERED: "Đã giao hàng",
-    FAILED: "Giao hàng thất bại",
-    CANCELLED: "Đã hủy",
+    CREATED: "Created",
+    ASSIGNED: "Assigned",
+    ACCEPTED: "Trip Accepted",
+    REJECTED: "Rejected",
+    READY_TO_SHIP: "Ready for Delivery",
+    IN_TRANSIT: "In Transit",
+    ARRIVED: "Arrived",
+    DELIVERED: "Delivered",
+    FAILED: "Delivery Failed",
+    CANCELLED: "Cancelled",
 };
 
 function StatusBadge({ status }) {
@@ -87,7 +87,7 @@ function InfoItem({ label, value }) {
 const transferColumns = [
     {
         key: "transferCode",
-        label: "Mã phiếu điều chuyển",
+        label: "Stock Transfer Code",
         render: (value, item) => (
             <Link
                 to={`/business/stock-transfers/${item.transferId}`}
@@ -99,31 +99,31 @@ const transferColumns = [
     },
     {
         key: "transferType",
-        label: "Loại điều chuyển",
+        label: "Transfer Type",
     },
     {
         key: "transferStatus",
-        label: "Trạng thái",
+        label: "Status",
         render: (value) => value ? formatBusinessStatus(value) : "—",
     },
     {
         key: "totalProducts",
-        label: "Số sản phẩm",
+        label: "Product Count",
         render: formatNumber,
     },
     {
         key: "totalRequestedQuantity",
-        label: "Số lượng yêu cầu",
+        label: "Requested Quantity",
         render: formatNumber,
     },
     {
         key: "expectedShipmentDate",
-        label: "Dự kiến xuất kho",
+        label: "Expected Dispatch",
         render: (value) => formatLocalDate(value),
     },
     {
         key: "expectedReceiptDate",
-        label: "Dự kiến nhận hàng",
+        label: "Expected Receipt Date",
         render: (value) => formatLocalDate(value),
     },
 ];
@@ -131,23 +131,23 @@ const transferColumns = [
 const productColumns = [
     {
         key: "productCode",
-        label: "Mã sản phẩm",
+        label: "Product Code",
     },
     {
         key: "productName",
-        label: "Tên sản phẩm",
+        label: "Product Name",
     },
     {
         key: "barcode",
-        label: "Mã vạch",
+        label: "Barcode",
     },
     {
         key: "baseUnit",
-        label: "Đơn vị",
+        label: "Unit",
     },
     {
         key: "quantity",
-        label: "Số lượng",
+        label: "Quantity",
         render: formatNumber,
     },
 ];
@@ -174,7 +174,7 @@ export default function ShipmentManifestDetailPage() {
                 if (controller.signal.aborted) return;
 
                 if (!data?.manifestId) {
-                    throw new Error("Dữ liệu bảng kê không hợp lệ.");
+                    throw new Error("Invalid shipment manifest data.");
                 }
 
                 setManifest(data);
@@ -185,7 +185,7 @@ export default function ShipmentManifestDetailPage() {
                 setError(
                     err?.isAxiosError
                         ? shipmentManifestErrorMessage(err)
-                        : err.message || "Không tải được chi tiết bảng kê."
+                        : err.message || "Unable to load shipment manifest details."
                 );
             })
             .finally(() => {
@@ -204,14 +204,14 @@ export default function ShipmentManifestDetailPage() {
         >
             <div className="space-y-6">
                 <PageHeader
-                    title="Chi tiết bảng kê đi hàng"
-                    description="Theo dõi thông tin vận chuyển, phiếu điều chuyển và các kiện hàng."
+                    title="Shipment Manifest Details"
+                    description="Track shipment details, stock transfers, and packages."
                     actions={
                         <Link
                             to={ROOT}
                             className="rounded-xl border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50"
                         >
-                            Quay lại danh sách
+                            Back to List
                         </Link>
                     }
                 />
@@ -222,7 +222,7 @@ export default function ShipmentManifestDetailPage() {
                         className="flex items-center gap-3 rounded-xl bg-white p-8 text-slate-600"
                     >
                         <Spinner />
-                        Đang tải chi tiết bảng kê...
+                        Loading manifest details...
                     </div>
                 ) : error ? (
                     <div role="alert">
@@ -230,22 +230,20 @@ export default function ShipmentManifestDetailPage() {
                     </div>
                 ) : !manifest ? (
                     <EmptyState
-                        title="Không tìm thấy bảng kê"
-                        description="Không có dữ liệu chi tiết để hiển thị."
+                        title="Manifest Not Found"
+                        description="No details available to display."
                     />
                 ) : (
                     <>
                         <Alert type="info">
-                            Nhân viên kinh doanh chỉ được xem và theo dõi
-                            bảng kê. Không được chỉnh sửa, hủy hoặc
-                            thay đổi nội dung kiện hàng.
+                            Business Operations users can view and track shipment manifests but cannot edit, cancel, or change package contents.
                         </Alert>
 
                         <Card>
                             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                                 <div>
                                     <p className="text-sm text-slate-500">
-                                        Mã bảng kê
+                                        Manifest Code
                                     </p>
                                     <h2 className="text-xl font-bold text-slate-900">
                                         {manifest.manifestCode}
@@ -259,19 +257,19 @@ export default function ShipmentManifestDetailPage() {
 
                             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                                 <InfoItem
-                                    label="Trạng thái bảng kê"
+                                    label="Manifest Status"
                                     value={manifest.manifestStatus}
                                 />
                                 <InfoItem
-                                    label="Người tạo"
+                                    label="Created By"
                                     value={manifest.createdByName}
                                 />
                                 <InfoItem
-                                    label="Ngày tạo"
+                                    label="Created At"
                                     value={formatDate(manifest.createdAt)}
                                 />
                                 <InfoItem
-                                    label="Mã người tạo"
+                                    label="Created By User ID"
                                     value={manifest.createdByCode}
                                 />
                             </div>
@@ -280,21 +278,21 @@ export default function ShipmentManifestDetailPage() {
                         <div className="grid gap-4 md:grid-cols-2">
                             <Card>
                                 <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                    Điểm xuất phát
+                                    Origin
                                 </h3>
                                 <InfoItem
-                                    label="Kho / Cửa hàng"
+                                    label="Warehouse / Store"
                                     value={manifest.fromWarehouseName}
                                 />
                                 <div className="mt-3">
                                     <InfoItem
-                                        label="Mã điểm xuất"
+                                        label="Origin Code"
                                         value={manifest.fromWarehouseCode}
                                     />
                                 </div>
                                 <div className="mt-3">
                                     <InfoItem
-                                        label="Địa chỉ"
+                                        label="Address"
                                         value={manifest.fromWarehouseAddress}
                                     />
                                 </div>
@@ -302,21 +300,21 @@ export default function ShipmentManifestDetailPage() {
 
                             <Card>
                                 <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                    Điểm đến
+                                    Destination
                                 </h3>
                                 <InfoItem
-                                    label="Kho / Cửa hàng"
+                                    label="Warehouse / Store"
                                     value={manifest.toWarehouseName}
                                 />
                                 <div className="mt-3">
                                     <InfoItem
-                                        label="Mã điểm nhận"
+                                        label="Destination Code"
                                         value={manifest.toWarehouseCode}
                                     />
                                 </div>
                                 <div className="mt-3">
                                     <InfoItem
-                                        label="Địa chỉ"
+                                        label="Address"
                                         value={manifest.toWarehouseAddress}
                                     />
                                 </div>
@@ -325,9 +323,9 @@ export default function ShipmentManifestDetailPage() {
 
                         <div className="grid gap-4 sm:grid-cols-3">
                             {[
-                                ["Tổng số phiếu điều chuyển", manifest.totalTransfers],
-                                ["Tổng số kiện", manifest.totalPackages],
-                                ["Tổng số lượng sản phẩm", manifest.totalProductQuantity],
+                                ["Total Stock Transfers", manifest.totalTransfers],
+                                ["Total Packages", manifest.totalPackages],
+                                ["Total Product Quantity", manifest.totalProductQuantity],
                             ].map(([label, value]) => (
                                 <Card key={label}>
                                     <p className="text-sm text-slate-500">
@@ -342,38 +340,38 @@ export default function ShipmentManifestDetailPage() {
 
                         <Card>
                             <h3 className="mb-4 text-lg font-bold text-slate-800">
-                                Thông tin vận chuyển
+                                Shipment Information
                             </h3>
 
                             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                                 <InfoItem
-                                    label="Mã chuyến giao"
+                                    label="Delivery Trip Code"
                                     value={manifest.deliveryCode}
                                 />
                                 <InfoItem
-                                    label="Tài xế"
+                                    label="Driver"
                                     value={manifest.driverName}
                                 />
                                 <InfoItem
-                                    label="Thời gian bắt đầu"
+                                    label="Start Time"
                                     value={formatDate(manifest.startedAt)}
                                 />
                                 <InfoItem
-                                    label="Thời gian giao xong"
+                                    label="Delivery Completion Time"
                                     value={formatDate(manifest.deliveredAt)}
                                 />
                             </div>
 
                             {manifest.note && (
                                 <p className="mt-4 text-sm text-slate-600">
-                                    <strong>Ghi chú:</strong> {manifest.note}
+                                    <strong>Notes:</strong> {manifest.note}
                                 </p>
                             )}
                         </Card>
 
                         <div className="space-y-3">
                             <h3 className="text-lg font-bold text-slate-800">
-                                Danh sách phiếu điều chuyển
+                                Stock Transfers
                             </h3>
 
                             {manifest.transfers?.length ? (
@@ -384,18 +382,18 @@ export default function ShipmentManifestDetailPage() {
                                 />
                             ) : (
                                 <EmptyState
-                                    title="Chưa có phiếu điều chuyển"
+                                    title="No Stock Transfers"
                                 />
                             )}
                         </div>
 
                         <div className="space-y-4">
                             <h3 className="text-lg font-bold text-slate-800">
-                                Danh sách kiện hàng
+                                Packages
                             </h3>
 
                             {!manifest.packages?.length ? (
-                                <EmptyState title="Chưa có kiện hàng" />
+                                <EmptyState title="No Packages" />
                             ) : (
                                 manifest.packages.map((pkg) => (
                                     <Card key={pkg.packageId}>
@@ -411,25 +409,25 @@ export default function ShipmentManifestDetailPage() {
 
                                         <div className="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                             <InfoItem
-                                                label="Mã niêm phong"
+                                                label="Seal Code"
                                                 value={pkg.sealNumber}
                                             />
                                             <InfoItem
-                                                label="Người đóng kiện"
+                                                label="Packed By"
                                                 value={pkg.packedByName}
                                             />
                                             <InfoItem
-                                                label="Thời gian đóng kiện"
+                                                label="Packed At"
                                                 value={formatDate(pkg.packedAt)}
                                             />
                                             <InfoItem
-                                                label="Tổng số lượng"
+                                                label="Total Quantity"
                                                 value={formatNumber(pkg.totalQuantity)}
                                             />
                                         </div>
 
                                         <h5 className="mb-3 font-semibold text-slate-800">
-                                            Sản phẩm trong kiện
+                                            Package Items
                                         </h5>
 
                                         {pkg.products?.length ? (
@@ -440,7 +438,7 @@ export default function ShipmentManifestDetailPage() {
                                             />
                                         ) : (
                                             <EmptyState
-                                                title="Kiện chưa có sản phẩm"
+                                                title="This package contains no products"
                                             />
                                         )}
                                     </Card>

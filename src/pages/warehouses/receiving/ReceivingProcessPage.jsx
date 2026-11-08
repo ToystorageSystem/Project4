@@ -38,7 +38,7 @@ export default function ReceivingProcessPage() {
                 <div className="grid gap-4 md:grid-cols-2">
 
                     <ReceivingSourceCard
-                        title="From Supplier (NCC)"
+                        title="From Supplier"
                         description="Purchase Order / Supplier → Warehouse receiving process."
                         active={
                             source === "SUPPLIER"

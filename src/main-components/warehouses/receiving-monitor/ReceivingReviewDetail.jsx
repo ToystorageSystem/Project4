@@ -133,7 +133,7 @@ export default function ReceivingReviewDetail({
         );
 
         if (!report?.id) {
-            setActionError(`Không tìm thấy ${getInspectionResult(item)} discrepancy của sản phẩm này.`);
+            setActionError(`Not Found ${getInspectionResult(item)} discrepancies for this product.`);
             return;
         }
         if (!reason) {
@@ -186,7 +186,7 @@ export default function ReceivingReviewDetail({
         const reason = String(reasonDrafts[productId] ?? "").trim();
 
         if (!report?.id) {
-            setActionError(`Không tìm thấy ${getInspectionResult(item)} discrepancy của sản phẩm này.`);
+            setActionError(`Not Found ${getInspectionResult(item)} discrepancies for this product.`);
             return;
         }
         if (!reason) {
@@ -217,7 +217,7 @@ export default function ReceivingReviewDetail({
                 <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-[#f25d19]">
-                            {readOnly ? "Receiving History" : "Receiving Review - NCC"}
+                            {readOnly ? "Receiving History" : "Supplier Receiving Review"}
                         </p>
                         <h2 className="mt-1 text-xl font-semibold text-slate-900">
                             {data?.receiptCode ?? `Receipt #${receiptId ?? "-"}`}
@@ -275,9 +275,9 @@ export default function ReceivingReviewDetail({
 
             <Card className="overflow-hidden p-0">
                 <div className="border-b border-slate-100 p-5">
-                    <h3 className="font-semibold text-slate-900">NCC discrepancy review</h3>
+                    <h3 className="font-semibold text-slate-900">Supplier Receiving Discrepancy Review</h3>
                     <p className="mt-1 text-sm text-slate-500">
-                        MINOR không chặn luồng. MAJOR/blocking cần xử lý hoặc chuyển Business Manager.
+                        MINOR discrepancies do not block the workflow. MAJOR or blocking discrepancies must be resolved or escalated to the Business Manager.
                     </p>
                 </div>
 
@@ -374,9 +374,9 @@ export default function ReceivingReviewDetail({
                 <Card>
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h3 className="font-semibold text-slate-900">Manager decision - NCC</h3>
+                            <h3 className="font-semibold text-slate-900">Manager Decision - Supplier Receiving</h3>
                             <p className="mt-1 text-sm text-slate-500">
-                                Confirm khi không còn MAJOR/blocking chưa xử lý; nếu cần thì yêu cầu re-inspection.
+                                Confirm only when no unresolved MAJOR or blocking discrepancies remain; request re-inspection if needed.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-3">

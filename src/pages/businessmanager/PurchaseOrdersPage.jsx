@@ -22,16 +22,16 @@ const labelClass = "mb-1.5 block text-xs font-semibold text-slate-600";
 const buttonClass = "rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
 
 const STATUS_LABELS = {
-    DRAFT: "Nháp",
-    PENDING: "Chờ xử lý",
-    PENDING_APPROVAL: "Chờ phê duyệt",
-    APPROVED: "Đã duyệt",
-    ORDERED: "Đã đặt hàng",
-    RECEIVING: "Đang nhận hàng",
-    PARTIALLY_RECEIVED: "Nhận một phần",
-    COMPLETED: "Đã hoàn thành",
-    REJECTED: "Bị từ chối",
-    CANCELLED: "Đã hủy",
+    DRAFT: "Draft",
+    PENDING: "Pending",
+    PENDING_APPROVAL: "Pending Approval",
+    APPROVED: "Approved",
+    ORDERED: "Ordered",
+    RECEIVING: "Receiving",
+    PARTIALLY_RECEIVED: "Partially Received",
+    COMPLETED: "Completed",
+    REJECTED: "Rejected",
+    CANCELLED: "Cancelled",
 };
 
 function display(value) {
@@ -41,14 +41,14 @@ function display(value) {
 function integer(value) {
     if (value === null || value === undefined || value === "") return "—";
     const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed.toLocaleString("vi-VN") : String(value);
+    return Number.isFinite(parsed) ? parsed.toLocaleString("en-GB") : String(value);
 }
 
 function money(value) {
     if (value === null || value === undefined || value === "") return "—";
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) return String(value);
-    return new Intl.NumberFormat("vi-VN", {
+    return new Intl.NumberFormat("en-GB", {
         style: "currency",
         currency: "VND",
         maximumFractionDigits: 0,
@@ -59,7 +59,7 @@ function time(value) {
     if (!value) return "—";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value);
-    return date.toLocaleString("vi-VN", {
+    return date.toLocaleString("en-GB", {
         day: "2-digit", month: "2-digit", year: "numeric",
         hour: "2-digit", minute: "2-digit",
     });
@@ -90,10 +90,10 @@ function StatusBadge({ value }) {
 
 function apiError(error) {
     const status = error?.response?.status;
-    if (status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-    if (status === 403) return "Tài khoản của bạn chưa được cấp quyền xem đơn mua hàng.";
-    if (status === 404) return "Không tìm thấy đơn mua hàng cần xem.";
-    return friendlyBusinessError(error, "Không thể tải danh sách đơn mua hàng. Vui lòng thử lại.");
+    if (status === 401) return "Your session has expired. Please sign in again.";
+    if (status === 403) return "You do not have permission to view purchase orders.";
+    if (status === 404) return "Purchase order not found.";
+    return friendlyBusinessError(error, "Unable to load purchase orders. Please try again.");
 }
 
 function cancelled(error) {
@@ -117,47 +117,47 @@ function PurchaseOrderDetail({ order, loading, error, onClose }) {
         <div role="dialog" aria-modal="true" aria-labelledby="po-detail-heading" className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
                 <div>
-                    <h2 id="po-detail-heading" className="text-lg font-bold text-slate-900">Chi tiết đơn mua hàng</h2>
-                    <p className="mt-1 text-xs text-slate-500">{order?.orderCode || "Đang tải chi tiết..."}</p>
+                    <h2 id="po-detail-heading" className="text-lg font-bold text-slate-900">Purchase Order Details</h2>
+                    <p className="mt-1 text-xs text-slate-500">{order?.orderCode || "Loading details..."}</p>
                 </div>
-                <button type="button" className="rounded-lg px-3 py-2 text-sm text-blue-700 hover:bg-blue-50" onClick={onClose}>Đóng ×</button>
+                <button type="button" className="rounded-lg px-3 py-2 text-sm text-blue-700 hover:bg-blue-50" onClick={onClose}>Close ×</button>
             </div>
             <div className="overflow-y-auto p-5">
-                {loading && <div className="py-10 text-center text-sm text-slate-600">Đang tải thông tin đơn mua hàng...</div>}
+                {loading && <div className="py-10 text-center text-sm text-slate-600">Loading purchase order details...</div>}
                 {!loading && error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
                 {!loading && !error && order && <div className="space-y-5">
                     <div className="grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <DetailField title="Mã đơn mua">{display(order.orderCode)}</DetailField>
-                        <DetailField title="Trạng thái"><StatusBadge value={order.status}/></DetailField>
-                        <DetailField title="Nhà cung cấp">{display(order.supplierName)}{order.supplierCode ? <div className="mt-1 text-xs font-normal text-slate-500">{order.supplierCode}</div> : null}</DetailField>
-                        <DetailField title="Kho nhận hàng">{display(order.warehouseName)}</DetailField>
-                        <DetailField title="Người tạo">{display(order.createdByName || order.createdByCode)}</DetailField>
-                        <DetailField title="Thời gian tạo">{time(order.createdAt)}</DetailField>
-                        <DetailField title="Ngày dự kiến nhận">{dateOnly(order.expectedDeliveryDate)}</DetailField>
-                        <DetailField title="Người duyệt đơn">{display(order.approvedByName || order.approvedByCode)}</DetailField>
-                        <DetailField title="Thời gian duyệt đơn">{time(order.approvedAt)}</DetailField>
-                        <DetailField title="Cập nhật lần cuối">{time(order.updatedAt)}</DetailField>
-                        <DetailField title="Tổng số sản phẩm">{integer(order.totalProducts)}</DetailField>
-                        <DetailField title="Tổng số lượng đặt">{integer(order.totalOrderedQuantity)}</DetailField>
+                        <DetailField title="Purchase Order Code">{display(order.orderCode)}</DetailField>
+                        <DetailField title="Status"><StatusBadge value={order.status}/></DetailField>
+                        <DetailField title="Supplier">{display(order.supplierName)}{order.supplierCode ? <div className="mt-1 text-xs font-normal text-slate-500">{order.supplierCode}</div> : null}</DetailField>
+                        <DetailField title="Receiving Warehouse">{display(order.warehouseName)}</DetailField>
+                        <DetailField title="Created By">{display(order.createdByName || order.createdByCode)}</DetailField>
+                        <DetailField title="Created At">{time(order.createdAt)}</DetailField>
+                        <DetailField title="Expected Delivery Date">{dateOnly(order.expectedDeliveryDate)}</DetailField>
+                        <DetailField title="Approved By">{display(order.approvedByName || order.approvedByCode)}</DetailField>
+                        <DetailField title="Approved At">{time(order.approvedAt)}</DetailField>
+                        <DetailField title="Last Updated">{time(order.updatedAt)}</DetailField>
+                        <DetailField title="Total Products">{integer(order.totalProducts)}</DetailField>
+                        <DetailField title="Total Ordered Quantity">{integer(order.totalOrderedQuantity)}</DetailField>
                     </div>
 
                     {(order.note || order.rejectionReason || order.cancelReason) && <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                        {order.note && <p><strong>Ghi chú:</strong> {order.note}</p>}
-                        {order.rejectionReason && <p><strong>Lý do từ chối:</strong> {order.rejectionReason}</p>}
-                        {order.cancelReason && <p><strong>Lý do hủy:</strong> {order.cancelReason}</p>}
+                        {order.note && <p><strong>Notes:</strong> {order.note}</p>}
+                        {order.rejectionReason && <p><strong>Rejection Reason:</strong> {order.rejectionReason}</p>}
+                        {order.cancelReason && <p><strong>Cancellation Reason:</strong> {order.cancelReason}</p>}
                     </div>}
 
                     <div>
-                        <h3 className="mb-3 font-bold text-slate-900">Danh sách sản phẩm</h3>
+                        <h3 className="mb-3 font-bold text-slate-900">Product List</h3>
                         <div className="overflow-x-auto rounded-xl border border-slate-200">
                             <table className="min-w-[850px] w-full text-left text-sm">
                                 <thead className="bg-slate-50 text-xs uppercase text-slate-600"><tr>
-                                    <th className="px-4 py-3">Sản phẩm</th>
-                                    <th className="px-4 py-3">Đơn vị</th>
-                                    <th className="px-4 py-3 text-right">Đặt</th>
-                                    <th className="px-4 py-3 text-right">Đã nhận</th>
-                                    <th className="px-4 py-3 text-right">Đơn giá</th>
-                                    <th className="px-4 py-3 text-right">Thành tiền</th>
+                                    <th className="px-4 py-3">Products</th>
+                                    <th className="px-4 py-3">Unit</th>
+                                    <th className="px-4 py-3 text-right">Ordered</th>
+                                    <th className="px-4 py-3 text-right">Received</th>
+                                    <th className="px-4 py-3 text-right">Unit Price</th>
+                                    <th className="px-4 py-3 text-right">Line Total</th>
                                 </tr></thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {items.map((item, index) => <tr key={item.id ?? `${item.productId}-${index}`}>
@@ -168,13 +168,13 @@ function PurchaseOrderDetail({ order, loading, error, onClose }) {
                                         <td className="px-4 py-3 text-right tabular-nums">{money(item.unitPrice)}</td>
                                         <td className="px-4 py-3 text-right font-semibold tabular-nums">{money(item.lineTotal)}</td>
                                     </tr>)}
-                                    {items.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Đơn mua hàng này chưa có sản phẩm.</td></tr>}
+                                    {items.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">This purchase order contains no products.</td></tr>}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
-                        <div className="text-sm text-blue-800">Tổng giá trị đơn mua hàng</div>
+                        <div className="text-sm text-blue-800">Purchase Order Total</div>
                         <div className="text-xl font-bold text-blue-900 tabular-nums">{money(order.totalAmount)}</div>
                     </div>
                 </div>}
@@ -202,7 +202,7 @@ export default function PurchaseOrdersPage() {
         const controller = new AbortController();
         listBusinessManagerPurchaseOrders({}, controller.signal)
             .then(setCatalog)
-            .catch((err) => { if (!cancelled(err)) console.warn("Không tải được bộ lọc đơn mua hàng:", err); });
+            .catch((err) => { if (!cancelled(err)) console.warn("Unable to load purchase order filters:", err); });
         return () => controller.abort();
     }, []);
 
@@ -234,7 +234,7 @@ export default function PurchaseOrdersPage() {
         const map = new Map();
         for (const row of catalog) {
             if (row.supplierId != null && !map.has(String(row.supplierId))) {
-                map.set(String(row.supplierId), row.supplierName || row.supplierCode || `Nhà cung cấp #${row.supplierId}`);
+                map.set(String(row.supplierId), row.supplierName || row.supplierCode || `Supplier #${row.supplierId}`);
             }
         }
         return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], "vi"));
@@ -254,7 +254,7 @@ export default function PurchaseOrdersPage() {
     function applyFilters(event) {
         event.preventDefault();
         if (draft.createdFrom && draft.createdTo && draft.createdFrom > draft.createdTo) {
-            setFormError("Ngày bắt đầu không được sau ngày kết thúc.");
+            setFormError("Start date cannot be after end date.");
             return;
         }
         setFormError("");
@@ -277,52 +277,52 @@ export default function PurchaseOrdersPage() {
     return <MainLayout title="Business Operations" items={businessManagerMenuItems}>
         <main className="mx-auto w-full max-w-7xl space-y-5 px-4 py-8 sm:px-6 lg:py-10">
             <div>
-                <h1 className="text-xl font-bold text-slate-900">Danh sách đơn mua hàng</h1>
-                <p className="mt-1 text-sm text-slate-500">Theo dõi đơn mua hàng và xử lý các đề nghị hủy từ nhân viên. Thông tin đơn chỉ để xem, không chỉnh sửa tại đây.</p>
+                <h1 className="text-xl font-bold text-slate-900">Purchase Order List</h1>
+                <p className="mt-1 text-sm text-slate-500">Track purchase orders and review cancellation requests from staff. Order information is read-only on this page.</p>
             </div>
 
             <PurchaseOrderCancellationReviewPanel onChanged={() => setReload((value) => value + 1)} />
 
             <form onSubmit={applyFilters} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                    <label><span className={labelClass}>Mã đơn mua hàng</span><input className={inputClass} value={draft.keyword} onChange={(event) => updateDraft("keyword", event.target.value)} placeholder="PO-..." /></label>
-                    <label><span className={labelClass}>Nhà cung cấp</span><select className={inputClass} value={draft.supplierId} onChange={(event) => updateDraft("supplierId", event.target.value)}><option value="">Tất cả nhà cung cấp</option>{supplierOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
-                    <label><span className={labelClass}>Trạng thái</span><select className={inputClass} value={draft.status} onChange={(event) => updateDraft("status", event.target.value)}><option value="">Tất cả trạng thái</option>{statusOptions.map((status) => <option key={status} value={status}>{statusName(status)}</option>)}</select></label>
-                    <label><span className={labelClass}>Từ ngày tạo</span><input type="date" className={inputClass} value={draft.createdFrom} onChange={(event) => updateDraft("createdFrom", event.target.value)}/></label>
-                    <label><span className={labelClass}>Đến ngày tạo</span><input type="date" className={inputClass} value={draft.createdTo} onChange={(event) => updateDraft("createdTo", event.target.value)}/></label>
+                    <label><span className={labelClass}>Purchase Order Code</span><input className={inputClass} value={draft.keyword} onChange={(event) => updateDraft("keyword", event.target.value)} placeholder="PO-..." /></label>
+                    <label><span className={labelClass}>Suppliers</span><select className={inputClass} value={draft.supplierId} onChange={(event) => updateDraft("supplierId", event.target.value)}><option value="">All Suppliers</option>{supplierOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+                    <label><span className={labelClass}>Status</span><select className={inputClass} value={draft.status} onChange={(event) => updateDraft("status", event.target.value)}><option value="">All Statuses</option>{statusOptions.map((status) => <option key={status} value={status}>{statusName(status)}</option>)}</select></label>
+                    <label><span className={labelClass}>Created From</span><input type="date" className={inputClass} value={draft.createdFrom} onChange={(event) => updateDraft("createdFrom", event.target.value)}/></label>
+                    <label><span className={labelClass}>Created To</span><input type="date" className={inputClass} value={draft.createdTo} onChange={(event) => updateDraft("createdTo", event.target.value)}/></label>
                 </div>
                 {formError && <p role="alert" className="mt-3 text-sm text-red-600">{formError}</p>}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <button type="submit" className={`${buttonClass} bg-blue-600 text-white hover:bg-blue-700`}>Tìm kiếm / Bộ lọc</button>
-                    <button type="button" className={`${buttonClass} border border-slate-200 text-slate-700 hover:bg-slate-50`} onClick={clearFilters}>Xóa bộ lọc</button>
-                    <button type="button" className={`${buttonClass} text-blue-700 hover:bg-blue-50`} onClick={() => setReload((n) => n + 1)}>Tải lại</button>
+                    <button type="submit" className={`${buttonClass} bg-blue-600 text-white hover:bg-blue-700`}>Search / Filters</button>
+                    <button type="button" className={`${buttonClass} border border-slate-200 text-slate-700 hover:bg-slate-50`} onClick={clearFilters}>Clear Filters</button>
+                    <button type="button" className={`${buttonClass} text-blue-700 hover:bg-blue-50`} onClick={() => setReload((n) => n + 1)}>Reload</button>
                 </div>
             </form>
 
             <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="text-xs text-slate-500">Số đơn mua hàng</div><div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{loading ? "..." : integer(records.length)}</div></div>
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="text-xs text-slate-500">Tổng số lượng đặt</div><div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{loading ? "..." : integer(records.reduce((sum, row) => sum + (Number(row.totalOrderedQuantity) || 0), 0))}</div></div>
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="text-xs text-slate-500">Tổng giá trị đơn đang hiển thị</div><div className="mt-1 text-xl font-bold tabular-nums text-blue-800">{loading ? "..." : money(totalValue)}</div></div>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="text-xs text-slate-500">Purchase Orders</div><div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{loading ? "..." : integer(records.length)}</div></div>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="text-xs text-slate-500">Total Ordered Quantity</div><div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{loading ? "..." : integer(records.reduce((sum, row) => sum + (Number(row.totalOrderedQuantity) || 0), 0))}</div></div>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="text-xs text-slate-500">Total Value of Displayed Orders</div><div className="mt-1 text-xl font-bold tabular-nums text-blue-800">{loading ? "..." : money(totalValue)}</div></div>
             </div>
 
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
-                    <h2 className="font-semibold text-slate-900">Danh sách đơn mua hàng</h2>
-                    <span className="text-xs text-slate-500">{loading ? "Đang tải..." : `${integer(records.length)} đơn`}</span>
+                    <h2 className="font-semibold text-slate-900">Purchase Order List</h2>
+                    <span className="text-xs text-slate-500">{loading ? "Loading..." : `${integer(records.length)} orders`}</span>
                 </div>
                 {error && <div role="alert" className="m-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-                {loading ? <div className="py-12 text-center text-sm text-slate-500">Đang tải danh sách đơn mua hàng...</div> : !error && records.length === 0 ? <div className="py-12 text-center text-sm text-slate-500">Không tìm thấy đơn mua hàng phù hợp.</div> : !error && <div className="overflow-x-auto">
+                {loading ? <div className="py-12 text-center text-sm text-slate-500">Loading purchase orders...</div> : !error && records.length === 0 ? <div className="py-12 text-center text-sm text-slate-500">No matching purchase orders found.</div> : !error && <div className="overflow-x-auto">
                     <table className="min-w-[1200px] w-full text-left text-sm">
                         <thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr>
-                            <th className="px-4 py-3">Mã đơn hàng</th>
-                            <th className="px-4 py-3">Nhà cung cấp</th>
-                            <th className="px-4 py-3">Kho nhận hàng</th>
-                            <th className="px-4 py-3">Trạng thái</th>
-                            <th className="px-4 py-3 text-right">Sản phẩm / Số lượng</th>
-                            <th className="px-4 py-3 text-right">Tổng tiền</th>
-                            <th className="px-4 py-3">Người tạo</th>
-                            <th className="px-4 py-3">Ngày tạo</th>
-                            <th className="px-4 py-3 text-right">Thao tác</th>
+                            <th className="px-4 py-3">Order Code</th>
+                            <th className="px-4 py-3">Suppliers</th>
+                            <th className="px-4 py-3">Receiving Warehouse</th>
+                            <th className="px-4 py-3">Status</th>
+                            <th className="px-4 py-3 text-right">Products / Quantity</th>
+                            <th className="px-4 py-3 text-right">Total Amount</th>
+                            <th className="px-4 py-3">Created By</th>
+                            <th className="px-4 py-3">Created At</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
                         </tr></thead>
                         <tbody className="divide-y divide-slate-100">{pageRecords.map((row) => <tr key={row.id} className="hover:bg-slate-50/60">
                             <td className="px-4 py-3 font-semibold text-slate-900">{display(row.orderCode)}</td>
@@ -333,13 +333,13 @@ export default function PurchaseOrdersPage() {
                             <td className="px-4 py-3 text-right font-semibold tabular-nums">{money(row.totalAmount)}</td>
                             <td className="px-4 py-3">{display(row.createdByName || row.createdByCode)}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-slate-600">{time(row.createdAt)}</td>
-                            <td className="px-4 py-3 text-right"><button type="button" className="font-semibold text-blue-700 hover:underline" onClick={() => setSelectedId(row.id)}>Chi tiết</button></td>
+                            <td className="px-4 py-3 text-right"><button type="button" className="font-semibold text-blue-700 hover:underline" onClick={() => setSelectedId(row.id)}>Details</button></td>
                         </tr>)}</tbody>
                     </table>
                 </div>}
                 {!loading && !error && records.length > 0 && <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-500">
                     <span>Trang {page + 1} / {totalPages}</span>
-                    <div className="flex gap-2"><button type="button" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))} className={`${buttonClass} border border-slate-200 text-slate-700 disabled:text-slate-400`}>Trước</button><button type="button" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} className={`${buttonClass} border border-slate-200 text-slate-700 disabled:text-slate-400`}>Sau</button></div>
+                    <div className="flex gap-2"><button type="button" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))} className={`${buttonClass} border border-slate-200 text-slate-700 disabled:text-slate-400`}>Previous</button><button type="button" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} className={`${buttonClass} border border-slate-200 text-slate-700 disabled:text-slate-400`}>Sau</button></div>
                 </div>}
             </section>
         </main>

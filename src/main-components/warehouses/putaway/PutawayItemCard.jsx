@@ -20,7 +20,7 @@ export default function PutawayItemCard({
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-semibold text-slate-900">
-                            {item.productName || "Sản phẩm"}
+                            {item.productName || "Product"}
                         </h3>
 
                         <PutawayStatusBadge
@@ -30,7 +30,7 @@ export default function PutawayItemCard({
 
                     <div className="mt-2 space-y-1 text-sm text-slate-500">
                         <div>
-                            Mã SP:{" "}
+                            Product Code:{" "}
                             <span className="text-slate-700">
                                 {item.productCode || "-"}
                             </span>
@@ -47,7 +47,7 @@ export default function PutawayItemCard({
                     <div className="mt-4 grid grid-cols-3 gap-3">
                         <div className="rounded-xl bg-slate-50 p-3">
                             <div className="text-xs text-slate-500">
-                                Cần cất
+                                To Put Away
                             </div>
                             <div className="mt-1 font-semibold text-slate-900">
                                 {item.expectedQuantity ?? 0}
@@ -56,7 +56,7 @@ export default function PutawayItemCard({
 
                         <div className="rounded-xl bg-slate-50 p-3">
                             <div className="text-xs text-slate-500">
-                                Đã cất
+                                Put Away
                             </div>
                             <div className="mt-1 font-semibold text-slate-900">
                                 {item.putawayQuantity ?? 0}
@@ -65,7 +65,7 @@ export default function PutawayItemCard({
 
                         <div className="rounded-xl bg-slate-50 p-3">
                             <div className="text-xs text-slate-500">
-                                Còn lại
+                                Remaining
                             </div>
                             <div className="mt-1 font-semibold text-slate-900">
                                 {item.remainingQuantity ?? 0}
@@ -75,7 +75,7 @@ export default function PutawayItemCard({
 
                     <div className="mt-4 text-sm text-slate-600">
                         <div>
-                            Từ:{" "}
+                            From:{" "}
                             <strong>
                                 {item.fromLocationCode ||
                                     "RECEIVING"}
@@ -84,7 +84,7 @@ export default function PutawayItemCard({
 
                         {item.toLocationCode && (
                             <div className="mt-1">
-                                Đến:{" "}
+                                To:{" "}
                                 <strong>
                                     {item.toLocationCode}
                                 </strong>
@@ -113,8 +113,8 @@ export default function PutawayItemCard({
                             }
                         >
                             {selected
-                                ? "Đang chọn"
-                                : "Cất hàng"}
+                                ? "Selected"
+                                : "Put Away Stock"}
                         </Button>
                     )}
             </div>

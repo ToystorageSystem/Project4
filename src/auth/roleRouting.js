@@ -16,5 +16,5 @@ export function getHomePath(user) {
 }
 
 export function getBusinessRoleLabel(user) {
-    return hasAuthority(user, ROLE.BUSINESS_OPERATIONS) ? "Nghiệp vụ kinh doanh" : null;
+    return hasAuthority(user, ROLE.BUSINESS_OPERATIONS) ? "Business Operations" : null;
 }

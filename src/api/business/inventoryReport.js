@@ -123,14 +123,14 @@ export async function exportInventoryReport(filters = {}) {
 // Shared error message handler.
 export function inventoryReportErrorMessage(
     error,
-    fallback = "Không tải được báo cáo tồn kho."
+    fallback = "Unable to load inventory report."
 ) {
     if (error?.response?.status === 401) {
-        return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+        return "Your session has expired. Please sign in again.";
     }
 
     if (error?.response?.status === 403) {
-        return "Tài khoản không có quyền xem báo cáo tồn kho.";
+        return "You do not have permission to view inventory reports.";
     }
 
     if (!error?.response) {
@@ -138,7 +138,7 @@ export function inventoryReportErrorMessage(
             return "";
         }
 
-        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+        return "Unable to connect to the system. Check your network connection and try again.";
     }
 
     const data = error.response.data;

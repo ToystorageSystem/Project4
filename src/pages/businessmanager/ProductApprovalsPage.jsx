@@ -25,31 +25,31 @@ import TextArea from "../../components/ui/TextArea";
 
 const PAGE_SIZE = 10;
 const REQUEST_TYPES = {
-    CREATE: "Tạo mới",
-    UPDATE: "Chỉnh sửa",
-    DEACTIVATE: "Ẩn sản phẩm",
+    CREATE: "Create New",
+    UPDATE: "Edit",
+    DEACTIVATE: "Hide Product",
 };
 const FIELD_LABELS = {
-    productCode: "Mã sản phẩm",
-    barcode: "Mã vạch",
-    name: "Tên sản phẩm",
-    categoryId: "Mã danh mục",
-    categoryName: "Tên danh mục",
-    brandId: "Mã thương hiệu",
-    brandName: "Tên thương hiệu",
-    baseUnit: "Đơn vị cơ sở",
-    purchasePrice: "Giá mua",
-    sellingPrice: "Giá bán",
-    imageUrl: "Đường dẫn hình ảnh",
-    description: "Mô tả sản phẩm",
-    category: "Danh mục",
-    brand: "Thương hiệu",
-    unit: "Đơn vị tính",
-    productName: "Tên sản phẩm",
-    productStatus: "Trạng thái sản phẩm",
-    quantity: "Số lượng",
-    minimumStock: "Số lượng tồn tối thiểu",
-    status: "Trạng thái sản phẩm",
+    productCode: "Product Code",
+    barcode: "Barcode",
+    name: "Product Name",
+    categoryId: "Category ID",
+    categoryName: "Category Name",
+    brandId: "Brand ID",
+    brandName: "Brand Name",
+    baseUnit: "Base Unit",
+    purchasePrice: "Purchase Price",
+    sellingPrice: "Selling Price",
+    imageUrl: "Image URL",
+    description: "Product Description",
+    category: "Categories",
+    brand: "Brand",
+    unit: "Unit of Measure",
+    productName: "Product Name",
+    productStatus: "Product Status",
+    quantity: "Quantity",
+    minimumStock: "Minimum Stock Level",
+    status: "Product Status",
 };
 
 function asObject(value) {
@@ -68,7 +68,7 @@ function asObject(value) {
 function formatValue(field, value) {
     if (value === null || value === undefined || value === "") return "—";
     if (field === "purchasePrice" || field === "sellingPrice") return formatProductPrice(value);
-    if (typeof value === "boolean") return value ? "Có" : "Không";
+    if (typeof value === "boolean") return value ? "Yes" : "Unable";
     if (typeof value === "object") {
         return Object.entries(value).map(([key, part]) => `${FIELD_LABELS[key] || key}: ${formatValue(key, part)}`).join("; ") || "—";
     }
@@ -86,7 +86,7 @@ function makeComparisonRows(detail) {
             const hasOld = Object.hasOwn(oldData, key);
             const hasNew = Object.hasOwn(newData, key);
             const before = hasOld ? formatValue(key, oldData[key]) : "—";
-            const after = hasNew ? formatValue(key, newData[key]) : "Không đề xuất đổi";
+            const after = hasNew ? formatValue(key, newData[key]) : "No Change Requested";
             const changed = hasNew && (isCreate || !hasOld || JSON.stringify(oldData[key]) !== JSON.stringify(newData[key]));
             return { key, label, before, after, changed };
         });
@@ -135,7 +135,7 @@ export default function ProductApprovalsPage() {
         listPendingProductApprovals({ page, size: PAGE_SIZE }, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(result?.items)) throw new Error("Dữ liệu danh sách xét duyệt chưa hợp lệ");
+                if (!Array.isArray(result?.items)) throw new Error("Invalid approval request list data");
                 if (page > 0 && result.totalPages > 0 && page >= result.totalPages) {
                     setPage(result.totalPages - 1);
                     return;
@@ -148,7 +148,7 @@ export default function ProductApprovalsPage() {
             })
             .catch((error) => {
                 if (!controller.signal.aborted) {
-                    setListError(productErrorMessage(error, "Không tải được các yêu cầu chờ duyệt."));
+                    setListError(productErrorMessage(error, "Unable to load pending approval requests."));
                 }
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false); });
@@ -173,12 +173,12 @@ export default function ProductApprovalsPage() {
         try {
             const result = await getProductApprovalRequest(requestId, controller.signal);
             if (!controller.signal.aborted) {
-                if (!result || !result.id) throw new Error("Dữ liệu chi tiết sản phẩm chưa hợp lệ");
+                if (!result || !result.id) throw new Error("Invalid product details");
                 setDetail(result);
             }
         } catch (error) {
             if (!controller.signal.aborted) {
-                setDetailError(productErrorMessage(error, "Không tải được chi tiết yêu cầu."));
+                setDetailError(productErrorMessage(error, "Unable to load request details."));
             }
         } finally {
             if (!controller.signal.aborted) setDetailLoading(false);
@@ -189,7 +189,7 @@ export default function ProductApprovalsPage() {
         event.preventDefault();
         if (saving) return;
         if (!/^[1-9]\d*$/.test(lookupId.trim())) {
-            setDetailError("Vui lòng nhập số yêu cầu hợp lệ (ví dụ: 6).");
+            setDetailError("Enter a valid request number (e.g., 6).");
             return;
         }
         loadDetail(lookupId.trim());
@@ -208,7 +208,7 @@ export default function ProductApprovalsPage() {
         const trimmedReason = reason.trim();
         if (action !== "APPROVE" && action !== "REJECT") return;
         if (action === "REJECT" && (!trimmedReason || trimmedReason.length > 500)) {
-            setActionError("Lý do từ chối bắt buộc, tối đa 500 ký tự.");
+            setActionError("Rejection reason is required and must not exceed 500 characters.");
             return;
         }
         setSaving(true);
@@ -218,13 +218,13 @@ export default function ProductApprovalsPage() {
                 ? await approveProductApprovalRequest(detail.id)
                 : await rejectProductApprovalRequest(detail.id, trimmedReason);
             setDetail(result);
-            setNotice(`Đã ${action === "APPROVE" ? "phê duyệt" : "từ chối"} yêu cầu ${result?.requestCode || `#${detail.id}`} thành công. Nhân viên kinh doanh có thể xem kết quả tại mục “Yêu cầu sản phẩm của tôi”.`);
+            setNotice(`Successfully ${action === "APPROVE" ? "approved" : "rejected"} request ${result?.requestCode || `#${detail.id}`} . Business Staff can view the result under My Product Requests.`);
             setAction("");
             setReason("");
             setConfirmed(false);
             setReload((value) => value + 1);
         } catch (error) {
-            setActionError(productErrorMessage(error, "Không xử lý được yêu cầu. Có thể yêu cầu đã được người khác xử lý."));
+            setActionError(productErrorMessage(error, "Unable to process the request. It may have been handled by another user."));
             // Refresh the pending list so concurrent decisions are reflected.
             setReload((value) => value + 1);
         } finally {
@@ -245,37 +245,37 @@ export default function ProductApprovalsPage() {
 
     const comparisonRows = detail ? makeComparisonRows(detail) : [];
     const columns = [
-        { key: "id", label: "Số thứ tự", render: (value) => <span className="font-semibold text-slate-800">#{value}</span> },
-        { key: "requestCode", label: "Mã yêu cầu", render: (value) => <span className="break-all font-medium text-slate-900">{value || "—"}</span> },
-        { key: "requestType", label: "Loại yêu cầu", render: (value) => <TypeBadge type={value} /> },
-        { key: "productName", label: "Sản phẩm", render: (value, row) => <div><p className="font-medium text-slate-900">{value || "—"}</p><p className="text-xs text-slate-500">{row.productCode || "—"}</p></div> },
-        { key: "createdByName", label: "Người gửi", render: (value) => value || "—" },
-        { key: "createdAt", label: "Ngày gửi", render: formatProductDate },
-        { key: "status", label: "Trạng thái", render: (value) => <ProductStatusBadge status={value} /> },
-        { key: "id-action", label: "Thao tác", render: (_value, row) => <Button size="sm" variant="outline" onClick={() => loadDetail(row.id)} disabled={saving || detailLoading}>Xem / Xử lý</Button> },
+        { key: "id", label: "No.", render: (value) => <span className="font-semibold text-slate-800">#{value}</span> },
+        { key: "requestCode", label: "Request Code", render: (value) => <span className="break-all font-medium text-slate-900">{value || "—"}</span> },
+        { key: "requestType", label: "Request Type", render: (value) => <TypeBadge type={value} /> },
+        { key: "productName", label: "Product", render: (value, row) => <div><p className="font-medium text-slate-900">{value || "—"}</p><p className="text-xs text-slate-500">{row.productCode || "—"}</p></div> },
+        { key: "createdByName", label: "Submitted By", render: (value) => value || "—" },
+        { key: "createdAt", label: "Submitted At", render: formatProductDate },
+        { key: "status", label: "Status", render: (value) => <ProductStatusBadge status={value} /> },
+        { key: "id-action", label: "Actions", render: (_value, row) => <Button size="sm" variant="outline" onClick={() => loadDetail(row.id)} disabled={saving || detailLoading}>View / Process</Button> },
     ];
 
     return (
         <MainLayout title="Business Operations" items={businessManagerMenuItems}>
             <div className="space-y-6">
                 <PageHeader
-                    title="Duyệt sản phẩm"
-                    description="Xem các đề nghị của nhân viên kinh doanh, kiểm tra thông tin và quyết định phê duyệt hoặc từ chối."
-                    actions={<Button variant="outline" onClick={() => setReload((value) => value + 1)} disabled={loading || saving}>Làm mới</Button>}
+                    title="Product Approvals"
+                    description="Review product requests submitted by Business Staff and decide whether to approve or reject them."
+                    actions={<Button variant="outline" onClick={() => setReload((value) => value + 1)} disabled={loading || saving}>Refresh</Button>}
                 />
 
                 {notice && <div role="status"><Alert type="success">{notice}</Alert></div>}
                 <Card className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                            <h2 className="font-semibold text-slate-900">Danh sách yêu cầu chờ duyệt</h2>
-                            <p className="mt-1 text-sm text-slate-500">Tổng số: <strong>{data.totalElements ?? 0}</strong> yêu cầu đang chờ xét duyệt.</p>
+                            <h2 className="font-semibold text-slate-900">Pending Approval Requests</h2>
+                            <p className="mt-1 text-sm text-slate-500">Total: <strong>{data.totalElements ?? 0}</strong> requests awaiting review.</p>
                         </div>
-                        <span className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">Chỉ hiển thị yêu cầu chờ duyệt</span>
+                        <span className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">Only pending requests are shown</span>
                     </div>
                     {listError && <div role="alert"><Alert type="danger">{listError}</Alert></div>}
-                    {loading ? <div role="status" className="flex items-center gap-3 py-8"><Spinner /> Đang tải yêu cầu...</div>
-                        : !listError && data.items.length === 0 ? <EmptyState title="Không có yêu cầu chờ duyệt" description="Hiện chưa có đề nghị sản phẩm nào cần xét duyệt." />
+                    {loading ? <div role="status" className="flex items-center gap-3 py-8"><Spinner /> Loading requests...</div>
+                        : !listError && data.items.length === 0 ? <EmptyState title="No Pending Requests" description="There are no product requests awaiting approval." />
                             : !listError ? <Table columns={columns} data={data.items} /> : null}
                     {!loading && !listError && data.totalPages > 1 && (
                         <Pagination page={page + 1} totalPages={data.totalPages} onChange={(value) => { setPage(value - 1); closeDetail(); }} />
@@ -283,48 +283,48 @@ export default function ProductApprovalsPage() {
                 </Card>
 
                 <Card>
-                    <h2 className="font-semibold text-slate-900">Tra cứu yêu cầu đã xử lý</h2>
-                    <p className="mt-1 text-sm text-slate-500">Nhập số yêu cầu để xem lại những yêu cầu đã được duyệt hoặc từ chối.</p>
+                    <h2 className="font-semibold text-slate-900">Lookup Processed Request</h2>
+                    <p className="mt-1 text-sm text-slate-500">Enter the request number to review a previously approved or rejected request.</p>
                     <form onSubmit={lookupRequest} className="mt-3 flex max-w-xl flex-col items-stretch gap-2 sm:flex-row sm:items-end">
-                        <div className="flex-1"><Input label="Số yêu cầu" value={lookupId} onChange={(event) => { setLookupId(event.target.value); setDetailError(""); }} placeholder="Ví dụ: 6" inputMode="numeric" /></div>
-                        <Button type="submit" variant="outline" disabled={saving || detailLoading}>Tra cứu</Button>
+                        <div className="flex-1"><Input label="Request Number" value={lookupId} onChange={(event) => { setLookupId(event.target.value); setDetailError(""); }} placeholder="Example: 6" inputMode="numeric" /></div>
+                        <Button type="submit" variant="outline" disabled={saving || detailLoading}>Search</Button>
                     </form>
                 </Card>
 
-                {detailLoading && <Card><div role="status" className="flex items-center gap-3"><Spinner /> Đang tải chi tiết yêu cầu...</div></Card>}
+                {detailLoading && <Card><div role="status" className="flex items-center gap-3"><Spinner /> Loading request details...</div></Card>}
                 {detailError && <div role="alert"><Alert type="danger">{detailError}</Alert></div>}
                 {detail && (
                     <Card className="space-y-5 border-orange-200" >
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
-                                <h2 className="break-all text-lg font-bold text-slate-900">Chi tiết {detail.requestCode || `yêu cầu #${detail.id}`}</h2>
-                                <p className="mt-1 text-sm text-slate-500">Sản phẩm: {detail.productName || "—"} · {detail.productCode || "—"} · Số yêu cầu #{detail.id}</p>
+                                <h2 className="break-all text-lg font-bold text-slate-900">Details {detail.requestCode || `request #${detail.id}`}</h2>
+                                <p className="mt-1 text-sm text-slate-500">Product: {detail.productName || "—"} · {detail.productCode || "—"} · Request #{detail.id}</p>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={closeDetail} disabled={saving}>Đóng</Button>
+                            <Button variant="ghost" size="sm" onClick={closeDetail} disabled={saving}>Close</Button>
                         </div>
                         <div className="grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
-                            <DetailField label="Loại yêu cầu" value={REQUEST_TYPES[detail.requestType] || detail.requestType} />
-                            <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Trạng thái</dt><dd className="mt-1"><ProductStatusBadge status={detail.status} /></dd></div>
-                            <DetailField label="Người yêu cầu" value={detail.createdByName || (detail.createdById ? `Mã người dùng ${detail.createdById}` : "")} />
-                            <DetailField label="Ngày gửi" value={formatProductDate(detail.createdAt)} />
-                            <DetailField label="Người duyệt / từ chối" value={detail.approvedByName || (detail.approvedById ? `Mã người dùng ${detail.approvedById}` : "Chưa xử lý")} />
-                            <DetailField label="Thời điểm xử lý" value={formatProductDate(detail.approvedAt)} />
-                            <DetailField label="Số tham chiếu sản phẩm" value={detail.productId ? String(detail.productId) : ""} />
-                            <DetailField label="Mã yêu cầu" value={detail.requestCode} />
+                            <DetailField label="Request Type" value={REQUEST_TYPES[detail.requestType] || detail.requestType} />
+                            <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Status</dt><dd className="mt-1"><ProductStatusBadge status={detail.status} /></dd></div>
+                            <DetailField label="Requested By" value={detail.createdByName || (detail.createdById ? `User ID ${detail.createdById}` : "")} />
+                            <DetailField label="Submitted At" value={formatProductDate(detail.createdAt)} />
+                            <DetailField label="Reviewed By" value={detail.approvedByName || (detail.approvedById ? `User ID ${detail.approvedById}` : "Pending")} />
+                            <DetailField label="Reviewed At" value={formatProductDate(detail.approvedAt)} />
+                            <DetailField label="Product Reference ID" value={detail.productId ? String(detail.productId) : ""} />
+                            <DetailField label="Request Code" value={detail.requestCode} />
                         </div>
-                        {detail.requestReason && <Alert type="info"><strong>Lý do đề nghị:</strong> {detail.requestReason}</Alert>}
-                        {detail.rejectionReason && <Alert type="danger"><strong>Lý do đã từ chối:</strong> {detail.rejectionReason}</Alert>}
+                        {detail.requestReason && <Alert type="info"><strong>Request Reason:</strong> {detail.requestReason}</Alert>}
+                        {detail.rejectionReason && <Alert type="danger"><strong>Rejection Reason:</strong> {detail.rejectionReason}</Alert>}
 
                         <div className="space-y-3">
                             <div>
-                                <h3 className="font-semibold text-slate-900">So sánh thông tin sản phẩm</h3>
-                                <p className="mt-1 text-sm text-slate-500">Những trường có dữ liệu đề xuất khác dữ liệu cũ sẽ được đánh dấu để dễ đối chiếu.</p>
+                                <h3 className="font-semibold text-slate-900">Compare Product Information</h3>
+                                <p className="mt-1 text-sm text-slate-500">Fields with proposed values different from the existing values are highlighted for comparison.</p>
                             </div>
                             {comparisonRows.length > 0 ? (
                                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                                     <table className="min-w-full divide-y divide-slate-200 text-sm">
                                         <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600">
-                                            <tr><th className="px-4 py-3">Thuộc tính</th><th className="px-4 py-3">Dữ liệu cũ</th><th className="px-4 py-3">Dữ liệu đề xuất</th></tr>
+                                            <tr><th className="px-4 py-3">Field</th><th className="px-4 py-3">Current Value</th><th className="px-4 py-3">Proposed Value</th></tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
                                             {comparisonRows.map((row) => (
@@ -337,45 +337,45 @@ export default function ProductApprovalsPage() {
                                         </tbody>
                                     </table>
                                 </div>
-                            ) : <Alert type="warning">Yêu cầu này chưa có đủ thông tin để so sánh. Vui lòng kiểm tra dữ liệu bổ sung trước khi xử lý.</Alert>}
+                            ) : <Alert type="warning">This request does not contain enough information for comparison. Review the supporting data before deciding.</Alert>}
                         </div>
 
                         {detail.status === "PENDING" ? (
                             <div className="space-y-4 rounded-2xl border border-orange-200 bg-orange-50/50 p-4">
                                 <div>
-                                    <h3 className="font-semibold text-slate-900">Quyết định phê duyệt</h3>
-                                    <p className="mt-1 text-sm text-slate-600">Quyết định của bạn sẽ được lưu vào hệ thống. Vui lòng kiểm tra kỹ thông tin trước khi xác nhận.</p>
+                                    <h3 className="font-semibold text-slate-900">Approval Decision</h3>
+                                    <p className="mt-1 text-sm text-slate-600">Your decision will be saved. Review the information carefully before confirming.</p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    <Button type="button" variant={action === "APPROVE" ? "success" : "outline"} onClick={() => selectAction("APPROVE")} disabled={saving}>Phê duyệt</Button>
-                                    <Button type="button" variant={action === "REJECT" ? "danger" : "outline"} onClick={() => selectAction("REJECT")} disabled={saving}>Từ chối</Button>
-                                    {action && <Button type="button" variant="ghost" onClick={() => selectAction("")} disabled={saving}>Hủy thao tác</Button>}
+                                    <Button type="button" variant={action === "APPROVE" ? "success" : "outline"} onClick={() => selectAction("APPROVE")} disabled={saving}>Approve</Button>
+                                    <Button type="button" variant={action === "REJECT" ? "danger" : "outline"} onClick={() => selectAction("REJECT")} disabled={saving}>Reject</Button>
+                                    {action && <Button type="button" variant="ghost" onClick={() => selectAction("")} disabled={saving}>Cancel Action</Button>}
                                 </div>
                                 {action && (
                                     <form onSubmit={submitDecision} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
                                         {action === "REJECT" && (
                                             <TextArea
-                                                label="Lý do từ chối * (tối đa 500 ký tự)"
+                                                label="Rejection Reason * (maximum 500 characters)"
                                                 rows={3}
                                                 value={reason}
                                                 maxLength={500}
                                                 required
                                                 onChange={(event) => { setReason(event.target.value); setConfirmed(false); setActionError(""); }}
-                                                placeholder="Nhập góp ý cụ thể để nhân viên kinh doanh chỉnh sửa và gửi lại"
+                                                placeholder="Enter specific feedback so Business Staff can revise and resubmit the request"
                                             />
                                         )}
                                         <label className="flex items-start gap-2 text-sm text-slate-700">
                                             <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#f25d19]" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} disabled={saving} />
-                                            <span>Tôi đã xem thông tin yêu cầu #{detail.id} và xác nhận {action === "APPROVE" ? "phê duyệt" : "từ chối"} vào hệ thống.</span>
+                                            <span>I have reviewed request #{detail.id} and confirm the decision to {action === "APPROVE" ? "approved" : "rejected"} in the system.</span>
                                         </label>
                                         {actionError && <div role="alert"><Alert type="danger">{actionError}</Alert></div>}
                                         <Button type="submit" variant={action === "APPROVE" ? "success" : "danger"} disabled={saving || !confirmed || (action === "REJECT" && (!reason.trim() || reason.trim().length > 500))}>
-                                            {saving ? "Đang xử lý..." : action === "APPROVE" ? "Xác nhận phê duyệt" : "Xác nhận từ chối"}
+                                            {saving ? "Processing..." : action === "APPROVE" ? "Confirm Approval" : "Confirm Rejection"}
                                         </Button>
                                     </form>
                                 )}
                             </div>
-                        ) : <Alert type="info">Yêu cầu đã được xử lý nên không thể xét duyệt lại.</Alert>}
+                        ) : <Alert type="info">This request has already been processed and cannot be reviewed again.</Alert>}
                     </Card>
                 )}
             </div>

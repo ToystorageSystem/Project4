@@ -32,16 +32,16 @@ export function validateSupplierInvoiceDraft(form, purchaseOrders) {
     const taxAmount = parseInvoiceCents(form.taxAmount);
     const total = subtotal === null || taxAmount === null ? null : subtotal + taxAmount;
 
-    if (!isPositiveId(supplierId)) issues.push("Vui lòng chọn nhà cung cấp đang hoạt động.");
+    if (!isPositiveId(supplierId)) issues.push("Please select an active supplier.");
     if (!isPositiveId(purchaseOrderId)) {
-        issues.push("Vui lòng chọn đơn mua hàng hợp lệ của nhà cung cấp.");
+        issues.push("Select a valid purchase order for this supplier.");
     } else if (!purchaseOrders.some((po) => String(po.id) === purchaseOrderId)) {
-        issues.push("Đơn mua hàng này chưa đủ điều kiện để lập hóa đơn. Vui lòng chọn đơn khác.");
+        issues.push("This purchase order is not eligible for invoicing. Select another order.");
     }
-    if (!invoiceNumber) issues.push("Số hóa đơn không được để trống.");
-    else if (invoiceNumber.length > 100) issues.push("Số hóa đơn không được vượt quá 100 ký tự.");
+    if (!invoiceNumber) issues.push("Invoice number is required.");
+    else if (invoiceNumber.length > 100) issues.push("Invoice number cannot exceed 100 characters.");
     if (!validLocalDate(form.invoiceDate)) {
-    issues.push("Ngày phát hành hóa đơn không hợp lệ.");
+    issues.push("Invalid invoice issue date.");
 } else {
     const now = new Date();
 
@@ -52,18 +52,18 @@ export function validateSupplierInvoiceDraft(form, purchaseOrders) {
 
     if (form.invoiceDate > today) {
         issues.push(
-            "Ngày phát hành hóa đơn không được sau ngày hiện tại."
+            "Invoice issue date cannot be in the future."
         );
     }
 }
-    if (!validLocalDate(form.dueDate)) issues.push("Hạn thanh toán không hợp lệ.");
+    if (!validLocalDate(form.dueDate)) issues.push("Invalid payment due date.");
     if (validLocalDate(form.invoiceDate) && validLocalDate(form.dueDate) && form.dueDate < form.invoiceDate) {
-        issues.push("Hạn thanh toán không được trước ngày phát hành hóa đơn.");
+        issues.push("Payment due date cannot be before the invoice issue date.");
     }
-    if (subtotal === null) issues.push("Giá trị trước thuế phải là số không âm, tối đa 2 chữ số thập phân.");
-    if (taxAmount === null) issues.push("Tiền thuế phải là số không âm, tối đa 2 chữ số thập phân.");
+    if (subtotal === null) issues.push("Subtotal must be non-negative, with at most two decimal places.");
+    if (taxAmount === null) issues.push("Tax amount must be non-negative, with at most two decimal places.");
     if (total !== null && (!Number.isSafeInteger(total) || total <= 0)) {
-        issues.push("Tổng giá trị hóa đơn phải lớn hơn 0 và nằm trong giới hạn hỗ trợ.");
+        issues.push("Invoice total must be greater than zero and within supported limits.");
     }
     return issues;
 }
@@ -71,7 +71,7 @@ export function validateSupplierInvoiceDraft(form, purchaseOrders) {
 export function supplierInvoiceDraftPayload(form) {
     const subtotalCents = parseInvoiceCents(form.subtotal);
     const taxCents = parseInvoiceCents(form.taxAmount);
-    if (subtotalCents === null || taxCents === null) throw new Error("Giá trị hóa đơn không hợp lệ.");
+    if (subtotalCents === null || taxCents === null) throw new Error("Invalid invoice amount.");
     return {
         supplierId: Number(form.supplierId),
         purchaseOrderId: Number(form.purchaseOrderId),

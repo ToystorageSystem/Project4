@@ -35,7 +35,7 @@ function MenuIcon({
 export const warehouseSidebarItems = [
     {
         key: "dashboard",
-        label: "Tổng quan",
+        label: "Overview",
         path: "/warehouse/dashboard",
         icon: (
             <svg
@@ -56,7 +56,7 @@ export const warehouseSidebarItems = [
 
     {
         key: "receiving",
-        label: "Nhận hàng",
+        label: "Receiving",
         path: "/warehouse/receiving",
         icon: (
             <svg
@@ -77,7 +77,7 @@ export const warehouseSidebarItems = [
 
     {
         key: "putaway",
-        label: "Sắp xếp hàng vào kho",
+        label: "Putaway",
         path: "/warehouse/putaway",
         icon: (
             <svg
@@ -104,7 +104,7 @@ const BUSINESS_STAFF_SECTIONS = [
     {
         type: "group",
         id: "catalog",
-        label: "Sản phẩm & nhà cung cấp",
+        label: "Products & Suppliers",
         keys: [
             "business-staff-products",
             "business-staff-categories",
@@ -115,7 +115,7 @@ const BUSINESS_STAFF_SECTIONS = [
     {
         type: "group",
         id: "purchasing",
-        label: "Mua hàng & nhập kho",
+        label: "Purchasing & Receiving",
         keys: [
             "business-staff-purchase-orders",
             "business-staff-supplier-invoices",
@@ -126,7 +126,7 @@ const BUSINESS_STAFF_SECTIONS = [
     {
         type: "group",
         id: "delivery",
-        label: "Điều chuyển & giao nhận",
+        label: "Stock Transfers & Deliveries",
         keys: [
             "business-staff-stock-transfer-list",
             "business-staff-stock-transfer-create",
@@ -142,17 +142,17 @@ const BUSINESS_STAFF_SECTIONS = [
 
 // Chi thay doi ten hien thi, khong doi route hay quyen.
 const STAFF_MENU_LABELS = {
-    "business-staff-products": "Danh sách sản phẩm",
-    "business-staff-categories": "Danh mục sản phẩm",
-    "business-staff-rejected-products": "Yêu cầu bị từ chối",
-    "business-staff-suppliers": "Nhà cung cấp",
-    "business-staff-purchase-orders": "Đơn mua hàng",
-    "business-staff-supplier-invoices": "Hóa đơn nhà cung cấp",
-    "business-staff-goods-receipt-list": "Theo dõi phiếu nhập kho",
-    "business-staff-goods-receipt": "Lập phiếu nhận hàng cho kho tổng",
-    "business-staff-stock-transfer-create": "Tạo phiếu điều chuyển",
-    "business-staff-shipment-manifests": "Bảng kê hàng gửi đi",
-    "business-staff-in-transit-shipments": "Theo dõi vận chuyển",
+    "business-staff-products": "Product List",
+    "business-staff-categories": "Product Categories",
+    "business-staff-rejected-products": "Rejected Requests",
+    "business-staff-suppliers": "Suppliers",
+    "business-staff-purchase-orders": "Purchase Orders",
+    "business-staff-supplier-invoices": "Supplier Invoices",
+    "business-staff-goods-receipt-list": "Track Goods Receipts",
+    "business-staff-goods-receipt": "Create Goods Receipt for Main Warehouse",
+    "business-staff-stock-transfer-create": "Create Stock Transfer",
+    "business-staff-shipment-manifests": "Outbound Shipment Manifests",
+    "business-staff-in-transit-shipments": "Shipment Tracking",
 };
 
 function pathMatches(pathname, path) {
@@ -414,10 +414,10 @@ export default function Sidebar({
                 {!collapsed && (
                     <div className="min-w-0 px-2">
                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                            Khu vực làm việc
+                            Work Area
                         </p>
                         <p className="truncate text-sm font-semibold text-slate-800">
-                            {title === "Business Staff" ? "Nhân viên kinh doanh" : title === "Business Manager" ? "Quản lý kinh doanh" : title === "Warehouse" ? "Bộ phận kho" : title}
+                            {title === "Business Staff" ? "Business Staff" : title === "Business Manager" ? "Business Manager" : title === "Warehouse" ? "Warehouse Department" : title}
                         </p>
                     </div>
                 )}
@@ -434,13 +434,13 @@ export default function Sidebar({
                     }
                     aria-label={
                         collapsed
-                            ? "Mở rộng thanh chức năng"
-                            : "Thu gọn thanh chức năng"
+                            ? "Expand sidebar"
+                            : "Collapse sidebar"
                     }
                     title={
                         collapsed
-                            ? "Mở rộng thanh chức năng"
-                            : "Thu gọn thanh chức năng"
+                            ? "Expand sidebar"
+                            : "Collapse sidebar"
                     }
                 >
                     <svg

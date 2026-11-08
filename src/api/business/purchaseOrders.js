@@ -71,12 +71,12 @@ export async function listPurchaseOrderCancellationRequests(orderId, signal) {
     return response.data;
 }
 
-export function purchaseOrderErrorMessage(error, fallback = "Không tải được dữ liệu đơn mua hàng.") {
+export function purchaseOrderErrorMessage(error, fallback = "Unable to load purchase orders.") {
     if (error?.response?.status === 403) {
-        return "Tài khoản chưa được cấp quyền thực hiện thao tác này.";
+        return "Your account does not have permission to perform this action.";
     }
     if (!error?.response) {
-        return "Không thể kết nối hệ thống. Vui lòng kiểm tra kết nối rồi thử lại.";
+        return "Unable to connect to the system. Check your connection and try again.";
     }
     return friendlyBusinessError(error, fallback);
 }

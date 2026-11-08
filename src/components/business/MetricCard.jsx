@@ -13,5 +13,5 @@ export default function MetricCard({ label, value, subtitle }) {
 export function formatCount(value) {
     if (value === null || value === undefined) return "—";
     const number = Number(value);
-    return Number.isFinite(number) ? number.toLocaleString("vi-VN") : "—";
+    return Number.isFinite(number) ? number.toLocaleString("en-GB") : "—";
 }

@@ -84,7 +84,7 @@ export async function decideSupplierPrice(
 // 4. Chuyen loi Backend thanh thong bao cho giao dien.
 export function supplierFeedbackErrorMessage(
     error,
-    fallback = "Không thực hiện được thao tác với nhà cung cấp."
+    fallback = "Unable to complete the supplier operation."
 ) {
     if (
         error?.code === "ERR_CANCELED" ||
@@ -96,11 +96,11 @@ export function supplierFeedbackErrorMessage(
     const status = error?.response?.status;
 
     if (status === 401) {
-        return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+        return "Your session has expired. Please sign in again.";
     }
 
     if (status === 403) {
-        return "Tài khoản không có quyền thực hiện chức năng này.";
+        return "Your account does not have permission to use this feature.";
     }
 
     const data = error?.response?.data;
@@ -111,11 +111,11 @@ export function supplierFeedbackErrorMessage(
             : data?.message;
 
     if (status === 404) {
-        return friendlyBusinessError(error, "Không tìm thấy thông tin nhà cung cấp cần tìm.");
+        return friendlyBusinessError(error, "Supplier not found.");
     }
 
     if (!error?.response) {
-        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+        return "Unable to connect to the system. Check your network connection and try again.";
     }
 
     return friendlyBusinessError(error, fallback);

@@ -9,12 +9,11 @@ export default function PutawayCompletePanel({
     return (
         <Card>
             <h2 className="font-semibold text-slate-900">
-                Hoàn thành Putaway
+                Complete Putaway
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-                Chỉ có thể hoàn thành khi toàn bộ
-                sản phẩm đã được cất đủ số lượng.
+                Putaway can be completed only when all items have been stored in full.
             </p>
 
             <Button
@@ -27,7 +26,7 @@ export default function PutawayCompletePanel({
                 onClick={onComplete}
             >
                 {completing
-                    ? "Đang hoàn thành..."
+                    ? "Completing..."
                     : "Complete Putaway"}
             </Button>
         </Card>

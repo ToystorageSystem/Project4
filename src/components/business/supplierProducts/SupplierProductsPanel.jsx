@@ -5,11 +5,11 @@ import Alert from "../../ui/Alert";
 import Button from "../../ui/Button";
 import EmptyState from "../../ui/EmptyState";
 import StatusBadge from "../../ui/StatusBadge";
-const businessStatusLabel = (value) => ({ ACTIVE: "Đang hoạt động", INACTIVE: "Tạm ngừng", REJECTED: "Đã từ chối", PENDING: "Chờ duyệt" }[value] || value);
+const businessStatusLabel = (value) => ({ ACTIVE: "Active", INACTIVE: "Inactive", REJECTED: "Rejected", PENDING: "Pending Approval" }[value] || value);
 import Table from "../../ui/Table";
 
 const show = (value) => value == null || value === "" ? "—" : value;
-const formatMoney = (value) => value == null ? "—" : `${Number(value).toLocaleString("vi-VN")} ₫`;
+const formatMoney = (value) => value == null ? "—" : `${Number(value).toLocaleString("en-GB")} ₫`;
 
 export default function SupplierProductsPanel({ supplierId }) {
     const [links, setLinks] = useState([]);
@@ -24,11 +24,11 @@ export default function SupplierProductsPanel({ supplierId }) {
         getLinksBySupplier(supplierId, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(result)) throw new Error("Dữ liệu liên kết sản phẩm và nhà cung cấp không hợp lệ");
+                if (!Array.isArray(result)) throw new Error("Invalid product–supplier association data");
                 setLinks(result);
             })
             .catch((requestError) => {
-                if (!controller.signal.aborted) setError(supplierProductErrorMessage(requestError, "Không tải được liên kết sản phẩm."));
+                if (!controller.signal.aborted) setError(supplierProductErrorMessage(requestError, "Unable to load product associations."));
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false); });
         return () => controller.abort();
@@ -36,33 +36,33 @@ export default function SupplierProductsPanel({ supplierId }) {
 
     const columns = [
         {
-            key: "productCode", label: "Mã sản phẩm",
+            key: "productCode", label: "Product Code",
             render: (value, link) => <Link to={`/business/products/${link.productId}`} className="font-semibold text-[#c94810] hover:underline">{show(value)}</Link>,
         },
-        { key: "productName", label: "Tên sản phẩm", render: (value) => <span className="font-medium text-slate-900">{show(value)}</span> },
-        { key: "supplierProductCode", label: "Mã sản phẩm phía nhà cung cấp", render: show },
-        { key: "purchasePrice", label: "Giá nhập", render: formatMoney },
-        { key: "minimumOrderQuantity", label: "Đặt tối thiểu", render: show },
-        { key: "leadTimeDays", label: "Giao (ngày)", render: show },
-        { key: "status", label: "Liên kết", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} label={businessStatusLabel(value)} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ Nhà cung cấp ưu tiên</div>}</div> },
-        { key: "productStatus", label: "Trạng thái SP", render: (value) => <StatusBadge status={value} label={businessStatusLabel(value)} /> },
-        { key: "id", label: "Thao tác", render: (_value, link) => <Link className="font-semibold text-[#c94810] hover:underline" to={`/business/products/${link.productId}`}>Quản lý liên kết</Link> },
+        { key: "productName", label: "Product Name", render: (value) => <span className="font-medium text-slate-900">{show(value)}</span> },
+        { key: "supplierProductCode", label: "Supplier Product Code", render: show },
+        { key: "purchasePrice", label: "Purchase Price", render: formatMoney },
+        { key: "minimumOrderQuantity", label: "Minimum Order Quantity", render: show },
+        { key: "leadTimeDays", label: "Lead Time (days)", render: show },
+        { key: "status", label: "Association", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} label={businessStatusLabel(value)} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ Preferred Supplier</div>}</div> },
+        { key: "productStatus", label: "Product Status", render: (value) => <StatusBadge status={value} label={businessStatusLabel(value)} /> },
+        { key: "id", label: "Actions", render: (_value, link) => <Link className="font-semibold text-[#c94810] hover:underline" to={`/business/products/${link.productId}`}>Manage Associations</Link> },
     ];
 
     return (
         <section className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900">Sản phẩm liên kết ({links.length})</h2>
-                    <p className="mt-1 text-sm text-slate-500">Bao gồm cả liên kết đang hoạt động và tạm ngừng</p>
+                    <h2 className="text-lg font-bold text-slate-900">Linked Products ({links.length})</h2>
+                    <p className="mt-1 text-sm text-slate-500">Includes both active and inactive associations</p>
                 </div>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setReload((value) => value + 1)}>Làm mới</Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setReload((value) => value + 1)}>Refresh</Button>
             </div>
-            {loading ? <p role="status" className="text-sm text-slate-500">Đang tải danh sách liên kết...</p>
+            {loading ? <p role="status" className="text-sm text-slate-500">Loading associations...</p>
                 : error ? <div role="alert"><Alert type="warning">{error}</Alert></div>
                     : links.length ? <Table columns={columns} data={links} />
-                        : <EmptyState title="Chưa có liên kết sản phẩm" description="Mở chi tiết một sản phẩm đang hoạt động, sau đó chọn “Liên kết nhà cung cấp”." />}
-            <p className="text-xs text-slate-500">Để tạo hoặc chỉnh sửa liên kết, mở trang chi tiết sản phẩm tương ứng. Không thay đổi sản phẩm bằng thao tác này.</p>
+                        : <EmptyState title="No Linked Products" description="Open an active product's details and select Link Supplier." />}
+            <p className="text-xs text-slate-500">To create or edit an association, open the corresponding product details. This action does not modify the product itself.</p>
         </section>
     );
 }

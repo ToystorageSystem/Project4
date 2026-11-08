@@ -16,25 +16,21 @@ export default function StockTransferActionDialog({
             <div role="dialog" aria-modal="true" aria-labelledby="stock-transfer-action-title" className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl">
                 <div className="border-b border-slate-200 px-6 py-4">
                     <h2 id="stock-transfer-action-title" className="text-lg font-semibold text-slate-900">
-                        {isSubmit ? "Xác nhận gửi phiếu điều chuyển" : "Xác nhận hủy phiếu điều chuyển"}
+                        {isSubmit ? "Confirm Stock Transfer Submission" : "Confirm Stock Transfer Cancellation"}
                     </h2>
                 </div>
                 <div className="space-y-4 px-6 py-5 text-sm text-slate-700">
                     {isSubmit ? <p>
-                        Chứng từ <strong>{transferCode}</strong> sẽ được gửi cho bộ phận kho xử lý.
-                        Hệ thống sẽ kiểm tra số lượng có thể xuất và <strong>tạm giữ số hàng cần điều chuyển tại kho xuất</strong>.
-                        Sau khi gửi, việc chỉnh sửa phiếu sẽ bị hạn chế.
+                        Document <strong>{transferCode}</strong> will be sent to the warehouse team for processing. The system will check available stock and <strong>reserve the required quantity at the source warehouse</strong>. Further edits will be restricted after submission.
                     </p> : <>
                         <p>
-                            Hủy phiếu <strong>{transferCode}</strong> (trạng thái <strong>{status}</strong>) sẽ được đánh dấu đã hủy.
-                            Nếu có hàng đang được tạm giữ, hệ thống sẽ trả lại số lượng có thể sử dụng.
-                            Không thể tiếp tục xử lý phiếu đã hủy.
+                            Cancel Transfer <strong>{transferCode}</strong> (status <strong>{status}</strong>) will be cancelled. Reserved stock, if any, will be released back to available stock. Cancelled transfers cannot be processed further.
                         </p>
-                        <label className="block font-medium text-slate-800" htmlFor="stock-transfer-cancel-reason">Lý do hủy *</label>
+                        <label className="block font-medium text-slate-800" htmlFor="stock-transfer-cancel-reason">Cancellation Reason *</label>
                         <textarea
                             id="stock-transfer-cancel-reason"
                             className="min-h-24 w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-orange-500"
-                            placeholder="Nhập lý do hủy phiếu..."
+                            placeholder="Enter the cancellation reason..."
                             value={reason}
                             maxLength={500}
                             disabled={busy || uncertain}
@@ -43,15 +39,15 @@ export default function StockTransferActionDialog({
                     </>}
                     <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
                         <input type="checkbox" checked={confirmed} disabled={busy || uncertain} onChange={(event) => setConfirmed(event.target.checked)} className="mt-1 accent-orange-600" />
-                        <span>Tôi đã kiểm tra thông tin và đồng ý <strong>lưu thay đổi vào hệ thống</strong>{isSubmit ? " và sẽ giữ chỗ tồn kho." : " và có thể giải phóng phần tồn đã giữ chỗ."}</span>
+                        <span>I have reviewed the details and agree to <strong>save the changes</strong>{isSubmit ? " and reserve the stock." : " and release reserved stock if applicable."}</span>
                     </label>
                     {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
-                    {uncertain && <Alert type="warning">Không thử lại thao tác này. Hãy làm mới chi tiết, kiểm tra trạng thái và đối chiếu với nhóm trước khi quyết định tiếp.</Alert>}
+                    {uncertain && <Alert type="warning">Do not retry this action. Refresh the details, check the status, and confirm with the team before proceeding.</Alert>}
                 </div>
                 <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
-                    <Button type="button" variant="outline" disabled={busy} onClick={onClose}>Đóng</Button>
+                    <Button type="button" variant="outline" disabled={busy} onClick={onClose}>Close</Button>
                     <Button type="button" disabled={!canConfirm} onClick={() => onConfirm(reason.trim())}>
-                        {busy ? "Đang xử lý..." : (isSubmit ? "Xác nhận gửi phiếu" : "Xác nhận hủy phiếu")}
+                        {busy ? "Processing..." : (isSubmit ? "Confirm Submission" : "Confirm Cancellation")}
                     </Button>
                 </div>
             </div>

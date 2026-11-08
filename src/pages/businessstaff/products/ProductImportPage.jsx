@@ -37,7 +37,7 @@ export default function ProductImportPage() {
     const checkExcel = async () => {
         if (!file || checking || importing) return;
         if (!/\.(xlsx|xls)$/i.test(file.name)) {
-            setError("Chỉ hỗ trợ .xlsx hoặc .xls.");
+            setError("Only .xlsx and .xls files are supported.");
             return;
         }
         setChecking(true);
@@ -46,10 +46,10 @@ export default function ProductImportPage() {
         setResult(null);
         try {
             const response = await previewProductExcel(file);
-            if (!Array.isArray(response?.rows)) throw new Error("Dữ liệu xem trước chưa hợp lệ");
+            if (!Array.isArray(response?.rows)) throw new Error("Invalid preview data");
             setPreview(response);
         } catch (requestError) {
-            setError(productErrorMessage(requestError, "Không thể xem trước file Excel."));
+            setError(productErrorMessage(requestError, "Unable to preview Excel file."));
         } finally {
             setChecking(false);
         }
@@ -65,7 +65,7 @@ export default function ProductImportPage() {
             setPreview(null);
             setConfirmed(false);
         } catch (requestError) {
-            setError(productErrorMessage(requestError, "Không thể nhập file Excel. Hãy xem trước lại trước khi thử tiếp."));
+            setError(productErrorMessage(requestError, "Unable to import Excel file. Preview the file again before retrying."));
             setPreview(null); // The server revalidates; a fresh preview is required.
             setConfirmed(false);
         } finally {
@@ -74,63 +74,63 @@ export default function ProductImportPage() {
     };
 
     const columns = [
-        { key: "rowNumber", label: "Dòng" },
-        { key: "productCode", label: "Mã SKU", render: (value) => value || "—" },
-        { key: "barcode", label: "Mã vạch", render: (value) => value || "—" },
-        { key: "name", label: "Tên sản phẩm", render: (value) => value || "—" },
-        { key: "categoryId", label: "Mã danh mục", render: (value) => value ?? "—" },
-        { key: "brandId", label: "Mã thương hiệu", render: (value) => value ?? "—" },
-        { key: "valid", label: "Kết quả", render: (value) => <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${value ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>{value ? "Hợp lệ" : "Có lỗi"}</span> },
-        { key: "errors", label: "Lỗi", render: (value) => value?.length ? <ul className="list-disc space-y-1 pl-4 text-xs text-red-700">{value.map((item, i) => <li key={i}>{item}</li>)}</ul> : "—" },
+        { key: "rowNumber", label: "Row" },
+        { key: "productCode", label: "SKU", render: (value) => value || "—" },
+        { key: "barcode", label: "Barcode", render: (value) => value || "—" },
+        { key: "name", label: "Product Name", render: (value) => value || "—" },
+        { key: "categoryId", label: "Category ID", render: (value) => value ?? "—" },
+        { key: "brandId", label: "Brand ID", render: (value) => value ?? "—" },
+        { key: "valid", label: "Result", render: (value) => <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${value ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>{value ? "Valid" : "Invalid"}</span> },
+        { key: "errors", label: "Error", render: (value) => value?.length ? <ul className="list-disc space-y-1 pl-4 text-xs text-red-700">{value.map((item, i) => <li key={i}>{item}</li>)}</ul> : "—" },
     ];
 
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Nhập sản phẩm bằng Excel" description="Xem trước toàn bộ các dòng hợp lệ/không hợp lệ trước khi xác nhận. Sản phẩm hợp lệ sẽ được tạo ngay sau khi xác nhận nhập."
-                    actions={<Button variant="ghost" onClick={() => navigate(ROOT)}>← Danh sách sản phẩm</Button>}
+                <PageHeader title="Import Products from Excel" description="Preview all valid and invalid rows before confirming. Valid products are created immediately after import confirmation."
+                    actions={<Button variant="ghost" onClick={() => navigate(ROOT)}>← Product List</Button>}
                 />
                 <Card>
                     <div className="space-y-4">
                         <Alert type="info">
-                            Chọn Excel .xlsx hoặc .xls. <strong>Sheet đầu tiên</strong> phải có dòng tiêu đề gồm chính xác 10 cột theo thứ tự sau (phân biệt chữ hoa/thường):
+                            Select an .xlsx or .xls Excel file. <strong>The first worksheet</strong> must contain a header row with exactly 10 columns in the following order (case-sensitive):
                             <div className="mt-2 overflow-x-auto rounded-lg bg-white p-3 font-mono text-xs text-slate-800">{HEADERS.join(" | ")}</div>
-                            <p className="mt-2 text-xs">Mã thương hiệu, đường dẫn ảnh và lý do có thể để trống. Vui lòng điền đủ các thông tin bắt buộc. Hệ thống sẽ kiểm tra mã sản phẩm và mã vạch bị trùng.</p>
+                            <p className="mt-2 text-xs">Brand ID, image URL, and reason may be blank. Complete all required fields. Duplicate product codes and barcodes are validated.</p>
                         </Alert>
                         <div className="flex flex-wrap items-center gap-3">
-                            <input type="file" accept=".xlsx,.xls" aria-label="Chọn file Excel sản phẩm" onChange={chooseFile} className="max-w-full text-sm text-slate-600" />
+                            <input type="file" accept=".xlsx,.xls" aria-label="Select Product Excel File" onChange={chooseFile} className="max-w-full text-sm text-slate-600" />
                             <Button onClick={checkExcel} disabled={!file || checking || importing}>
-                                {checking ? "Đang kiểm tra..." : "Xem trước / kiểm tra"}
+                                {checking ? "Validating..." : "Preview / Validate"}
                             </Button>
                         </div>
-                        {file && <p className="text-xs text-slate-500">Tệp: {file.name}</p>}
+                        {file && <p className="text-xs text-slate-500">File: {file.name}</p>}
                     </div>
                 </Card>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
-                {result && <div role="status"><Alert type="success">Đã nhập thành công {result.importedRows} / {result.totalRows} sản phẩm từ Excel. Sản phẩm được đưa vào sử dụng ngay và đã ghi lịch sử tạo mới.</Alert></div>}
+                {result && <div role="status"><Alert type="success">Successfully imported {result.importedRows} / {result.totalRows} products from Excel. Products are activated immediately, and creation history has been recorded.</Alert></div>}
                 {preview && (
                     <>
                         <div className="grid gap-4 sm:grid-cols-3">
-                            <Card><p className="text-sm text-slate-500">Tổng dòng</p><p className="mt-1 text-2xl font-bold text-slate-900">{preview.totalRows}</p></Card>
-                            <Card><p className="text-sm text-slate-500">Hợp lệ</p><p className="mt-1 text-2xl font-bold text-emerald-700">{preview.validRows}</p></Card>
-                            <Card><p className="text-sm text-slate-500">Không hợp lệ</p><p className="mt-1 text-2xl font-bold text-red-700">{preview.invalidRows}</p></Card>
+                            <Card><p className="text-sm text-slate-500">Total Rows</p><p className="mt-1 text-2xl font-bold text-slate-900">{preview.totalRows}</p></Card>
+                            <Card><p className="text-sm text-slate-500">Valid</p><p className="mt-1 text-2xl font-bold text-emerald-700">{preview.validRows}</p></Card>
+                            <Card><p className="text-sm text-slate-500">Invalid</p><p className="mt-1 text-2xl font-bold text-red-700">{preview.invalidRows}</p></Card>
                         </div>
                         <Card className="space-y-4">
-                            <h2 className="text-lg font-semibold text-slate-900">Kết quả kiểm tra từng dòng</h2>
-                            <p className="text-sm text-slate-500">Đây chỉ là bản xem trước. Chưa có sản phẩm nào được tạo. Bạn có thể kéo bảng để xem thêm.</p>
+                            <h2 className="text-lg font-semibold text-slate-900">Row Validation Results</h2>
+                            <p className="text-sm text-slate-500">This is a preview only. No products have been created. Scroll horizontally to view additional columns.</p>
                             <div className="max-h-[440px] overflow-auto"><Table columns={columns} data={preview.rows} rowKey="rowNumber" /></div>
                             {preview.invalidRows > 0 ? (
-                                <Alert type="danger">File còn {preview.invalidRows} dòng chưa hợp lệ. Vui lòng chỉnh sửa tệp Excel rồi kiểm tra lại. Chỉ có thể nhập khi tất cả dòng đều hợp lệ.</Alert>
+                                <Alert type="danger">The file contains {preview.invalidRows} invalid rows. Correct the Excel file and validate again. Import is allowed only when all rows are valid.</Alert>
                             ) : (
-                                <Alert type="success">Đã kiểm tra {preview.validRows} dòng hợp lệ. Hệ thống sẽ kiểm tra lại khi bạn xác nhận nhập.</Alert>
+                                <Alert type="success">Inspected {preview.validRows} valid rows. The system will validate them again upon import confirmation.</Alert>
                             )}
                             {preview.invalidRows === 0 && preview.validRows > 0 && (
                                 <div className="space-y-4 border-t border-slate-100 pt-4">
                                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi xác nhận các sản phẩm hợp lệ sẽ được lưu trực tiếp vào cơ sở dữ liệu." />
+                                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="I confirm that valid products will be saved directly to the database." />
                                     </div>
                                     <div className="flex justify-end">
-                                        <Button onClick={confirmImport} disabled={!confirmed || importing}>{importing ? "Đang nhập..." : `Xác nhận nhập ${preview.validRows} sản phẩm`}</Button>
+                                        <Button onClick={confirmImport} disabled={!confirmed || importing}>{importing ? "Importing..." : `Confirm Import ${preview.validRows} products`}</Button>
                                     </div>
                                 </div>
                             )}

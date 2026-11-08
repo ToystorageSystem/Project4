@@ -18,7 +18,7 @@ import Input from "../../ui/Input";
 import Modal from "../../ui/Modal";
 import Select from "../../ui/Select";
 import StatusBadge from "../../ui/StatusBadge";
-const businessStatusLabel = (value) => ({ ACTIVE: "Đang hoạt động", INACTIVE: "Tạm ngừng", REJECTED: "Đã từ chối", PENDING: "Chờ duyệt" }[value] || value);
+const businessStatusLabel = (value) => ({ ACTIVE: "Active", INACTIVE: "Inactive", REJECTED: "Rejected", PENDING: "Pending Approval" }[value] || value);
 import Table from "../../ui/Table";
 
 const EMPTY_FORM = {
@@ -30,31 +30,31 @@ const EMPTY_FORM = {
     status: "ACTIVE",
     defaultSupplier: false,
 };
-const formatMoney = (value) => value == null ? "—" : `${Number(value).toLocaleString("vi-VN")} ₫`;
+const formatMoney = (value) => value == null ? "—" : `${Number(value).toLocaleString("en-GB")} ₫`;
 const display = (value) => value == null || value === "" ? "—" : value;
 
 function validationErrors(form, creating, linkedSupplierIds) {
     const errors = {};
     if (creating && (!Number.isSafeInteger(Number(form.supplierId)) || Number(form.supplierId) <= 0)) {
-        errors.supplierId = "Chọn nhà cung cấp hợp lệ.";
+        errors.supplierId = "Select a valid supplier.";
     } else if (creating && linkedSupplierIds.has(Number(form.supplierId))) {
-        errors.supplierId = "Nhà cung cấp này đã liên kết với sản phẩm (kể cả liên kết đang tạm ngừng). Hãy sửa liên kết cũ.";
+        errors.supplierId = "This supplier is already linked to the product, including inactive links. Edit the existing link instead.";
     }
     if (form.supplierProductCode.trim().length > 100) {
-        errors.supplierProductCode = "Tối đa 100 ký tự.";
+        errors.supplierProductCode = "Maximum 100 characters.";
     }
     const rawPrice = form.purchasePrice.trim();
     if (!/^\d+(\.\d{1,2})?$/.test(rawPrice) || Number(rawPrice) < 0.01 || !Number.isFinite(Number(rawPrice))) {
-        errors.purchasePrice = "Giá nhập phải lớn hơn 0 và có tối đa 2 chữ số thập phân.";
+        errors.purchasePrice = "Purchase price must be greater than zero, with at most two decimal places.";
     }
     if (!/^\d+$/.test(form.leadTimeDays) || !Number.isSafeInteger(Number(form.leadTimeDays))) {
-        errors.leadTimeDays = "Thời gian giao hàng phải là số nguyên từ 0 trở lên.";
+        errors.leadTimeDays = "Lead time must be a non-negative integer.";
     }
     if (!/^\d+$/.test(form.minimumOrderQuantity) || !Number.isSafeInteger(Number(form.minimumOrderQuantity)) || Number(form.minimumOrderQuantity) < 1) {
-        errors.minimumOrderQuantity = "Số lượng đặt tối thiểu phải là số nguyên từ 1 trở lên.";
+        errors.minimumOrderQuantity = "Minimum order quantity must be an integer of at least 1.";
     }
     if (!creating && !["ACTIVE", "INACTIVE"].includes(form.status)) {
-        errors.status = "Trạng thái không hợp lệ.";
+        errors.status = "Invalid status.";
     }
     return errors;
 }
@@ -88,11 +88,11 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
         getLinksByProduct(productId, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(result)) throw new Error("Dữ liệu liên kết sản phẩm và nhà cung cấp không hợp lệ");
+                if (!Array.isArray(result)) throw new Error("Invalid product–supplier association data");
                 setLinks(result);
             })
             .catch((requestError) => {
-                if (!controller.signal.aborted) setLoadError(supplierProductErrorMessage(requestError, "Không tải được nhà cung cấp liên kết."));
+                if (!controller.signal.aborted) setLoadError(supplierProductErrorMessage(requestError, "Unable to load linked suppliers."));
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false); });
         return () => controller.abort();
@@ -106,12 +106,12 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
         listSuppliers({ keyword: supplierKeyword || undefined, status: "ACTIVE", page: supplierPage, size: 20, sortBy: "name", direction: "ASC" }, controller.signal)
             .then((result) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(result?.content)) throw new Error("Dữ liệu danh sách nhà cung cấp không hợp lệ");
+                if (!Array.isArray(result?.content)) throw new Error("Invalid supplier list data");
                 setSupplierOptions(result.content);
                 setSupplierTotalPages(result.totalPages ?? 0);
             })
             .catch((requestError) => {
-                if (!controller.signal.aborted) setSupplierError(supplierProductErrorMessage(requestError, "Không tải được danh sách nhà cung cấp."));
+                if (!controller.signal.aborted) setSupplierError(supplierProductErrorMessage(requestError, "Unable to load suppliers."));
             })
             .finally(() => { if (!controller.signal.aborted) setSupplierLoading(false); });
         return () => controller.abort();
@@ -156,7 +156,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
         const creating = action.type === "create";
         const nextErrors = validationErrors(form, creating, new Set(links.map((link) => Number(link.supplierId))));
         if (!creating && action.link?.defaultSupplier && form.status === "INACTIVE") {
-            nextErrors.status = "Không thể ngừng hoạt động NCC mặc định. Hãy chọn một NCC mặc định khác trước.";
+            nextErrors.status = "Cannot deactivate the default supplier. Select another default supplier first.";
         }
         setErrors(nextErrors);
         if (Object.keys(nextErrors).length) return;
@@ -179,11 +179,11 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
             } else {
                 await updateSupplierProductLink(action.link.id, { ...payload, status: form.status });
             }
-            setNotice(creating ? "Đã tạo liên kết nhà cung cấp." : "Đã cập nhật liên kết nhà cung cấp.");
+            setNotice(creating ? "Supplier association created." : "Supplier association updated.");
             setAction(null);
             setReload((current) => current + 1);
         } catch (requestError) {
-            setError(supplierProductErrorMessage(requestError, "Không thể lưu liên kết."));
+            setError(supplierProductErrorMessage(requestError, "Unable to save supplier association."));
         } finally {
             setSaving(false);
         }
@@ -198,15 +198,15 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
         try {
             if (action.type === "default") {
                 await setDefaultSupplierLink(action.link.id);
-                setNotice(`Đã chọn ${action.link.supplierName} làm nhà cung cấp mặc định.`);
+                setNotice(`Selected ${action.link.supplierName} as the default supplier.`);
             } else if (action.type === "delete") {
                 await deleteSupplierProductLink(action.link.id);
-                setNotice("Đã xóa vĩnh viễn liên kết.");
+                setNotice("Supplier association permanently deleted.");
             } else return;
             setAction(null);
             setReload((current) => current + 1);
         } catch (requestError) {
-            setError(supplierProductErrorMessage(requestError, "Không thể thực hiện thao tác."));
+            setError(supplierProductErrorMessage(requestError, "Unable to complete the operation."));
         } finally {
             setSaving(false);
         }
@@ -214,7 +214,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
 
     const columns = [
         {
-            key: "supplierName", label: "Nhà cung cấp",
+            key: "supplierName", label: "Supplier",
             render: (_value, link) => (
                 <div className="space-y-1">
                     <Link to={`/business/suppliers/${link.supplierId}`} className="font-semibold text-[#c94810] hover:underline">{link.supplierName || link.supplierCode || "—"}</Link>
@@ -223,17 +223,17 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                 </div>
             ),
         },
-        { key: "supplierProductCode", label: "Mã sản phẩm phía nhà cung cấp", render: display },
-        { key: "purchasePrice", label: "Giá nhập", render: formatMoney },
-        { key: "minimumOrderQuantity", label: "Đặt tối thiểu", render: display },
-        { key: "status", label: "Liên kết", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} label={businessStatusLabel(value)} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ Nhà cung cấp ưu tiên</div>}</div> },
+        { key: "supplierProductCode", label: "Supplier Product Code", render: display },
+        { key: "purchasePrice", label: "Purchase Price", render: formatMoney },
+        { key: "minimumOrderQuantity", label: "Minimum Order Quantity", render: display },
+        { key: "status", label: "Association", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} label={businessStatusLabel(value)} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ Preferred Supplier</div>}</div> },
         {
-            key: "id", label: "Thao tác",
+            key: "id", label: "Actions",
             render: (_value, link) => (
                 <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" size="sm" disabled={!canManage} onClick={() => openAction("edit", link)}>Sửa</Button>
-                    {!link.defaultSupplier && <Button type="button" variant="secondary" size="sm" disabled={!canManage || link.status !== "ACTIVE" || link.supplierStatus !== "ACTIVE"} onClick={() => openAction("default", link)}>Đặt mặc định</Button>}
-                    <Button type="button" variant="danger" size="sm" disabled={!canManage || Boolean(link.defaultSupplier)} onClick={() => openAction("delete", link)}>Xóa</Button>
+                    <Button type="button" variant="outline" size="sm" disabled={!canManage} onClick={() => openAction("edit", link)}>Edit</Button>
+                    {!link.defaultSupplier && <Button type="button" variant="secondary" size="sm" disabled={!canManage || link.status !== "ACTIVE" || link.supplierStatus !== "ACTIVE"} onClick={() => openAction("default", link)}>Set as Default</Button>}
+                    <Button type="button" variant="danger" size="sm" disabled={!canManage || Boolean(link.defaultSupplier)} onClick={() => openAction("delete", link)}>Delete</Button>
                 </div>
             ),
         },
@@ -246,34 +246,34 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
             <Card>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h2 className="text-lg font-bold text-slate-900">Nhà cung cấp liên kết ({links.length})</h2>
+                        <h2 className="text-lg font-bold text-slate-900">Linked Suppliers ({links.length})</h2>
                         <p className="mt-1 text-sm text-slate-500">
-                            Theo dõi giá mua, số lượng đặt tối thiểu và nhà cung cấp ưu tiên
+                            Manage purchase prices, minimum order quantities, and preferred suppliers
                         </p>
                     </div>
-                    <Button type="button" disabled={!canManage} onClick={() => openAction("create")}>+ Liên kết nhà cung cấp</Button>
+                    <Button type="button" disabled={!canManage} onClick={() => openAction("create")}>+ Link Supplier</Button>
                 </div>
-                {!canManage && <div className="mt-4"><Alert type="warning">Chỉ có thể thay đổi nhà cung cấp khi sản phẩm đang hoạt động. Các liên kết hiện có vẫn được hiển thị để tra cứu.</Alert></div>}
+                {!canManage && <div className="mt-4"><Alert type="warning">Supplier associations can be changed only for active products. Existing associations remain visible for reference.</Alert></div>}
                 {notice && <div role="status" className="mt-4"><Alert type="success">{notice}</Alert></div>}
                 {loadError && <div role="alert" className="mt-4"><Alert type="danger">{loadError}</Alert></div>}
-                {!loading && !loadError && <p className="mt-4 text-xs text-slate-500">Có {links.filter((link) => link.status === "ACTIVE").length} liên kết đang hoạt động. Liên kết tạm ngừng vẫn được lưu để có thể khôi phục khi cần.</p>}
+                {!loading && !loadError && <p className="mt-4 text-xs text-slate-500">Yes {links.filter((link) => link.status === "ACTIVE").length} active associations. Inactive associations are retained and can be restored if needed.</p>}
             </Card>
-            {loading ? <p role="status" className="text-sm text-slate-600">Đang tải liên kết nhà cung cấp...</p>
+            {loading ? <p role="status" className="text-sm text-slate-600">Loading linked suppliers...</p>
                 : !loadError && (links.length ? <Table columns={columns} data={links} />
-                    : <EmptyState title="Chưa liên kết nhà cung cấp" description="Sản phẩm chưa có nhà cung cấp. Sử dụng nút Liên kết nhà cung cấp để tạo mới." />)}
+                    : <EmptyState title="No Linked Suppliers" description="This product has no linked suppliers. Select Link Supplier to add one." />)}
             <Modal
                 open={Boolean(action)}
-                title={creating ? "Thêm liên kết nhà cung cấp" : action?.type === "edit" ? "Cập nhật liên kết" : action?.type === "default" ? "Đặt nhà cung cấp mặc định" : "Xóa vĩnh viễn liên kết"}
+                title={creating ? "Add Supplier Association" : action?.type === "edit" ? "Update Association" : action?.type === "default" ? "Set Default Supplier" : "Permanently Delete Association"}
                 onClose={() => { if (!saving) { setAction(null); setError(""); } }}
                 footer={<>
-                    <Button type="button" variant="ghost" disabled={saving} onClick={() => { setAction(null); setError(""); }}>Hủy</Button>
+                    <Button type="button" variant="ghost" disabled={saving} onClick={() => { setAction(null); setError(""); }}>Cancel</Button>
                     <Button
                         type={editingForm ? "submit" : "button"}
                         form={editingForm ? "supplier-product-link-form" : undefined}
                         variant={action?.type === "delete" ? "danger" : "primary"}
                         disabled={saving || !confirmed || (action?.type === "delete" && deleteText !== "XOA")}
                         onClick={editingForm ? undefined : confirmAction}
-                    >{saving ? "Đang xử lý..." : creating ? "Tạo liên kết" : action?.type === "edit" ? "Lưu thay đổi" : action?.type === "default" ? "Xác nhận mặc định" : "Xóa vĩnh viễn"}</Button>
+                    >{saving ? "Processing..." : creating ? "Create Association" : action?.type === "edit" ? "Save Changes" : action?.type === "default" ? "Confirm Default Supplier" : "Delete Permanently"}</Button>
                 </>}
             >
                 <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
@@ -284,8 +284,8 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                                 <div className="space-y-3 rounded-xl border border-slate-200 p-3">
                                     <div>
                                         <Input
-                                            label="Tìm nhà cung cấp đang hoạt động"
-                                            placeholder="Nhập tên hoặc mã NCC"
+                                            label="Find an active supplier"
+                                            placeholder="Enter supplier name or code"
                                             value={supplierKeywordDraft}
                                             onChange={(event) => setSupplierKeywordDraft(event.target.value)}
                                             onKeyDown={(event) => {
@@ -298,16 +298,16 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                                                 }
                                             }}
                                         />
-                                        <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => { setSupplierPage(0); setSupplierKeyword(supplierKeywordDraft.trim()); setForm((current) => ({ ...current, supplierId: "" })); }}>Tìm NCC</Button>
+                                        <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => { setSupplierPage(0); setSupplierKeyword(supplierKeywordDraft.trim()); setForm((current) => ({ ...current, supplierId: "" })); }}>Find Supplier</Button>
                                     </div>
                                     {supplierError && <Alert type="danger">{supplierError}</Alert>}
-                                    {supplierLoading ? <p className="text-sm text-slate-500">Đang tải NCC...</p> : <Select
-                                        label="Nhà cung cấp *" value={form.supplierId} error={errors.supplierId}
+                                    {supplierLoading ? <p className="text-sm text-slate-500">Loading suppliers...</p> : <Select
+                                        label="Supplier *" value={form.supplierId} error={errors.supplierId}
                                         onChange={change("supplierId")}
                                         options={[
     {
         value: "",
-        label: "-- Chọn nhà cung cấp --",
+        label: "-- Select Supplier --",
     },
     ...supplierOptions
         .filter(
@@ -326,30 +326,30 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                                     <div className="flex items-center justify-between text-xs text-slate-500">
                                         <span>Trang {supplierPage + 1}/{Math.max(1, supplierTotalPages)}</span>
                                         <div className="flex gap-2">
-                                            <Button type="button" size="sm" variant="ghost" disabled={supplierPage <= 0 || supplierLoading} onClick={() => { setSupplierPage((page) => page - 1); setForm((current) => ({ ...current, supplierId: "" })); }}>Trước</Button>
+                                            <Button type="button" size="sm" variant="ghost" disabled={supplierPage <= 0 || supplierLoading} onClick={() => { setSupplierPage((page) => page - 1); setForm((current) => ({ ...current, supplierId: "" })); }}>Previous</Button>
                                             <Button type="button" size="sm" variant="ghost" disabled={supplierPage + 1 >= supplierTotalPages || supplierLoading} onClick={() => { setSupplierPage((page) => page + 1); setForm((current) => ({ ...current, supplierId: "" })); }}>Sau</Button>
                                         </div>
                                     </div>
                                 </div>
-                            ) : <p className="text-sm text-slate-700">Liên kết với <strong>{action.link?.supplierName}</strong> (mã liên kết {action.link?.id}). Muốn đổi NCC, hãy tạo liên kết mới.</p>}
-                            <Input label="Mã sản phẩm do nhà cung cấp sử dụng (tối đa 100 ký tự)" value={form.supplierProductCode} maxLength={100} onChange={change("supplierProductCode")} error={errors.supplierProductCode} />
-                            <Input label="Giá nhập *" type="number" min="0.01" step="0.01" value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} />
-                            <Input label="Số lượng đặt tối thiểu *" type="number" min="1" step="1" value={form.minimumOrderQuantity} onChange={change("minimumOrderQuantity")} error={errors.minimumOrderQuantity} />
-                            {creating ? <Checkbox checked={form.defaultSupplier} onChange={change("defaultSupplier")} label="Đặt làm nhà cung cấp mặc định ngay khi tạo (sẽ bỏ mặc định cũ)." />
-                                : <Select label="Trạng thái liên kết" value={form.status} onChange={change("status")} error={errors.status} options={[{ value: "ACTIVE", label: "Đang hoạt động" }, { value: "INACTIVE", label: "Tạm ngừng" }]} />}
-                            <p className="text-xs text-slate-500">Chỉ sửa điều kiện mua hàng và trạng thái của liên kết. Không thay đổi chính sản phẩm hoặc nhà cung cấp.</p>
+                            ) : <p className="text-sm text-slate-700">Linked to <strong>{action.link?.supplierName}</strong> (association ID {action.link?.id}). To change the supplier, create a new association.</p>}
+                            <Input label="Product code used by the supplier (maximum 100 characters)" value={form.supplierProductCode} maxLength={100} onChange={change("supplierProductCode")} error={errors.supplierProductCode} />
+                            <Input label="Purchase Price *" type="number" min="0.01" step="0.01" value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} />
+                            <Input label="Minimum Order Quantity *" type="number" min="1" step="1" value={form.minimumOrderQuantity} onChange={change("minimumOrderQuantity")} error={errors.minimumOrderQuantity} />
+                            {creating ? <Checkbox checked={form.defaultSupplier} onChange={change("defaultSupplier")} label="Set as the default supplier when creating this association (replaces the current default)." />
+                                : <Select label="Association Status" value={form.status} onChange={change("status")} error={errors.status} options={[{ value: "ACTIVE", label: "Active" }, { value: "INACTIVE", label: "Inactive" }]} />}
+                            <p className="text-xs text-slate-500">Only purchasing terms and association status can be edited. The product and supplier records remain unchanged.</p>
                         </form>
                     ) : action?.type === "default" ? (
-                        <p className="text-sm text-slate-700">Chọn <strong>{action.link?.supplierName}</strong> làm nhà cung cấp mặc định của sản phẩm? Hệ thống sẽ bỏ lựa chọn ưu tiên của nhà cung cấp trước đó.</p>
+                        <p className="text-sm text-slate-700">Set <strong>{action.link?.supplierName}</strong> as the default supplier for this product? The current default supplier will be replaced.</p>
                     ) : action?.type === "delete" ? (
                         <div className="space-y-3 text-sm text-slate-700">
-                            <Alert type="danger">Cảnh báo: Liên kết sẽ bị xóa vĩnh viễn và chưa thể khôi phục qua lịch sử thao tác. Chỉ thực hiện khi đã được cho phép.</Alert>
-                            <p>Xóa liên kết với <strong>{action.link?.supplierName}</strong> (mã {action.link?.linkCode})?</p>
-                            <Input label='Gõ XOA để xác nhận' value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="XOA" />
+                            <Alert type="danger">Warning: This association will be deleted permanently and cannot currently be restored from the activity history. Proceed only if authorized.</Alert>
+                            <p>Delete association with <strong>{action.link?.supplierName}</strong> (ID {action.link?.linkCode})?</p>
+                            <Input label='Type XOA to confirm' value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="XOA" />
                         </div>
                     ) : null}
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi hiểu thao tác này sẽ lưu thay đổi vào dữ liệu đang sử dụng chung." />
+                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="I understand this action will change shared production data." />
                     </div>
                 </div>
             </Modal>

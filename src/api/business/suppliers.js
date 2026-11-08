@@ -34,12 +34,12 @@ export async function changeSupplierStatus(id, active) {
     return response.data;
 }
 
-export function supplierErrorMessage(error, fallback = "Đã xảy ra lỗi. Vui lòng thử lại.") {
+export function supplierErrorMessage(error, fallback = "An error occurred. Please try again.") {
     if (error?.response?.status === 403) {
-        return "Bạn không có quyền thực hiện thao tác này.";
+        return "You do not have permission to perform this action.";
     }
     if (!error?.response) {
-        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+        return "Unable to connect to the system. Check your network connection and try again.";
     }
     const message = error.response.data?.message;
     return friendlyBusinessError(error, fallback);

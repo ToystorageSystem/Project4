@@ -324,7 +324,7 @@ export default function WarehouseLocationFormModal({
                                 onChange={
                                     handleChange
                                 }
-                                placeholder="Example: Kệ A03"
+                                placeholder="Example: Shelf A03"
                                 className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none transition focus:border-[#f25d19] focus:ring-2 focus:ring-[#f25d19]/10"
                             />
 

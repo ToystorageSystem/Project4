@@ -39,18 +39,18 @@ const EMPTY_FILTERS = {
 };
 
 const STATUS_LABELS = {
-    CREATED: "Đã tạo",
-    ASSIGNED: "Đã phân công",
-    READY_TO_SHIP: "Sẵn sàng xuất hàng",
-    IN_TRANSIT: "Đang vận chuyển",
-    ARRIVED: "Đã đến điểm nhận",
-    DELIVERED: "Đã giao thành công",
-    FAILED: "Giao hàng thất bại",
-    CANCELLED: "Đã hủy",
+    CREATED: "Created",
+    ASSIGNED: "Assigned",
+    READY_TO_SHIP: "Ready to Ship",
+    IN_TRANSIT: "In Transit",
+    ARRIVED: "Arrived at Destination",
+    DELIVERED: "Delivered",
+    FAILED: "Delivery Failed",
+    CANCELLED: "Cancelled",
 };
 
 const STATUS_OPTIONS = [
-    { value: "", label: "Tất cả trạng thái" },
+    { value: "", label: "All Statuses" },
     ...Object.entries(STATUS_LABELS).map(([value, label]) => ({
         value,
         label,
@@ -69,7 +69,7 @@ function formatDateTime(value) {
         return String(value);
     }
 
-    return date.toLocaleString("vi-VN", {
+    return date.toLocaleString("en-GB", {
         hour12: false,
     });
 }
@@ -149,7 +149,7 @@ export default function InTransitShipmentListPage() {
 
                 if (!Array.isArray(data)) {
                     throw new Error(
-                        "Dữ liệu kho/cửa hàng không hợp lệ."
+                        "Invalid warehouse/store data."
                     );
                 }
 
@@ -161,7 +161,7 @@ export default function InTransitShipmentListPage() {
                 const message = err?.isAxiosError
                     ? inTransitShipmentErrorMessage(err)
                     : err?.message ||
-                      "Không tải được danh sách kho/cửa hàng.";
+                      "Unable to load warehouses and stores.";
 
                 setOptionsError(message);
             });
@@ -189,7 +189,7 @@ export default function InTransitShipmentListPage() {
 
                 if (!Array.isArray(data?.items)) {
                     throw new Error(
-                        "Dữ liệu chuyến vận chuyển không hợp lệ."
+                        "Invalid shipment data."
                     );
                 }
 
@@ -207,7 +207,7 @@ export default function InTransitShipmentListPage() {
                 const message = err?.isAxiosError
                     ? inTransitShipmentErrorMessage(err)
                     : err?.message ||
-                      "Không tải được danh sách vận chuyển.";
+                      "Unable to load shipments.";
 
                 setError(message);
             })
@@ -252,7 +252,7 @@ export default function InTransitShipmentListPage() {
     const warehouseOptions = [
         {
             value: "",
-            label: "Tất cả kho/cửa hàng",
+            label: "All Warehouses / Stores",
         },
         ...warehouses
             .filter((warehouse) => warehouse?.id != null)
@@ -266,7 +266,7 @@ export default function InTransitShipmentListPage() {
     const columns = [
         {
             key: "deliveryCode",
-            label: "Mã chuyến giao",
+            label: "Delivery Trip Code",
             render: (value, delivery) => (
                 <Link
                     to={`${ROOT}/${delivery.deliveryId}`}
@@ -278,7 +278,7 @@ export default function InTransitShipmentListPage() {
         },
         {
             key: "manifestCode",
-            label: "Bảng kê / Phiếu / Kiện",
+            label: "Manifest / Transfer / Package",
             render: (value, delivery) => (
                 <div className="space-y-1">
                     <p className="font-semibold text-slate-800">
@@ -286,12 +286,12 @@ export default function InTransitShipmentListPage() {
                     </p>
 
                     <CodeList
-                        label="Chứng từ"
+                        label="Document"
                         values={delivery.transferCodes}
                     />
 
                     <CodeList
-                        label="Kiện"
+                        label="Package"
                         values={delivery.packageCodes}
                     />
                 </div>
@@ -299,7 +299,7 @@ export default function InTransitShipmentListPage() {
         },
         {
             key: "fromWarehouseName",
-            label: "Điểm xuất phát",
+            label: "Origin",
             render: (value, delivery) => (
                 <div>
                     <p className="font-medium">
@@ -314,7 +314,7 @@ export default function InTransitShipmentListPage() {
         },
         {
             key: "toWarehouseName",
-            label: "Điểm đến",
+            label: "Destination",
             render: (value, delivery) => (
                 <div>
                     <p className="font-medium">
@@ -329,36 +329,36 @@ export default function InTransitShipmentListPage() {
         },
         {
             key: "startedAt",
-            label: "Bắt đầu vận chuyển",
+            label: "Departed At",
             render: (value) => formatDateTime(value),
         },
         {
             key: "expectedDeliveryAt",
-            label: "Dự kiến nhận hàng",
+            label: "Expected Receipt Date",
             render: (value) => formatDateTime(value),
         },
         {
             key: "deliveryStatus",
-            label: "Trạng thái",
+            label: "Status",
             render: (value) => (
                 <DeliveryStatusBadge status={value} />
             ),
         },
         {
             key: "totalPackages",
-            label: "Thông tin hàng",
+            label: "Shipment Contents",
             render: (_value, delivery) => (
                 <div className="space-y-1 text-sm">
                     <p>
-                        Phiếu: {delivery.totalTransfers ?? 0}
+                        Transfer: {delivery.totalTransfers ?? 0}
                     </p>
 
                     <p>
-                        Kiện: {delivery.totalPackages ?? 0}
+                        Package: {delivery.totalPackages ?? 0}
                     </p>
 
                     <p className="font-semibold">
-                        Số lượng:{" "}
+                        Quantity:{" "}
                         {delivery.totalProductQuantity ?? 0}
                     </p>
                 </div>
@@ -366,14 +366,14 @@ export default function InTransitShipmentListPage() {
         },
         {
             key: "overdue",
-            label: "Cảnh báo",
+            label: "Alert",
             render: (value) =>
                 value === true ? (
                     <span
                         className="inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700"
-                        title="Đã quá thời gian dự kiến nhận hàng"
+                        title="Past expected receipt time"
                     >
-                        Quá hạn giao hàng
+                        Delivery Overdue
                     </span>
                 ) : (
                     <span className="text-sm text-slate-500">
@@ -383,13 +383,13 @@ export default function InTransitShipmentListPage() {
         },
         {
             key: "deliveryId",
-            label: "Thao tác",
+            label: "Actions",
             render: (_value, delivery) => (
                 <Link
                     to={`${ROOT}/${delivery.deliveryId}`}
                     className="font-semibold text-[#c94810] hover:underline"
                 >
-                    Xem chi tiết
+                    View Details
                 </Link>
             ),
         },
@@ -408,16 +408,12 @@ export default function InTransitShipmentListPage() {
         >
             <div className="space-y-6">
                 <PageHeader
-                    title="Theo dõi vận chuyển"
-                    description="Theo dõi chuyến giao, phiếu điều chuyển, kiện hàng, thời gian dự kiến nhận và trạng thái vận chuyển."
+                    title="Shipment Tracking"
+                    description="Track delivery trips, stock transfers, packages, expected receipt times, and shipment statuses."
                 />
 
                 <Alert type="info">
-                    Trang này hiển thị các chuyến vận chuyển
-                    trong hệ thống, bao gồm cả chuyến đã hoàn
-                    thành. Chọn trạng thái "In Transit"
-                    để chỉ xem các chuyến đang trên đường.
-                    Nhân viên kinh doanh chỉ được xem và theo dõi thông tin.
+                    This page lists all shipments, including completed trips. Select In Transit to view shipments still on the road. Business Operations users have read-only tracking access.
                 </Alert>
 
                 {optionsError && (
@@ -441,8 +437,8 @@ export default function InTransitShipmentListPage() {
                         className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-3"
                     >
                         <SearchInput
-                            label="Mã chuyến / bảng kê / phiếu / kiện"
-                            placeholder="Nhập SHIP, MAN, ST hoặc PKG..."
+                            label="Trip / Manifest / Transfer / Package Code"
+                            placeholder="Enter SHIP, MAN, ST, or PKG code..."
                             value={draftFilters.keyword}
                             onChange={(event) =>
                                 updateDraft(
@@ -453,7 +449,7 @@ export default function InTransitShipmentListPage() {
                         />
 
                         <Select
-                            label="Điểm xuất phát"
+                            label="Origin"
                             value={draftFilters.fromWarehouseId}
                             options={warehouseOptions}
                             onChange={(event) =>
@@ -465,7 +461,7 @@ export default function InTransitShipmentListPage() {
                         />
 
                         <Select
-                            label="Điểm đến"
+                            label="Destination"
                             value={draftFilters.toWarehouseId}
                             options={warehouseOptions}
                             onChange={(event) =>
@@ -477,7 +473,7 @@ export default function InTransitShipmentListPage() {
                         />
 
                         <Select
-                            label="Trạng thái vận chuyển"
+                            label="Shipment Status"
                             value={draftFilters.status}
                             options={STATUS_OPTIONS}
                             onChange={(event) =>
@@ -490,7 +486,7 @@ export default function InTransitShipmentListPage() {
 
                         <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-3">
                             <Button type="submit">
-                                Tìm kiếm / Bộ lọc
+                                Search / Filters
                             </Button>
 
                             <Button
@@ -498,7 +494,7 @@ export default function InTransitShipmentListPage() {
                                 variant="outline"
                                 onClick={resetFilters}
                             >
-                                Xóa bộ lọc
+                                Clear Filters
                             </Button>
 
                             <Button
@@ -508,17 +504,17 @@ export default function InTransitShipmentListPage() {
                                     setReload((value) => value + 1)
                                 }
                             >
-                                Làm mới
+                                Refresh
                             </Button>
                         </div>
                     </form>
 
                     <p className="mt-4 text-sm text-slate-500">
                         {loading
-                            ? "Đang tải..."
-                            : `Tìm thấy ${
+                            ? "Loading..."
+                            : `Found ${
                                   result.totalElements ?? 0
-                              } chuyến vận chuyển.`}
+                              } shipments.`}
                     </p>
                 </Card>
 
@@ -529,12 +525,12 @@ export default function InTransitShipmentListPage() {
                         role="status"
                     >
                         <Spinner />
-                        Đang tải danh sách vận chuyển...
+                        Loading shipments...
                     </div>
                 ) : error ? null : items.length === 0 ? (
                     <EmptyState
-                        title="Không tìm thấy chuyến vận chuyển"
-                        description="Chưa có chuyến giao phù hợp với bộ lọc hiện tại."
+                        title="Shipment Not Found"
+                        description="No shipments match the current filters."
                     />
                 ) : (
                     <div className="space-y-4">

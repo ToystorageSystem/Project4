@@ -90,18 +90,18 @@ export async function activateCategory(categoryId) {
 // Chuyen loi Backend thanh thong bao cho Frontend
 export function categoryErrorMessage(
     error,
-    fallback = "Không thực hiện được thao tác danh mục."
+    fallback = "Unable to complete the category operation."
 ) {
     if (error?.response?.status === 401) {
-        return "Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.";
+        return "Your session is invalid. Please sign in again.";
     }
 
     if (error?.response?.status === 403) {
-        return "Bạn chưa được cấp quyền quản lý danh mục.";
+        return "You do not have permission to manage categories.";
     }
 
     if (!error?.response) {
-        return "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.";
+        return "Unable to connect to the system. Check your network connection and try again.";
     }
 
     const data = error.response.data;

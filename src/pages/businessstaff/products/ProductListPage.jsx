@@ -18,10 +18,10 @@ import Table from "../../../components/ui/Table";
 const ROOT = "/business/products";
 const PAGE_SIZE = 10;
 const STATUS_OPTIONS = [
-    { value: "", label: "Tất cả trạng thái" },
-    { value: "ACTIVE", label: "Đang hoạt động" },
-    { value: "INACTIVE", label: "Ngừng hoạt động" },
-    { value: "DISCONTINUED", label: "Ngừng kinh doanh" },
+    { value: "", label: "All Statuses" },
+    { value: "ACTIVE", label: "Active" },
+    { value: "INACTIVE", label: "Inactive" },
+    { value: "DISCONTINUED", label: "Discontinued" },
 ];
 
 export default function ProductListPage() {
@@ -45,12 +45,12 @@ export default function ProductListPage() {
         listProducts({ status, page, size: PAGE_SIZE }, controller.signal)
             .then((result) => {
                 if (!controller.signal.aborted) {
-                    if (!Array.isArray(result?.content)) throw new Error("Dữ liệu danh sách sản phẩm trả về không hợp lệ.");
+                    if (!Array.isArray(result?.content)) throw new Error("Invalid product list response.");
                     setData(result);
                 }
             })
             .catch((requestError) => {
-                if (!controller.signal.aborted) setError(productErrorMessage(requestError, "Không thể tải danh sách sản phẩm."));
+                if (!controller.signal.aborted) setError(productErrorMessage(requestError, "Unable to load products."));
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false); });
         return () => controller.abort();
@@ -70,12 +70,12 @@ export default function ProductListPage() {
         setError("");
         try {
             await changeProductVisibility(target.product.id, target.makeActive);
-            setNotice(`${target.makeActive ? "Khôi phục" : "Ngừng hoạt động"} sản phẩm thành công.`);
+            setNotice(`${target.makeActive ? "Restore" : "Inactive"} product(s) successfully.`);
             setTarget(null);
             setConfirmed(false);
             setReload((current) => current + 1);
         } catch (requestError) {
-            setError(productErrorMessage(requestError, "Không thể cập nhật trạng thái sản phẩm."));
+            setError(productErrorMessage(requestError, "Unable to change product status."));
             setTarget(null);
         } finally {
             setSaving(false);
@@ -83,24 +83,24 @@ export default function ProductListPage() {
     };
 
     const columns = [
-        { key: "productCode", label: "Mã sản phẩm", render: (v, p) => <Link className="font-semibold text-[#c94810] hover:underline" to={`${ROOT}/${p.id}`}>{v || "—"}</Link> },
-        { key: "name", label: "Tên sản phẩm", render: (v) => <span className="font-medium text-slate-900">{v || "—"}</span> },
-        { key: "barcode", label: "Mã vạch" },
-        { key: "categoryName", label: "Danh mục", render: (v) => v || "—" },
-        { key: "sellingPrice", label: "Giá bán", render: formatProductPrice },
-        { key: "status", label: "Trạng thái", render: (v) => <ProductStatusBadge status={v} /> },
+        { key: "productCode", label: "Product Code", render: (v, p) => <Link className="font-semibold text-[#c94810] hover:underline" to={`${ROOT}/${p.id}`}>{v || "—"}</Link> },
+        { key: "name", label: "Product Name", render: (v) => <span className="font-medium text-slate-900">{v || "—"}</span> },
+        { key: "barcode", label: "Barcode" },
+        { key: "categoryName", label: "Categories", render: (v) => v || "—" },
+        { key: "sellingPrice", label: "Selling Price", render: formatProductPrice },
+        { key: "status", label: "Status", render: (v) => <ProductStatusBadge status={v} /> },
         {
-            key: "actions", label: "Thao tác", render: (_, product) => (
+            key: "actions", label: "Actions", render: (_, product) => (
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => navigate(`${ROOT}/${product.id}`)}>Chi tiết</Button>
+                    <Button size="sm" variant="ghost" onClick={() => navigate(`${ROOT}/${product.id}`)}>Details</Button>
                     {(product.status === "ACTIVE" || product.status === "INACTIVE") && (
-                        <Button size="sm" variant="outline" onClick={() => navigate(`${ROOT}/${product.id}/edit`)}>Chỉnh sửa</Button>
+                        <Button size="sm" variant="outline" onClick={() => navigate(`${ROOT}/${product.id}/edit`)}>Edit</Button>
                     )}
                     {product.status === "ACTIVE" && (
-                        <Button size="sm" variant="danger" onClick={() => openAction(product, false)}>Ngừng hoạt động</Button>
+                        <Button size="sm" variant="danger" onClick={() => openAction(product, false)}>Inactive</Button>
                     )}
                     {product.status === "INACTIVE" && (
-                        <Button size="sm" variant="success" onClick={() => openAction(product, true)}>Khôi phục</Button>
+                        <Button size="sm" variant="success" onClick={() => openAction(product, true)}>Restore</Button>
                     )}
                 </div>
             ),
@@ -110,11 +110,11 @@ export default function ProductListPage() {
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Quản lý sản phẩm" description="Xem, tạo, chỉnh sửa, tạm ẩn và khôi phục sản phẩm. Mọi thay đổi đều được ghi lịch sử."
+                <PageHeader title="Product Management" description="View, create, edit, hide, and restore products. All changes are recorded in the history."
                     actions={
                         <div className="flex flex-wrap gap-2">
-                            <Button variant="outline" onClick={() => navigate(`${ROOT}/import`)}>Nhập từ Excel</Button>
-                            <Button onClick={() => navigate(`${ROOT}/new`)}>+ Thêm sản phẩm</Button>
+                            <Button variant="outline" onClick={() => navigate(`${ROOT}/import`)}>Import from Excel</Button>
+                            <Button onClick={() => navigate(`${ROOT}/new`)}>+ Add Product</Button>
                         </div>
                     }
                 />
@@ -122,32 +122,32 @@ export default function ProductListPage() {
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex flex-wrap items-end justify-between gap-4">
-                        <Select label="Lọc theo trạng thái" className="min-w-56" value={status} options={STATUS_OPTIONS}
+                        <Select label="Filter by Status" className="min-w-56" value={status} options={STATUS_OPTIONS}
                             onChange={(event) => { setStatus(event.target.value); setPage(0); }} />
-                        <Button variant="ghost" onClick={() => setReload((current) => current + 1)}>Làm mới</Button>
+                        <Button variant="ghost" onClick={() => setReload((current) => current + 1)}>Refresh</Button>
                     </div>
-                    <p className="mt-3 text-sm text-slate-500">Tổng số: {data?.totalElements ?? "—"} sản phẩm · Sắp xếp theo ngày tạo, mới nhất trước.</p>
+                    <p className="mt-3 text-sm text-slate-500">Total: {data?.totalElements ?? "—"} products · Sorted by newest creation date first.</p>
                 </div>
                 {loading ? (
-                    <div className="flex items-center gap-3 rounded-2xl bg-white p-6 text-sm text-slate-600"><Spinner /> Đang tải sản phẩm...</div>
+                    <div className="flex items-center gap-3 rounded-2xl bg-white p-6 text-sm text-slate-600"><Spinner /> Loading product...</div>
                 ) : rows.length === 0 && !error ? (
-                    <EmptyState title="Không có sản phẩm" description="Không tìm thấy sản phẩm với trạng thái đã chọn." />
+                    <EmptyState title="No Products" description="No products match the selected status." />
                 ) : !error ? <Table columns={columns} data={rows} /> : null}
                 {!loading && !error && data && data.totalPages > 0 && (
                     <Pagination page={page + 1} totalPages={data.totalPages} onChange={(selected) => setPage(selected - 1)} />
                 )}
-                <Modal open={Boolean(target)} title={target?.makeActive ? "Khôi phục sản phẩm" : "Ẩn sản phẩm"}
+                <Modal open={Boolean(target)} title={target?.makeActive ? "Restore Product" : "Hide Product"}
                     onClose={() => { if (!saving) setTarget(null); }}
                     footer={<>
-                        <Button variant="ghost" disabled={saving} onClick={() => setTarget(null)}>Hủy</Button>
+                        <Button variant="ghost" disabled={saving} onClick={() => setTarget(null)}>Cancel</Button>
                         <Button variant={target?.makeActive ? "success" : "danger"} disabled={!confirmed || saving} onClick={submitVisibility}>
-                            {saving ? "Đang xử lý..." : "Xác nhận"}
+                            {saving ? "Processing..." : "Confirm"}
                         </Button>
                     </>}
                 >
-                    <p className="mb-4 text-sm text-slate-700">{target?.makeActive ? "Khôi phục" : "Ngừng hoạt động"} sản phẩm <strong>{target?.product?.name}</strong> (mã {target?.product?.productCode})?</p>
-                    <p className="mb-4 text-sm text-amber-700">Thao tác này thay đổi trạng thái sản phẩm nhưng không xóa sản phẩm khỏi hệ thống.</p>
-                    <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="Tôi xác nhận thay đổi dữ liệu chung của nhóm." />
+                    <p className="mb-4 text-sm text-slate-700">{target?.makeActive ? "Restore" : "Inactive"} products <strong>{target?.product?.name}</strong> (ID {target?.product?.productCode})?</p>
+                    <p className="mb-4 text-sm text-amber-700">This action changes the product status without deleting the product.</p>
+                    <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="I confirm this change to shared team data." />
                 </Modal>
             </div>
         </MainLayout>

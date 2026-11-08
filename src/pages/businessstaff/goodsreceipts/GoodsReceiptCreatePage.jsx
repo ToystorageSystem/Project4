@@ -55,7 +55,7 @@ export default function GoodsReceiptCreatePage() {
         setLoadError("");
         listPurchaseOrders({}, controller.signal).then((data) => {
             if (controller.signal.aborted) return;
-            if (!Array.isArray(data)) throw new Error("Dữ liệu danh sách đơn mua hàng nhận được không hợp lệ.");
+            if (!Array.isArray(data)) throw new Error("The purchase order list response is invalid.");
             setOrders(data.filter((po) => AVAILABLE_STATES.has(po.status)));
         }).catch((error) => {
             if (!controller.signal.aborted) setLoadError(goodsReceiptErrorMessage(error, T.loadError));
@@ -160,7 +160,7 @@ export default function GoodsReceiptCreatePage() {
             <div className="space-y-6">
                 <PageHeader title={T.title} description={T.intro}
                     actions={<Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/list`)}>
-                        ← Xem danh sách phiếu nhập
+                        ← View Goods Receipts
                     </Button>} />
                 <Alert type="info">{T.draftNote}</Alert>
                 <Alert type="warning">{T.fromPurchaseOrderNote}</Alert>

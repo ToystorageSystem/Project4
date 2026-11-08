@@ -47,7 +47,7 @@ export default function PutawayScanPanel({
                 </h2>
 
                 <p className="mt-3 text-sm text-slate-500">
-                    Chọn một sản phẩm để bắt đầu cất hàng.
+                    Select a product to begin putaway.
                 </p>
             </Card>
         );
@@ -62,8 +62,8 @@ export default function PutawayScanPanel({
         setScanSuccess(matched);
         setScanMessage(
             matched
-                ? "Barcode sản phẩm hợp lệ."
-                : "Barcode không khớp sản phẩm đã chọn."
+                ? "Product barcode verified."
+                : "Barcode does not match the selected product."
         );
     };
 
@@ -71,7 +71,7 @@ export default function PutawayScanPanel({
         setLocationCode(code);
         setScanSuccess(true);
         setScanMessage(
-            `Đã nhận vị trí ${code}. Backend sẽ kiểm tra vị trí này.`
+            `Location scanned: ${code}. The backend will validate this location.`
         );
     };
 
@@ -82,7 +82,7 @@ export default function PutawayScanPanel({
         if (!productBarcode.trim()) {
             setScanSuccess(false);
             setScanMessage(
-                "Vui lòng scan barcode sản phẩm."
+                "Please scan the product barcode."
             );
             return;
         }
@@ -90,7 +90,7 @@ export default function PutawayScanPanel({
         if (!locationCode.trim()) {
             setScanSuccess(false);
             setScanMessage(
-                "Vui lòng scan mã vị trí."
+                "Please scan the location barcode."
             );
             return;
         }
@@ -101,7 +101,7 @@ export default function PutawayScanPanel({
         ) {
             setScanSuccess(false);
             setScanMessage(
-                "Số lượng Putaway phải lớn hơn 0."
+                "Putaway quantity must be greater than zero."
             );
             return;
         }
@@ -112,7 +112,7 @@ export default function PutawayScanPanel({
         ) {
             setScanSuccess(false);
             setScanMessage(
-                "Số lượng Putaway vượt quá số lượng còn lại."
+                "Putaway quantity exceeds the remaining quantity."
             );
             return;
         }
@@ -139,7 +139,7 @@ export default function PutawayScanPanel({
                     </div>
 
                     <div className="mt-1 text-sm text-slate-500">
-                        Còn lại:{" "}
+                        Remaining:{" "}
                         {item.remainingQuantity ?? 0}
                     </div>
                 </div>
@@ -147,18 +147,18 @@ export default function PutawayScanPanel({
                 <div className="mt-4 space-y-4">
                     <BarcodeInput
                         label="Product Barcode"
-                        placeholder="Quét barcode sản phẩm"
+                        placeholder="Scan Product Barcode"
                         onScan={handleProductScan}
                     />
 
                     <BarcodeInput
                         label="Location Code"
-                        placeholder="Quét mã vị trí, ví dụ A01-03"
+                        placeholder="Scan location barcode (e.g., A01-03)"
                         onScan={handleLocationScan}
                     />
 
                     <Input
-                        label="Số lượng"
+                        label="Quantity"
                         type="number"
                         min="1"
                         max={
@@ -183,14 +183,14 @@ export default function PutawayScanPanel({
                         onClick={handleSubmit}
                     >
                         {submitting
-                            ? "Đang xử lý..."
-                            : "Xác nhận Putaway"}
+                            ? "Processing..."
+                            : "Confirm Putaway"}
                     </Button>
                 </div>
             </Card>
 
             <LocationInfo
-                title="Vị trí hiện tại"
+                title="Current Location"
                 code={
                     item.fromLocationCode ||
                     "RECEIVING"
@@ -199,7 +199,7 @@ export default function PutawayScanPanel({
 
             {item.toLocationCode && (
                 <LocationInfo
-                    title="Vị trí đích"
+                    title="Destination Location"
                     code={item.toLocationCode}
                     name={
                         [

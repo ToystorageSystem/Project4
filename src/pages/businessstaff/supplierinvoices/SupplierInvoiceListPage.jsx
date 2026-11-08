@@ -46,7 +46,7 @@ export default function SupplierInvoiceListPage() {
             .then((data) => {
                 if (controller.signal.aborted) return;
                 if (!Array.isArray(data)) {
-                    throw new Error("Danh sách hóa đơn chưa hợp lệ");
+                    throw new Error("Invalid invoice list data");
                 }
                 setInvoices(data);
             })
@@ -83,7 +83,7 @@ export default function SupplierInvoiceListPage() {
     const columns = [
         {
             key: "invoiceNumber",
-            label: "Số hóa đơn / Mã nội bộ",
+            label: "Invoice Number / Internal ID",
             render: (value, invoice) => (
                 <div className="space-y-1 whitespace-nowrap">
                     <Link to={`${ROOT}/${encodeURIComponent(invoice.id)}`} className="font-semibold text-[#c94810] hover:underline">{value || "—"}</Link>
@@ -93,7 +93,7 @@ export default function SupplierInvoiceListPage() {
         },
         {
             key: "supplierName",
-            label: "Nhà cung cấp",
+            label: "Supplier",
             render: (value, invoice) => (
                 <div>
                     <p className="font-medium">{value || "—"}</p>
@@ -103,7 +103,7 @@ export default function SupplierInvoiceListPage() {
         },
         {
             key: "purchaseOrderCode",
-            label: "Đơn mua hàng",
+            label: "Purchase Orders",
             render: (value, invoice) => invoice.purchaseOrderId ? (
                 <Link
                     to={`/business/purchase-orders/${encodeURIComponent(invoice.purchaseOrderId)}`}
@@ -113,42 +113,42 @@ export default function SupplierInvoiceListPage() {
                 </Link>
             ) : "—",
         },
-        { key: "invoiceDate", label: "Ngày hóa đơn", render: formatSupplierInvoiceDate },
-        { key: "dueDate", label: "Hạn thanh toán", render: formatSupplierInvoiceDate },
+        { key: "invoiceDate", label: "Invoice Date", render: formatSupplierInvoiceDate },
+        { key: "dueDate", label: "Due Date", render: formatSupplierInvoiceDate },
         {
             key: "totalAmount",
-            label: "Giá trị hóa đơn",
+            label: "Invoice Amount",
             render: (value, invoice) => (
                 <div className="whitespace-nowrap">
                     <p className="font-semibold">{formatSupplierInvoiceMoney(value)}</p>
-                    <p className="text-xs text-slate-500">Trước thuế: {formatSupplierInvoiceMoney(invoice.subtotal)}</p>
+                    <p className="text-xs text-slate-500">Before Tax: {formatSupplierInvoiceMoney(invoice.subtotal)}</p>
                 </div>
             ),
         },
         {
             key: "status",
-            label: "Trạng thái",
+            label: "Status",
             render: (status) => <SupplierInvoiceStatusBadge status={status} />,
         },
         {
             key: "purchaseOrderMatched",
-            label: "Đối chiếu đơn mua hàng",
+            label: "Purchase Order Reconciliation",
             render: (_value, invoice) => <SupplierInvoiceReconciliation invoice={invoice} />,
         },
         {
             key: "hasAttachment",
-            label: "Tệp hóa đơn",
+            label: "Invoice File",
             render: (value) => (
                 <span className={value ? "font-medium text-emerald-700" : "text-slate-500"}>
-                    {value === true ? "Có đính kèm" : value === false ? "Chưa đính kèm" : "—"}
+                    {value === true ? "Attached" : value === false ? "Not Attached" : "—"}
                 </span>
             ),
         },
         {
             key: "id",
-            label: "Thao tác",
+            label: "Actions",
             render: (value) => (
-                <Link to={`${ROOT}/${encodeURIComponent(value)}`} className="font-semibold text-[#c94810] hover:underline">Chi tiết</Link>
+                <Link to={`${ROOT}/${encodeURIComponent(value)}`} className="font-semibold text-[#c94810] hover:underline">Details</Link>
             ),
         },
     ];
@@ -157,53 +157,51 @@ export default function SupplierInvoiceListPage() {
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
-                    title="Quản lý hóa đơn nhà cung cấp"
-                    description="Theo dõi hóa đơn nhà cung cấp, tình trạng thanh toán và chênh lệch so với đơn mua hàng."
-                    actions={<Link to={`${ROOT}/new`} className="inline-flex h-10 items-center justify-center rounded-xl bg-[#f25d19] px-4 text-sm font-medium text-white hover:bg-[#d94f12]">+ Tạo hóa đơn</Link>}
+                    title="Supplier Invoice Management"
+                    description="Track supplier invoices, payment status, and differences from purchase order amounts."
+                    actions={<Link to={`${ROOT}/new`} className="inline-flex h-10 items-center justify-center rounded-xl bg-[#f25d19] px-4 text-sm font-medium text-white hover:bg-[#d94f12]">+ Create Invoice</Link>}
                 />
                 <Alert type="info">
-                    Bạn có thể tìm và xem hóa đơn tại đây. Khi tạo hoặc sửa hóa đơn, hệ thống sẽ yêu cầu xác nhận. Số tiền đối chiếu được tính theo <strong>giá trị trước thuế</strong>.
-                    Hóa đơn đã xác nhận vẫn có thể chênh lệch số tiền so với đơn mua hàng.
+                    Search and view invoices here. Creating or editing an invoice requires confirmation. Reconciliation uses the <strong>pre-tax amount</strong>. Confirmed invoices may still differ from the purchase order amount.
                 </Alert>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 <Card>
                     <form onSubmit={applyFilters} className="grid grid-cols-1 items-end gap-3 md:grid-cols-2">
                         <SearchInput
-                            label="Số hóa đơn, mã hóa đơn, nhà cung cấp hoặc mã đơn mua hàng"
-                            placeholder="Nhập thông tin cần tìm..."
+                            label="Invoice number, internal code, supplier, or purchase order code"
+                            placeholder="Enter search terms..."
                             value={draft.keyword}
                             onChange={(event) => setDraft((value) => ({ ...value, keyword: event.target.value }))}
                         />
                         <Select
-                            label="Trạng thái hóa đơn"
+                            label="Invoice Status"
                             value={draft.status}
                             options={SUPPLIER_INVOICE_STATUS_OPTIONS}
                             onChange={(event) => setDraft((value) => ({ ...value, status: event.target.value }))}
                         />
                         <div className="flex flex-wrap gap-2 md:col-span-2">
-                            <Button type="submit">Tìm kiếm / Bộ lọc</Button>
-                            <Button type="button" variant="outline" onClick={clearFilters}>Xóa bộ lọc</Button>
-                            <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Làm mới</Button>
+                            <Button type="submit">Search / Filters</Button>
+                            <Button type="button" variant="outline" onClick={clearFilters}>Clear Filters</Button>
+                            <Button type="button" variant="ghost" onClick={() => setRefresh((value) => value + 1)}>Refresh</Button>
                         </div>
                     </form>
                     <p className="mt-4 text-sm text-slate-500" aria-live="polite">
-                        {loading ? "Đang tải hóa đơn..." : `Tìm thấy ${invoices.length} hóa đơn (phân trang trên giao diện, 10 hóa đơn/trang).`}
+                        {loading ? "Loading invoices..." : `Found ${invoices.length} invoices (client-side pagination, 10 invoices per page).`}
                     </p>
                 </Card>
                 {!loading && !error && mismatchCount > 0 && (
                     <div role="alert">
                         <Alert type="warning">
-                            Có <strong>{mismatchCount}</strong> hóa đơn có số tiền trước thuế chưa khớp với đơn mua hàng.
-                            Hãy kiểm tra số liệu trước khi xác nhận hoặc thanh toán.
+                            Yes <strong>{mismatchCount}</strong> invoices have a pre-tax amount that differs from the purchase order. Review before confirming or paying.
                         </Alert>
                     </div>
                 )}
                 {loading ? (
                     <div className="flex items-center gap-3 rounded-2xl bg-white p-7 text-sm text-slate-600" role="status">
-                        <Spinner /> Đang tải danh sách hóa đơn...
+                        <Spinner /> Loading invoice list...
                     </div>
                 ) : error ? null : invoices.length === 0 ? (
-                    <EmptyState title="Không tìm thấy hóa đơn" description="Hãy thử thay đổi từ khóa hoặc trạng thái." />
+                    <EmptyState title="No Invoices Found" description="Try changing the keyword or status." />
                 ) : (
                     <div className="space-y-4">
                         <Table columns={columns} data={visibleInvoices} />
@@ -211,8 +209,7 @@ export default function SupplierInvoiceListPage() {
                     </div>
                 )}
                 <p className="text-xs text-slate-500">
-                    Chức năng tạo/sửa, hủy hóa đơn và tải file sẽ được bổ sung ở các bước tiếp theo.
-                    Trang này chỉ dùng để xem và tra cứu hóa đơn.
+                    Invoice creation, editing, cancellation, and file upload will be added in later steps. This page is currently for viewing and searching only.
                 </p>
             </div>
         </MainLayout>

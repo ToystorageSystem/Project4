@@ -27,22 +27,22 @@ const PAGE_SIZE = 10;
 
 // Chuyen trang thai Backend thanh ten de hieu tren giao dien.
 const STATUS_LABELS = {
-    DRAFT: "Nháp",
-    PENDING_SOURCE_CONFIRMATION: "Chờ kho xuất xác nhận",
-    CREATED: "Đã gửi, chờ kho xử lý",
-    PICKING: "Đang lấy hàng",
-    PACKING: "Đang đóng kiện",
-    PACKED: "Đã đóng kiện",
-    SHIPPED: "Đang vận chuyển",
-    RECEIVING: "Đang kiểm nhận",
-    RECEIVED: "Đã nhận",
-    COMPLETED: "Đã hoàn thành",
-    REJECTED: "Bị từ chối",
-    CANCELLED: "Đã hủy",
+    DRAFT: "Draft",
+    PENDING_SOURCE_CONFIRMATION: "Awaiting Source Warehouse Confirmation",
+    CREATED: "Submitted - Awaiting Warehouse Processing",
+    PICKING: "Picking",
+    PACKING: "Packing",
+    PACKED: "Packed",
+    SHIPPED: "In Transit",
+    RECEIVING: "Inspection In Progress",
+    RECEIVED: "Received",
+    COMPLETED: "Completed",
+    REJECTED: "Rejected",
+    CANCELLED: "Cancelled",
 };
 
 const STATUS_OPTIONS = [
-    { value: "", label: "Tất cả trạng thái" },
+    { value: "", label: "All Statuses" },
     ...Object.entries(STATUS_LABELS).map(([value, label]) => ({
         value,
         label,
@@ -65,7 +65,7 @@ function formatDate(value) {
 
     return Number.isNaN(date.getTime())
         ? text
-        : date.toLocaleString("vi-VN");
+        : date.toLocaleString("en-GB");
 }
 
 // Hien thi trang thai phieu bang mau sac.
@@ -141,7 +141,7 @@ export default function StockTransferListPage() {
 
                 if (!Array.isArray(data?.content)) {
                     throw new Error(
-                        "Dữ liệu danh sách phiếu không hợp lệ."
+                        "Invalid transfer list data."
                     );
                 }
 
@@ -159,7 +159,7 @@ export default function StockTransferListPage() {
                 setError(
                     stockTransferErrorMessage(
                         requestError,
-                        "Không tải được danh sách phiếu điều chuyển."
+                        "Unable to load stock transfers."
                     )
                 );
             })
@@ -202,7 +202,7 @@ export default function StockTransferListPage() {
     const columns = [
         {
             key: "transferCode",
-            label: "Mã chứng từ",
+            label: "Document No.",
             render: (value, item) => (
                 <Link
                     to={`${ROOT}/${item.id}`}
@@ -214,45 +214,45 @@ export default function StockTransferListPage() {
         },
         {
             key: "fromWarehouseName",
-            label: "Điểm xuất phát",
+            label: "Origin",
             render: (value) => value || "—",
         },
         {
             key: "toWarehouseName",
-            label: "Điểm đến",
+            label: "Destination",
             render: (value) => value || "—",
         },
         {
             key: "status",
-            label: "Trạng thái",
+            label: "Status",
             render: (value) => (
                 <StatusBadge status={value} />
             ),
         },
         {
             key: "expectedShipmentDate",
-            label: "Dự kiến xuất kho",
+            label: "Expected Dispatch",
             render: formatDate,
         },
         {
             key: "expectedReceiptDate",
-            label: "Dự kiến nhận hàng",
+            label: "Expected Receipt Date",
             render: formatDate,
         },
         {
             key: "createdAt",
-            label: "Ngày tạo",
+            label: "Created At",
             render: formatDate,
         },
         {
             key: "id",
-            label: "Thao tác",
+            label: "Actions",
             render: (value) => (
                 <Link
                     to={`${ROOT}/${value}`}
                     className="whitespace-nowrap font-semibold text-[#c94810] hover:underline"
                 >
-                    Xem chi tiết
+                    View Details
                 </Link>
             ),
         },
@@ -265,8 +265,8 @@ export default function StockTransferListPage() {
         >
             <div className="space-y-6">
                 <PageHeader
-                    title="Phiếu điều chuyển của tôi"
-                    description="Xem lại các phiếu điều chuyển đã tạo và theo dõi trạng thái xử lý từ hệ thống."
+                    title="My Stock Transfers"
+                    description="Review created stock transfers and track their processing status."
                     actions={
                         <Button
                             type="button"
@@ -274,7 +274,7 @@ export default function StockTransferListPage() {
                                 navigate(`${ROOT}/new`)
                             }
                         >
-                            + Tạo phiếu điều chuyển
+                            + Create Stock Transfer
                         </Button>
                     }
                 />
@@ -285,8 +285,8 @@ export default function StockTransferListPage() {
                         className="grid gap-3 md:grid-cols-[2fr_1fr]"
                     >
                         <SearchInput
-                            label="Tìm theo mã phiếu"
-                            placeholder="Nhập mã ST-..."
+                            label="Search by Transfer Code"
+                            placeholder="Enter ST code..."
                             maxLength={100}
                             value={keywordDraft}
                             onChange={(event) =>
@@ -295,7 +295,7 @@ export default function StockTransferListPage() {
                         />
 
                         <Select
-                            label="Trạng thái"
+                            label="Status"
                             value={statusDraft}
                             options={STATUS_OPTIONS}
                             onChange={(event) =>
@@ -305,7 +305,7 @@ export default function StockTransferListPage() {
 
                         <div className="flex flex-wrap items-center gap-2 md:col-span-2">
                             <Button type="submit">
-                                Tìm kiếm / Bộ lọc
+                                Search / Filters
                             </Button>
 
                             <Button
@@ -313,7 +313,7 @@ export default function StockTransferListPage() {
                                 variant="outline"
                                 onClick={resetFilters}
                             >
-                                Xóa bộ lọc
+                                Clear Filters
                             </Button>
 
                             <Button
@@ -323,15 +323,15 @@ export default function StockTransferListPage() {
                                     setRefresh((value) => value + 1)
                                 }
                             >
-                                Làm mới
+                                Refresh
                             </Button>
                         </div>
                     </form>
 
                     <p className="text-sm text-slate-500">
                         {loading
-                            ? "Đang tải danh sách..."
-                            : `Tìm thấy ${result.totalElements ?? 0} phiếu của tài khoản hiện tại.`}
+                            ? "Loading list..."
+                            : `Found ${result.totalElements ?? 0} transfers created by this account.`}
                     </p>
                 </Card>
 
@@ -344,7 +344,7 @@ export default function StockTransferListPage() {
                 {loading ? (
                     <Card className="flex items-center gap-3">
                         <Spinner />
-                        Đang tải phiếu điều chuyển...
+                        Loading stock transfers...
                     </Card>
                 ) : result.content.length > 0 ? (
                     <>
@@ -367,8 +367,8 @@ export default function StockTransferListPage() {
                 ) : (
                     !error && (
                         <EmptyState
-                            title="Không tìm thấy phiếu điều chuyển"
-                            description="Chưa có phiếu do tài khoản này tạo hoặc bộ lọc chưa khớp."
+                            title="No Stock Transfers Found"
+                            description="No transfers created by this account, or the filters did not match."
                         />
                     )
                 )}

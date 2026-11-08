@@ -1,7 +1,7 @@
 import Button from "./Button";
 import Modal from "./Modal";
 export default function ConfirmModal( {
-    open,title="Xác nhận",message,confirmText="Xác nhận",cancelText="Hủy",danger=false,onConfirm,onClose
+    open,title="Confirm",message,confirmText="Confirm",cancelText="Cancel",danger=false,onConfirm,onClose
 }
 ) {
     return <Modal open= {

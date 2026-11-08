@@ -1,6 +1,6 @@
 import Spinner from "../ui/Spinner";
 export default function LoadingPage( {
-    text="Đang tải dữ liệu..."
+    text="Loading data..."
 }
 ) {
     return <div className="flex min-h-[260px] items-center justify-center">

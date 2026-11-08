@@ -39,21 +39,21 @@ const EMPTY_FILTERS = {
 };
 
 const STATUS_LABELS = {
-    CREATED: "Mới tạo",
-    ASSIGNED: "Đã phân công",
-    ACCEPTED: "Tài xế đã nhận",
-    REJECTED: "Tài xế từ chối",
-    READY_TO_SHIP: "Sẵn sàng giao hàng",
-    IN_TRANSIT: "Đang vận chuyển",
-    ARRIVED: "Đã đến nơi",
-    DELIVERED: "Đã giao hàng",
-    FAILED: "Giao hàng thất bại",
-    CANCELLED: "Đã hủy",
+    CREATED: "Created",
+    ASSIGNED: "Assigned",
+    ACCEPTED: "Driver Accepted",
+    REJECTED: "Driver Rejected",
+    READY_TO_SHIP: "Ready for Delivery",
+    IN_TRANSIT: "In Transit",
+    ARRIVED: "Arrived",
+    DELIVERED: "Delivered",
+    FAILED: "Delivery Failed",
+    CANCELLED: "Cancelled",
 };
 
 const STATUS_OPTIONS = [
-    { value: "", label: "Tất cả trạng thái" },
-    { value: "NO_DELIVERY", label: "Chưa có chuyến giao hàng" },
+    { value: "", label: "All Statuses" },
+    { value: "NO_DELIVERY", label: "No Delivery Trip" },
     ...Object.entries(STATUS_LABELS).map(([value, label]) => ({
         value,
         label,
@@ -67,7 +67,7 @@ function formatDate(value) {
 
     return Number.isNaN(date.getTime())
         ? value
-        : date.toLocaleString("vi-VN");
+        : date.toLocaleString("en-GB");
 }
 
 function TransportStatusBadge({ status }) {
@@ -119,7 +119,7 @@ export default function ShipmentManifestListPage() {
                 if (controller.signal.aborted) return;
 
                 if (!Array.isArray(data)) {
-                    throw new Error("Dữ liệu kho không hợp lệ.");
+                    throw new Error("Invalid warehouse data.");
                 }
 
                 setWarehouses(data);
@@ -156,7 +156,7 @@ export default function ShipmentManifestListPage() {
                 if (controller.signal.aborted) return;
 
                 if (!Array.isArray(data?.items)) {
-                    throw new Error("Dữ liệu bảng kê không hợp lệ.");
+                    throw new Error("Invalid shipment manifest data.");
                 }
 
                 setResult(data);
@@ -173,7 +173,7 @@ export default function ShipmentManifestListPage() {
                 setError(
                     err?.isAxiosError
                         ? shipmentManifestErrorMessage(err)
-                        : err.message || "Không tải được danh sách bảng kê."
+                        : err.message || "Unable to load shipment manifests."
                 );
             })
             .finally(() => {
@@ -201,7 +201,7 @@ export default function ShipmentManifestListPage() {
             draftFilters.fromDate > draftFilters.toDate
         ) {
             setFilterError(
-                "Ngày bắt đầu không được sau ngày kết thúc."
+                "Start date cannot be after end date."
             );
             return;
         }
@@ -223,7 +223,7 @@ export default function ShipmentManifestListPage() {
     };
 
     const warehouseOptions = [
-        { value: "", label: "Tất cả kho/cửa hàng" },
+        { value: "", label: "All Warehouses / Stores" },
         ...warehouses.map((warehouse) => ({
             value: String(warehouse.id),
             label: `${warehouse.name} (${warehouse.code})`,
@@ -233,7 +233,7 @@ export default function ShipmentManifestListPage() {
     const columns = [
         {
             key: "manifestCode",
-            label: "Mã bảng kê",
+            label: "Manifest Code",
             render: (value, manifest) => (
                 <Link
                     to={`${ROOT}/${manifest.manifestId}`}
@@ -245,7 +245,7 @@ export default function ShipmentManifestListPage() {
         },
         {
             key: "fromWarehouseName",
-            label: "Điểm xuất phát",
+            label: "Origin",
             render: (value, manifest) => (
                 <div>
                     <p className="font-medium">{value || "—"}</p>
@@ -257,7 +257,7 @@ export default function ShipmentManifestListPage() {
         },
         {
             key: "toWarehouseName",
-            label: "Điểm đến",
+            label: "Destination",
             render: (value, manifest) => (
                 <div>
                     <p className="font-medium">{value || "—"}</p>
@@ -269,40 +269,40 @@ export default function ShipmentManifestListPage() {
         },
         {
             key: "createdAt",
-            label: "Thời gian tạo",
+            label: "Created At",
             render: formatDate,
         },
         {
             key: "createdByName",
-            label: "Người tạo",
+            label: "Created By",
             render: (value) => value || "—",
         },
         {
             key: "totalTransfers",
-            label: "Số phiếu",
+            label: "Transfer Count",
             render: (value) => value ?? 0,
         },
         {
             key: "totalPackages",
-            label: "Số kiện",
+            label: "Package Count",
             render: (value) => value ?? 0,
         },
         {
             key: "transportStatus",
-            label: "Vận chuyển",
+            label: "Shipment",
             render: (value) => (
                 <TransportStatusBadge status={value || "NO_DELIVERY"} />
             ),
         },
         {
             key: "manifestId",
-            label: "Thao tác",
+            label: "Actions",
             render: (_value, manifest) => (
                 <Link
                     to={`${ROOT}/${manifest.manifestId}`}
                     className="font-semibold text-[#c94810] hover:underline"
                 >
-                    Xem chi tiết
+                    View Details
                 </Link>
             ),
         },
@@ -318,14 +318,12 @@ export default function ShipmentManifestListPage() {
         >
             <div className="space-y-6">
                 <PageHeader
-                    title="Danh sách bảng kê đi hàng"
-                    description="Theo dõi bảng kê, phiếu điều chuyển, kiện hàng và trạng thái vận chuyển."
+                    title="Shipment Manifests"
+                    description="Track shipment manifests, stock transfers, packages, and shipment status."
                 />
 
                 <Alert type="info">
-                    Bảng kê được hệ thống tạo sau khi hoàn tất
-                    đóng kiện. Nhân viên kinh doanh chỉ được xem và theo dõi,
-                    không được chỉnh sửa hoặc xóa dữ liệu.
+                    Shipment manifests are generated after packing is completed. Business Operations users have read-only access and cannot modify or delete manifest data.
                 </Alert>
 
                 {optionsError && (
@@ -348,8 +346,8 @@ export default function ShipmentManifestListPage() {
                         className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-3"
                     >
                         <SearchInput
-                            label="Mã bảng kê / mã phiếu điều chuyển"
-                            placeholder="Nhập mã bảng kê hoặc mã ST..."
+                            label="Manifest Code / Stock Transfer Code"
+                            placeholder="Enter manifest code or ST code..."
                             value={draftFilters.keyword}
                             onChange={(event) =>
                                 updateDraft("keyword", event.target.value)
@@ -357,7 +355,7 @@ export default function ShipmentManifestListPage() {
                         />
 
                         <Select
-                            label="Điểm xuất phát"
+                            label="Origin"
                             value={draftFilters.fromWarehouseId}
                             options={warehouseOptions}
                             onChange={(event) =>
@@ -366,7 +364,7 @@ export default function ShipmentManifestListPage() {
                         />
 
                         <Select
-                            label="Điểm đến"
+                            label="Destination"
                             value={draftFilters.toWarehouseId}
                             options={warehouseOptions}
                             onChange={(event) =>
@@ -375,7 +373,7 @@ export default function ShipmentManifestListPage() {
                         />
 
                         <Select
-                            label="Trạng thái vận chuyển"
+                            label="Shipment Status"
                             value={draftFilters.transportStatus}
                             options={STATUS_OPTIONS}
                             onChange={(event) =>
@@ -384,7 +382,7 @@ export default function ShipmentManifestListPage() {
                         />
 
                         <Input
-                            label="Từ ngày"
+                            label="From Date"
                             type="date"
                             value={draftFilters.fromDate}
                             onChange={(event) =>
@@ -393,7 +391,7 @@ export default function ShipmentManifestListPage() {
                         />
 
                         <Input
-                            label="Đến ngày"
+                            label="To Date"
                             type="date"
                             value={draftFilters.toDate}
                             onChange={(event) =>
@@ -403,7 +401,7 @@ export default function ShipmentManifestListPage() {
 
                         <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-3">
                             <Button type="submit">
-                                Tìm kiếm / Bộ lọc
+                                Search / Filters
                             </Button>
 
                             <Button
@@ -411,7 +409,7 @@ export default function ShipmentManifestListPage() {
                                 variant="outline"
                                 onClick={resetFilters}
                             >
-                                Xóa bộ lọc
+                                Clear Filters
                             </Button>
 
                             <Button
@@ -421,15 +419,15 @@ export default function ShipmentManifestListPage() {
                                     setReload((value) => value + 1)
                                 }
                             >
-                                Làm mới
+                                Refresh
                             </Button>
                         </div>
                     </form>
 
                     <p className="mt-4 text-sm text-slate-500">
                         {loading
-                            ? "Đang tải..."
-                            : `Tìm thấy ${result.totalElements ?? 0} bảng kê đi hàng.`}
+                            ? "Loading..."
+                            : `Found ${result.totalElements ?? 0} manifests.`}
                     </p>
                 </Card>
 
@@ -439,12 +437,12 @@ export default function ShipmentManifestListPage() {
                         role="status"
                     >
                         <Spinner />
-                        Đang tải danh sách bảng kê...
+                        Loading shipment manifests...
                     </div>
                 ) : error ? null : items.length === 0 ? (
                     <EmptyState
-                        title="Không tìm thấy bảng kê"
-                        description="Chưa có bảng kê phù hợp với bộ lọc hiện tại."
+                        title="Manifest Not Found"
+                        description="No shipment manifests match the current filters."
                     />
                 ) : (
                     <div className="space-y-4">

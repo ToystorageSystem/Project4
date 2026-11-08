@@ -23,7 +23,7 @@ import {
 } from "../../../api/stores/returns/storeReturnInspection.js";
 
 const sourceTabs = [
-    { key: "NCC", label: "Nhận từ NCC" },
+    { key: "NCC", label: "Received from Supplier" },
     { key: "STORE_RETURN", label: "Store Return" },
 ];
 
@@ -96,7 +96,7 @@ function NccDiscrepancyTab() {
                 )
             );
         } catch (e) {
-            setError(e.response?.data?.message ?? "Không tải được discrepancy NCC.");
+            setError(e.response?.data?.message ?? "Unable to load supplier receiving discrepancies.");
         } finally {
             setLoading(false);
         }
@@ -136,13 +136,13 @@ function NccDiscrepancyTab() {
                 const accepted = Number(draft.acceptedQuantity ?? 0);
 
                 if (!Number.isFinite(accepted) || accepted < 0) {
-                    throw new Error("Accepted quantity không hợp lệ.");
+                    throw new Error("Invalid accepted quantity.");
                 }
                 if (!reason) {
-                    throw new Error("Bạn cần nhập lý do xử lý.");
+                    throw new Error("Enter a resolution reason.");
                 }
                 if (report?.productId == null) {
-                    throw new Error("Discrepancy này chưa có productId.");
+                    throw new Error("This discrepancy has no product ID.");
                 }
 
                 if (normalize(report?.status) === "OPEN") {
@@ -159,25 +159,25 @@ function NccDiscrepancyTab() {
 
             if (action === "recount") {
                 if (!reason) {
-                    throw new Error("Bạn cần nhập lý do kiểm lại.");
+                    throw new Error("Enter a recount reason.");
                 }
                 await requestDiscrepancyRecount(id, reason);
             }
 
             if (action === "escalate") {
                 if (!reason) {
-                    throw new Error("Bạn cần nhập lý do chuyển Business Manager.");
+                    throw new Error("Enter an escalation reason for Business Manager.");
                 }
                 await escalateDiscrepancy(id, reason);
             }
 
-            setSuccess("Đã cập nhật discrepancy NCC.");
+            setSuccess("Supplier discrepancy updated.");
             await load();
         } catch (e) {
             setError(
                 e.response?.data?.message ??
                     e.message ??
-                    "Không thể xử lý discrepancy NCC."
+                    "Unable to resolve supplier discrepancy."
             );
         } finally {
             setBusyId(null);
@@ -189,15 +189,14 @@ function NccDiscrepancyTab() {
     return (
         <div className="space-y-4">
             <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4 text-sm text-slate-700">
-                <b>NCC / GOODS_RECEIPT:</b> discrepancy phát sinh khi nhận hàng từ nhà cung cấp.
-                MINOR không chặn luồng; MAJOR cần Warehouse Manager xử lý trước khi tiếp tục.
+                <b>Supplier Receiving / GOODS_RECEIPT:</b> Discrepancies arising from supplier deliveries. MINOR discrepancies do not block receiving; MAJOR discrepancies must be handled by Warehouse Manager before proceeding.
             </div>
 
             {error && <Alert type="danger">{error}</Alert>}
             {success && <Alert type="success">{success}</Alert>}
 
             {!reports.length ? (
-                <EmptyState>Không có discrepancy NCC.</EmptyState>
+                <EmptyState>No supplier receiving discrepancies.</EmptyState>
             ) : (
                 reports.map((report) => {
                     const id = report.id;
@@ -212,7 +211,7 @@ function NccDiscrepancyTab() {
                                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-wide text-[#f25d19]">
-                                            NCC / GOODS_RECEIPT
+                                            Supplier Receiving / GOODS_RECEIPT
                                         </p>
                                         <h3 className="mt-1 text-lg font-semibold text-slate-900">
                                             {report.reportCode ?? `Discrepancy #${id}`}
@@ -230,16 +229,16 @@ function NccDiscrepancyTab() {
 
                                 <div className="grid gap-3 md:grid-cols-3">
                                     <div className="rounded-xl bg-slate-50 p-3">
-                                        <p className="text-xs text-slate-400">Loại lỗi</p>
+                                        <p className="text-xs text-slate-400">Issue Type</p>
                                         <p className="mt-1 font-semibold text-slate-800">{report.discrepancyType ?? "-"}</p>
                                     </div>
                                     <div className="rounded-xl bg-slate-50 p-3">
-                                        <p className="text-xs text-slate-400">Phụ trách</p>
+                                        <p className="text-xs text-slate-400">Assigned To</p>
                                         <p className="mt-1 font-semibold text-slate-800">{report.responsibleParty ?? "-"}</p>
                                     </div>
                                     <div className="rounded-xl bg-slate-50 p-3">
                                         <p className="text-xs text-slate-400">Blocking</p>
-                                        <p className="mt-1 font-semibold text-slate-800">{report.blocking ? "Có" : "Không"}</p>
+                                        <p className="mt-1 font-semibold text-slate-800">{report.blocking ? "Yes" : "Unable"}</p>
                                     </div>
                                 </div>
 
@@ -261,23 +260,23 @@ function NccDiscrepancyTab() {
                                             type="text"
                                             value={draft.reason ?? ""}
                                             onChange={(e) => updateDraft(id, "reason", e.target.value)}
-                                            placeholder="Lý do xử lý / kiểm lại / chuyển Business..."
+                                            placeholder="Resolution / Recount / Escalation Reason..."
                                             className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#f25d19]"
                                         />
                                         <div className="flex flex-wrap gap-2">
                                             {normalize(report.status) === "OPEN" && (
-                                                <Button disabled={busy} onClick={() => runAction(report, "start")}>Bắt đầu</Button>
+                                                <Button disabled={busy} onClick={() => runAction(report, "start")}>Start</Button>
                                             )}
-                                            <Button disabled={busy} onClick={() => runAction(report, "accept")}>Chấp nhận SL</Button>
-                                            <Button variant="outline" disabled={busy} onClick={() => runAction(report, "recount")}>Kiểm lại</Button>
-                                            <Button variant="outline" disabled={busy} onClick={() => runAction(report, "escalate")}>Chuyển Business</Button>
+                                            <Button disabled={busy} onClick={() => runAction(report, "accept")}>Accept Qty</Button>
+                                            <Button variant="outline" disabled={busy} onClick={() => runAction(report, "recount")}>Recount</Button>
+                                            <Button variant="outline" disabled={busy} onClick={() => runAction(report, "escalate")}>Escalate to Business</Button>
                                         </div>
                                     </div>
                                 )}
 
                                 {business && !resolved && (
                                     <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-sm text-amber-800">
-                                        Đã chuyển Business Manager xử lý.
+                                        Escalated to Business Manager for resolution.
                                     </div>
                                 )}
                             </div>
@@ -304,7 +303,7 @@ function StoreReturnTab() {
             const data = await getStoreReturns();
             setReturns(Array.isArray(data) ? data : []);
         } catch (e) {
-            setError(e.response?.data?.message ?? "Không tải được Store Return.");
+            setError(e.response?.data?.message ?? "Unable to load Store Return.");
         } finally {
             setLoading(false);
         }
@@ -331,7 +330,7 @@ function StoreReturnTab() {
     const runReportAction = async (storeReturn, report, action) => {
         const reason = String(drafts[report.id] ?? "").trim();
         if (!reason) {
-            setError("Bạn cần nhập lý do xử lý Store Return.");
+            setError("Enter a Store Return resolution reason.");
             return;
         }
 
@@ -347,10 +346,10 @@ function StoreReturnTab() {
                 await sendStoreReturnDiscrepancyToStore(storeReturn.returnId, report.id, reason);
             }
 
-            setSuccess("Đã cập nhật discrepancy Store Return.");
+            setSuccess("Store Return discrepancy updated.");
             await load();
         } catch (e) {
-            setError(e.response?.data?.message ?? e.message ?? "Không thể xử lý Store Return.");
+            setError(e.response?.data?.message ?? e.message ?? "Unable to resolve Store Return discrepancy.");
         } finally {
             setBusyId(null);
         }
@@ -362,10 +361,10 @@ function StoreReturnTab() {
             setError("");
             setSuccess("");
             await confirmStoreReturn(storeReturn.returnId);
-            setSuccess("Đã xác nhận Store Return.");
+            setSuccess("Store Return confirmed.");
             await load();
         } catch (e) {
-            setError(e.response?.data?.message ?? "Store Return vẫn còn MAJOR chưa xử lý.");
+            setError(e.response?.data?.message ?? "Store Return still has unresolved MAJOR discrepancies.");
         } finally {
             setBusyId(null);
         }
@@ -376,14 +375,14 @@ function StoreReturnTab() {
     return (
         <div className="space-y-4">
             <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-slate-700">
-                <b>STORE_RETURN:</b> discrepancy phát sinh khi Store trả hàng về Warehouse. Warehouse Manager có thể nhận trách nhiệm tại kho hoặc chuyển Store Manager xác nhận.
+                <b>STORE_RETURN:</b> Discrepancies arising from store-to-warehouse returns. Warehouse Manager may assume responsibility or request Store Manager confirmation.
             </div>
 
             {error && <Alert type="danger">{error}</Alert>}
             {success && <Alert type="success">{success}</Alert>}
 
             {!flat.length ? (
-                <EmptyState>Không có discrepancy Store Return.</EmptyState>
+                <EmptyState>No Store Return discrepancies.</EmptyState>
             ) : (
                 flat.map(({ storeReturn, report }) => {
                     const resolved = normalize(report.status) === "RESOLVED";
@@ -415,11 +414,11 @@ function StoreReturnTab() {
                                         <p className="mt-1 font-semibold text-slate-800">{storeReturn.storeName ?? `#${storeReturn.storeId ?? "-"}`}</p>
                                     </div>
                                     <div className="rounded-xl bg-slate-50 p-3">
-                                        <p className="text-xs text-slate-400">Loại lỗi</p>
+                                        <p className="text-xs text-slate-400">Issue Type</p>
                                         <p className="mt-1 font-semibold text-slate-800">{report.discrepancyType ?? "-"}</p>
                                     </div>
                                     <div className="rounded-xl bg-slate-50 p-3">
-                                        <p className="text-xs text-slate-400">Phụ trách</p>
+                                        <p className="text-xs text-slate-400">Assigned To</p>
                                         <p className="mt-1 font-semibold text-slate-800">{report.responsibleParty ?? "-"}</p>
                                     </div>
                                     <div className="rounded-xl bg-slate-50 p-3">
@@ -435,12 +434,12 @@ function StoreReturnTab() {
                                         <input
                                             value={drafts[report.id] ?? ""}
                                             onChange={(e) => updateReason(report.id, e.target.value)}
-                                            placeholder="Lý do / kết quả trao đổi với Store..."
+                                            placeholder="Reason / Discussion Outcome with Store..."
                                             className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
                                         />
                                         <div className="flex flex-wrap gap-2">
-                                            <Button disabled={busy} onClick={() => runReportAction(storeReturn, report, "warehouse")}>Kho xác nhận</Button>
-                                            <Button variant="outline" disabled={busy} onClick={() => runReportAction(storeReturn, report, "store")}>Gửi Store Manager</Button>
+                                            <Button disabled={busy} onClick={() => runReportAction(storeReturn, report, "warehouse")}>Confirm at Warehouse</Button>
+                                            <Button variant="outline" disabled={busy} onClick={() => runReportAction(storeReturn, report, "store")}>Send to Store Manager</Button>
                                         </div>
                                     </div>
                                 )}
@@ -451,7 +450,7 @@ function StoreReturnTab() {
                                             disabled={busyId === `return-${storeReturn.returnId}`}
                                             onClick={() => runConfirm(storeReturn)}
                                         >
-                                            Xác nhận hoàn tất Store Return
+                                            Confirm Store Return Completion
                                         </Button>
                                     </div>
                                 )}
@@ -472,7 +471,7 @@ export default function WarehouseDiscrepancyPage() {
             <div className="space-y-6">
                 <PageHeader
                     title="Discrepancy Reports"
-                    description="Tách riêng discrepancy nhận từ NCC và Store Return để Warehouse Manager xử lý đúng workflow."
+                    description="Handle supplier receiving and Store Return discrepancies separately to follow the correct Warehouse Manager workflow."
                 />
 
                 <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1.5 md:w-[520px]">

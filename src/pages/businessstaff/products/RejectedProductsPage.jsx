@@ -117,7 +117,7 @@ function validate(form) {
     ];
 
     if (required.some((field) => !form[field].trim())) {
-        return "Mã, barcode, tên sản phẩm và đơn vị tính không được để trống.";
+        return "Product code, barcode, name, and unit of measure are required.";
     }
 
     const limits = {
@@ -134,18 +134,18 @@ function validate(form) {
             ([key, max]) => form[key].trim().length > max
         )
     ) {
-        return "Một số thông tin vượt quá độ dài cho phép. Vui lòng rút ngắn nội dung.";
+        return "Some fields exceed the allowed length. Shorten the information and try again.";
     }
 
     if (!/^[1-9]\d*$/.test(form.categoryId.trim())) {
-        return "Mã danh mục phải là số nguyên dương.";
+        return "Category ID must be a positive integer.";
     }
 
     if (
         form.brandId.trim() &&
         !/^[1-9]\d*$/.test(form.brandId.trim())
     ) {
-        return "Mã thương hiệu phải là số nguyên dương, hoặc để trống.";
+        return "Brand ID must be a positive integer or left blank.";
     }
 
     if (
@@ -156,14 +156,14 @@ function validate(form) {
                 Number(form[field]) < 0.01
         )
     ) {
-        return "Giá nhập và giá bán phải là số lớn hơn hoặc bằng 0,01.";
+        return "Purchase and selling prices must be at least 0.01.";
     }
 
     if (
         form.imageUrl.trim() &&
         !/^https?:\/\//i.test(form.imageUrl.trim())
     ) {
-        return "Đường dẫn ảnh phải bắt đầu bằng http:// hoặc https://.";
+        return "Image URL must start with http:// or https://.";
     }
 
     return "";
@@ -193,7 +193,7 @@ function formatDate(value) {
 
     return Number.isNaN(date.getTime())
         ? String(value)
-        : new Intl.DateTimeFormat("vi-VN", {
+        : new Intl.DateTimeFormat("en-GB", {
               dateStyle: "short",
               timeStyle: "short",
           }).format(date);
@@ -235,43 +235,43 @@ function FormField({
 const COMPARISON_FIELDS = [
     {
         key: "productCode",
-        label: "Mã sản phẩm",
+        label: "Product Code",
     },
     {
         key: "barcode",
-        label: "Mã vạch",
+        label: "Barcode",
     },
     {
         key: "name",
-        label: "Tên sản phẩm",
+        label: "Product Name",
     },
     {
         key: "categoryId",
         nameKey: "categoryName",
-        label: "Danh mục",
+        label: "Categories",
     },
     {
         key: "brandId",
         nameKey: "brandName",
-        label: "Thương hiệu",
+        label: "Brand",
     },
     {
         key: "baseUnit",
-        label: "Đơn vị tính",
+        label: "Unit of Measure",
     },
     {
         key: "purchasePrice",
-        label: "Giá mua",
+        label: "Purchase Price",
         price: true,
     },
     {
         key: "sellingPrice",
-        label: "Giá bán",
+        label: "Selling Price",
         price: true,
     },
     {
         key: "imageUrl",
-        label: "Hình ảnh",
+        label: "Image",
         image: true,
     },
 ];
@@ -279,8 +279,8 @@ const COMPARISON_FIELDS = [
 function comparisonValue(value, field, snapshot) {
     if (field.image) {
         return value
-            ? "Có hình ảnh"
-            : "Chưa có hình ảnh";
+            ? "Image Available"
+            : "No Image";
     }
 
     if (field.nameKey && snapshot[field.nameKey]) {
@@ -292,14 +292,14 @@ function comparisonValue(value, field, snapshot) {
         value === undefined ||
         value === ""
     ) {
-        return "Chưa có thông tin";
+        return "Not Available";
     }
 
     if (field.price) {
         const number = Number(value);
 
         if (Number.isFinite(number)) {
-            return new Intl.NumberFormat("vi-VN", {
+            return new Intl.NumberFormat("en-GB", {
                 style: "currency",
                 currency: "VND",
                 maximumFractionDigits: 2,
@@ -367,25 +367,25 @@ function ProductChangeComparison({ request }) {
                 <div>
                     <h3 className="text-sm font-semibold text-slate-900">
                         {isCreate
-                            ? "Thông tin sản phẩm đề xuất"
-                            : "So sánh thông tin sản phẩm"}
+                            ? "Proposed Product Information"
+                            : "Compare Product Information"}
                     </h3>
 
                     <p className="mt-1 text-xs text-slate-500">
                         {isCreate
-                            ? "Thông tin được gửi để phê duyệt."
-                            : "Chỉ hiển thị các thông tin được đề xuất thay đổi."}
+                            ? "Information submitted for approval."
+                            : "Only proposed changes are shown."}
                     </p>
                 </div>
 
                 <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
-                    {visibleFields.length} thông tin
+                    {visibleFields.length} fields
                 </span>
             </div>
 
             {visibleFields.length === 0 ? (
                 <p className="px-4 py-5 text-sm text-slate-600">
-                    Không có thay đổi ở những thông tin sản phẩm chính.
+                    There are no changes to the main product fields.
                 </p>
             ) : (
                 <div className="overflow-x-auto">
@@ -393,17 +393,17 @@ function ProductChangeComparison({ request }) {
                         <thead className="bg-slate-50 text-slate-600">
                             <tr>
                                 <th className="px-4 py-3 font-semibold">
-                                    Thông tin
+                                    Information
                                 </th>
 
                                 {!isCreate && (
                                     <th className="px-4 py-3 font-semibold">
-                                        Hiện tại
+                                        Current
                                     </th>
                                 )}
 
                                 <th className="px-4 py-3 font-semibold">
-                                    Đề xuất
+                                    Proposed
                                 </th>
                             </tr>
                         </thead>
@@ -497,7 +497,7 @@ export default function RejectedProductsPage() {
 
                 if (!Array.isArray(result?.items)) {
                     throw new Error(
-                        "Không đọc được danh sách yêu cầu bị từ chối."
+                        "Unable to read rejected requests."
                     );
                 }
 
@@ -509,7 +509,7 @@ export default function RejectedProductsPage() {
                 setError(
                     productErrorMessage(
                         requestError,
-                        "Không tải được danh sách bị từ chối."
+                        "Unable to load rejected requests."
                     )
                 );
 
@@ -566,7 +566,7 @@ export default function RejectedProductsPage() {
             setDetailError(
                 productErrorMessage(
                     requestError,
-                    "Không lấy được chi tiết yêu cầu."
+                    "Unable to load request details."
                 )
             );
         } finally {
@@ -579,7 +579,7 @@ export default function RejectedProductsPage() {
 
         if (
             !window.confirm(
-                "Bạn có muốn ngừng xử lý yêu cầu này không? Lịch sử từ chối vẫn được lưu lại."
+                "Stop processing this request? Its rejection history will be retained."
             )
         ) {
             return;
@@ -592,7 +592,7 @@ export default function RejectedProductsPage() {
             await closeRejectedProductRequest(detail.id);
 
             setNotice(
-                "Đã kết thúc xử lý yêu cầu. Lịch sử xét duyệt vẫn được giữ lại."
+                "Request closed. Approval history has been retained."
             );
 
             setDetail(null);
@@ -603,7 +603,7 @@ export default function RejectedProductsPage() {
             setDetailError(
                 productErrorMessage(
                     requestError,
-                    "Chưa thể kết thúc xử lý yêu cầu. Vui lòng thử lại."
+                    "Unable to close the request. Please try again."
                 )
             );
         } finally {
@@ -652,7 +652,7 @@ export default function RejectedProductsPage() {
                 );
 
             setNotice(
-                `Đã gửi lại yêu cầu phê duyệt thành công${
+                `Approval request resubmitted successfully${
                     response?.requestCode
                         ? ` (${response.requestCode})`
                         : ""
@@ -668,7 +668,7 @@ export default function RejectedProductsPage() {
             setFormError(
                 productErrorMessage(
                     requestError,
-                    "Không gửi lại được yêu cầu phê duyệt."
+                    "Unable to resubmit the approval request."
                 )
             );
         } finally {
@@ -686,8 +686,8 @@ export default function RejectedProductsPage() {
         >
             <div className="space-y-6">
                 <PageHeader
-                    title="Sản phẩm bị từ chối"
-                    description="Xem lý do từ chối, gửi lại nếu cần hoặc chọn Không tiếp tục. Lịch sử vẫn được giữ."
+                    title="Rejected Products"
+                    description="Review rejection reasons, resubmit if needed, or select Do Not Continue. History is retained."
                 />
 
                 {notice && (
@@ -700,7 +700,7 @@ export default function RejectedProductsPage() {
                             className="text-sm font-medium text-orange-700 underline"
                             to="/business/products/requests"
                         >
-                            Xem lịch sử các yêu cầu của tôi
+                            View My Request History
                         </Link>
                     </div>
                 )}
@@ -717,12 +717,12 @@ export default function RejectedProductsPage() {
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <p className="text-sm text-slate-600">
                             {showClosed
-                                ? "Đã kết thúc:"
-                                : "Cần xử lý:"}{" "}
+                                ? "Closed:"
+                                : "Requires Action:"}{" "}
                             <strong>
                                 {data.totalElements ?? 0}
                             </strong>{" "}
-                            yêu cầu.
+                            requests.
                         </p>
 
                         <div className="flex flex-wrap items-center gap-2">
@@ -738,7 +738,7 @@ export default function RejectedProductsPage() {
                                     setDetail(null);
                                 }}
                             >
-                                Cần xử lý
+                                Requires Action
                             </Button>
 
                             <Button
@@ -753,7 +753,7 @@ export default function RejectedProductsPage() {
                                     setDetail(null);
                                 }}
                             >
-                                Đã kết thúc
+                                Closed
                             </Button>
 
                             <Button
@@ -764,7 +764,7 @@ export default function RejectedProductsPage() {
                                     )
                                 }
                             >
-                                Làm mới
+                                Refresh
                             </Button>
                         </div>
                     </div>
@@ -772,19 +772,19 @@ export default function RejectedProductsPage() {
                     {loading ? (
                         <div className="flex items-center gap-3 text-sm text-slate-600">
                             <Spinner />
-                            Đang tải sản phẩm bị từ chối...
+                            Loading rejected products...
                         </div>
                     ) : !error && rows.length === 0 ? (
                         <EmptyState
                             title={
                                 showClosed
-                                    ? "Chưa có yêu cầu đã kết thúc"
-                                    : "Không có yêu cầu bị từ chối cần xử lý"
+                                    ? "No Closed Requests"
+                                    : "No Rejected Requests Require Action"
                             }
                             description={
                                 showClosed
-                                    ? "Chưa có yêu cầu nào được đánh dấu Không tiếp tục."
-                                    : "Hiện không có yêu cầu nào cần xem lại."
+                                    ? "No requests have been marked Do Not Continue."
+                                    : "There are no requests requiring review."
                             }
                         />
                     ) : !error ? (
@@ -793,22 +793,22 @@ export default function RejectedProductsPage() {
                                 <thead className="bg-slate-50 text-slate-600">
                                     <tr>
                                         <th className="px-3 py-3">
-                                            Mã yêu cầu
+                                            Request Code
                                         </th>
                                         <th className="px-3 py-3">
-                                            Sản phẩm
+                                            Products
                                         </th>
                                         <th className="px-3 py-3">
-                                            Loại
+                                            Type
                                         </th>
                                         <th className="px-3 py-3">
-                                            Lý do từ chối
+                                            Rejection Reason
                                         </th>
                                         <th className="px-3 py-3">
-                                            Ngày xử lý
+                                            Processed At
                                         </th>
                                         <th className="px-3 py-3">
-                                            Thao tác
+                                            Actions
                                         </th>
                                     </tr>
                                 </thead>
@@ -843,7 +843,7 @@ export default function RejectedProductsPage() {
 
                                             <td className="max-w-64 whitespace-normal px-3 py-3 text-red-700">
                                                 {row.rejectionReason ||
-                                                    "Chưa có lý do"}
+                                                    "No reason provided"}
                                             </td>
 
                                             <td className="px-3 py-3">
@@ -862,8 +862,8 @@ export default function RejectedProductsPage() {
                                                     }
                                                 >
                                                     {showClosed
-                                                        ? "Xem lịch sử"
-                                                        : "Xem / Gửi lại"}
+                                                        ? "View History"
+                                                        : "View / Resubmit"}
                                                 </Button>
                                             </td>
                                         </tr>
@@ -884,7 +884,7 @@ export default function RejectedProductsPage() {
                                         setPage((p) => p - 1)
                                     }
                                 >
-                                    Trước
+                                    Previous
                                 </Button>
 
                                 <span className="text-sm text-slate-600">
@@ -909,7 +909,7 @@ export default function RejectedProductsPage() {
                 {detailLoading && (
                     <div className="flex items-center gap-3 rounded-2xl bg-white p-5 text-sm">
                         <Spinner />
-                        Đang tải chi tiết yêu cầu...
+                        Loading request details...
                     </div>
                 )}
 
@@ -926,13 +926,13 @@ export default function RejectedProductsPage() {
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
                                 <h2 className="text-xl font-semibold text-slate-900">
-                                    Chi tiết yêu cầu{" "}
+                                    Request Details{" "}
                                     {detail.requestCode ||
                                         `#${detail.id}`}
                                 </h2>
 
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Sản phẩm:{" "}
+                                    Product:{" "}
                                     {detail.productName || "—"} ·{" "}
                                     {detail.productCode || "—"}
                                 </p>
@@ -946,14 +946,14 @@ export default function RejectedProductsPage() {
                                     setEditing(false);
                                 }}
                             >
-                                Đóng
+                                Close
                             </Button>
                         </div>
 
                         <dl className="grid gap-3 text-sm sm:grid-cols-2">
                             <div>
                                 <dt className="text-slate-500">
-                                    Trạng thái
+                                    Status
                                 </dt>
                                 <dd className="font-medium">
                                     {detail.status ? formatBusinessStatus(detail.status) : "—"}
@@ -962,7 +962,7 @@ export default function RejectedProductsPage() {
 
                             <div>
                                 <dt className="text-slate-500">
-                                    Loại yêu cầu
+                                    Request Type
                                 </dt>
                                 <dd className="font-medium">
                                     {detail.requestType || "—"}
@@ -971,7 +971,7 @@ export default function RejectedProductsPage() {
 
                             <div>
                                 <dt className="text-slate-500">
-                                    Người từ chối
+                                    Rejected By
                                 </dt>
                                 <dd className="font-medium">
                                     {detail.approvedByName || "—"}
@@ -980,7 +980,7 @@ export default function RejectedProductsPage() {
 
                             <div>
                                 <dt className="text-slate-500">
-                                    Thời gian từ chối
+                                    Rejected At
                                 </dt>
                                 <dd className="font-medium">
                                     {formatDate(
@@ -992,18 +992,18 @@ export default function RejectedProductsPage() {
 
                         <div className="rounded-xl border border-red-200 bg-red-50 p-4">
                             <p className="text-sm font-semibold text-red-800">
-                                Lý do quản lý kinh doanh từ chối
+                                Business Manager's Rejection Reason
                             </p>
 
                             <p className="mt-1 whitespace-pre-wrap text-sm text-red-800">
                                 {detail.rejectionReason ||
-                                    "Chưa có lý do từ chối."}
+                                    "No rejection reason provided."}
                             </p>
                         </div>
 
                         <div className="text-sm text-slate-600">
                             <strong>
-                                Lý do gửi trước đó:
+                                Previous Submission Reason:
                             </strong>{" "}
                             {detail.requestReason || "—"}
                         </div>
@@ -1023,7 +1023,7 @@ export default function RejectedProductsPage() {
                                             setConfirmed(false);
                                         }}
                                     >
-                                        Chỉnh sửa và gửi lại phê duyệt
+                                        Edit and Resubmit for Approval
                                     </Button>
 
                                     {String(
@@ -1035,7 +1035,7 @@ export default function RejectedProductsPage() {
                                             disabled={saving}
                                             onClick={closeRequest}
                                         >
-                                            Không tiếp tục
+                                            Do Not Continue
                                         </Button>
                                     )}
                                 </div>
@@ -1043,9 +1043,8 @@ export default function RejectedProductsPage() {
 
                         {detail.closedAt && (
                             <p className="text-sm text-slate-600">
-                                Đã kết thúc theo dõi lúc{" "}
-                                {formatDate(detail.closedAt)}.
-                                Yêu cầu vẫn được ghi nhận là đã bị từ chối.
+                                Tracking closed at{" "}
+                                {formatDate(detail.closedAt)}. The request remains recorded as rejected.
                             </p>
                         )}
 
@@ -1057,7 +1056,7 @@ export default function RejectedProductsPage() {
                                     className="space-y-4 border-t border-slate-200 pt-5"
                                 >
                                     <h3 className="text-lg font-semibold">
-                                        Chỉnh sửa thông tin theo góp ý
+                                        Revise details based on the feedback
                                     </h3>
 
                                     {formError && (
@@ -1070,7 +1069,7 @@ export default function RejectedProductsPage() {
 
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <FormField
-                                            label="Mã sản phẩm"
+                                            label="Product Code"
                                             required
                                             maxLength={50}
                                             value={form.productCode}
@@ -1083,7 +1082,7 @@ export default function RejectedProductsPage() {
                                         />
 
                                         <FormField
-                                            label="Mã vạch"
+                                            label="Barcode"
                                             required
                                             maxLength={100}
                                             value={form.barcode}
@@ -1096,7 +1095,7 @@ export default function RejectedProductsPage() {
                                         />
 
                                         <FormField
-                                            label="Tên sản phẩm"
+                                            label="Product Name"
                                             required
                                             maxLength={200}
                                             value={form.name}
@@ -1109,7 +1108,7 @@ export default function RejectedProductsPage() {
                                         />
 
                                         <FormField
-                                            label="Đơn vị tính"
+                                            label="Unit of Measure"
                                             required
                                             maxLength={30}
                                             value={form.baseUnit}
@@ -1123,7 +1122,7 @@ export default function RejectedProductsPage() {
 
                                         <div>
                                             <FormField
-                                                label="Mã danh mục"
+                                                label="Category ID"
                                                 required
                                                 inputMode="numeric"
                                                 list="issue4-category-options"
@@ -1156,12 +1155,12 @@ export default function RejectedProductsPage() {
                                             </datalist>
 
                                             <p className="mt-1 text-xs text-slate-500">
-                                                Chọn danh mục đang hoạt động.
+                                                Select an active category.
                                             </p>
                                         </div>
 
                                         <FormField
-                                            label="Mã thương hiệu (không bắt buộc)"
+                                            label="Brand ID (optional)"
                                             inputMode="numeric"
                                             value={form.brandId}
                                             onChange={(v) =>
@@ -1173,7 +1172,7 @@ export default function RejectedProductsPage() {
                                         />
 
                                         <FormField
-                                            label="Giá mua"
+                                            label="Purchase Price"
                                             required
                                             type="number"
                                             min="0.01"
@@ -1188,7 +1187,7 @@ export default function RejectedProductsPage() {
                                         />
 
                                         <FormField
-                                            label="Giá bán"
+                                            label="Selling Price"
                                             required
                                             type="number"
                                             min="0.01"
@@ -1204,7 +1203,7 @@ export default function RejectedProductsPage() {
                                     </div>
 
                                     <FormField
-                                        label="URL ảnh (không bắt buộc)"
+                                        label="Image URL (optional)"
                                         maxLength={500}
                                         value={form.imageUrl}
                                         onChange={(v) =>
@@ -1216,7 +1215,7 @@ export default function RejectedProductsPage() {
                                     />
 
                                     <label className="block text-sm font-medium text-slate-700">
-                                        Ghi chú khi gửi lại cho quản lý kinh doanh
+                                        Resubmission Notes for Business Manager
 
                                         <textarea
                                             className={INPUT_CLASS}
@@ -1229,7 +1228,7 @@ export default function RejectedProductsPage() {
                                                     event.target.value
                                                 )
                                             }
-                                            placeholder="Đã sửa thông tin theo góp ý..."
+                                            placeholder="I have revised the information based on the feedback..."
                                         />
                                     </label>
 
@@ -1246,7 +1245,7 @@ export default function RejectedProductsPage() {
                                         />
 
                                         <span>
-                                            Tôi xác nhận thông tin đã sửa và đồng ý gửi lại yêu cầu phê duyệt.
+                                            I confirm the revised information and agree to resubmit the request for approval.
                                         </span>
                                     </label>
 
@@ -1259,8 +1258,8 @@ export default function RejectedProductsPage() {
                                             className="rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             {saving
-                                                ? "Đang gửi..."
-                                                : "Gửi lại phê duyệt"}
+                                                ? "Submitting..."
+                                                : "Resubmit for Approval"}
                                         </button>
 
                                         <button
@@ -1273,7 +1272,7 @@ export default function RejectedProductsPage() {
                                             }}
                                             className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 disabled:opacity-50"
                                         >
-                                            Hủy chỉnh sửa
+                                            Cancel Editing
                                         </button>
                                     </div>
                                 </form>

@@ -28,9 +28,9 @@ import Table from "../../../components/ui/Table";
 const PAGE_SIZE = 10;
 
 const STATUS_OPTIONS = [
-    { value: "", label: "Tất cả trạng thái" },
-    { value: "ACTIVE", label: "Đang hoạt động" },
-    { value: "INACTIVE", label: "Ngừng hoạt động" },
+    { value: "", label: "All Statuses" },
+    { value: "ACTIVE", label: "Active" },
+    { value: "INACTIVE", label: "Inactive" },
 ];
 
 const EMPTY_FORM = {
@@ -81,7 +81,7 @@ export default function CategoryListPage() {
                 if (controller.signal.aborted) return;
 
                 if (!Array.isArray(result?.content)) {
-                    throw new Error("Danh sách danh mục sản phẩm chưa hợp lệ");
+                    throw new Error("Invalid product category list data");
                 }
 
                 setData(result);
@@ -92,7 +92,7 @@ export default function CategoryListPage() {
                 setError(
                     categoryErrorMessage(
                         requestError,
-                        "Không tải được danh sách danh mục."
+                        "Unable to load categories."
                     )
                 );
             })
@@ -170,7 +170,7 @@ export default function CategoryListPage() {
         const description = form.description.trim();
 
         if (!categoryCode || !name) {
-            setFormError("Mã và tên danh mục không được để trống.");
+            setFormError("Category code and name are required.");
             return;
         }
 
@@ -179,7 +179,7 @@ export default function CategoryListPage() {
             name.length > 150 ||
             description.length > 1000
         ) {
-            setFormError("Thông tin vượt quá độ dài cho phép.");
+            setFormError("Information exceeds the maximum allowed length.");
             return;
         }
 
@@ -195,10 +195,10 @@ export default function CategoryListPage() {
         try {
             if (formMode === "create") {
                 await createCategory(payload);
-                setNotice("Thêm danh mục thành công.");
+                setNotice("Category added successfully.");
             } else {
                 await updateCategory(editingCategory.id, payload);
-                setNotice("Cập nhật danh mục thành công.");
+                setNotice("Category updated successfully.");
             }
 
             closeFormAfterSave();
@@ -207,7 +207,7 @@ export default function CategoryListPage() {
             setFormError(
                 categoryErrorMessage(
                     requestError,
-                    "Không thể lưu danh mục."
+                    "Unable to save category."
                 )
             );
         } finally {
@@ -258,8 +258,8 @@ export default function CategoryListPage() {
 
             setNotice(
                 makeActive
-                    ? "Khôi phục danh mục thành công."
-                    : "Ẩn danh mục thành công."
+                    ? "Category restored successfully."
+                    : "Category hidden successfully."
             );
 
             setVisibilityTarget(null);
@@ -269,7 +269,7 @@ export default function CategoryListPage() {
             setVisibilityError(
                 categoryErrorMessage(
                     requestError,
-                    "Không thể thay đổi trạng thái danh mục."
+                    "Unable to change category status."
                 )
             );
         } finally {
@@ -281,7 +281,7 @@ export default function CategoryListPage() {
     const columns = [
         {
             key: "categoryCode",
-            label: "Mã danh mục",
+            label: "Category ID",
             render: (value) => (
                 <span className="font-semibold text-[#c94810]">
                     {value || "—"}
@@ -290,7 +290,7 @@ export default function CategoryListPage() {
         },
         {
             key: "name",
-            label: "Tên danh mục",
+            label: "Category Name",
             render: (value) => (
                 <span className="font-medium text-slate-900">
                     {value || "—"}
@@ -299,12 +299,12 @@ export default function CategoryListPage() {
         },
         {
             key: "description",
-            label: "Mô tả",
+            label: "Description",
             render: (value) => value || "—",
         },
         {
             key: "status",
-            label: "Trạng thái",
+            label: "Status",
             render: (value) => (
                 <span
                     className={
@@ -313,13 +313,13 @@ export default function CategoryListPage() {
                             : "inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
                     }
                 >
-                    {value === "ACTIVE" ? "Đang hoạt động" : "Ngừng hoạt động"}
+                    {value === "ACTIVE" ? "Active" : "Inactive"}
                 </span>
             ),
         },
         {
             key: "actions",
-            label: "Thao tác",
+            label: "Actions",
             render: (_, category) => (
                 <div className="flex flex-wrap gap-2">
                     <Button
@@ -327,7 +327,7 @@ export default function CategoryListPage() {
                         variant="outline"
                         onClick={() => openEdit(category)}
                     >
-                        Chỉnh sửa
+                        Edit
                     </Button>
 
                     {category.status === "ACTIVE" && (
@@ -336,7 +336,7 @@ export default function CategoryListPage() {
                             variant="danger"
                             onClick={() => openVisibility(category, false)}
                         >
-                            Ngừng hoạt động
+                            Inactive
                         </Button>
                     )}
 
@@ -346,7 +346,7 @@ export default function CategoryListPage() {
                             variant="success"
                             onClick={() => openVisibility(category, true)}
                         >
-                            Khôi phục
+                            Restore
                         </Button>
                     )}
                 </div>
@@ -361,11 +361,11 @@ export default function CategoryListPage() {
         >
             <div className="space-y-6">
                 <PageHeader
-                    title="Quản lý danh mục sản phẩm"
-                    description="Quản lý mã, tên, mô tả và trạng thái danh mục sản phẩm."
+                    title="Product Category Management"
+                    description="Manage category codes, names, descriptions, and status."
                     actions={
                         <Button onClick={openCreate}>
-                            + Thêm danh mục
+                            + Add Category
                         </Button>
                     }
                 />
@@ -387,8 +387,8 @@ export default function CategoryListPage() {
                     <div className="flex flex-wrap items-end gap-3">
                         <div className="min-w-60 flex-1">
                             <Input
-                                label="Tìm theo mã hoặc tên danh mục"
-                                placeholder="Nhập mã hoặc tên danh mục..."
+                                label="Search by category code or name"
+                                placeholder="Enter category code or name..."
                                 value={searchInput}
                                 onChange={(event) =>
                                     setSearchInput(event.target.value)
@@ -406,12 +406,12 @@ export default function CategoryListPage() {
                             variant="outline"
                             onClick={applySearch}
                         >
-                            Tìm kiếm
+                            Search
                         </Button>
 
                         <div className="min-w-48">
                             <Select
-                                label="Lọc trạng thái"
+                                label="Status Filter"
                                 value={status}
                                 options={STATUS_OPTIONS}
                                 onChange={(event) => {
@@ -427,13 +427,12 @@ export default function CategoryListPage() {
                                 setReload((current) => current + 1)
                             }
                         >
-                            Làm mới
+                            Refresh
                         </Button>
                     </div>
 
                     <p className="mt-4 text-sm text-slate-500">
-                        Tổng số: {data?.totalElements ?? "—"} danh mục.
-                        Danh sách được sắp xếp theo tên.
+                        Total: {data?.totalElements ?? "—"} categories. Sorted alphabetically by name.
                     </p>
                 </div>
 
@@ -441,12 +440,12 @@ export default function CategoryListPage() {
                 {loading ? (
                     <div className="flex items-center gap-3 rounded-2xl bg-white p-6 text-sm text-slate-600">
                         <Spinner />
-                        Đang tải danh mục...
+                        Loading categories...
                     </div>
                 ) : error ? null : rows.length === 0 ? (
                     <EmptyState
-                        title="Không có danh mục"
-                        description="Không tìm thấy danh mục phù hợp với điều kiện đã chọn."
+                        title="No Categories"
+                        description="No categories match the selected filters."
                     />
                 ) : (
                     <Table columns={columns} data={rows} />
@@ -471,8 +470,8 @@ export default function CategoryListPage() {
                     open={Boolean(formMode)}
                     title={
                         formMode === "create"
-                            ? "Thêm danh mục"
-                            : "Chỉnh sửa danh mục"
+                            ? "Add Category"
+                            : "Edit Category"
                     }
                     onClose={closeForm}
                     footer={
@@ -482,14 +481,14 @@ export default function CategoryListPage() {
                                 disabled={saving}
                                 onClick={closeForm}
                             >
-                                Hủy
+                                Cancel
                             </Button>
 
                             <Button
                                 disabled={!formConfirmed || saving}
                                 onClick={saveCategory}
                             >
-                                {saving ? "Saving..." : "Lưu danh mục"}
+                                {saving ? "Saving..." : "Save Category"}
                             </Button>
                         </>
                     }
@@ -502,8 +501,8 @@ export default function CategoryListPage() {
                         )}
 
                         <Input
-                            label="Mã danh mục *"
-                            placeholder="Ví dụ: CAT-TOYS"
+                            label="Category Code *"
+                            placeholder="Example: CAT-TOYS"
                             maxLength={50}
                             required
                             value={form.categoryCode}
@@ -516,8 +515,8 @@ export default function CategoryListPage() {
                         />
 
                         <Input
-                            label="Tên danh mục *"
-                            placeholder="Nhập tên danh mục"
+                            label="Category Name *"
+                            placeholder="Enter category name"
                             maxLength={150}
                             required
                             value={form.name}
@@ -531,7 +530,7 @@ export default function CategoryListPage() {
 
                         <label className="block space-y-1.5">
                             <span className="text-sm font-medium text-slate-700">
-                                Mô tả
+                                Description
                             </span>
 
                             <textarea
@@ -544,17 +543,17 @@ export default function CategoryListPage() {
                                         event.target.value
                                     )
                                 }
-                                placeholder="Nhập mô tả (không bắt buộc)"
+                                placeholder="Enter a description (optional)"
                                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-[#f25d19] focus:ring-2 focus:ring-[#f25d19]/20"
                             />
 
                             <span className="block text-xs text-slate-500">
-                                {form.description.length}/1000 ký tự
+                                {form.description.length}/1000 characters
                             </span>
                         </label>
 
                         <p className="text-sm text-amber-700">
-                            Thao tác này sẽ cập nhật thông tin danh mục trong hệ thống.
+                            This action will update category information in the system.
                         </p>
 
                         <Checkbox
@@ -562,7 +561,7 @@ export default function CategoryListPage() {
                             onChange={(event) =>
                                 setFormConfirmed(event.target.checked)
                             }
-                            label="Tôi xác nhận thông tin danh mục là chính xác."
+                            label="I confirm the category information is correct."
                         />
                     </form>
                 </Modal>
@@ -572,8 +571,8 @@ export default function CategoryListPage() {
                     open={Boolean(visibilityTarget)}
                     title={
                         visibilityTarget?.makeActive
-                            ? "Khôi phục danh mục"
-                            : "Ẩn danh mục"
+                            ? "Restore Category"
+                            : "Hide Category"
                     }
                     onClose={closeVisibility}
                     footer={
@@ -583,7 +582,7 @@ export default function CategoryListPage() {
                                 disabled={saving}
                                 onClick={closeVisibility}
                             >
-                                Hủy
+                                Cancel
                             </Button>
 
                             <Button
@@ -595,7 +594,7 @@ export default function CategoryListPage() {
                                 disabled={!visibilityConfirmed || saving}
                                 onClick={submitVisibility}
                             >
-                                {saving ? "Đang xử lý..." : "Xác nhận"}
+                                {saving ? "Processing..." : "Confirm"}
                             </Button>
                         </>
                     }
@@ -608,13 +607,13 @@ export default function CategoryListPage() {
                         )}
 
                         <p className="text-sm text-slate-700">
-                            Bạn có chắc muốn{" "}
+                            Are you sure you want to{" "}
                             <strong>
                                 {visibilityTarget?.makeActive
-                                    ? "khôi phục"
-                                    : "ẩn"}
+                                    ? "restore"
+                                    : "hide"}
                             </strong>{" "}
-                            danh mục{" "}
+                            category{" "}
                             <strong>
                                 {visibilityTarget?.category?.name}
                             </strong>
@@ -622,16 +621,12 @@ export default function CategoryListPage() {
                         </p>
 
                         <p className="text-sm text-slate-500">
-                            Mã danh mục:{" "}
+                            Category Code:{" "}
                             {visibilityTarget?.category?.categoryCode}
                         </p>
 
                         <p className="text-sm text-amber-700">
-                            Danh mục không bị xóa khỏi cơ sở dữ liệu.
-                            Danh mục đã ẩn sẽ không xuất hiện trong
-                            danh sách danh mục đang hoạt động khi tạo sản phẩm.
-                            Hệ thống có thể không cho ẩn nếu danh mục
-                            đang liên quan đến dữ liệu chờ xử lý.
+                            Categories are not deleted from the database. Hidden categories are excluded from active category selections when creating products. Hiding a category may be restricted when related requests are pending.
                         </p>
 
                         <Checkbox
@@ -639,7 +634,7 @@ export default function CategoryListPage() {
                             onChange={(event) =>
                                 setVisibilityConfirmed(event.target.checked)
                             }
-                            label="Tôi xác nhận thay đổi trạng thái danh mục."
+                            label="I confirm this category status change."
                         />
                     </div>
                 </Modal>

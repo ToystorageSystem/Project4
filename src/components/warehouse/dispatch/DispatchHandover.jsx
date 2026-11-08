@@ -1336,7 +1336,7 @@ function formatDateTime(
 
 
     return date.toLocaleString(
-        "vi-VN"
+        "en-GB"
     );
 }
 

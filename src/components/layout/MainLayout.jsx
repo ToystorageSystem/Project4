@@ -26,7 +26,7 @@ import { getBusinessRoleLabel } from "../../auth/roleRouting";
 
 function formatRole(role) {
     if (!role) {
-        return "Nhân viên kho";
+        return "Warehouse Staff";
     }
 
     if (typeof role === "object") {
@@ -58,18 +58,18 @@ function getGreeting(date) {
         hour < 12
     ) {
         return {
-            title: "Chào buổi sáng" ,
+            title: "Good morning" ,
             message:
-                "Chúc bạn một ngày làm việc thuận lợi.",
+                "Have a productive day.",
             type: "morning",
         };
     }
 
     if (hour === 12) {
         return {
-            title: "Đến giờ nghỉ trưa",
+            title: "Time for a lunch break",
             message:
-                "Chúc bạn có giờ nghỉ trưa thoải mái.",
+                "Enjoy your lunch break.",
             type: "break",
         };
     }
@@ -79,9 +79,9 @@ function getGreeting(date) {
         hour < 17
     ) {
         return {
-            title: "Chào buổi chiều",
+            title: "Good afternoon",
             message:
-                "Chúc bạn tiếp tục làm việc hiệu quả.",
+                "Keep up the great work.",
             type: "afternoon",
         };
     }
@@ -91,9 +91,9 @@ function getGreeting(date) {
         hour < 19
     ) {
         return {
-            title: "Kết thúc ngày làm việc",
+            title: "Wrapping up the day",
             message:
-                "Chúc bạn về nhà an toàn và nghỉ ngơi thật tốt.",
+                "Have a safe trip home and a good rest.",
             type: "goodbye",
         };
     }
@@ -103,17 +103,17 @@ function getGreeting(date) {
         hour < 23
     ) {
         return {
-            title: "Đang ngoài giờ làm việc",
+            title: "Outside business hours",
             message:
-                "Bạn nhớ dành thời gian nghỉ ngơi khi có thể nhé.",
+                "Remember to take a break when you can.",
             type: "overtime",
         };
     }
 
     return {
-        title: "Chào buổi tối",
+        title: "Good evening",
         message:
-            "Đã muộn rồi, bạn nhớ giữ sức khỏe nhé.",
+            "It's getting late. Take care of yourself.",
         type: "night",
     };
 }
@@ -361,7 +361,7 @@ function WorkspaceHeader() {
         user?.name ??
         user?.fullName ??
         user?.email ??
-        "Người dùng";
+        "User";
 
 
     const role =
@@ -389,7 +389,7 @@ function WorkspaceHeader() {
 
     const date =
         now.toLocaleDateString(
-            "vi-VN",
+            "en-GB",
             {
                 weekday: "short",
                 day: "2-digit",
@@ -484,7 +484,7 @@ function WorkspaceHeader() {
                         <div>
 
                             <p className="text-xs text-slate-400">
-                                Vai trò
+                                Role
                             </p>
 
                             <p className="mt-0.5 whitespace-nowrap text-sm font-semibold text-slate-800">
@@ -513,8 +513,8 @@ function WorkspaceHeader() {
                         <span className="hidden sm:inline">
 
                             {loggingOut
-                                ? "Đang đăng xuất..."
-                                : "Đăng xuất"}
+                                ? "Signing out..."
+                                : "Sign out"}
 
                         </span>
 

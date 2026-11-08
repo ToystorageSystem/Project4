@@ -7,88 +7,88 @@ import { businessManagerMenuItems } from "../../components/icons/businessMenuIte
 import MainLayout from "../../components/layout/MainLayout";
 
 const TYPES = [
-    { id: "imports", label: "Báo cáo nhập hàng", short: "Nhập hàng", file: "bao-cao-nhap-hang.xlsx" },
-    { id: "exports", label: "Báo cáo xuất hàng", short: "Xuất hàng", file: "bao-cao-xuat-hang.xlsx" },
-    { id: "transfers", label: "Báo cáo điều chuyển", short: "Điều chuyển", file: "bao-cao-dieu-chuyen.xlsx" },
-    { id: "inventory", label: "Báo cáo tồn kho", short: "Tồn kho", file: "bao-cao-ton-kho.xlsx" },
+    { id: "imports", label: "Goods Receipt Report", short: "Goods Receipts", file: "goods-receipt-report.xlsx" },
+    { id: "exports", label: "Outbound Stock Report", short: "Outbound Stock", file: "outbound-stock-report.xlsx" },
+    { id: "transfers", label: "Stock Transfer Report", short: "Stock Transfers", file: "stock-transfer-report.xlsx" },
+    { id: "inventory", label: "Inventory Report", short: "Inventory", file: "inventory-report.xlsx" },
 ];
 
 const METRICS = {
     imports: [
-        ["totalReceipts", "Tổng phiếu nhập"],
-        ["completedReceipts", "Phiếu đã hoàn tất"],
-        ["totalAcceptedQuantity", "Số lượng chấp nhận"],
+        ["totalReceipts", "Total Goods Receipts"],
+        ["completedReceipts", "Completed Receipts"],
+        ["totalAcceptedQuantity", "Accepted Quantity"],
     ],
     exports: [
-        ["totalExports", "Tổng phiếu xuất"],
-        ["shippedExports", "Phiếu đã xuất hàng"],
-        ["totalShippedQuantity", "Số lượng đã xuất"],
+        ["totalExports", "Total Outbound Transfers"],
+        ["shippedExports", "Shipped Transfers"],
+        ["totalShippedQuantity", "Shipped Quantity"],
     ],
     transfers: [
-        ["totalTransfers", "Tổng số phiếu điều chuyển"],
-        ["completedTransfers", "Phiếu đã hoàn tất"],
-        ["totalShippedQuantity", "Số lượng đã xuất"],
+        ["totalTransfers", "Total Stock Transfers"],
+        ["completedTransfers", "Completed Transfers"],
+        ["totalShippedQuantity", "Shipped Quantity"],
     ],
     inventory: [
-        ["totalProducts", "Sản phẩm khác nhau"],
-        ["totalBalanceRecords", "Vị trí có hàng"],
-        ["totalQuantity", "Tồn vật lý"],
-        ["totalReservedQuantity", "Đã tạm giữ"],
-        ["totalAvailableQuantity", "Tồn kho khả dụng"],
+        ["totalProducts", "Distinct Products"],
+        ["totalBalanceRecords", "Stock Locations"],
+        ["totalQuantity", "Physical Stock"],
+        ["totalReservedQuantity", "Reserved Stock"],
+        ["totalAvailableQuantity", "Available Stock"],
     ],
 };
 
 const COLUMNS = {
     imports: [
-        ["receiptCode", "Mã chứng từ"],
-        ["warehouseName", "Kho nhận hàng"],
-        ["status", "Trạng thái"],
-        ["createdAt", "Ngày tạo"],
-        ["receivedAt", "Ngày nhận"],
-        ["acceptedQuantity", "Số lượng chấp nhận"],
+        ["receiptCode", "Document No."],
+        ["warehouseName", "Receiving Warehouse"],
+        ["status", "Status"],
+        ["createdAt", "Created At"],
+        ["receivedAt", "Received At"],
+        ["acceptedQuantity", "Accepted Quantity"],
     ],
     exports: [
-        ["transferCode", "Mã chứng từ"],
-        ["fromWarehouseName", "Kho xuất hàng"],
-        ["toWarehouseName", "Kho/cửa hàng nhận"],
-        ["status", "Trạng thái"],
-        ["createdAt", "Ngày tạo"],
-        ["shippedAt", "Ngày xuất"],
-        ["shippedQuantity", "Số lượng đã xuất"],
+        ["transferCode", "Document No."],
+        ["fromWarehouseName", "Source Warehouse"],
+        ["toWarehouseName", "Destination Warehouse / Store"],
+        ["status", "Status"],
+        ["createdAt", "Created At"],
+        ["shippedAt", "Shipped At"],
+        ["shippedQuantity", "Shipped Quantity"],
     ],
     transfers: [
-        ["transferCode", "Mã chứng từ"],
-        ["fromWarehouseName", "Kho gửi"],
-        ["toWarehouseName", "Kho/cửa hàng nhận"],
-        ["status", "Trạng thái"],
-        ["createdAt", "Ngày tạo"],
-        ["shippedAt", "Ngày xuất"],
-        ["shippedQuantity", "Số lượng đã xuất"],
+        ["transferCode", "Document No."],
+        ["fromWarehouseName", "Origin Warehouse"],
+        ["toWarehouseName", "Destination Warehouse / Store"],
+        ["status", "Status"],
+        ["createdAt", "Created At"],
+        ["shippedAt", "Shipped At"],
+        ["shippedQuantity", "Shipped Quantity"],
     ],
     inventory: [
-        ["productCode", "Mã sản phẩm"],
-        ["productName", "Sản phẩm"],
-        ["warehouseName", "Kho"],
-        ["locationCode", "Mã vị trí"],
-        ["locationType", "Loại vị trí"],
-        ["quantity", "Tồn vật lý"],
-        ["reservedQuantity", "Giữ chỗ"],
-        ["availableQuantity", "Khả dụng"],
+        ["productCode", "Product Code"],
+        ["productName", "Product"],
+        ["warehouseName", "Warehouse"],
+        ["locationCode", "Location Code"],
+        ["locationType", "Location Type"],
+        ["quantity", "Physical Stock"],
+        ["reservedQuantity", "Reserved"],
+        ["availableQuantity", "Available"],
     ],
 };
 
 const STATUS_LABELS = {
-    DRAFT: "Nháp",
-    CREATED: "Đã tạo",
-    RECEIVING: "Đang nhận",
-    INSPECTED: "Đã kiểm hàng",
-    COMPLETED: "Đã hoàn thành",
-    CANCELLED: "Đã hủy",
-    PICKING: "Đang lấy hàng",
-    PACKING: "Đang đóng kiện",
-    SHIPPED: "Đã xuất hàng",
-    IN_TRANSIT: "Đang vận chuyển",
-    CONFIRMED: "Đã xác nhận",
+    DRAFT: "Draft",
+    CREATED: "Created",
+    RECEIVING: "Receiving",
+    INSPECTED: "Inspected",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+    PICKING: "Picking",
+    PACKING: "Packing",
+    SHIPPED: "Shipped",
+    IN_TRANSIT: "In Transit",
+    CONFIRMED: "Confirmed",
 };
 
 const PAGE_SIZE = 12;
@@ -104,7 +104,7 @@ function display(value) {
 function number(value) {
     if (value === null || value === undefined || value === "") return "—";
     const result = Number(value);
-    return Number.isFinite(result) ? result.toLocaleString("vi-VN") : String(value);
+    return Number.isFinite(result) ? result.toLocaleString("en-GB") : String(value);
 }
 
 // Java LocalDateTime contains no timezone. Preserve the clock time returned by the server.
@@ -131,21 +131,21 @@ function toFilters(fields, type) {
 
 function validateFilters(filters) {
     if (filters.warehouseId && (!/^[1-9][0-9]*$/.test(filters.warehouseId) || !Number.isSafeInteger(Number(filters.warehouseId)))) {
-        return "Mã kho phải là số nguyên dương.";
+        return "Warehouse ID must be a positive integer.";
     }
     if (filters.fromDate && filters.toDate && filters.fromDate > filters.toDate) {
-        return "Ngày bắt đầu không được sau ngày kết thúc.";
+        return "Start date cannot be after end date.";
     }
     return "";
 }
 
 function requestError(error) {
-    if (error?.response?.status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-    if (error?.response?.status === 403) return "Tài khoản chưa được cấp quyền xem báo cáo của quản lý kinh doanh.";
+    if (error?.response?.status === 401) return "Your session has expired. Please sign in again.";
+    if (error?.response?.status === 403) return "You do not have permission to view Business Operations reports.";
     const body = error?.response?.data;
     if (typeof body?.message === "string" && body.message.trim()) return body.message;
     if (typeof body === "string" && body.trim()) return body;
-    return "Không tải được báo cáo. Vui lòng kiểm tra kết nối rồi thử lại.";
+    return "Unable to load report. Check your connection and try again.";
 }
 
 async function excelError(error) {
@@ -202,14 +202,14 @@ export default function BusinessActivityReportsPage() {
                 if (!controller.signal.aborted) {
                     if (!data || typeof data !== "object" || Array.isArray(data) ||
                         (data.records != null && !Array.isArray(data.records))) {
-                        throw new Error("Dữ liệu báo cáo không đúng định dạng.");
+                        throw new Error("Invalid report data format.");
                     }
                     setReport({ ...data, records: Array.isArray(data.records) ? data.records : [] });
                 }
             })
             .catch((err) => {
                 if (!controller.signal.aborted && err?.code !== "ERR_CANCELED") {
-                    setError(err?.message === "Dữ liệu báo cáo không đúng định dạng."
+                    setError(err?.message === "Invalid report data format."
                         ? err.message : requestError(err));
                 }
             })
@@ -264,11 +264,11 @@ export default function BusinessActivityReportsPage() {
             const response = await getBusinessActivityExcel(type, next);
             const data = response?.data;
             if (!(data instanceof Blob) || data.size === 0) {
-                throw new Error("Không tạo được tệp Excel hợp lệ.");
+                throw new Error("Unable to generate a valid Excel file.");
             }
             const contentType = String(response?.headers?.["content-type"] || data.type || "").toLowerCase();
             if (contentType.includes("json") || contentType.includes("text/html")) {
-                throw new Error("Không nhận được tệp Excel. Vui lòng thử lại.");
+                throw new Error("Unable to download the Excel file. Please try again.");
             }
             const url = URL.createObjectURL(data);
             const anchor = document.createElement("a");
@@ -279,7 +279,7 @@ export default function BusinessActivityReportsPage() {
             anchor.remove();
             window.setTimeout(() => URL.revokeObjectURL(url), 1500);
         } catch (err) {
-            setExportError(err?.message?.startsWith("Không") ? err.message : await excelError(err));
+            setExportError(err?.message?.startsWith("Unable") ? err.message : await excelError(err));
         } finally {
             setExporting(false);
         }
@@ -289,11 +289,11 @@ export default function BusinessActivityReportsPage() {
         <MainLayout title="Business Operations" items={businessManagerMenuItems}>
             <div className="mx-auto max-w-7xl space-y-5 px-3 py-6 sm:px-6 lg:py-10">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Xem báo cáo hoạt động</h1>
-                    <p className="mt-1 text-sm text-slate-500">Xem tình hình nhập, xuất, điều chuyển và tồn kho của toàn hệ thống; có thể xuất báo cáo Excel.</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">View Activity Reports</h1>
+                    <p className="mt-1 text-sm text-slate-500">View goods receipts, outbound transfers, stock transfers, and inventory across the system. Export reports to Excel.</p>
                 </div>
 
-                <div className="flex flex-wrap gap-2" role="tablist" aria-label="Loại báo cáo">
+                <div className="flex flex-wrap gap-2" role="tablist" aria-label="Report Type">
                     {TYPES.map((entry) => (
                         <button key={entry.id} type="button" role="tab" aria-selected={type === entry.id}
                             onClick={() => { setType(entry.id); setFilterError(""); setExportError(""); }}
@@ -306,42 +306,42 @@ export default function BusinessActivityReportsPage() {
                 <form onSubmit={applyFilters} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                     <div className="grid gap-3 sm:grid-cols-3">
                         <label className="block">
-                            <span className={labelClass}>Mã kho (để trống để xem tất cả)</span>
-                            <input className={inputClass} type="text" inputMode="numeric" placeholder="Ví dụ: 9"
+                            <span className={labelClass}>Warehouse ID (leave blank for all warehouses)</span>
+                            <input className={inputClass} type="text" inputMode="numeric" placeholder="Example: 9"
                                 value={draft.warehouseId} onChange={(event) => setDraft((old) => ({ ...old, warehouseId: event.target.value }))}/>
                         </label>
                         {type !== "inventory" ? <>
                             <label className="block">
-                                <span className={labelClass}>Từ ngày</span>
+                                <span className={labelClass}>From Date</span>
                                 <input className={inputClass} type="date" value={draft.fromDate}
                                     onChange={(event) => setDraft((old) => ({ ...old, fromDate: event.target.value }))}/>
                             </label>
                             <label className="block">
-                                <span className={labelClass}>Đến ngày</span>
+                                <span className={labelClass}>To Date</span>
                                 <input className={inputClass} type="date" value={draft.toDate}
                                     onChange={(event) => setDraft((old) => ({ ...old, toDate: event.target.value }))}/>
                             </label>
                         </> : <div className="sm:col-span-2 flex items-center text-sm text-slate-500">
-                            Báo cáo tồn kho là số liệu tại thời điểm hiện tại, không có bộ lọc ngày.
+                            The inventory report is a current snapshot and does not support date filtering.
                         </div>}
                     </div>
                     {filterError && <p role="alert" className="mt-3 text-sm text-red-600">{filterError}</p>}
                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                        <button type="submit" className={`${buttonClass} bg-blue-700 text-white hover:bg-blue-800`}>Xem báo cáo / Lọc</button>
-                        <button type="button" onClick={clearFilters} className={`${buttonClass} border border-slate-200 bg-white text-slate-700 hover:bg-slate-50`}>Xóa bộ lọc</button>
-                        <button type="button" onClick={() => setReload((value) => value + 1)} className={`${buttonClass} text-blue-700 hover:bg-blue-50`}>Tải lại</button>
+                        <button type="submit" className={`${buttonClass} bg-blue-700 text-white hover:bg-blue-800`}>View Report / Apply Filters</button>
+                        <button type="button" onClick={clearFilters} className={`${buttonClass} border border-slate-200 bg-white text-slate-700 hover:bg-slate-50`}>Clear Filters</button>
+                        <button type="button" onClick={() => setReload((value) => value + 1)} className={`${buttonClass} text-blue-700 hover:bg-blue-50`}>Reload</button>
                         <button type="button" onClick={exportExcel} disabled={exporting}
                             className={`${buttonClass} ml-auto bg-emerald-600 text-white hover:bg-emerald-700`}>
-                            {exporting ? "Đang xuất Excel..." : "Xuất báo cáo Excel"}
+                            {exporting ? "Exporting Excel..." : "Export to Excel"}
                         </button>
                     </div>
                     {exportError && <p role="alert" className="mt-3 text-sm text-red-600">{exportError}</p>}
                 </form>
 
-                {loading ? <div role="status" className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Đang tải báo cáo...</div>
+                {loading ? <div role="status" className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Loading report...</div>
                     : error ? <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
                         : report && <>
-                            <section aria-label="Chỉ số báo cáo" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                            <section aria-label="Report Metrics" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                                 {METRICS[type].map(([field, label]) => (
                                     <div key={field} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                                         <div className="text-xs font-semibold text-slate-500">{label}</div>
@@ -350,10 +350,10 @@ export default function BusinessActivityReportsPage() {
                                 ))}
                             </section>
 
-                            {type === "inventory" && <p className="text-sm text-slate-500">Thời điểm dữ liệu tồn kho: <strong>{dateTime(report.snapshotAt)}</strong>. Số lượng thực tế, số đã giữ và số có thể sử dụng được cập nhật từ hệ thống.</p>}
+                            {type === "inventory" && <p className="text-sm text-slate-500">Inventory snapshot as of: <strong>{dateTime(report.snapshotAt)}</strong>. Physical, reserved, and available stock quantities are synchronized with the system.</p>}
 
                             {breakdown.length > 0 && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                                <h2 className="mb-4 text-sm font-bold text-slate-800">Phiếu điều chuyển theo trạng thái</h2>
+                                <h2 className="mb-4 text-sm font-bold text-slate-800">Stock Transfers by Status</h2>
                                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                     {breakdown.map(([status, value]) => (
                                         <div key={status} className="space-y-2">
@@ -366,10 +366,10 @@ export default function BusinessActivityReportsPage() {
 
                             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-4">
-                                    <h2 className="font-bold text-slate-900">Chi tiết {current.label.toLowerCase()}</h2>
-                                    <span className="text-xs text-slate-500">{number(rows.length)} dòng kết quả</span>
+                                    <h2 className="font-bold text-slate-900">Details {current.label.toLowerCase()}</h2>
+                                    <span className="text-xs text-slate-500">{number(rows.length)} matching records</span>
                                 </div>
-                                {rows.length === 0 ? <p className="p-10 text-center text-sm text-slate-500">Không có dữ liệu trong bộ lọc đã chọn.</p> : <>
+                                {rows.length === 0 ? <p className="p-10 text-center text-sm text-slate-500">No records match the selected filters.</p> : <>
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full divide-y divide-slate-200 text-sm">
                                             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -388,7 +388,7 @@ export default function BusinessActivityReportsPage() {
                                         <span>Trang {page + 1} / {totalPages}</span>
                                         <div className="flex gap-2">
                                             <button type="button" disabled={page <= 0} onClick={() => setPage((value) => Math.max(0, value - 1))}
-                                                className={`${buttonClass} border border-slate-200 bg-white text-slate-700`}>Trước</button>
+                                                className={`${buttonClass} border border-slate-200 bg-white text-slate-700`}>Previous</button>
                                             <button type="button" disabled={page >= totalPages - 1} onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}
                                                 className={`${buttonClass} border border-slate-200 bg-white text-slate-700`}>Sau</button>
                                         </div>

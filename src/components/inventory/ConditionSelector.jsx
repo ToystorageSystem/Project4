@@ -1,22 +1,22 @@
 import Select from "../ui/Select";
 const defaultOptions=[ {
-    value:"NORMAL",label:"Bình thường"
+    value:"NORMAL",label:"Normal"
 }
 , {
-    value:"DAMAGED",label:"Hư hỏng"
+    value:"DAMAGED",label:"Damaged"
 }
 , {
-    value:"EXPIRED",label:"Hết hạn"
+    value:"EXPIRED",label:"Expired"
 }
 , {
-    value:"QUARANTINE",label:"Cách ly"
+    value:"QUARANTINE",label:"Quarantine"
 }
 ];
 export default function ConditionSelector( {
     value,onChange,options=defaultOptions
 }
 ) {
-    return <Select label="Tình trạng" value= {
+    return <Select label="Condition" value= {
         value
     }
     options= {

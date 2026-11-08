@@ -2,32 +2,32 @@ import { ROLE, hasAuthority } from "../../auth/roleRouting";
 
 // Menu da gop role. Backend van kiem tra quyen tren tung API.
 export const BUSINESS_NAV = [
-  { title: "Tổng quan", icon: "overview", links: [
-    { label: "Trang tổng quan", path: "/business/dashboard" },
+  { title: "Overview", icon: "overview", links: [
+    { label: "Dashboard", path: "/business/dashboard" },
   ] },
-  { title: "Sản phẩm và nhà cung cấp", icon: "catalog", links: [
-    { label: "Sản phẩm", path: "/business/products" },
-    { label: "Danh mục", path: "/business/categories" },
-    { label: "Nhà cung cấp", path: "/business/suppliers" },
+  { title: "Products & Suppliers", icon: "catalog", links: [
+    { label: "Products", path: "/business/products" },
+    { label: "Categories", path: "/business/categories" },
+    { label: "Suppliers", path: "/business/suppliers" },
   ] },
-  { title: "Mua hàng", icon: "purchasing", links: [
-    { label: "Đơn mua hàng", path: "/business/purchase-orders" },
-    { label: "Hóa đơn nhà cung cấp", path: "/business/supplier-invoices" },
-    { label: "Phiếu nhập kho", path: "/business/goods-receipts/list" },
-    { label: "Tạo phiếu nhập kho", path: "/business/goods-receipts" },
+  { title: "Purchasing", icon: "purchasing", links: [
+    { label: "Purchase Orders", path: "/business/purchase-orders" },
+    { label: "Supplier Invoices", path: "/business/supplier-invoices" },
+    { label: "Goods Receipts", path: "/business/goods-receipts/list" },
+    { label: "Create Goods Receipt", path: "/business/goods-receipts" },
   ] },
-  { title: "Phân phối hàng", icon: "distribution", links: [
-    { label: "Phiếu điều chuyển", path: "/business/stock-transfers" },
-    { label: "Bảng kê giao hàng", path: "/business/shipment-manifests" },
-    { label: "Hàng đang vận chuyển", path: "/business/in-transit-shipments" },
+  { title: "Distribution", icon: "distribution", links: [
+    { label: "Stock Transfers", path: "/business/stock-transfers" },
+    { label: "Shipment Manifests", path: "/business/shipment-manifests" },
+    { label: "In-Transit Shipments", path: "/business/in-transit-shipments" },
   ] },
-  { title: "Tồn kho", icon: "inventory", links: [
-    { label: "Báo cáo tồn kho", path: "/business/inventory-report" },
-    { label: "Giao dịch tồn kho", path: "/business/stock-transactions" },
-    { label: "Chênh lệch hàng hóa", path: "/business/discrepancies" },
+  { title: "Inventory", icon: "inventory", links: [
+    { label: "Inventory Report", path: "/business/inventory-report" },
+    { label: "Inventory Transactions", path: "/business/stock-transactions" },
+    { label: "Discrepancy Reports", path: "/business/discrepancies" },
   ] },
-  { title: "Báo cáo", icon: "reports", links: [
-    { label: "Hoạt động nghiệp vụ", path: "/business/activity-reports" },
+  { title: "Reports", icon: "reports", links: [
+    { label: "Operational Activity", path: "/business/activity-reports" },
   ] },
 ];
 
@@ -44,6 +44,6 @@ export function resolveBusinessLocation(pathname, user) {
     .filter((link) => pathname === link.path || pathname.startsWith(`${link.path}/`))
     .sort((a, b) => b.path.length - a.path.length)[0];
   if (match) return { section: match.section, page: match.label };
-  if (pathname.includes("/new")) return { section: "Không gian làm việc", page: "Tạo mới" };
-  return { section: "Không gian làm việc", page: "Nghiệp vụ kinh doanh" };
+  if (pathname.includes("/new")) return { section: "Workspace", page: "Create New" };
+  return { section: "Workspace", page: "Business Operations" };
 }

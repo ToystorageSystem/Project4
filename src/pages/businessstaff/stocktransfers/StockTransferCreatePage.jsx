@@ -34,7 +34,7 @@ import {
 } from "./stockTransferDraft";
 
 const ROOT = "/business/stock-transfers";
-const numberLabel = new Intl.NumberFormat("vi-VN");
+const numberLabel = new Intl.NumberFormat("en-GB");
 const displayQuantity = (quantity) => numberLabel.format(Number(quantity) || 0);
 
 export default function StockTransferCreatePage() {
@@ -69,7 +69,7 @@ export default function StockTransferCreatePage() {
         setExistingError("");
         setOriginalDetail(null);
         if (!Number.isSafeInteger(id) || id <= 0) {
-            setExistingError("Mã định danh phiếu không hợp lệ.");
+            setExistingError("Invalid transfer identifier.");
             setLoadingExisting(false);
             return () => controller.abort();
         }
@@ -77,13 +77,13 @@ export default function StockTransferCreatePage() {
             .then((data) => {
                 if (controller.signal.aborted) return;
                 if (!data || Number(data.id) !== id || !Array.isArray(data.items)) {
-                    throw new Error("Dữ liệu phiếu không đúng định dạng.");
+                    throw new Error("Invalid transfer data format.");
                 }
                 if (!canEditStockTransfer(data.status)) {
-                    throw new Error("Kho đã bắt đầu xử lý hoặc phiếu đã kết thúc nên không thể sửa. Hãy quay lại chi tiết.");
+                    throw new Error("The warehouse has started processing, or the transfer is already closed. Return to the details page.");
                 }
                 const loadedForm = stockTransferFormFromDetail(data);
-                if (!loadedForm.items.length) throw new Error("Phiếu không có sản phẩm.");
+                if (!loadedForm.items.length) throw new Error("This transfer contains no products.");
                 nextRowId.current = loadedForm.items.length;
                 setForm(loadedForm);
                 setOriginalDetail(data);
@@ -92,7 +92,7 @@ export default function StockTransferCreatePage() {
             })
             .catch((error) => {
                 if (!controller.signal.aborted) {
-                    setExistingError(stockTransferErrorMessage(error, "Không thể tải phiếu để sửa."));
+                    setExistingError(stockTransferErrorMessage(error, "Unable to load transfer for editing."));
                 }
             })
             .finally(() => { if (!controller.signal.aborted) setLoadingExisting(false); });
@@ -109,7 +109,7 @@ export default function StockTransferCreatePage() {
         ]).then(([sourceOptions, destinationOptions]) => {
             if (controller.signal.aborted) return;
             if (!Array.isArray(sourceOptions) || !Array.isArray(destinationOptions)) {
-                throw new Error("Dữ liệu kho xuất hoặc cửa hàng nhận không đúng định dạng.");
+                throw new Error("Invalid source warehouse or destination store data.");
             }
             setSources(sourceOptions);
             setDestinations(destinationOptions);
@@ -133,7 +133,7 @@ export default function StockTransferCreatePage() {
         getStockTransferSourceProducts(form.fromWarehouseId, controller.signal)
             .then((options) => {
                 if (controller.signal.aborted) return;
-                if (!Array.isArray(options)) throw new Error("Dữ liệu sản phẩm không đúng định dạng.");
+                if (!Array.isArray(options)) throw new Error("Invalid product data.");
                 setProducts(options);
             }).catch((error) => {
                 if (!controller.signal.aborted) setProductsError(stockTransferErrorMessage(error));
@@ -146,11 +146,11 @@ export default function StockTransferCreatePage() {
     const source = sources.find((item) => String(item.id) === form.fromWarehouseId);
     const destination = destinations.find((item) => String(item.id) === form.toWarehouseId);
     const sourceOptions = [
-        { value: "", label: "-- Chọn kho/cửa hàng xuất --" },
+        { value: "", label: "-- Select Source Warehouse / Store --" },
         ...sources.map((item) => ({ value: String(item.id), label: `${item.name} (${item.code}) · ${item.type}` })),
     ];
     const destinationOptions = [
-        { value: "", label: "-- Chọn cửa hàng nhận --" },
+        { value: "", label: "-- Select Destination Store --" },
         ...destinations.filter((item) => String(item.id) !== form.fromWarehouseId).map((item) => ({
             value: String(item.id), label: `${item.name} (${item.code})`,
         })),
@@ -225,9 +225,9 @@ export default function StockTransferCreatePage() {
         let latestProducts;
         try {
             latestProducts = await getStockTransferSourceProducts(form.fromWarehouseId);
-            if (!Array.isArray(latestProducts)) throw new Error("Dữ liệu tồn kho không đúng định dạng.");
+            if (!Array.isArray(latestProducts)) throw new Error("Invalid inventory data.");
         } catch (error) {
-            setSaveError(stockTransferErrorMessage(error, "Không kiểm tra lại được tồn kho trước khi lưu."));
+            setSaveError(stockTransferErrorMessage(error, "Unable to verify available stock before saving."));
             setSaving(false);
             return;
         }
@@ -237,7 +237,7 @@ export default function StockTransferCreatePage() {
             setProducts(latestProducts);
             setPreviewRequested(true);
             setConfirmedDbWrite(false);
-            setSaveError("Dữ liệu vừa thay đổi. Hãy sửa các lỗi được hiển thị, rồi xem trước lại.");
+            setSaveError("The data has changed. Fix the displayed errors and preview again.");
             setSaving(false);
             return;
         }
@@ -248,17 +248,17 @@ export default function StockTransferCreatePage() {
                 if (!canEditStockTransfer(latest?.status)
                     || latest.status !== originalDetail?.status
                     || Number(latest.id) !== Number(transferId)) {
-                    setSaveError("Trạng thái phiếu đã thay đổi hoặc kho đã bắt đầu xử lý. Hãy quay lại chi tiết và làm mới.");
+                    setSaveError("The transfer status has changed, or warehouse processing has started. Return to the details and refresh.");
                     setSaving(false);
                     return;
                 }
                 if (originalDetail?.updatedAt && latest.updatedAt !== originalDetail.updatedAt) {
-                    setSaveError("Phiếu đã được cập nhật ở nơi khác. Hãy tải lại trước khi sửa để tránh ghi đè.");
+                    setSaveError("This transfer was updated elsewhere. Reload before editing to avoid overwriting changes.");
                     setSaving(false);
                     return;
                 }
             } catch (error) {
-                setSaveError(stockTransferErrorMessage(error, "Không thể xác minh trạng thái mới nhất của phiếu."));
+                setSaveError(stockTransferErrorMessage(error, "Unable to verify the latest transfer status."));
                 setSaving(false);
                 return;
             }
@@ -272,16 +272,16 @@ export default function StockTransferCreatePage() {
             if (!Number.isSafeInteger(Number(saved?.id)) || Number(saved.id) !== expectedId || saved.status !== expectedStatus) {
                 // A successful POST/PUT may have changed data despite an unexpected response.
                 setUncertainSave(true);
-                setSaveError("Chưa xác nhận được phiếu đã lưu. Vui lòng kiểm tra danh sách phiếu trước khi thao tác lại.");
+                setSaveError("Unable to confirm the transfer was saved. Check the transfer list before retrying.");
                 return;
             }
             navigate(`${ROOT}/${saved.id}`, { replace: true });
         } catch (error) {
             if (!error?.response) {
                 setUncertainSave(true);
-                setSaveError("Mất kết nối lúc lưu. Dữ liệu có thể đã được ghi; KHÔNG bấm lại trước khi kiểm tra chi tiết phiếu.");
+                setSaveError("Connection lost while saving. The changes may have been applied. DO NOT retry before checking the transfer details.");
             } else {
-                setSaveError(stockTransferErrorMessage(error, "Không lưu được thay đổi. Vui lòng thử lại."));
+                setSaveError(stockTransferErrorMessage(error, "Unable to save changes. Please try again."));
             }
         } finally {
             setConfirmedDbWrite(false);
@@ -293,64 +293,63 @@ export default function StockTransferCreatePage() {
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader
-                    title={isEditMode ? `Sửa phiếu điều chuyển ${originalDetail?.transferCode || `#${transferId}`}` : "Tạo phiếu điều chuyển hàng"}
+                    title={isEditMode ? `Edit Stock Transfer ${originalDetail?.transferCode || `#${transferId}`}` : "Create Stock Transfer"}
                     description={isEditMode
-                        ? "Chỉnh sửa phiếu điều chuyển khi bộ phận kho chưa bắt đầu lấy hàng."
-                        : "Điều chuyển hàng từ kho tổng đến cửa hàng hoặc giữa các cửa hàng."}
-                    actions={<Button type="button" variant="outline" onClick={() => navigate(isEditMode ? `${ROOT}/${transferId}` : "/business/dashboard")}>← {isEditMode ? "Chi tiết" : "Trang tổng quan"}</Button>}
+                        ? "Edit the transfer before warehouse picking begins."
+                        : "Transfer stock from a main warehouse to a store or between stores."}
+                    actions={<Button type="button" variant="outline" onClick={() => navigate(isEditMode ? `${ROOT}/${transferId}` : "/business/dashboard")}>← {isEditMode ? "Details" : "Dashboard"}</Button>}
                 />
                 <Alert type="info">
-                    <strong>{isEditMode ? `Sửa phiếu ${formatBusinessStatus(originalDetail?.status)}` : "Tạo phiếu nháp"}:</strong> Xem trước chỉ kiểm tra trên giao diện.
-                    Những thay đổi của bạn sẽ được lưu vào hệ thống.
+                    <strong>{isEditMode ? `Edit Transfer ${formatBusinessStatus(originalDetail?.status)}` : "Create Draft Transfer"}:</strong> Preview checks the form only. Your changes will be saved to the system when confirmed.
                     {editingReservedTransfer
-                        ? " Nếu phiếu đã được gửi, hệ thống sẽ cập nhật lại số hàng tạm giữ theo số lượng mới."
-                        : " Phiếu nháp chưa tạm giữ hàng. Chỉ sau khi gửi phiếu mới giữ số hàng cần điều chuyển."}
-                    {isEditMode && ` Điểm xuất không đổi${!canChangeDestination ? ", điểm nhận cũng không thể đổi sau khi gửi." : "."}`}
+                        ? " For submitted transfers, reserved stock will be recalculated based on the new quantities."
+                        : " Draft transfers do not reserve stock. Required quantities are reserved only after submission."}
+                    {isEditMode && ` The source location cannot be changed${!canChangeDestination ? ", and the destination cannot be changed after submission." : "."}`}
                 </Alert>
-                {loadError && <div role="alert"><Alert type="danger">{loadError} <Button type="button" variant="outline" size="sm" onClick={() => setRefresh((count) => count + 1)}>Thử lại</Button></Alert></div>}
+                {loadError && <div role="alert"><Alert type="danger">{loadError} <Button type="button" variant="outline" size="sm" onClick={() => setRefresh((count) => count + 1)}>Retry</Button></Alert></div>}
                 {productsError && <div role="alert"><Alert type="danger">{productsError}</Alert></div>}
                 {existingError && <div role="alert"><Alert type="danger">{existingError}</Alert></div>}
 
-                {(loading || loadingExisting) ? <Card className="flex items-center gap-3"><Spinner /> Đang tải dữ liệu phiếu và danh mục...</Card> : !loadError && !existingError && (
+                {(loading || loadingExisting) ? <Card className="flex items-center gap-3"><Spinner /> Loading transfer and reference data...</Card> : !loadError && !existingError && (
                     <>
                         <Card className="space-y-5">
-                            <h2 className="text-lg font-semibold text-slate-900">Điểm xuất và điểm nhận</h2>
+                            <h2 className="text-lg font-semibold text-slate-900">Source and Destination</h2>
                             <div className="grid gap-4 md:grid-cols-2">
-                                <Select label="Kho / cửa hàng xuất *" disabled={saving || isEditMode} value={form.fromWarehouseId} options={sourceOptions} onChange={(event) => changeSource(event.target.value)} />
-                                <Select label="Cửa hàng nhận *" disabled={saving || !canChangeDestination} value={form.toWarehouseId} options={destinationOptions} onChange={(event) => setField("toWarehouseId", event.target.value)} />
+                                <Select label="Source Warehouse / Store *" disabled={saving || isEditMode} value={form.fromWarehouseId} options={sourceOptions} onChange={(event) => changeSource(event.target.value)} />
+                                <Select label="Destination Store *" disabled={saving || !canChangeDestination} value={form.toWarehouseId} options={destinationOptions} onChange={(event) => setField("toWarehouseId", event.target.value)} />
                             </div>
-                            {source && <p className="text-sm text-slate-500">Điểm xuất: {source.address || source.name} · Loại: {source.type}</p>}
-                            {destination && <p className="text-sm text-slate-500">Điểm nhận: {destination.address || destination.name}</p>}
+                            {source && <p className="text-sm text-slate-500">Source: {source.address || source.name} · Type: {source.type}</p>}
+                            {destination && <p className="text-sm text-slate-500">Destination: {destination.address || destination.name}</p>}
                             <div className="grid gap-4 md:grid-cols-2">
-                                <Input label="Ngày dự kiến xuất hàng *" disabled={saving} type="date" min={minDate} value={form.expectedShipmentDate} onChange={(event) => setField("expectedShipmentDate", event.target.value)} />
-                                <Input label="Ngày dự kiến nhận hàng *" disabled={saving} type="date" min={form.expectedShipmentDate || minDate} value={form.expectedReceiptDate} onChange={(event) => setField("expectedReceiptDate", event.target.value)} />
+                                <Input label="Expected Ship Date *" disabled={saving} type="date" min={minDate} value={form.expectedShipmentDate} onChange={(event) => setField("expectedShipmentDate", event.target.value)} />
+                                <Input label="Expected Receipt Date *" disabled={saving} type="date" min={form.expectedShipmentDate || minDate} value={form.expectedReceiptDate} onChange={(event) => setField("expectedReceiptDate", event.target.value)} />
                             </div>
-                            <Select label="Lý do điều chuyển *" disabled={saving} value={form.reasonCode} options={[{ value: "", label: "-- Chọn lý do --" }, ...TRANSFER_REASONS]} onChange={(event) => setField("reasonCode", event.target.value)} />
-                            <TextArea disabled={saving} label={form.reasonCode === "OTHER" ? "Giải thích lý do khác *" : "Diễn giải lý do (nếu có)"} rows={2} value={form.reasonNote} onChange={(event) => setField("reasonNote", event.target.value)} />
-                            <TextArea disabled={saving} label="Ghi chú (không bắt buộc)" rows={2} value={form.notes} onChange={(event) => setField("notes", event.target.value)} />
+                            <Select label="Transfer Reason *" disabled={saving} value={form.reasonCode} options={[{ value: "", label: "-- Select Reason --" }, ...TRANSFER_REASONS]} onChange={(event) => setField("reasonCode", event.target.value)} />
+                            <TextArea disabled={saving} label={form.reasonCode === "OTHER" ? "Other Reason Explanation *" : "Additional Reason Notes (optional)"} rows={2} value={form.reasonNote} onChange={(event) => setField("reasonNote", event.target.value)} />
+                            <TextArea disabled={saving} label="Notes (optional)" rows={2} value={form.notes} onChange={(event) => setField("notes", event.target.value)} />
                         </Card>
 
                         <Card className="space-y-4">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
-                                    <h2 className="text-lg font-semibold text-slate-900">Sản phẩm điều chuyển</h2>
+                                    <h2 className="text-lg font-semibold text-slate-900">Transfer Items</h2>
                                     <p className="mt-1 text-sm text-slate-500">{editingReservedTransfer
-                                        ? "Số lượng có thể xuất đã bao gồm phần hàng đang tạm giữ cho phiếu này. Hệ thống sẽ kiểm tra lại khi lưu."
-                                        : "Đây là số lượng hàng có thể xuất ở kho gửi, không phải kho nhận."}</p>
+                                        ? "Available-to-transfer quantity includes stock already reserved for this transfer. The system will validate quantities when saving."
+                                        : "This is the available stock at the source, not the destination."}</p>
                                 </div>
-                                <Button type="button" variant="outline" disabled={saving || !form.fromWarehouseId || loadingProducts || products.length === 0} onClick={addRow}>+ Thêm sản phẩm</Button>
+                                <Button type="button" variant="outline" disabled={saving || !form.fromWarehouseId || loadingProducts || products.length === 0} onClick={addRow}>+ Add Product</Button>
                             </div>
-                            {loadingProducts && <p className="flex items-center gap-2 text-sm text-slate-500"><Spinner /> Đang tải tồn khả dụng...</p>}
-                            {form.fromWarehouseId && !loadingProducts && !productsError && editableProducts.length === 0 && <Alert type="warning">Điểm xuất chưa có sản phẩm khả dụng. Hãy kiểm tra tồn kho hoặc chọn điểm xuất khác.</Alert>}
+                            {loadingProducts && <p className="flex items-center gap-2 text-sm text-slate-500"><Spinner /> Loading available stock...</p>}
+                            {form.fromWarehouseId && !loadingProducts && !productsError && editableProducts.length === 0 && <Alert type="warning">No available stock at the source. Check inventory or select another source.</Alert>}
                             {form.items.map((row, index) => {
                                 const selectedProduct = productById.get(row.productId);
                                 const otherSelected = new Set(form.items.filter((item) => item.clientKey !== row.clientKey).map((item) => item.productId));
                                 const eligible = editableProducts.filter((item) => !otherSelected.has(String(item.productId)) && Number(item.availableQuantity) > 0);
                                 const options = [
-                                    { value: "", label: "-- Chọn sản phẩm --" },
+                                    { value: "", label: "-- Select Product --" },
                                     ...eligible.map((item) => ({
                                         value: String(item.productId),
-                                        label: `${item.productCode} — ${item.productName} (${item.baseUnit || ""}) · Tồn ${displayQuantity(item.availableQuantity)}`,
+                                        label: `${item.productCode} — ${item.productName} (${item.baseUnit || ""}) · Stock ${displayQuantity(item.availableQuantity)}`,
                                     })),
                                 ];
                                 const requested = Number(row.requestedQuantity);
@@ -358,48 +357,48 @@ export default function StockTransferCreatePage() {
                                 return (
                                     <div key={row.clientKey} className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                                         <div className="flex items-center justify-between gap-3">
-                                            <span className="text-sm font-semibold text-slate-800">Sản phẩm #{index + 1}</span>
-                                            <Button type="button" size="sm" variant="outline" disabled={saving || form.items.length === 1} onClick={() => removeRow(row.clientKey)}>Xóa dòng</Button>
+                                            <span className="text-sm font-semibold text-slate-800">Product #{index + 1}</span>
+                                            <Button type="button" size="sm" variant="outline" disabled={saving || form.items.length === 1} onClick={() => removeRow(row.clientKey)}>Remove Row</Button>
                                         </div>
                                         <div className="grid gap-4 md:grid-cols-3">
-                                            <Select label="Sản phẩm *" value={row.productId} disabled={saving || !form.fromWarehouseId || loadingProducts} options={options} onChange={(event) => changeRow(row.clientKey, "productId", event.target.value)} />
-                                            <Input label="Số lượng yêu cầu *" type="number" min="1" step="1" max={selectedProduct?.availableQuantity ?? undefined} disabled={saving || !selectedProduct || loadingProducts} value={row.requestedQuantity} onChange={(event) => changeRow(row.clientKey, "requestedQuantity", event.target.value)} />
+                                            <Select label="Product *" value={row.productId} disabled={saving || !form.fromWarehouseId || loadingProducts} options={options} onChange={(event) => changeRow(row.clientKey, "productId", event.target.value)} />
+                                            <Input label="Requested Quantity *" type="number" min="1" step="1" max={selectedProduct?.availableQuantity ?? undefined} disabled={saving || !selectedProduct || loadingProducts} value={row.requestedQuantity} onChange={(event) => changeRow(row.clientKey, "requestedQuantity", event.target.value)} />
                                             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                                                <span className="block text-slate-500">{editingReservedTransfer ? "Có thể dùng sau khi tính phần phiếu đã giữ chỗ (ước tính)" : "Tồn khả dụng tại điểm xuất"}</span>
+                                                <span className="block text-slate-500">{editingReservedTransfer ? "Available after accounting for this transfer's reservations (estimate)" : "Available Stock at Source"}</span>
                                                 <strong className="mt-1 block text-xl text-slate-900">{selectedProduct ? displayQuantity(selectedProduct.availableQuantity) : "—"}</strong>
                                             </div>
                                         </div>
-                                        {overStock && <p role="alert" className="text-sm font-semibold text-red-600">Yêu cầu {displayQuantity(requested)} vượt tồn khả dụng {displayQuantity(selectedProduct.availableQuantity)}.</p>}
-                                        {selectedProduct && <p className="text-xs text-slate-500">Mã: {selectedProduct.productCode} · Mã vạch: {selectedProduct.barcode || "—"} · Đơn vị: {selectedProduct.baseUnit || "—"}</p>}
+                                        {overStock && <p role="alert" className="text-sm font-semibold text-red-600">Request {displayQuantity(requested)} exceeds available stock {displayQuantity(selectedProduct.availableQuantity)}.</p>}
+                                        {selectedProduct && <p className="text-xs text-slate-500">Code: {selectedProduct.productCode} · Barcode: {selectedProduct.barcode || "—"} · Unit: {selectedProduct.baseUnit || "—"}</p>}
                                     </div>
                                 );
                             })}
                             <div className="flex justify-end border-t border-slate-200 pt-4 text-right">
                                 <div>
-                                    <p className="text-sm text-slate-500">Tổng số lượng yêu cầu</p>
+                                    <p className="text-sm text-slate-500">Total Requested Quantity</p>
                                     <strong className="text-2xl text-slate-900">{displayQuantity(totalQuantity)}</strong>
                                 </div>
                             </div>
                         </Card>
 
                         <Card className="space-y-4">
-                            <h2 className="text-lg font-semibold text-slate-900">Kiểm tra bản nháp trên giao diện</h2>
-                            <p className="text-sm text-slate-600">Kiểm tra kỹ các thông tin trước khi lưu. Xem trước sẽ không làm thay đổi dữ liệu.</p>
+                            <h2 className="text-lg font-semibold text-slate-900">Validate Draft Form</h2>
+                            <p className="text-sm text-slate-600">Review the details before saving. Preview will not change any data.</p>
                             {previewRequested && errors.length > 0 && <div role="alert"><Alert type="danger">
-                                <strong>Cần sửa các thông tin sau:</strong>
+                                <strong>Correct the following fields:</strong>
                                 <ul className="mt-2 list-disc space-y-1 pl-5">{errors.map((message, index) => <li key={index}>{message}</li>)}</ul>
                             </Alert></div>}
                             {previewReady && <Alert type="success">
-                                <strong>Kiểm tra đạt — chưa ghi dữ liệu.</strong>
-                                <p className="mt-2">{source?.name} → {destination?.name}; {payload.items.length} sản phẩm, tổng {displayQuantity(totalQuantity)} đơn vị.</p>
-                                <p>Ngày xuất: {payload.expectedShipmentDate}; ngày nhận: {payload.expectedReceiptDate}; lý do: {TRANSFER_REASONS.find((item) => item.value === payload.reasonCode)?.label}.</p>
+                                <strong>Validation passed — no changes saved.</strong>
+                                <p className="mt-2">{source?.name} → {destination?.name}; {payload.items.length} products, total {displayQuantity(totalQuantity)} units.</p>
+                                <p>Ship Date: {payload.expectedShipmentDate}; Receipt Date: {payload.expectedReceiptDate}; lý do: {TRANSFER_REASONS.find((item) => item.value === payload.reasonCode)?.label}.</p>
                             </Alert>}
                             {saveError && <div role="alert"><Alert type="danger">{saveError}</Alert></div>}
                             {previewReady && !uncertainSave && <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-slate-700">
                                 <input type="checkbox" className="mt-1 accent-orange-600" checked={confirmedDbWrite} disabled={saving} onChange={(event) => setConfirmedDbWrite(event.target.checked)} />
-                                <span>Tôi xác nhận {isEditMode ? `cập nhật phiếu ${originalDetail?.status}` : "tạo phiếu nháp"} trên <strong>hệ thống</strong>. {editingReservedTransfer
-                                    ? "Hệ thống sẽ cập nhật số hàng đang tạm giữ theo nội dung mới."
-                                    : "Thao tác này chưa giữ chỗ tồn kho."}</span>
+                                <span>I confirm {isEditMode ? `update the transfer ${originalDetail?.status}` : "create the draft transfer"} in the <strong>system</strong>. {editingReservedTransfer
+                                    ? "The system will recalculate reserved stock based on the updated quantities."
+                                    : "This action does not reserve stock yet."}</span>
                             </label>}
                             <div className="flex flex-wrap justify-end gap-3">
                                 <Button type="button" variant="outline" disabled={saving || uncertainSave} onClick={() => {
@@ -409,13 +408,13 @@ export default function StockTransferCreatePage() {
                                     setForm(resetForm);
                                     nextRowId.current = resetForm.items.length;
                                     invalidatePreview();
-                                }}>{isEditMode ? "Khôi phục dữ liệu" : "Làm lại form"}</Button>
-                                <Button type="button" disabled={saving || loadingProducts || !!productsError || uncertainSave} onClick={() => setPreviewRequested(true)}>Kiểm tra / Xem trước</Button>
+                                }}>{isEditMode ? "Restore Data" : "Reset Form"}</Button>
+                                <Button type="button" disabled={saving || loadingProducts || !!productsError || uncertainSave} onClick={() => setPreviewRequested(true)}>Validate / Preview</Button>
                                 <Button type="button" disabled={!previewReady || !confirmedDbWrite || saving || uncertainSave} onClick={handleSaveDraft}>
-                                    {saving ? "Saving..." : (isEditMode ? "Lưu thay đổi phiếu" : "Lưu phiếu nháp")}
+                                    {saving ? "Saving..." : (isEditMode ? "Save Transfer Changes" : "Save Draft Transfer")}
                                 </Button>
                             </div>
-                            <p className="text-xs text-slate-500">Bạn có thể gửi hoặc hủy phiếu tại trang chi tiết. Hệ thống sẽ yêu cầu xác nhận trước khi lưu thay đổi.</p>
+                            <p className="text-xs text-slate-500">You can submit or cancel the transfer from its details page. Confirmation is required before saving changes.</p>
                         </Card>
                     </>
                 )}

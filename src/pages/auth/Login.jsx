@@ -144,7 +144,7 @@ export default function Login() {
                 ) {
 
                     setError(
-                        "Đăng nhập thành công nhưng chưa nhận được thông tin tài khoản. Vui lòng thử lại."
+                        "Sign-in succeeded, but account information was not returned. Please try again."
                     );
 
                     return;
@@ -172,7 +172,7 @@ export default function Login() {
                 ) {
 
                 setError(
-                    friendlyBusinessError(requestError, "Email hoặc mật khẩu không đúng.")
+                    friendlyBusinessError(requestError, "Incorrect email or password.")
                 );
             }
             finally {
@@ -204,7 +204,7 @@ export default function Login() {
 
                         <img
                             src="/logo.png"
-                            alt="Biểu trưng hệ thống quản lý kho"
+                            alt="Warehouse Management System Logo"
                             className="app-logo app-logo--large"
                         />
 
@@ -212,12 +212,12 @@ export default function Login() {
 
 
                     <h1 className="mt-5 text-3xl font-bold tracking-tight text-slate-900">
-                        Hệ thống Toy Storage
+                        Toy Storage System
                     </h1>
 
 
                     <p className="mt-2 text-sm text-slate-500">
-                        Hệ thống quản lý kho hàng
+                        Warehouse Management System
                     </p>
 
                 </div>
@@ -235,12 +235,12 @@ export default function Login() {
                         <div>
 
                             <h2 className="text-xl font-semibold text-slate-900">
-                                Đăng nhập
+                                Sign In
                             </h2>
 
 
                             <p className="mt-1 text-sm text-slate-500">
-                                Nhập thông tin tài khoản để tiếp tục.
+                                Enter your account details to continue.
                             </p>
 
                         </div>
@@ -276,12 +276,12 @@ export default function Login() {
 
 
                         <Input
-                            label="Mật khẩu"
+                            label="Password"
                             type="password"
                             value={
                                 password
                             }
-                            placeholder="Nhập mật khẩu"
+                            placeholder="Enter password"
                             onChange={(
                                 event
                             ) =>
@@ -305,8 +305,8 @@ export default function Login() {
                         >
 
                             {loading
-                                ? "Đang đăng nhập..."
-                                : "Đăng nhập"}
+                                ? "Signing in..."
+                                : "Sign In"}
 
                         </Button>
 
