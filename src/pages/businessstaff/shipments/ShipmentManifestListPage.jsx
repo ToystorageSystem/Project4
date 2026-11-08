@@ -53,7 +53,7 @@ const STATUS_LABELS = {
 
 const STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },
-    { value: "NO_DELIVERY", label: "Không tìm thấy chuyến giao hàng" },
+    { value: "NO_DELIVERY", label: "Chưa có chuyến giao hàng" },
     ...Object.entries(STATUS_LABELS).map(([value, label]) => ({
         value,
         label,
@@ -291,7 +291,7 @@ export default function ShipmentManifestListPage() {
             key: "transportStatus",
             label: "Vận chuyển",
             render: (value) => (
-                <TransportStatusBadge status={value} />
+                <TransportStatusBadge status={value || "NO_DELIVERY"} />
             ),
         },
         {

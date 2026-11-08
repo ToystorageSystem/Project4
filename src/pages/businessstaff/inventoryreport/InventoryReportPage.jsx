@@ -5,7 +5,6 @@ import {
     getInventoryWarehouseOptions,
     getInventoryCategoryOptions,
     getInventoryBrandOptions,
-    getInventoryProductLocations,
     exportInventoryReport,
     inventoryReportErrorMessage,
 } from "../../../api/business/inventoryReport";
@@ -69,50 +68,27 @@ function StockStatusBadge({ status, onHandQuantity, availableQuantity }) {
     );
 }
 
+
 function ProductLocationsDialog({ product, onClose }) {
-    const [locations, setLocations] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-
-    useEffect(() => {
-        const controller = new AbortController();
-
-        setLoading(true);
-        setError("");
-
-        getInventoryProductLocations(product.productId, controller.signal)
-            .then((data) => {
-                if (!controller.signal.aborted) {
-                    setLocations(Array.isArray(data) ? data : []);
-                }
-            })
-            .catch((err) => {
-                if (!controller.signal.aborted) {
-                    setError(inventoryReportErrorMessage(err));
-                }
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) {
-                    setLoading(false);
-                }
-            });
-
-        return () => controller.abort();
-    }, [product.productId]);
+    // Lay so luong ton kho cua dung vi tri da chon.
+    const onHand = Number(product.onHandQuantity ?? 0);
+    const available = Number(product.availableQuantity ?? 0);
+    const unavailable = onHand > 0 && available === 0;
 
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             role="dialog"
             aria-modal="true"
-            aria-label="Chi tiết tồn kho sản phẩm"
+            aria-label="Chi tiết tồn kho tại vị trí"
         >
-            <div className="w-full max-w-5xl rounded-xl bg-white p-6 shadow-xl">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
                         <h2 className="text-xl font-semibold text-slate-900">
-                            Chi tiết tồn kho sản phẩm
+                            Chi tiết tồn kho tại vị trí
                         </h2>
+
                         <p className="mt-1 text-sm text-slate-500">
                             {product.productCode} — {product.productName}
                         </p>
@@ -121,78 +97,113 @@ function ProductLocationsDialog({ product, onClose }) {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-lg border px-3 py-2 text-sm"
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                     >
                         Đóng
                     </button>
                 </div>
 
-                {loading && <p>Đang tải vị trí tồn kho...</p>}
+                <div className="mb-5 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg bg-slate-50 p-4">
+                        <p className="mb-1 text-xs font-medium text-slate-500">
+                            Kho / Cửa hàng
+                        </p>
 
-                {error && (
-                    <p role="alert" className="text-sm text-red-600">
-                        {error}
-                    </p>
-                )}
-
-                {!loading && !error && (
-                    <div className="max-h-[65vh] overflow-auto">
-                        <table className="w-full min-w-[800px] text-left text-sm">
-                            <thead className="bg-slate-100">
-                                <tr>
-                                    <th className="p-3">Kho / Cửa hàng</th>
-                                    <th className="p-3">Vị trí</th>
-                                    <th className="p-3 text-right">Thực tế</th>
-                                    <th className="p-3 text-right">Đã giữ</th>
-                                    <th className="p-3 text-right">Khả dụng</th>
-                                    <th className="p-3">Trạng thái</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {locations.map((item) => (
-                                    <tr
-                                        key={`${item.warehouseId}-${item.locationId}`}
-                                        className="border-b"
-                                    >
-                                        <td className="p-3">{item.warehouseName}</td>
-                                        <td className="p-3">{item.locationCode}</td>
-                                        <td className="p-3 text-right">
-                                            {formatNumber(item.onHandQuantity)}
-                                        </td>
-                                        <td className="p-3 text-right">
-                                            {formatNumber(item.reservedQuantity)}
-                                        </td>
-                                        <td className="p-3 text-right font-semibold">
-                                            {formatNumber(item.availableQuantity)}
-                                        </td>
-                                        <td className="p-3">
-                                            <StockStatusBadge status={item.stockStatus}
-                                                onHandQuantity={item.onHandQuantity}
-                                                availableQuantity={item.availableQuantity} />
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {locations.some((item) => Number(item.onHandQuantity) > 0 && Number(item.availableQuantity) === 0) && (
-                            <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-                                Có hàng tồn thực tế nhưng chưa khả dụng. Báo cáo không cung cấp lý do bị hạn chế;
-                                cần đối chiếu trạng thái kiểm nhận, cách ly hoặc khóa hàng tại bộ phận kho.
-                            </p>
-                        )}
-                        {locations.length === 0 && (
-                            <p className="py-6 text-center text-slate-500">
-                                Không có dữ liệu tồn kho.
-                            </p>
-                        )}
+                        <p className="font-semibold text-slate-900">
+                            {product.warehouseName || "—"}
+                        </p>
                     </div>
+
+                    <div className="rounded-lg bg-slate-50 p-4">
+                        <p className="mb-1 text-xs font-medium text-slate-500">
+                            Vị trí lưu trữ
+                        </p>
+
+                        <p className="font-semibold text-slate-900">
+                            {product.locationCode || "—"}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mb-5 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-lg border border-slate-200 p-4 text-center">
+                        <p className="mb-2 text-xs text-slate-500">
+                            Tồn thực tế
+                        </p>
+
+                        <p className="text-2xl font-bold text-slate-900">
+                            {formatNumber(product.onHandQuantity)}
+                        </p>
+                    </div>
+
+                    <div className="rounded-lg border border-slate-200 p-4 text-center">
+                        <p className="mb-2 text-xs text-slate-500">
+                            Đã giữ chỗ
+                        </p>
+
+                        <p className="text-2xl font-bold text-amber-600">
+                            {formatNumber(product.reservedQuantity)}
+                        </p>
+                    </div>
+
+                    <div className="rounded-lg border border-slate-200 p-4 text-center">
+                        <p className="mb-2 text-xs text-slate-500">
+                            Tồn khả dụng
+                        </p>
+
+                        <p className="text-2xl font-bold text-green-700">
+                            {formatNumber(product.availableQuantity)}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="space-y-3 rounded-lg bg-slate-50 p-4 text-sm">
+                    <div className="flex items-center justify-between gap-4">
+                        <span className="text-slate-500">
+                            Trạng thái tồn kho
+                        </span>
+
+                        <StockStatusBadge
+                            status={product.stockStatus}
+                            onHandQuantity={product.onHandQuantity}
+                            availableQuantity={product.availableQuantity}
+                        />
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                        <span className="text-slate-500">
+                            Tồn tối thiểu
+                        </span>
+
+                        <strong className="text-slate-900">
+                            {formatNumber(product.minimumStockLevel)}
+                        </strong>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                        <span className="text-slate-500">
+                            Cập nhật lần cuối
+                        </span>
+
+                        <strong className="text-slate-900">
+                            {formatDate(product.lastUpdatedAt)}
+                        </strong>
+                    </div>
+                </div>
+
+                {unavailable && (
+                    <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                        Vị trí này có hàng tồn thực tế nhưng không có
+                        số lượng khả dụng. Báo cáo hiện chưa cung cấp
+                        nguyên nhân cụ thể. Cần đối chiếu thông tin
+                        với bộ phận kho.
+                    </p>
                 )}
             </div>
         </div>
     );
 }
+
 
 export default function InventoryReportPage() {
     const [draftFilters, setDraftFilters] = useState(initialFilters);
@@ -313,7 +324,7 @@ export default function InventoryReportPage() {
             link.remove();
 
             window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-        } catch (err) {
+        }  catch (err) {
             setError(
                 inventoryReportErrorMessage(err, "Không xuất được file Excel.")
             );
@@ -520,11 +531,7 @@ export default function InventoryReportPage() {
                                         <td className="p-3">
                                             <button
                                                 type="button"
-                                                onClick={() => setSelectedProduct({
-                                                    productId: item.productId,
-                                                    productCode: item.productCode,
-                                                    productName: item.productName,
-                                                })}
+                                                onClick={() => setSelectedProduct(item)}
                                                 className="font-medium text-blue-600 hover:underline"
                                             >
                                                 Xem
