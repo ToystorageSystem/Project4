@@ -1,6 +1,6 @@
 package com.toystorage.backend.services.packages.shipments;
 
-import com.toystorage.backend.dto.response.shipments.ShipmentHistoryResponse;
+import com.toystorage.backend.dto.response.packages.shipments.ShipmentHistoryResponse;
 
 import com.toystorage.backend.entity.packages.PackageItems;
 

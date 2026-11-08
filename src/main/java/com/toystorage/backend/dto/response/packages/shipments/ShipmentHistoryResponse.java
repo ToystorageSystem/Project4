@@ -1,4 +1,4 @@
-package com.toystorage.backend.dto.response.shipments;
+package com.toystorage.backend.dto.response.packages.shipments;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
