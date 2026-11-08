@@ -1,10 +1,10 @@
 package com.toystorage.backend.controllers.receipts;
 
-import com.toystorage.backend.dto.request.receipts.RequestPurchaseOrderCancellation;
-import com.toystorage.backend.dto.request.receipts.ReviewPurchaseOrderCancellation;
-import com.toystorage.backend.dto.response.receipts.PurchaseOrderCancellationResponse;
+import com.toystorage.backend.dto.request.receipts.receiving.RequestPurchaseOrderCancellation;
+import com.toystorage.backend.dto.request.receipts.receiving.ReviewPurchaseOrderCancellation;
+import com.toystorage.backend.dto.response.receipts.receiving.PurchaseOrderCancellationResponse;
 import com.toystorage.backend.enums.receipts.PurchaseOrderCancellationStatus;
-import com.toystorage.backend.services.receipts.PurchaseOrderCancellationService;
+import com.toystorage.backend.services.receipts.receiving.PurchaseOrderCancellationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

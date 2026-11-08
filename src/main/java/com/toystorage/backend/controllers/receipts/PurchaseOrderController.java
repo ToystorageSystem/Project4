@@ -1,12 +1,12 @@
 
 package com.toystorage.backend.controllers.receipts;
 
-import com.toystorage.backend.dto.request.receipts.CancelPurchaseOrderRequest;
-import com.toystorage.backend.dto.request.receipts.CreatePurchaseOrderRequest;
-import com.toystorage.backend.dto.request.receipts.UpdatePurchaseOrderRequest;
-import com.toystorage.backend.dto.response.receipts.*;
+import com.toystorage.backend.dto.request.receipts.receiving.CancelPurchaseOrderRequest;
+import com.toystorage.backend.dto.request.receipts.receiving.CreatePurchaseOrderRequest;
+import com.toystorage.backend.dto.request.receipts.receiving.UpdatePurchaseOrderRequest;
+import com.toystorage.backend.dto.response.receipts.receiving.*;
 import com.toystorage.backend.enums.receipts.PurchaseOrderStatus;
-import com.toystorage.backend.services.receipts.PurchaseOrderService;
+import com.toystorage.backend.services.receipts.receiving.PurchaseOrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;

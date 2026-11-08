@@ -1,13 +1,13 @@
 package com.toystorage.backend.controllers.receipts;
 
-import com.toystorage.backend.dto.request.receipts.CreateGoodsReceiptRequest;
-import com.toystorage.backend.dto.response.receipts.GoodsReceiptDetailResponse;
-import com.toystorage.backend.dto.response.receipts.GoodsReceiptOptionResponse;
-import com.toystorage.backend.dto.response.receipts.GoodsReceiptSummaryResponse;
-import com.toystorage.backend.dto.response.receipts.GoodsReceiptTrackingPageResponse;
+import com.toystorage.backend.dto.request.receipts.receiving.CreateGoodsReceiptRequest;
+import com.toystorage.backend.dto.response.receipts.receiving.GoodsReceiptDetailResponse;
+import com.toystorage.backend.dto.response.receipts.receiving.GoodsReceiptOptionResponse;
+import com.toystorage.backend.dto.response.receipts.receiving.GoodsReceiptSummaryResponse;
+import com.toystorage.backend.dto.response.receipts.receiving.GoodsReceiptTrackingPageResponse;
 import com.toystorage.backend.enums.receipts.GoodsReceiptStatus;
-import com.toystorage.backend.services.receipts.GoodsReceiptCreationService;
-import com.toystorage.backend.services.receipts.GoodsReceiptTrackingService;
+import com.toystorage.backend.services.receipts.receiving.GoodsReceiptCreationService;
+import com.toystorage.backend.services.receipts.receiving.GoodsReceiptTrackingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
