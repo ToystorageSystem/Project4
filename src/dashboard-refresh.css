@@ -1,0 +1,51 @@
+/* Dashboard charts */
+.analytics-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; margin:24px 0; }
+.analytics-card { min-width:0; background:#fff; border:1px solid #e7e5df; border-radius:16px; padding:24px; color:#292b29; }
+.analytics-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:28px; }
+.analytics-card-heading h2 { margin:0; font-size:17px; font-weight:650; letter-spacing:-.3px; }
+.ts-chart-type-label { font-size:11px; padding:4px 8px; border:1px solid #e9e7e1; border-radius:5px; color:#777970; flex-shrink:0; }
+.ts-bar-chart { display:grid; gap:20px; min-height:210px; align-content:center; }
+.ts-bar-caption { display:flex; justify-content:space-between; gap:16px; font-size:13px; margin-bottom:9px; }
+.ts-bar-caption strong { font-variant-numeric:tabular-nums; font-size:14px; }
+.ts-bar-track { height:10px; background:#f1f1eb; border-radius:4px; overflow:hidden; }
+.ts-bar-track>span { height:100%; display:block; border-radius:4px; transition:width .4s ease; }
+.ts-donut-layout { display:flex; gap:26px; min-height:210px; align-items:center; }
+.ts-donut-chart { width:174px; height:174px; border-radius:50%; display:grid; place-items:center; flex-shrink:0; }
+.ts-donut-center { width:128px; height:128px; border-radius:50%; background:#fff; display:flex; flex-direction:column; justify-content:center; text-align:center; padding:10px; }
+.ts-donut-center strong { font-size:30px; font-weight:650; line-height:1.2; letter-spacing:-1px; font-variant-numeric:tabular-nums; }
+.ts-donut-center span { font-size:11px; color:#777970; margin-top:6px; text-transform:capitalize; }
+.ts-chart-legend { flex:1; min-width:0; list-style:none; padding:0; margin:0; display:grid; gap:6px; }
+.ts-chart-legend button { display:flex; align-items:center; gap:8px; width:100%; background:none; border:0; text-align:left; color:inherit; padding:8px 4px; border-radius:5px; cursor:pointer; font-size:12px; }
+.ts-chart-legend button:hover,.ts-chart-legend button:focus-visible { background:#f7f6f2; outline:2px solid #eee2d5; outline-offset:1px; }
+.ts-chart-label { flex:1; text-transform:capitalize; }
+.ts-chart-legend small { color:#777970; min-width:30px; text-align:right; }
+.ts-chart-dot { width:8px; height:8px; border-radius:3px; flex-shrink:0; }
+.ts-chart-state { min-height:210px; display:flex; align-items:center; justify-content:center; gap:12px; color:#777970; font-size:14px; }
+.ts-chart-skeleton { width:30px; height:30px; border:3px solid #f1e8dd; border-top-color:#d76c2a; border-radius:50%; animation:ts-chart-spin 1s linear infinite; }
+@keyframes ts-chart-spin { to { transform:rotate(360deg); } }
+/* A single, comfortable density throughout the workspace. */
+.workspace-content { padding-top:32px; }
+.workspace-topbar { gap:20px; }
+.workspace-sidebar .nav-item>svg:first-child { color:#777c73; flex-shrink:0; }
+.workspace-sidebar .nav-item.is-active>svg:first-child { color:#b34d1d; }
+.workspace-sidebar .nav-item { min-height:43px; gap:12px; }
+.sidebar-brand { padding-bottom:22px; }
+.workspace-sidebar .brand-lockup { align-items:center; }
+.page-heading>div>p:not([role]),.bo-page-heading>div>p:not([role]),.panel-head>div>p:not([role]) { display:none; }
+/* Simple authentication card, retaining the existing secure multi-step flow. */
+.auth-shell { display:flex; min-height:100dvh; align-items:center; justify-content:center; background:#f6f5f1; padding:32px 20px; }
+.auth-main { width:100%; padding:0; display:block; }
+.auth-form-wrap { width:100%; max-width:420px; margin:0 auto; background:white; border:1px solid #e5e4dc; border-radius:18px; padding:36px; box-shadow:0 14px 50px #3b332408; }
+.auth-brand { display:flex; align-items:center; gap:11px; color:#292b29; text-decoration:none; font-size:21px; font-weight:650; margin-bottom:32px; letter-spacing:-.6px; }
+.auth-brand img { object-fit:contain; }
+.auth-form-wrap h1 { font-size:25px; line-height:1.3; letter-spacing:-.6px; font-weight:650; margin:0 0 28px; }
+.auth-form { gap:20px; }
+.auth-field>span { font-size:13px; font-weight:550; margin-bottom:8px; }
+.auth-field>input { width:100%; border:1px solid #dcded7; border-radius:8px; padding:12px 14px; background:#fff; font-size:15px; min-height:46px; }
+.auth-field>input:focus { outline:3px solid #e8753220; border-color:#c9622c; }
+.auth-form .ops-button { border-radius:8px; min-height:46px; box-shadow:none; justify-content:center; }
+.auth-form>.text-link { text-align:center; justify-content:center; font-size:13px; }
+.recovery-codes { overflow-wrap:anywhere; }
+@media(max-width:1150px) { .ts-donut-layout { flex-direction:column; } .ts-chart-legend { width:100%; } }
+@media(max-width:760px) { .analytics-grid { grid-template-columns:1fr; gap:16px; } .analytics-card { padding:20px; } .ts-donut-layout { flex-direction:row; flex-wrap:wrap; justify-content:center; } .ts-chart-legend { flex-basis:130px; } .auth-form-wrap { padding:28px 24px; } }
+@media(prefers-reduced-motion:reduce) { .ts-bar-track>span { transition:none; } .ts-chart-skeleton { animation:none; } }

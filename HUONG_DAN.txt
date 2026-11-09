@@ -1,0 +1,17 @@
+TOYSTORAGE — UNIFIED FRONTEND (3 BRANCHES)
+
+1. Giải nén ZIP vào một thư mục mới.
+2. Mở terminal trong thư mục chứa package.json.
+3. Chạy npm ci, sau đó npm run dev.
+4. Backend mặc định localhost:8080; thay API_PROXY_TARGET trong .env.local nếu cần.
+5. Đăng nhập tại /login bằng tài khoản database của bạn.
+6. Hoàn tất đổi mật khẩu/MFA khi được yêu cầu; ứng dụng tự chọn trang theo role.
+
+Admin: /admin/dashboard
+Business Operations: /business/dashboard
+Warehouse: /warehouse/dashboard
+Store Manager: /store/dashboard
+
+Đọc README.md trước khi ghép với backend khác.
+Không chép đè các file auth của nhánh khác vào bản này.
+Không cần chạy 3 frontend riêng.
