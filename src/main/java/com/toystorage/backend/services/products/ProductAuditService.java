@@ -75,6 +75,12 @@ public class ProductAuditService {
         Map<String, Object> next = new LinkedHashMap<>(after);
         if (note != null && !note.isBlank()) next.put("changeNote", note.trim());
         ActivityLogs entry = ActivityLogs.builder()
+                .activityLogsCode(
+                "ACT-" + java.util.UUID.randomUUID()
+                        .toString()
+                        .replace("-", "")
+                        .toUpperCase(java.util.Locale.ROOT)
+                )
                 .user(actor)
                 .action(action)
                 .entityType(ActivityEntityType.PRODUCT)

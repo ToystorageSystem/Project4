@@ -100,6 +100,13 @@ public class CategoryAuditService {
 
         ActivityLogs log =
                 ActivityLogs.builder()
+                                        // Tao ma Activity Log cho thao tac danh muc.
+                        .activityLogsCode(
+                                "ACT-" + java.util.UUID.randomUUID()
+                                        .toString()
+                                        .replace("-", "")
+                                        .toUpperCase(java.util.Locale.ROOT)
+                        )
                         .user(currentUser)
                         .action(action)
                         .entityType(
