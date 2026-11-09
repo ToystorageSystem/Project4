@@ -1,0 +1,9 @@
+ALTER TABLE discrepancy_reports
+MODIFY COLUMN reference_type ENUM(
+    'GOODS_RECEIPT',
+    'INVENTORY_ADJUSTMENT',
+    'STOCK_COUNT',
+    'STOCK_TRANSFER',
+    'STORE_RECEIPT',
+    'STORE_RETURN'
+) NOT NULL;
