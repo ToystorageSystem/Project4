@@ -20,7 +20,7 @@ it.each([
  ["ROLE_ROLE-BIZ-OPS","/business/dashboard"], ["ROLE_BUSINESS_OPERATIONS","/business/dashboard"],
  ["ROLE_BIZ_MANAGER","/business/dashboard"], ["ROLE_BIZ_STAFF","/business/dashboard"],
  ["ROLE_ROLE-WH-MANAGER","/warehouse/dashboard"], ["ROLE_ROLE-WH-STAFF","/warehouse/dashboard"], ["ROLE_DELIVERY_STAFF","/warehouse/dashboard"],
- ["ROLE_STORE_MANAGER","/store/receiving"], ["ROLE_ROLE-STORE-MANAGER","/store/receiving"], ["ROLE_ROLE-STORE-STAFF","/workspace"],
+ ["ROLE_STORE_MANAGER","/workspace"],
 ])("routes %s to its own workspace", (role, expected) => {
  expect(authPath(account(role))).toBe(expected);
  expect(homePath(account(role))).toBe(expected);

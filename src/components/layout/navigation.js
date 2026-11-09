@@ -1,6 +1,5 @@
 import { canAccess } from "../../auth/access";
 import { BUSINESS_NAV } from "../business/businessOperationsNav";
-import { STORE_NAV } from "../store/storeNav";
 const entries = [
   ["dashboard", "01 / OPERATIONS", "Dashboard", "/warehouse/dashboard", "◫"],
   ["receiving-pending", "02 / INBOUND", "Receiving queue", "/warehouse/receiving/pending", "inbound"],
@@ -141,7 +140,6 @@ export const navigation = [ ...entries.map(([key, group, label, path, icon]) => 
     ["dashboard", "Dashboard", "dashboard"], ["users", "User accounts", "users"], ["roles", "Roles & permissions", "roles"], ["warehouses", "Warehouses & stores", "warehouses"], ["logs", "Activity logs", "activity-logs"], ["alerts", "Security alerts", "security-alerts"],
   ].map(([key,label,path]) => ({key:`admin-${key}`,group:key === "dashboard" ? "Overview" : "Administration",label,path:`/admin/${path}`})),
   ...BUSINESS_NAV.flatMap(section => section.links.map(link => ({ key:`business-${link.path.slice(10).replaceAll("/", "-")}`, group:section.title, label:link.label, path:link.path }))),
-  ...STORE_NAV,
 ];
 export const menuFor = (user) =>
   navigation.filter((item) => canAccess(user, item.key));

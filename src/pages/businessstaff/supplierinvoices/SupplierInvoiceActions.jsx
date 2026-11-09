@@ -173,20 +173,39 @@ export function SupplierInvoiceAttachmentUploader({ invoice, onUpdated }) {
             <label htmlFor="supplier-invoice-attachment" className="block text-sm font-medium text-slate-800">
                 Select Invoice File *
             </label>
-            <input
-                key={fileInputKey}
-                id="supplier-invoice-attachment"
-                type="file"
-                accept={FILE_ACCEPT}
-                disabled={saving}
-                onChange={(event) => {
-                    setFile(event.target.files?.[0] || null);
-                    setConfirmed(false);
-                    setError("");
-                    setSuccess("");
-                }}
-                className="block w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#fff1e9] file:px-3 file:py-2 file:font-semibold file:text-[#c94810]"
-            />
+
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-[#fff8f4] p-3">
+                <input
+                    key={fileInputKey}
+                    id="supplier-invoice-attachment"
+                    type="file"
+                    accept={FILE_ACCEPT}
+                    disabled={saving}
+                    className="sr-only"
+                    onChange={(event) => {
+                        setFile(event.target.files?.[0] || null);
+                        setConfirmed(false);
+                        setError("");
+                        setSuccess("");
+                    }}
+                />
+
+                <label
+                    htmlFor="supplier-invoice-attachment"
+                    className={`inline-flex rounded-lg bg-[#fff1e9] px-4 py-2 text-sm font-semibold text-[#c94810] ${
+                        saving
+                            ? "cursor-not-allowed opacity-60"
+                            : "cursor-pointer hover:bg-[#ffe5d6]"
+                    }`}
+                >
+                    Choose File
+                </label>
+
+                <span className="break-all text-sm text-slate-600">
+                    {file ? file.name : "No file chosen"}
+                </span>
+            </div>
+
             {file && <p className="break-all text-xs text-slate-600">Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)</p>}
             {fileError && <div role="alert"><Alert type="danger">{fileError}</Alert></div>}
             <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-slate-700">

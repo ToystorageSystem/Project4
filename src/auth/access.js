@@ -15,13 +15,10 @@ export const isStaff = (user) =>
 export const isDelivery = (user) => hasRole(user, "DELIVERY_STAFF", "DELIVERY");
 export const isAdmin = (user) => hasRole(user, "ADMIN", "ADMINISTRATOR", "SYS_ADMIN");
 export const isBusiness = (user) => hasRole(user, "BIZ_OPS", "BUSINESS_OPERATIONS", "BIZ_MANAGER", "BUSINESS_MANAGER", "BIZ_STAFF", "BUSINESS_STAFF");
-// Store module (web is for Store Manager only; Store Staff uses the Flutter app).
-export const isStoreManager = (user) => hasRole(user, "STORE_MANAGER");
 export function homePath(user) {
   if (isAdmin(user)) return "/admin/dashboard";
   if (isBusiness(user)) return "/business/dashboard";
   if (isManager(user) || isStaff(user) || isDelivery(user)) return "/warehouse/dashboard";
-  if (isStoreManager(user)) return "/store/receiving";
   return "/workspace";
 }
 export const hasPermission = (user, permission) =>
@@ -44,14 +41,11 @@ export function roleLabel(user) {
       ? "Warehouse Staff"
       : isDelivery(user)
         ? "Delivery Staff"
-        : isStoreManager(user)
-          ? "Store Manager"
-          : "System Account";
+        : "System Account";
 }
 export function canAccess(user, key) {
   if (key.startsWith("admin-")) return isAdmin(user);
   if (key.startsWith("business-")) return isBusiness(user);
-  if (key.startsWith("store-manager")) return isStoreManager(user);
   if (key === "dashboard") return isManager(user) || isStaff(user) || isDelivery(user);
   if (key === "inventory") return isManager(user) || isStaff(user);
   if (key === "stock-counts") return isManager(user);
