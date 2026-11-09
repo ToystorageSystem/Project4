@@ -49,6 +49,7 @@ export function roleLabel(user) {
           : "System Account";
 }
 export function canAccess(user, key) {
+  if (key === "fleet") return isManager(user) || isStoreManager(user);
   if (key.startsWith("admin-")) return isAdmin(user);
   if (key.startsWith("business-")) return isBusiness(user);
   if (key.startsWith("store-manager")) return isStoreManager(user);

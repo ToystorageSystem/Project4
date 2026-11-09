@@ -28,6 +28,7 @@ function LegacyBusinessRedirect() {
 }
 function UnassignedWorkspace() { return <MainLayout><WorkspaceWelcome/><section className="ops-panel" style={{padding:24}}><h2>No workspace is assigned to this account.</h2><p>Ask your administrator to check the account's role and permissions.</p></section></MainLayout>; }
 function NotFound() { const {user} = useAuth(); return <div className="session-screen"><h1>Page not found</h1><Link to={user ? homePath(user) : "/login"}>Back to my workspace</Link></div>; }
+const Fleet = lazy(() => import("./pages/fleet/FleetPage"));
 const Login = lazy(() => import("./pages/auth/Login"));
 const ReceivingPending = lazy(() => import("./pages/warehouses/receiving/ReceivingPendingPage"));
 const Dashboard = lazy(
@@ -125,6 +126,7 @@ export default function App() {
           }
         >
           <Routes>
+            <Route element={<ProtectedRoute access="fleet" />}><Route path="/fleet" element={<Fleet/>}/></Route>
             <Route element={<ProtectedRoute access="receiving-pending"/>}><Route path="/warehouse/receiving/pending" element={<ReceivingPending/>}/></Route>
             <Route element={<ProtectedRoute access="admin-dashboard" />}>
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />

@@ -142,6 +142,7 @@ export const navigation = [ ...entries.map(([key, group, label, path, icon]) => 
   ].map(([key,label,path]) => ({key:`admin-${key}`,group:key === "dashboard" ? "Overview" : "Administration",label,path:`/admin/${path}`})),
   ...BUSINESS_NAV.flatMap(section => section.links.map(link => ({ key:`business-${link.path.slice(10).replaceAll("/", "-")}`, group:section.title, label:link.label, path:link.path }))),
   ...STORE_NAV,
+  { key:"fleet", group:"Transport", label:"Vehicles & routes", path:"/fleet" },
 ];
 export const menuFor = (user) =>
   navigation.filter((item) => canAccess(user, item.key));

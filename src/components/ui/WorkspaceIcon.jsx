@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 const menuIcons = {
+  fleet: Truck,
   "receiving-pending": ListTodo, "receiving-process": ScanLine,
   "receiving-in-progress": MonitorCheck, "receiving-waiting-review": ClipboardCheck,
   putaway: Forklift, "staff-putaway": ShelvingUnit, "store-returns": Undo2,
