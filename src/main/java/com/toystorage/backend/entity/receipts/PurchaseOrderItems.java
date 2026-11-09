@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(
@@ -118,10 +120,14 @@ public class PurchaseOrderItems {
     )
     private BigDecimal unitPrice;
 
-    /*
-     * Mã nội bộ của dòng sản phẩm trong đơn mua hàng.
-     */
-    @DecimalMin(value = "0.0", inclusive = true)
+
+    // Ma dinh danh cua dong san pham trong Purchase Order.
+    // Chi kiem tra chuoi khong rong va do dai toi da.
+    @NotBlank(message = "Purchase order item code is required")
+    @Size(
+            max = 50,
+            message = "Purchase order item code cannot exceed 50 characters"
+    )
     @Column(
             name = "purchase_order_items_code",
             nullable = false,
@@ -129,6 +135,7 @@ public class PurchaseOrderItems {
             length = 50
     )
     private String purchaseOrderItemsCode;
+
     /*
      * Phản hồi của nhà cung cấp đối với sản phẩm này.
      */

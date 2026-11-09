@@ -142,6 +142,52 @@ public class ProductService {
 
         return productMapper.toPageResponse(productPage);
     }
+    
+    /**
+     * Tim kiem va loc san pham cho Business Operations.
+     * Giu nguyen hanh vi cu neu khong co keyword va categoryId.
+     */
+    @Transactional(readOnly = true)
+    public ProductPageResponse getProducts(
+            ProductStatus status,
+            String keyword,
+            Long categoryId,
+            int page,
+            int size
+    ) {
+        validatePageParameters(page, size);
+
+        String searchTerm =
+                (keyword == null || keyword.isBlank())
+                        ? null
+                        : keyword.trim();
+
+        // Khong co bo loc moi thi su dung logic cu.
+        if (searchTerm == null && categoryId == null) {
+            return getProducts(status, page, size);
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(
+                        Sort.Direction.DESC,
+                        "createdAt"
+                )
+        );
+
+        // Tim kiem theo ma, ten, barcode va danh muc.
+        Page<Products> productPage =
+                productRepository.findByBusinessFilters(
+                        status,
+                        searchTerm,
+                        categoryId,
+                        pageable
+                );
+
+        return productMapper.toPageResponse(productPage);
+    }
+
 
     /**
      * Xem chi tiết một sản phẩm.

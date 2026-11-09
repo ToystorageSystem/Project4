@@ -463,24 +463,28 @@ public class SupplierProductService {
             String newValue
     ) {
 
-        ActivityLogs activityLog =
-                ActivityLogs.builder()
-                        .user(user)
-                        .action(action)
-                        .entityType(
-                                ActivityEntityType.SUPPLIER_PRODUCT
-                        )
-                        .entityId(
-                                entity.getId()
-                        )
-                        .oldValue(oldValue)
-                        .newValue(newValue)
-                        .build();
 
+            ActivityLogs activityLog =
+                    ActivityLogs.builder()
+                            // Tao ma Activity Log duy nhat, tranh loi NOT NULL.
+                            .activityLogsCode(
+                                    "ACT-" + UUID.randomUUID()
+                                            .toString()
+                                            .replace("-", "")
+                                            .toUpperCase()
+                            )
+                            .user(user)
+                            .action(action)
+                            .entityType(
+                                    ActivityEntityType.SUPPLIER_PRODUCT
+                            )
+                            .entityId(entity.getId())
+                            .oldValue(oldValue)
+                            .newValue(newValue)
+                            .build();
 
-        activityLogRepository.save(
-                activityLog
-        );
+            activityLogRepository.save(activityLog);
+
     }
 
 

@@ -103,10 +103,17 @@ public class ProductController {
                 'ROLE_ROLE-ADMIN'
             )
             """)
+    
     public ResponseEntity<ProductPageResponse>
     getProducts(
             @RequestParam(required = false)
             ProductStatus status,
+
+            @RequestParam(required = false)
+            String keyword,
+
+            @RequestParam(required = false)
+            Long categoryId,
 
             @RequestParam(defaultValue = "0")
             int page,
@@ -117,11 +124,14 @@ public class ProductController {
         return ResponseEntity.ok(
                 productService.getProducts(
                         status,
+                        keyword,
+                        categoryId,
                         page,
                         size
                 )
         );
     }
+
 
     /**
      * Xem chi tiết sản phẩm.

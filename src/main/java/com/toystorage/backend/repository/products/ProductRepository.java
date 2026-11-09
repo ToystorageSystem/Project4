@@ -116,4 +116,40 @@ public interface ProductRepository extends JpaRepository<Products, Long> {
             Long id,
             ProductStatus status
     );
+    
+    // Tim kiem va loc san pham cho Business Operations.
+    // Khong thay doi cac phuong thuc hien tai cua role khac.
+    @Query(
+        value = """
+            SELECT p FROM Products p
+            LEFT JOIN p.category c
+            WHERE (:status IS NULL OR p.status = :status)
+              AND (:categoryId IS NULL OR c.id = :categoryId)
+              AND (
+                  :keyword IS NULL
+                  OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(p.productsCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(p.barcode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+              )
+            """,
+        countQuery = """
+            SELECT COUNT(p) FROM Products p
+            LEFT JOIN p.category c
+            WHERE (:status IS NULL OR p.status = :status)
+              AND (:categoryId IS NULL OR c.id = :categoryId)
+              AND (
+                  :keyword IS NULL
+                  OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(p.productsCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(p.barcode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+              )
+            """
+    )
+    Page<Products> findByBusinessFilters(
+            @Param("status") ProductStatus status,
+            @Param("keyword") String keyword,
+            @Param("categoryId") Long categoryId,
+            Pageable pageable
+    );
+
 }

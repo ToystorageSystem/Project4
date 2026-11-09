@@ -5,6 +5,8 @@ import com.toystorage.backend.enums.users.ActivityAction;
 import com.toystorage.backend.enums.users.ActivityEntityType;
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.UUID;
+import java.util.Locale;
 
 import java.time.LocalDateTime;
 
@@ -66,11 +68,24 @@ public class ActivityLogs {
             length = 50
     )
     private String activityLogsCode;
+
     @PrePersist
     protected void onCreate() {
+
+        // Tu sinh ma neu Service chua cung cap.
+        // Giu nguyen ma duoc tao san boi cac Service khac.
+        if (activityLogsCode == null || activityLogsCode.isBlank()) {
+            activityLogsCode = "ACT-"
+                    + UUID.randomUUID()
+                            .toString()
+                            .replace("-", "")
+                            .toUpperCase(Locale.ROOT);
+        }
+
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
     }
+
 
 }
