@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import { authPath, homePath } from "./auth/access";
 import { businessRoutes } from "./routes/businessRoutes";
+import { storeRoutes } from "./routes/storeRoutes";
 import AdminPage from "./features/admin/AdminPage";
 import MainLayout from "./components/layout/MainLayout";
 import WorkspaceWelcome from "./components/layout/WorkspaceWelcome";
@@ -138,6 +139,10 @@ export default function App() {
               <Route path="/business-manager/*" element={<LegacyBusinessRedirect/>}/>
               <Route path="/business-staff" element={<Navigate to="/business/dashboard" replace/>}/>
               <Route path="/business-manager" element={<Navigate to="/business/dashboard" replace/>}/>
+            </Route>
+            <Route element={<ProtectedRoute access="store-manager" />}>
+              <Route path="/store" element={<Navigate to="/store/receiving" replace />} />
+              {storeRoutes.map(({path, Page}) => <Route key={path} path={path} element={<Page/>} />)}
             </Route>
             <Route element={<ProtectedRoute/>}><Route path="/workspace" element={<UnassignedWorkspace/>}/><Route path="/" element={<HomeRedirect/>}/></Route>
             {[
