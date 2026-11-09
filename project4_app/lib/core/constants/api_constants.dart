@@ -35,6 +35,18 @@ class ApiConstants {
   static String storeProductByBarcode(String barcode) =>
       '/api/store/products/barcode/${Uri.encodeComponent(barcode.trim())}';
 
+  // ---------- Store: shelves (shelf placement) ----------
+  static const storeShelves = '/api/store/shelves';
+  static String storeShelf(int id) => '/api/store/shelves/$id';
+  static String assignShelf(int productId) => '/api/store/products/$productId/shelf';
+  static String moveStock(int productId) => '/api/store/products/$productId/move';
+  static String minShelf(int productId) => '/api/store/products/$productId/min-shelf';
+  static const lowShelf = '/api/store/products/low-shelf';
+
+  // ---------- Store: sales (simulated) ----------
+  static const storeSales = '/api/store/sales';
+  static String storeSale(int id) => '/api/store/sales/$id';
+
   // ---------- Store: receiving ----------
   static const _receiving = '/api/store/receiving';
   static const manifests = '$_receiving/manifests';

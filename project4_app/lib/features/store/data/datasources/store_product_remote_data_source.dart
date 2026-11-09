@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/models/page_result.dart';
+import '../../domain/entities/move_direction.dart';
 import '../models/store_product_detail_model.dart';
 import '../models/store_product_model.dart';
 
@@ -48,6 +49,42 @@ class StoreProductRemoteDataSource {
   Future<StoreProductDetailModel> getDetail(int productId) async {
     final res = await _dio.get<Map<String, dynamic>>(
       ApiConstants.storeProduct(productId),
+    );
+    return StoreProductDetailModel.fromJson(res.data!);
+  }
+
+  // ---------- Shelf placement (PUT/POST: CSRF header added by interceptor) ----------
+
+  Future<StoreProductDetailModel> assignShelf(int productId, int? shelfId) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      ApiConstants.assignShelf(productId),
+      data: {'shelfId': shelfId}, // null = remove from shelf
+    );
+    return StoreProductDetailModel.fromJson(res.data!);
+  }
+
+  Future<StoreProductDetailModel> moveStock({
+    required int productId,
+    required MoveDirection direction,
+    required int quantity,
+    String? note,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      ApiConstants.moveStock(productId),
+      data: {
+        'direction': direction.apiValue,
+        'quantity': quantity,
+        'note': ?note,
+      },
+    );
+    return StoreProductDetailModel.fromJson(res.data!);
+  }
+
+  Future<StoreProductDetailModel> changeMinShelf(
+      int productId, int minShelfQuantity) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      ApiConstants.minShelf(productId),
+      data: {'minShelfQuantity': minShelfQuantity},
     );
     return StoreProductDetailModel.fromJson(res.data!);
   }

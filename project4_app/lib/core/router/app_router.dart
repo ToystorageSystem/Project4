@@ -15,6 +15,13 @@ import '../../features/receiving/presentation/screens/manifest_detail_screen.dar
 import '../../features/receiving/presentation/screens/manifest_list_screen.dart';
 import '../../features/receiving/presentation/screens/package_check_screen.dart';
 import '../../features/receiving/presentation/screens/receiving_result_screen.dart';
+import '../../features/sales/domain/entities/sale_detail.dart';
+import '../../features/sales/presentation/screens/sale_detail_screen.dart';
+import '../../features/sales/presentation/screens/sale_history_screen.dart';
+import '../../features/sales/presentation/screens/sale_screen.dart';
+import '../../features/shelves/presentation/screens/low_shelf_screen.dart';
+import '../../features/shelves/presentation/screens/shelf_detail_screen.dart';
+import '../../features/shelves/presentation/screens/shelf_list_screen.dart';
 import '../../features/store/presentation/screens/product_detail_screen.dart';
 import '../../features/store/presentation/screens/product_search_screen.dart';
 
@@ -34,6 +41,16 @@ class AppRoutes {
   static const storePrefix = '/home/store';
   static const storeProducts = '/home/store/products';
   static String storeProductDetail(int id) => '/home/store/products/$id';
+
+  // Store – shelves
+  static const storeShelves = '/home/store/shelves';
+  static String storeShelfDetail(int id) => '/home/store/shelves/$id';
+  static const lowShelf = '/home/store/low-shelf';
+
+  // Store – sales
+  static const sales = '/home/store/sales'; // new sale (cart)
+  static const saleHistory = '/home/store/sales/history';
+  static String saleDetail(int id) => '/home/store/sales/$id';
 
   // Store – receiving goods
   static const receiving = '/home/receiving';
@@ -97,6 +114,41 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: ':id',
                 builder: (c, s) => ProductDetailScreen(
                   productId: int.tryParse(s.pathParameters['id'] ?? '') ?? 0,
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'store/shelves',
+            builder: (c, s) => const ShelfListScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (c, s) => ShelfDetailScreen(
+                  shelfId: int.tryParse(s.pathParameters['id'] ?? '') ?? 0,
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'store/low-shelf',
+            builder: (c, s) => const LowShelfScreen(),
+          ),
+          GoRoute(
+            path: 'store/sales',
+            builder: (c, s) => const SaleScreen(),
+            routes: [
+              // 'history' BEFORE ':id' so it is not read as an id
+              GoRoute(
+                path: 'history',
+                builder: (c, s) => const SaleHistoryScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (c, s) => SaleDetailScreen(
+                  saleId: int.tryParse(s.pathParameters['id'] ?? '') ?? 0,
+                  // passed by context.push(..., extra: sale) after checkout
+                  initialSale: s.extra is SaleDetail ? s.extra as SaleDetail : null,
                 ),
               ),
             ],

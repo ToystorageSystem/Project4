@@ -11,6 +11,7 @@ import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/widgets/info_banner.dart';
 import '../../../../core/widgets/section_header.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../shelves/presentation/providers/low_shelf_provider.dart';
 import '../widgets/home_header.dart';
 import '../widgets/info_card.dart';
 import '../widgets/menu_tile.dart';
@@ -20,6 +21,7 @@ class HomeScreen extends ConsumerWidget {
 
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {
     try {
+      ref.invalidate(lowShelfProvider); // restock badge
       await ref.read(authProvider.notifier).refreshStatus();
     } on ApiException catch (e) {
       if (context.mounted) {
@@ -69,8 +71,37 @@ class HomeScreen extends ConsumerWidget {
                     MenuTile(
                       icon: Icons.manage_search_rounded,
                       title: 'Product lookup',
-                      subtitle: 'Search, scan barcode, shelf & stock',
+                      subtitle: 'Search, scan barcode, move stock',
                       onTap: () => context.push(AppRoutes.storeProducts),
+                    ),
+                    const SizedBox(height: 10),
+                    MenuTile(
+                      icon: Icons.point_of_sale_rounded,
+                      title: 'New sale',
+                      subtitle: 'Scan products, checkout, receipt',
+                      onTap: () => context.push(AppRoutes.sales),
+                    ),
+                    const SizedBox(height: 10),
+                    MenuTile(
+                      icon: Icons.receipt_long_outlined,
+                      title: 'Sales history',
+                      subtitle: 'Receipts of this store',
+                      onTap: () => context.push(AppRoutes.saleHistory),
+                    ),
+                    const SizedBox(height: 10),
+                    MenuTile(
+                      icon: Icons.shelves,
+                      title: 'Shelves',
+                      subtitle: 'Products on each shelf',
+                      onTap: () => context.push(AppRoutes.storeShelves),
+                    ),
+                    const SizedBox(height: 10),
+                    MenuTile(
+                      icon: Icons.inventory_outlined,
+                      title: 'Restock shelves',
+                      subtitle: 'Shelves at or below the minimum',
+                      trailing: const _LowShelfBadge(),
+                      onTap: () => context.push(AppRoutes.lowShelf),
                     ),
                     const SizedBox(height: 10),
                     MenuTile(
@@ -109,6 +140,31 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Red count of products to restock (nothing when 0 or on error)
+class _LowShelfBadge extends ConsumerWidget {
+  const _LowShelfBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(lowShelfProvider).value?.length ?? 0;
+    if (count == 0) {
+      return const Icon(Icons.chevron_right_rounded, color: AppColors.textGrey);
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '$count',
+        style: const TextStyle(
+            color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
       ),
     );
   }

@@ -7,20 +7,87 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/number_formatter.dart';
-import '../../../../core/widgets/error_banner.dart';
+import '../../../../core/widgets/load_error_view.dart';
 import '../../../../core/widgets/section_header.dart';
 import '../../../../core/widgets/status_chip.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../domain/entities/move_direction.dart';
 import '../../domain/entities/store_product_detail.dart';
 import '../providers/product_detail_provider.dart';
+import '../widgets/assign_shelf_sheet.dart';
+import '../widgets/min_shelf_dialog.dart';
+import '../widgets/move_stock_sheet.dart';
+import '../widgets/stock_actions.dart';
 
-class ProductDetailScreen extends ConsumerWidget {
+/// Product detail + shelf actions (assign shelf, move stock, manager: min)
+class ProductDetailScreen extends ConsumerStatefulWidget {
   final int productId;
 
   const ProductDetailScreen({super.key, required this.productId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final detailAsync = ref.watch(productDetailProvider(productId));
+  ConsumerState<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
+  bool _busy = false;
+
+  ProductDetailNotifier get _notifier =>
+      ref.read(productDetailProvider(widget.productId).notifier);
+
+  /// Run an action with a spinner; API errors → SnackBar.
+  /// 409 (changed by someone else) → reload the product.
+  Future<void> _run(Future<void> Function() action, String successMessage) async {
+    if (_busy) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await action();
+      messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      if (e.isConflict) ref.invalidate(productDetailProvider(widget.productId));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _assignShelf(StoreProductDetail p) async {
+    final choice = await showAssignShelfSheet(context, product: p);
+    if (choice == null || !mounted) return;
+    await _run(
+      () => _notifier.assignShelf(choice.shelfId),
+      choice.shelfId == null ? 'Removed from shelf' : 'Placed on ${choice.shelfName}',
+    );
+  }
+
+  Future<void> _move(StoreProductDetail p, MoveDirection direction) async {
+    final input =
+        await showMoveStockSheet(context, product: p, direction: direction);
+    if (input == null || !mounted) return;
+    await _run(
+      () => _notifier.moveStock(
+        direction: direction,
+        quantity: input.quantity,
+        note: input.note,
+      ),
+      direction == MoveDirection.toShelf
+          ? 'Moved ${input.quantity} pcs to shelf'
+          : 'Moved ${input.quantity} pcs to backroom',
+    );
+  }
+
+  Future<void> _changeMin(StoreProductDetail p) async {
+    final value = await showMinShelfDialog(context, current: p.minShelfQuantity);
+    if (value == null || !mounted) return;
+    await _run(() => _notifier.changeMinShelf(value), 'Minimum set to $value');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = productDetailProvider(widget.productId);
+    final detailAsync = ref.watch(provider);
+    final isManager = ref.watch(authProvider.select((s) => s.isStoreManager));
 
     return Scaffold(
       backgroundColor: AppColors.fieldFill,
@@ -28,27 +95,24 @@ class ProductDetailScreen extends ConsumerWidget {
         title: const Text('Product detail'),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
+        bottom: _busy
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(3),
+                child: LinearProgressIndicator(minHeight: 3),
+              )
+            : null,
       ),
       body: detailAsync.when(
+        // keep showing the product while an action reloads it
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ErrorBanner(
-                  message: e is ApiException ? e.message : 'Could not load product.'),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () => ref.invalidate(productDetailProvider(productId)),
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Try again'),
-              ),
-            ],
-          ),
+        error: (e, _) => LoadErrorView(
+          error: e,
+          fallbackMessage: 'Could not load product.',
+          onRetry: () => ref.invalidate(provider),
         ),
         data: (p) => RefreshIndicator(
-          onRefresh: () => ref.refresh(productDetailProvider(productId).future),
+          onRefresh: () => ref.refresh(provider.future),
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -61,6 +125,18 @@ class ProductDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 const _LowStockWarning(),
               ],
+              const SizedBox(height: 24),
+              const SectionHeader('Shelf & stock'),
+              const SizedBox(height: 10),
+              StockActions(
+                product: p,
+                isManager: isManager,
+                busy: _busy,
+                onAssignShelf: () => _assignShelf(p),
+                onToShelf: () => _move(p, MoveDirection.toShelf),
+                onToBackroom: () => _move(p, MoveDirection.toBackroom),
+                onChangeMin: () => _changeMin(p),
+              ),
               const SizedBox(height: 24),
               const SectionHeader('Details'),
               const SizedBox(height: 10),
