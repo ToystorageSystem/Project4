@@ -64,5 +64,24 @@ public interface StoreStockRepository extends JpaRepository<StoreStocks, Long> {
     List<StoreStocks> findLowShelf(@Param("storeId") Long storeId,
                                    @Param("status") ProductStatus status);
 
+    /** same condition as findLowShelf, only the number */
+    @Query("""
+            select count(s) from StoreStocks s
+            where s.storeId = :storeId
+              and s.product.status = :status
+              and s.shelf is not null
+              and s.shelfQuantity <= s.minShelfQuantity
+              and s.backroomQuantity > 0
+            """)
+    long countLowShelf(@Param("storeId") Long storeId, @Param("status") ProductStatus status);
 
-}
+    /** products with a stock row but nothing left (shelf + backroom = 0) */
+    @Query("""
+            select count(s) from StoreStocks s
+            where s.storeId = :storeId
+              and s.product.status = :status
+              and s.shelfQuantity = 0 and s.backroomQuantity = 0
+            """)
+    long countOutOfStock(@Param("storeId") Long storeId, @Param("status") ProductStatus status);
+
+                                }

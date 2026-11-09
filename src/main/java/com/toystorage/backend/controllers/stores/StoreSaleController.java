@@ -1,10 +1,12 @@
 package com.toystorage.backend.controllers.stores;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +29,7 @@ import com.toystorage.backend.dto.request.stores.CreateSaleRequest;
 import com.toystorage.backend.dto.response.common.PageResponse;
 import com.toystorage.backend.dto.response.stores.SaleDetail;
 import com.toystorage.backend.dto.response.stores.SaleSummary;
+import com.toystorage.backend.dto.response.stores.SalesSummaryResponse;
 import com.toystorage.backend.services.stores.StoreSaleService;
 
 import jakarta.validation.Valid;
@@ -47,11 +50,26 @@ public class StoreSaleController {
                 .body(saleService.createSale(principal.getId(), request));
     }
 
+    /** from / to: yyyy-MM-dd, optional, both days included */
     @GetMapping
     public PageResponse<SaleSummary> listSales(@AuthenticationPrincipal CustomUserDetails principal,
                                                @RequestParam(defaultValue = "0") int page,
-                                               @RequestParam(defaultValue = "20") int size) {
-        return saleService.listSales(principal.getId(), page, size);
+                                               @RequestParam(defaultValue = "20") int size,
+                                               @RequestParam(required = false)
+                                               @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                               @RequestParam(required = false)
+                                               @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return saleService.listSales(principal.getId(), page, size, from, to);
+    }
+
+    /** literal path -> wins over /{id} */
+    @GetMapping("/summary")
+    public SalesSummaryResponse summary(@AuthenticationPrincipal CustomUserDetails principal,
+                                        @RequestParam(required = false)
+                                        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                        @RequestParam(required = false)
+                                        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return saleService.summary(principal.getId(), from, to);
     }
 
     @GetMapping("/{id}")

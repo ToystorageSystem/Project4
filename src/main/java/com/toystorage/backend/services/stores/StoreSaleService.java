@@ -1,5 +1,6 @@
 package com.toystorage.backend.services.stores;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -19,6 +20,7 @@ import com.toystorage.backend.dto.request.stores.SaleLineRequest;
 import com.toystorage.backend.dto.response.common.PageResponse;
 import com.toystorage.backend.dto.response.stores.SaleDetail;
 import com.toystorage.backend.dto.response.stores.SaleSummary;
+import com.toystorage.backend.dto.response.stores.SalesSummaryResponse;
 import com.toystorage.backend.entity.products.Products;
 import com.toystorage.backend.entity.stores.StoreSaleItems;
 import com.toystorage.backend.entity.stores.StoreSales;
@@ -32,6 +34,7 @@ import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.mapper.stores.StoreSaleMapper;
 import com.toystorage.backend.repository.products.ProductRepository;
 import com.toystorage.backend.repository.receipts.store.StoreStockRepository;
+import com.toystorage.backend.repository.stores.SalesTotals;
 import com.toystorage.backend.repository.stores.StoreSaleRepository;
 import com.toystorage.backend.repository.receipts.store.StoreStockTransactionRepository;
 
@@ -120,9 +123,16 @@ public class StoreSaleService {
         return mapper.toDetail(sale);   // stock rows are managed -> updated at commit (@Version checked)
     }
 
-    /** GET /api/store/sales?page=&size= */
+    /** GET /api/store/sales?page=&size= (no date filter – used by Flutter) */
     @Transactional(readOnly = true)
     public PageResponse<SaleSummary> listSales(Long userId, int page, int size) {
+        return listSales(userId, page, size, null, null);
+    }
+
+    /** GET /api/store/sales?page=&size=&from=&to= (days inclusive) */
+    @Transactional(readOnly = true)
+    public PageResponse<SaleSummary> listSales(Long userId, int page, int size,
+                                               LocalDate from, LocalDate to) {
         Long storeId = storeAccessService.requireStoreId(userId);
         if (page < 0) {
             throw new BadRequest("Page must be >= 0");
@@ -130,9 +140,23 @@ public class StoreSaleService {
         if (size < 1 || size > MAX_PAGE_SIZE) {
             throw new BadRequest("Page size must be between 1 and " + MAX_PAGE_SIZE);
         }
+        DateRange range = DateRange.ofDays(from, to);
         return PageResponse.from(saleRepository
-                .findByStoreIdOrderByCreatedAtDescIdDesc(storeId, PageRequest.of(page, size))
+                .search(storeId, range.from(), range.to(), PageRequest.of(page, size))
                 .map(mapper::toSummary));
+    }
+
+    /** GET /api/store/sales/summary?from=&to= – missing day = today */
+    @Transactional(readOnly = true)
+    public SalesSummaryResponse summary(Long userId, LocalDate from, LocalDate to) {
+        Long storeId = storeAccessService.requireStoreId(userId);
+        LocalDate today = LocalDate.now();
+        LocalDate fromDay = from == null ? today : from;
+        LocalDate toDay = to == null ? today : to;
+        DateRange range = DateRange.ofDays(fromDay, toDay);
+        SalesTotals totals = saleRepository.sumBetween(storeId, range.from(), range.to());
+        return new SalesSummaryResponse(fromDay, toDay,
+                totals.safeSalesCount(), totals.safeItemsSold(), totals.safeRevenue());
     }
 
     /** GET /api/store/sales/{id} */
