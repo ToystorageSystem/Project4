@@ -349,7 +349,7 @@ export default function InventoryReportPage() {
                     disabled={exporting}
                     className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
                 >
-                    {exporting ? "Exporting..." : "Export Detailed Excel"}
+                    {exporting ? "Exporting..." : "Export Summary Excel"}
                 </button>
             </div>
 
