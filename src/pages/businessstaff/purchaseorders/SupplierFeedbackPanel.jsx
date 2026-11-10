@@ -620,12 +620,6 @@ export default function SupplierFeedbackPanel({ purchaseOrder, onSaved }) {
 
 
 
-                <Alert type="info">
-                    {SUPPLIER_FEEDBACK_WRITE_ENABLED
-                        ? "Supplier feedback is updated when you select Confirm Save."
-                        : "You may review and edit the response first. Saving is currently unavailable."}
-                </Alert>
-
 
 
                 <></>

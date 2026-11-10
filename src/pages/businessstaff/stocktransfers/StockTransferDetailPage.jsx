@@ -225,14 +225,6 @@ export default function StockTransferDetailPage() {
                             </table>
                         </div>
                     </Card>
-                    <Alert type="info">
-                        {detail.status === "DRAFT"
-                            ? "Draft transfers do not reserve stock. You can edit, submit, or cancel this transfer."
-                            : detail.status === "CREATED" || detail.status === "PENDING_SOURCE_CONFIRMATION"
-                                ? "The transfer was submitted but warehouse picking has not started. Authorized edits or cancellation may be made, and reserved stock will be recalculated."
-                                : "This transfer is already being processed and cannot be edited or cancelled here."}
-                        {" "}Only the creator or an authorized manager may edit or cancel a transfer.
-                    </Alert>
                 </>}
                 {actionType && detail && <StockTransferActionDialog
                     key={actionType}

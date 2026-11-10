@@ -365,8 +365,6 @@ export default function PurchaseOrderDetailPage() {
                             purchaseOrderId={detail.id}
                             purchaseOrderStatus={detail.status}
                         />
-
-                        <Alert type="info">Cancel draft orders directly. For placed orders, supplier agreement is required. Cancellation is blocked if goods receipts or supplier invoices exist.</Alert>
                     </>
                 ) : !error ? (
                     <EmptyState title="Purchase Order Not Found" />

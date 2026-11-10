@@ -299,13 +299,6 @@ export default function StockTransferCreatePage() {
                         : "Transfer stock from a main warehouse to a store or between stores."}
                     actions={<Button type="button" variant="outline" onClick={() => navigate(isEditMode ? `${ROOT}/${transferId}` : "/business/dashboard")}>← {isEditMode ? "Details" : "Dashboard"}</Button>}
                 />
-                <Alert type="info">
-                    <strong>{isEditMode ? `Edit Transfer ${formatBusinessStatus(originalDetail?.status)}` : "Create Draft Transfer"}:</strong> Preview checks the form only. Your changes will be saved to the system when confirmed.
-                    {editingReservedTransfer
-                        ? " For submitted transfers, reserved stock will be recalculated based on the new quantities."
-                        : " Draft transfers do not reserve stock. Required quantities are reserved only after submission."}
-                    {isEditMode && ` The source location cannot be changed${!canChangeDestination ? ", and the destination cannot be changed after submission." : "."}`}
-                </Alert>
                 {loadError && <div role="alert"><Alert type="danger">{loadError} <Button type="button" variant="outline" size="sm" onClick={() => setRefresh((count) => count + 1)}>Retry</Button></Alert></div>}
                 {productsError && <div role="alert"><Alert type="danger">{productsError}</Alert></div>}
                 {existingError && <div role="alert"><Alert type="danger">{existingError}</Alert></div>}

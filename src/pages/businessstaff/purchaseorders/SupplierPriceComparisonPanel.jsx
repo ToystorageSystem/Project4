@@ -531,11 +531,6 @@ export default function SupplierPriceComparisonPanel({
 
             <div className="mb-5">
 
-                    <Alert type="info">
-                        {PRICE_DECISION_WRITE_ENABLED
-                            ? "You can accept or reject the new price. If accepted, the purchase unit price will be updated. Every decision is recorded."
-                            : "The proposed price is for reference only. Price changes cannot be confirmed at this time."}
-                    </Alert>
 
             </div>
 
