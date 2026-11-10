@@ -15,30 +15,30 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class InventoryReportExcelService {
 
+    // Moi dong la tong ton cua mot san pham tai mot kho / cua hang.
     private static final String[] HEADERS = {
             "No.",
+            "Warehouse / Store",
             "Warehouse Code",
-            "Warehouse Name",
             "Warehouse Type",
-            "Location Code",
-            "Location Name",
             "Product Code",
             "Product Name",
             "Barcode",
-            "Category Code",
-            "Category Name",
-            "Brand Code",
-            "Brand Name",
-            "On-hand Quantity",
-            "Reserved Quantity",
-            "Available Quantity",
-            "Minimum Stock Level",
-            "Stock Status",
+            "Base Unit",
+            "Category",
+            "Brand",
+            "Physical Stock",
+            "Reserved Stock",
+            "Available Stock",
             "Last Updated At"
     };
 
@@ -93,10 +93,7 @@ public class InventoryReportExcelService {
 
             if (items != null) {
 
-                for (
-                        InventoryReportItemResponse item
-                        : items
-                ) {
+                for (InventoryReportItemResponse item : aggregateByWarehouseAndProduct(items)) {
 
                     createDataRow(
                             sheet,
@@ -135,6 +132,75 @@ public class InventoryReportExcelService {
 
             return outputStream.toByteArray();
         }
+    }
+
+
+    // =====================================================
+    // TONG HOP THEO (KHO, SAN PHAM) - KHONG TACH THEO KE
+    // =====================================================
+
+    private List<InventoryReportItemResponse> aggregateByWarehouseAndProduct(
+            List<InventoryReportItemResponse> items
+    ) {
+        Map<String, InventoryReportItemResponse> grouped = new LinkedHashMap<>();
+
+        for (InventoryReportItemResponse item : items) {
+            if (item == null) continue;
+
+            // ID la dinh danh chinh. Fallback ma chi de xu ly du lieu cu bi thieu ID.
+            String warehouseKey = item.getWarehouseId() != null
+                    ? item.getWarehouseId().toString()
+                    : "code:" + item.getWarehouseCode();
+            String productKey = item.getProductId() != null
+                    ? item.getProductId().toString()
+                    : "code:" + item.getProductCode();
+            String key = warehouseKey + "|" + productKey;
+
+            InventoryReportItemResponse total = grouped.get(key);
+            if (total == null) {
+                total = InventoryReportItemResponse.builder()
+                        .warehouseId(item.getWarehouseId())
+                        .warehouseCode(item.getWarehouseCode())
+                        .warehouseName(item.getWarehouseName())
+                        .warehouseType(item.getWarehouseType())
+                        .productId(item.getProductId())
+                        .productCode(item.getProductCode())
+                        .productName(item.getProductName())
+                        .barcode(item.getBarcode())
+                        .baseUnit(item.getBaseUnit())
+                        .categoryName(item.getCategoryName())
+                        .brandName(item.getBrandName())
+                        .onHandQuantity(0)
+                        .reservedQuantity(0)
+                        .availableQuantity(0)
+                        .lastUpdatedAt(item.getLastUpdatedAt())
+                        .build();
+                grouped.put(key, total);
+            }
+
+            // Cong 3 chi so doc lap; KHONG suy ra Available = Physical - Reserved.
+            total.setOnHandQuantity(total.getOnHandQuantity() + orZero(item.getOnHandQuantity()));
+            total.setReservedQuantity(total.getReservedQuantity() + orZero(item.getReservedQuantity()));
+            total.setAvailableQuantity(total.getAvailableQuantity() + orZero(item.getAvailableQuantity()));
+
+            if (item.getLastUpdatedAt() != null
+                    && (total.getLastUpdatedAt() == null
+                    || item.getLastUpdatedAt().isAfter(total.getLastUpdatedAt()))) {
+                total.setLastUpdatedAt(item.getLastUpdatedAt());
+            }
+        }
+
+        List<InventoryReportItemResponse> result = new ArrayList<>(grouped.values());
+        result.sort(Comparator
+                .comparing(InventoryReportItemResponse::getWarehouseName,
+                        Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER))
+                .thenComparing(InventoryReportItemResponse::getProductName,
+                        Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return result;
+    }
+
+    private int orZero(Integer value) {
+        return value == null ? 0 : value;
     }
 
 
@@ -192,141 +258,22 @@ public class InventoryReportExcelService {
             InventoryReportItemResponse item,
             CellStyle dateStyle
     ) {
-
-        Row row =
-                sheet.createRow(
-                        rowIndex
-                );
-
-
+        Row row = sheet.createRow(rowIndex);
         int columnIndex = 0;
 
-
-        setIntegerCell(
-                row,
-                columnIndex++,
-                rowIndex
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getWarehouseCode()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getWarehouseName()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getWarehouseType()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getLocationCode()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getLocationName()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getProductCode()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getProductName()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getBarcode()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getCategoryCode()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getCategoryName()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getBrandCode()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getBrandName()
-        );
-
-
-        setIntegerCell(
-                row,
-                columnIndex++,
-                item.getOnHandQuantity()
-        );
-
-
-        setIntegerCell(
-                row,
-                columnIndex++,
-                item.getReservedQuantity()
-        );
-
-
-        setIntegerCell(
-                row,
-                columnIndex++,
-                item.getAvailableQuantity()
-        );
-
-
-        setIntegerCell(
-                row,
-                columnIndex++,
-                item.getMinimumStockLevel()
-        );
-
-
-        setStringCell(
-                row,
-                columnIndex++,
-                item.getStockStatus()
-        );
-
+        setIntegerCell(row, columnIndex++, rowIndex);
+        setStringCell(row, columnIndex++, item.getWarehouseName());
+        setStringCell(row, columnIndex++, item.getWarehouseCode());
+        setStringCell(row, columnIndex++, item.getWarehouseType());
+        setStringCell(row, columnIndex++, item.getProductCode());
+        setStringCell(row, columnIndex++, item.getProductName());
+        setStringCell(row, columnIndex++, item.getBarcode());
+        setStringCell(row, columnIndex++, item.getBaseUnit());
+        setStringCell(row, columnIndex++, item.getCategoryName());
+        setStringCell(row, columnIndex++, item.getBrandName());
+        setIntegerCell(row, columnIndex++, item.getOnHandQuantity());
+        setIntegerCell(row, columnIndex++, item.getReservedQuantity());
+        setIntegerCell(row, columnIndex++, item.getAvailableQuantity());
 
         if (item.getLastUpdatedAt() != null) {
             Cell dateCell = row.createCell(columnIndex);
@@ -385,104 +332,11 @@ public class InventoryReportExcelService {
     // COLUMN WIDTH
     // =====================================================
 
-    private void configureColumnWidths(
-            Sheet sheet
-    ) {
-
-        sheet.setColumnWidth(
-                0,
-                8 * 256
-        );
-
-        sheet.setColumnWidth(
-                1,
-                18 * 256
-        );
-
-        sheet.setColumnWidth(
-                2,
-                25 * 256
-        );
-
-        sheet.setColumnWidth(
-                3,
-                20 * 256
-        );
-
-        sheet.setColumnWidth(
-                4,
-                18 * 256
-        );
-
-        sheet.setColumnWidth(
-                5,
-                25 * 256
-        );
-
-        sheet.setColumnWidth(
-                6,
-                20 * 256
-        );
-
-        sheet.setColumnWidth(
-                7,
-                30 * 256
-        );
-
-        sheet.setColumnWidth(
-                8,
-                20 * 256
-        );
-
-        sheet.setColumnWidth(
-                9,
-                20 * 256
-        );
-
-        sheet.setColumnWidth(
-                10,
-                22 * 256
-        );
-
-        sheet.setColumnWidth(
-                11,
-                20 * 256
-        );
-
-        sheet.setColumnWidth(
-                12,
-                22 * 256
-        );
-
-        sheet.setColumnWidth(
-                13,
-                18 * 256
-        );
-
-        sheet.setColumnWidth(
-                14,
-                18 * 256
-        );
-
-        sheet.setColumnWidth(
-                15,
-                18 * 256
-        );
-
-        sheet.setColumnWidth(
-                16,
-                20 * 256
-        );
-
-        sheet.setColumnWidth(
-                17,
-                18 * 256
-        );
-
-        sheet.setColumnWidth(
-                18,
-                24 * 256
-        );
+    private void configureColumnWidths(Sheet sheet) {
+        int[] widths = {8, 28, 20, 19, 23, 33, 19, 14, 26, 23, 18, 18, 18, 24};
+        for (int i = 0; i < widths.length; i++) {
+            sheet.setColumnWidth(i, widths[i] * 256);
+        }
     }
 
 

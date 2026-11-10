@@ -239,73 +239,51 @@ public class BusinessActivityReportExcelService {
 
     public byte[] exportInventory(Long warehouseId) {
 
-        InventoryActivityReportResponse report =
-                reportService.getInventoryReport(warehouseId);
+        InventoryActivityReportResponse report = reportService.getInventoryReport(warehouseId);
 
-        Map<String, Object> summary = new LinkedHashMap<>();
+        // Mot dong Excel = mot san pham tai mot kho / cua hang, khong theo ke.
+        Map<String, Object[]> grouped = new LinkedHashMap<>();
 
-        summary.put("Snapshot At",
-                report.getSnapshotAt());
-
-        summary.put("Warehouse ID",
-                warehouseId == null ? "All" : warehouseId);
-
-        summary.put("Distinct Products",
-                report.getTotalProducts());
-
-        summary.put("Inventory Location Records",
-                report.getTotalBalanceRecords());
-
-        summary.put("Total Physical Stock",
-                report.getTotalQuantity());
-
-        summary.put("Total Reserved Stock",
-                report.getTotalReservedQuantity());
-
-        summary.put("Total Available Stock",
-                report.getTotalAvailableQuantity());
-
-        List<Object[]> rows = new ArrayList<>();
-
-        for (InventoryActivityReportResponse.InventoryRecord item
-                : report.getRecords()) {
-
-            rows.add(new Object[]{
-                item.getInventoryBalanceId(),
-                item.getWarehouseId(),
-                item.getWarehouseName(),
-                item.getLocationId(),
-                item.getLocationCode(),
-                item.getLocationName(),
-                item.getLocationType(),
-                item.getProductId(),
-                item.getProductCode(),
-                item.getProductName(),
-                item.getQuantity(),
-                item.getReservedQuantity(),
-                item.getAvailableQuantity()
+        for (InventoryActivityReportResponse.InventoryRecord item : report.getRecords()) {
+            String key = item.getWarehouseId() + "|" + item.getProductId();
+            Object[] values = grouped.computeIfAbsent(key, ignored -> new Object[]{
+                    item.getWarehouseId(),
+                    item.getWarehouseName(),
+                    item.getProductId(),
+                    item.getProductCode(),
+                    item.getProductName(),
+                    0L, 0L, 0L
             });
+
+            // Cong doc lap 3 cot; khong tinh lai Available tu Physical - Reserved.
+            values[5] = (Long) values[5] + (item.getQuantity() == null ? 0L : item.getQuantity());
+            values[6] = (Long) values[6] + (item.getReservedQuantity() == null ? 0L : item.getReservedQuantity());
+            values[7] = (Long) values[7] + (item.getAvailableQuantity() == null ? 0L : item.getAvailableQuantity());
         }
 
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("Snapshot At", report.getSnapshotAt());
+        summary.put("Warehouse ID", warehouseId == null ? "All" : warehouseId);
+        summary.put("Distinct Products", report.getTotalProducts());
+        summary.put("Product / Warehouse Rows", grouped.size());
+        summary.put("Total Physical Stock", report.getTotalQuantity());
+        summary.put("Total Reserved Stock", report.getTotalReservedQuantity());
+        summary.put("Total Available Stock", report.getTotalAvailableQuantity());
+
         String[] headers = {
-            "Inventory Balance ID",
-            "Warehouse ID",
-            "Warehouse Name",
-            "Location ID",
-            "Location Code",
-            "Location Name",
-            "Location Type",
-            "Product ID",
-            "Product Code",
-            "Product Name",
-            "Physical Stock",
-            "Reserved Stock",
-            "Available Stock"
+                "Warehouse ID",
+                "Warehouse / Store",
+                "Product ID",
+                "Product Code",
+                "Product Name",
+                "Physical Stock",
+                "Reserved Stock",
+                "Available Stock"
         };
 
         return createWorkbook(
                 "CURRENT INVENTORY REPORT",
-                summary, headers, rows
+                summary, headers, new ArrayList<>(grouped.values())
         );
     }
 
