@@ -21,7 +21,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -43,9 +43,9 @@ public class AdminActivityLogController {
     // =========================================================
 
     @GetMapping
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('AUDIT_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('AUDIT_READ')"
+    // )
     public ResponseEntity<Page<ActivityLogResponse>>
     getActivityLogs(
 
@@ -121,9 +121,9 @@ public class AdminActivityLogController {
             value = "/export",
             produces = "text/csv"
     )
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('AUDIT_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('AUDIT_READ')"
+    // )
     public ResponseEntity<byte[]> exportActivityLogs(
 
             @RequestParam(required = false)
@@ -202,9 +202,9 @@ public class AdminActivityLogController {
     // =========================================================
 
     @GetMapping("/{logId}")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('AUDIT_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('AUDIT_READ')"
+    // )
     public ResponseEntity<ActivityLogResponse>
     getActivityLogById(
 

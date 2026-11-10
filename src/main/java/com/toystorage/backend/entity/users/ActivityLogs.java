@@ -1,5 +1,5 @@
-package com.toystorage.backend.entity.users;
 
+package com.toystorage.backend.entity.users;
 
 import com.toystorage.backend.enums.users.ActivityAction;
 import com.toystorage.backend.enums.users.ActivityEntityType;
@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -59,6 +61,7 @@ public class ActivityLogs {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
     @Column(
             name = "activity_logs_code",
             nullable = false,
@@ -66,11 +69,22 @@ public class ActivityLogs {
             length = 50
     )
     private String activityLogsCode;
+
     @PrePersist
     protected void onCreate() {
+
+        // Tu dong gan thoi gian tao log neu chua co.
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-    }
 
+        // Tu dong sinh ma log neu Service chua gan.
+        if (activityLogsCode == null || activityLogsCode.isBlank()) {
+            activityLogsCode = "ACT-"
+                    + UUID.randomUUID()
+                          .toString()
+                          .replace("-", "")
+                          .toUpperCase(Locale.ROOT);
+        }
+    }
 }

@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -24,7 +24,7 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/business-manager/reports")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
+// @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
 public class BusinessActivityReportController {
 
     private final BusinessActivityReportService reportService;

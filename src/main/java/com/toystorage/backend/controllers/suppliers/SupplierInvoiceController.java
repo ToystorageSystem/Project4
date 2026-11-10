@@ -13,7 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,13 +41,13 @@ public class SupplierInvoiceController {
     // =====================================================
 
     @GetMapping
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'SUPPLIER_INVOICE_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'SUPPLIER_INVOICE_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<SupplierInvoiceSummaryResponse>>
     getSupplierInvoices(
 
@@ -77,13 +77,13 @@ public class SupplierInvoiceController {
     // =====================================================
 
     @GetMapping("/{invoiceId}")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'SUPPLIER_INVOICE_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'SUPPLIER_INVOICE_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<SupplierInvoiceDetailResponse>
     getSupplierInvoiceDetail(
 
@@ -105,13 +105,13 @@ public class SupplierInvoiceController {
     // =====================================================
 
     @PostMapping
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'SUPPLIER_INVOICE_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'SUPPLIER_INVOICE_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<SupplierInvoiceDetailResponse>
     createSupplierInvoice(
 
@@ -141,13 +141,13 @@ public class SupplierInvoiceController {
     // =====================================================
 
     @PutMapping("/{invoiceId}")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'SUPPLIER_INVOICE_UPDATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'SUPPLIER_INVOICE_UPDATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<SupplierInvoiceDetailResponse>
     updateSupplierInvoice(
 
@@ -174,13 +174,13 @@ public class SupplierInvoiceController {
     // =====================================================
 
     @PatchMapping("/{invoiceId}/cancel")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'SUPPLIER_INVOICE_CANCEL',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'SUPPLIER_INVOICE_CANCEL',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<SupplierInvoiceDetailResponse>
     cancelSupplierInvoice(
 
@@ -212,13 +212,13 @@ public class SupplierInvoiceController {
                     "multipart/form-data"
             }
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'SUPPLIER_INVOICE_UPDATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'SUPPLIER_INVOICE_UPDATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<SupplierInvoiceDetailResponse>
     uploadAttachment(
 
@@ -244,14 +244,14 @@ public class SupplierInvoiceController {
     // =====================================================
 
     @GetMapping("/options/suppliers")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'SUPPLIER_INVOICE_VIEW',
-                'SUPPLIER_INVOICE_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'SUPPLIER_INVOICE_VIEW',
+                // 'SUPPLIER_INVOICE_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<
             List<SupplierInvoiceSupplierOptionResponse>
             >
@@ -271,14 +271,14 @@ public class SupplierInvoiceController {
     @GetMapping(
             "/options/suppliers/{supplierId}/purchase-orders"
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'SUPPLIER_INVOICE_VIEW',
-                'SUPPLIER_INVOICE_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'SUPPLIER_INVOICE_VIEW',
+                // 'SUPPLIER_INVOICE_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<
             List<SupplierInvoicePurchaseOrderOptionResponse>
             >

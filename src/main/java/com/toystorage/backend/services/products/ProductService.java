@@ -107,41 +107,45 @@ public class ProductService {
     }
 
     /**
-     * Xem danh sách sản phẩm theo trạng thái.
-     * Nếu status null thì lấy toàn bộ.
+     * Tim kiem san pham theo tu khoa, danh muc va trang thai.
+     * Thuc hien loc truoc khi phan trang.
      */
     @Transactional(readOnly = true)
     public ProductPageResponse getProducts(
             ProductStatus status,
+            String keyword,
+            Long categoryId,
             int page,
             int size
     ) {
+        // Kiem tra tham so phan trang.
         validatePageParameters(page, size);
 
+        // Chuan hoa tu khoa tim kiem.
+        String normalizedKeyword =
+                keyword == null || keyword.isBlank()
+                        ? null
+                        : keyword.trim().toLowerCase(Locale.ROOT);
+
+        // Sap xep san pham moi nhat len dau.
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by(
-                        Sort.Direction.DESC,
-                        "createdAt"
-                )
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
-        Page<Products> productPage;
-
-        if (status == null) {
-            productPage =
-                    productRepository.findAll(pageable);
-        } else {
-            productPage =
-                    productRepository.findByStatus(
-                            status,
-                            pageable
-                    );
-        }
+        // Loc san pham tai database.
+        Page<Products> productPage =
+                productRepository.searchProducts(
+                        status,
+                        normalizedKeyword,
+                        categoryId,
+                        pageable
+                );
 
         return productMapper.toPageResponse(productPage);
     }
+
 
     /**
      * Xem chi tiết một sản phẩm.

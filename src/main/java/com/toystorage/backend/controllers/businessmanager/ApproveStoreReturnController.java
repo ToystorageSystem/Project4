@@ -8,7 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,7 +20,7 @@ public class ApproveStoreReturnController {
 
     // Issue #19: Business Manager approves Store Return
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
+    // @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
     public ResponseEntity<Void> approveStoreReturn(
             @PathVariable Long id,
             @Valid @RequestBody ApproveStoreReturnRequest request

@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -30,13 +30,13 @@ public class PurchaseOrderController {
     // =====================================================
 
     @GetMapping
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PURCHASE_ORDER_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PURCHASE_ORDER_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<PurchaseOrderSummaryResponse>>
     getPurchaseOrders(
 
@@ -74,13 +74,13 @@ public class PurchaseOrderController {
     // =====================================================
 
     @GetMapping("/{orderId}")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PURCHASE_ORDER_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PURCHASE_ORDER_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<PurchaseOrderDetailResponse>
     getPurchaseOrderDetail(
             @PathVariable Long orderId
@@ -98,13 +98,13 @@ public class PurchaseOrderController {
     // =====================================================
 
     @PostMapping
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PURCHASE_ORDER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PURCHASE_ORDER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<PurchaseOrderDetailResponse>
     createPurchaseOrder(
             @Valid
@@ -124,13 +124,13 @@ public class PurchaseOrderController {
     // =====================================================
 
     @PutMapping("/{orderId}")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PURCHASE_ORDER_UPDATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PURCHASE_ORDER_UPDATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<PurchaseOrderDetailResponse>
     updatePurchaseOrder(
 
@@ -156,13 +156,13 @@ public class PurchaseOrderController {
     // =====================================================
 
     @PatchMapping("/{orderId}/submit")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PURCHASE_ORDER_SUBMIT',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PURCHASE_ORDER_SUBMIT',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<PurchaseOrderDetailResponse>
     submitPurchaseOrder(
             @PathVariable Long orderId
@@ -178,7 +178,7 @@ public class PurchaseOrderController {
     // =====================================================
 
     @PatchMapping("/{orderId}/cancel")
-    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
+    // @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<PurchaseOrderDetailResponse>
     cancelPurchaseOrder(
 
@@ -200,7 +200,7 @@ public class PurchaseOrderController {
 
     // Lịch sử hủy PO: xem ai đã hủy và thời điểm hủy.
     @GetMapping("/{orderId}/cancellation-history")
-    @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
+    // @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<List<PurchaseOrderCancellationHistoryResponse>>
     getPurchaseOrderCancellationHistory(@PathVariable Long orderId) {
         return ResponseEntity.ok(purchaseOrderService.getCancellationHistory(orderId));
@@ -211,14 +211,14 @@ public class PurchaseOrderController {
     // =====================================================
 
     @GetMapping("/options/suppliers")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PURCHASE_ORDER_VIEW',
-                'PURCHASE_ORDER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PURCHASE_ORDER_VIEW',
+                // 'PURCHASE_ORDER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<PurchaseOrderOptionResponse>>
     getSupplierOptions() {
 
@@ -232,14 +232,14 @@ public class PurchaseOrderController {
     // =====================================================
 
     @GetMapping("/options/main-warehouses")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PURCHASE_ORDER_VIEW',
-                'PURCHASE_ORDER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PURCHASE_ORDER_VIEW',
+                // 'PURCHASE_ORDER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<PurchaseOrderOptionResponse>>
     getMainWarehouseOptions() {
 
@@ -253,14 +253,14 @@ public class PurchaseOrderController {
     // =====================================================
 
     @GetMapping("/options/suppliers/{supplierId}/products")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PURCHASE_ORDER_VIEW',
-                'PURCHASE_ORDER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PURCHASE_ORDER_VIEW',
+                // 'PURCHASE_ORDER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<PurchaseOrderProductOptionResponse>>
     getProductsBySupplier(
             @PathVariable Long supplierId

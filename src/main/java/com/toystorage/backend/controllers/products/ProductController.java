@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,13 +45,13 @@ public class ProductController {
      * Business Operations tạo trực tiếp sản phẩm ACTIVE, có nhật ký thao tác.
      */
     @PostMapping
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductResponse>
     createProduct(
             @Valid
@@ -69,7 +69,7 @@ public class ProductController {
      * Giữ đường dẫn API cũ ở dạng 410 để client cũ không tạo dữ liệu chờ mới.
      */
     @PutMapping("/{productId}")
-    @PreAuthorize("hasAnyAuthority('PRODUCT_UPDATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    // @PreAuthorize("hasAnyAuthority('PRODUCT_UPDATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable Long productId,
             @Valid @RequestBody UpdateProductRequest request) {
@@ -77,14 +77,14 @@ public class ProductController {
     }
 
     @PostMapping("/{productId}/change-requests")
-    @PreAuthorize("hasAnyAuthority('PRODUCT_UPDATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    // @PreAuthorize("hasAnyAuthority('PRODUCT_UPDATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
     public ResponseEntity<Void> deprecatedChangeRequest(@PathVariable Long productId) {
         return ResponseEntity.status(HttpStatus.GONE).build();
     }
 
     /** Nhật ký thay đổi sản phẩm, chỉ đọc; dữ liệu lấy từ activity_logs. */
     @GetMapping("/{productId}/history")
-    @PreAuthorize("hasAnyAuthority('PRODUCT_VIEW','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    // @PreAuthorize("hasAnyAuthority('PRODUCT_VIEW','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
     public ResponseEntity<Page<ProductActivityResponse>> getProductHistory(
             @PathVariable Long productId,
             @RequestParam(defaultValue = "0") int page,
@@ -96,44 +96,43 @@ public class ProductController {
      * Xem danh sách sản phẩm, có thể lọc theo trạng thái.
      */
     @GetMapping
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
-    public ResponseEntity<ProductPageResponse>
-    getProducts(
-            @RequestParam(required = false)
-            ProductStatus status,
-
-            @RequestParam(defaultValue = "0")
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            int size
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
+    public ResponseEntity<ProductPageResponse> getProducts(
+            @RequestParam(required = false) ProductStatus status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
         return ResponseEntity.ok(
                 productService.getProducts(
                         status,
+                        keyword,
+                        categoryId,
                         page,
                         size
                 )
         );
     }
 
+
     /**
      * Xem chi tiết sản phẩm.
      */
     @GetMapping("/{productId}")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductResponse>
     getProduct(
             @PathVariable Long productId
@@ -147,13 +146,13 @@ public class ProductController {
      * Business Staff ẩn sản phẩm đang hoạt động.
      */
     @PatchMapping("/{productId}/deactivate")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_UPDATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_UPDATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductResponse>
     deactivateProduct(
             @PathVariable Long productId
@@ -167,13 +166,13 @@ public class ProductController {
      * Business Staff khôi phục sản phẩm đã ẩn.
      */
     @PatchMapping("/{productId}/activate")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_UPDATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_UPDATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductResponse>
     activateProduct(
             @PathVariable Long productId
@@ -187,13 +186,13 @@ public class ProductController {
      * Business Manager xem danh sách yêu cầu đang chờ duyệt.
      */
     @GetMapping("/change-requests/pending")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_APPROVE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_APPROVE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<Page<ProductChangeRequestResponse>>
     getPendingRequests(
             @RequestParam(defaultValue = "0")
@@ -214,13 +213,13 @@ public class ProductController {
      * Business Manager xem chi tiết yêu cầu chờ duyệt.
      */
     @GetMapping("/change-requests/{requestId}")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_APPROVE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_APPROVE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductChangeRequestResponse>
     getPendingRequest(
             @PathVariable Long requestId
@@ -236,13 +235,13 @@ public class ProductController {
      * Business Manager phê duyệt yêu cầu.
      */
     @PatchMapping("/change-requests/{requestId}/approve")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_APPROVE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_APPROVE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductChangeRequestResponse>
     approveCreateRequest(
             @PathVariable Long requestId
@@ -258,13 +257,13 @@ public class ProductController {
      * Business Manager từ chối yêu cầu.
      */
     @PatchMapping("/change-requests/{requestId}/reject")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_APPROVE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_APPROVE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductChangeRequestResponse>
     rejectCreateRequest(
             @PathVariable Long requestId,
@@ -290,14 +289,14 @@ public class ProductController {
             value = "/images",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_CREATE',
-                'PRODUCT_UPDATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_CREATE',
+                // 'PRODUCT_UPDATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductImageUploadResponse>
     uploadProductImage(
             @RequestParam("image") MultipartFile image
@@ -315,13 +314,13 @@ public class ProductController {
             value = "/import/preview",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductImportPreviewResponse>
     previewProductImport(
             @RequestParam("file") MultipartFile file
@@ -341,13 +340,13 @@ public class ProductController {
             value = "/import",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'PRODUCT_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'PRODUCT_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ProductImportResultResponse>
     importProducts(
             @RequestParam("file") MultipartFile file

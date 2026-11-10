@@ -27,7 +27,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -50,9 +50,9 @@ public class UserController {
     // =========================================================
 
     @GetMapping
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_READ')"
+    // )
     public ResponseEntity<Page<UserResponse>> getUsers(
 
             @RequestParam(required = false)
@@ -110,9 +110,9 @@ public class UserController {
     // =========================================================
 
     @GetMapping("/{userId}")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_READ')"
+    // )
     public ResponseEntity<UserResponse> getUserById(
 
             @PathVariable
@@ -137,9 +137,9 @@ public class UserController {
     // =========================================================
 
     @GetMapping("/{userId}/activity-logs")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_READ')"
+    // )
     public ResponseEntity<List<ActivityLogResponse>>
     getUserActivityLogs(
 
@@ -165,9 +165,9 @@ public class UserController {
     // =========================================================
 
     @PostMapping
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
+    // )
     public ResponseEntity<UserResponse> createUser(
 
             @Valid
@@ -208,9 +208,9 @@ public class UserController {
      * KHÔNG thay đổi Role.
      */
     @PutMapping("/{userId}")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
+    // )
     public ResponseEntity<UserResponse> updateUser(
 
             @PathVariable
@@ -255,9 +255,9 @@ public class UserController {
      * vẫn là authorities cũ.
      */
     @PutMapping("/{userId}/roles")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
+    // )
     public ResponseEntity<List<UserRoleResponse>>
     updateUserRoles(
 
@@ -306,9 +306,9 @@ public class UserController {
     // =========================================================
 
     @PatchMapping("/{userId}/lock")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
+    // )
     public ResponseEntity<UserResponse> lockUser(
 
             @PathVariable
@@ -343,9 +343,9 @@ public class UserController {
     // =========================================================
 
     @PatchMapping("/{userId}/unlock")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
+    // )
     public ResponseEntity<UserResponse> unlockUser(
 
             @PathVariable
@@ -377,9 +377,9 @@ public class UserController {
     // =========================================================
 
     @PatchMapping("/{userId}/inactive")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
+    // )
     public ResponseEntity<UserResponse> deactivateUser(
 
             @PathVariable
@@ -414,9 +414,9 @@ public class UserController {
     // =========================================================
 
     @PatchMapping("/{userId}/reset-password")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('USER_MANAGE')"
+    // )
     public ResponseEntity<Void> resetPassword(
 
             @PathVariable

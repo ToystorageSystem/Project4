@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,13 +48,13 @@ public class InventoryReportController {
      * - pagination
      */
     @GetMapping
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'INVENTORY_REPORT_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<InventoryReportPageResponse>
     getInventoryReport(
 
@@ -109,13 +109,13 @@ public class InventoryReportController {
     @GetMapping(
             "/export"
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'INVENTORY_REPORT_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<byte[]>
     exportInventoryReport(
 
@@ -195,13 +195,13 @@ public class InventoryReportController {
     @GetMapping(
             "/products/{productId}/locations"
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'INVENTORY_REPORT_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<InventoryProductLocationResponse>>
     getProductLocations(
 
@@ -229,13 +229,13 @@ public class InventoryReportController {
     @GetMapping(
             "/options/warehouses"
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'INVENTORY_REPORT_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<InventoryReportOptionResponse>>
     getWarehouseOptions() {
 
@@ -257,13 +257,13 @@ public class InventoryReportController {
     @GetMapping(
             "/options/categories"
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'INVENTORY_REPORT_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<InventoryReportOptionResponse>>
     getCategoryOptions() {
 
@@ -285,13 +285,13 @@ public class InventoryReportController {
     @GetMapping(
             "/options/brands"
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'INVENTORY_REPORT_VIEW',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'INVENTORY_REPORT_VIEW',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<InventoryReportOptionResponse>>
     getBrandOptions() {
 

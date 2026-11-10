@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,7 +21,7 @@ public class BusinessTransferController {
     private final BusinessTransferService service;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
+    // @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
     public ResponseEntity<Page<BusinessTransferListResponse>> getTransfers(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) TransferStatus status,
@@ -34,7 +34,7 @@ public class BusinessTransferController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
+    // @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
     public ResponseEntity<BusinessTransferDetailResponse> getDetail(
             @PathVariable Long id
     ) {

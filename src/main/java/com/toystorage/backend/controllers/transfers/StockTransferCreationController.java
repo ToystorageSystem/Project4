@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,13 +40,13 @@ public class StockTransferCreationController {
     // =====================================================
 
     @GetMapping("/creation-options/sources")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'STOCK_TRANSFER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<StockTransferWarehouseOptionResponse>>
     getSourceOptions() {
 
@@ -63,13 +63,13 @@ public class StockTransferCreationController {
     // =====================================================
 
     @GetMapping("/creation-options/destinations")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'STOCK_TRANSFER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<StockTransferWarehouseOptionResponse>>
     getDestinationOptions() {
 
@@ -87,13 +87,13 @@ public class StockTransferCreationController {
     @GetMapping(
             "/creation-options/sources/{sourceId}/products"
     )
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'STOCK_TRANSFER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<List<StockTransferProductOptionResponse>>
     getProductsBySource(
 
@@ -115,13 +115,13 @@ public class StockTransferCreationController {
     // =====================================================
 
     @PostMapping
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'STOCK_TRANSFER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<StockTransferDetailResponse>
     createStockTransfer(
 
@@ -152,13 +152,13 @@ public class StockTransferCreationController {
     // =====================================================
 
     @GetMapping("/mine")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'STOCK_TRANSFER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<Page<StockTransferListResponse>>
     getMyStockTransfers(
 
@@ -189,13 +189,13 @@ public class StockTransferCreationController {
     // =====================================================
 
     @GetMapping("/{transferId}")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'STOCK_TRANSFER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<StockTransferDetailResponse>
     getStockTransferDetail(
 
@@ -218,13 +218,13 @@ public class StockTransferCreationController {
     // =====================================================
 
     @PatchMapping("/{transferId}/submit")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'STOCK_TRANSFER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<StockTransferDetailResponse>
     submitStockTransfer(
 
@@ -246,13 +246,13 @@ public class StockTransferCreationController {
     // =====================================================
 
     @PutMapping("/{transferId}")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'STOCK_TRANSFER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<StockTransferDetailResponse>
     updateStockTransfer(
 
@@ -279,13 +279,13 @@ public class StockTransferCreationController {
     // =====================================================
 
     @PatchMapping("/{transferId}/cancel")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'STOCK_TRANSFER_CREATE',
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'STOCK_TRANSFER_CREATE',
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<StockTransferDetailResponse>
     cancelStockTransfer(
 

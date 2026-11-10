@@ -123,4 +123,24 @@ public interface ProductRepository extends JpaRepository<Products, Long> {
 
 
         List<Products> findByIdInAndStatus(Collection<Long> ids, ProductStatus status);
+
+    // Tim kiem san pham theo tu khoa, danh muc va trang thai.
+    @Query("""
+            SELECT p
+            FROM Products p
+            WHERE (:status IS NULL OR p.status = :status)
+              AND (:categoryId IS NULL OR p.category.id = :categoryId)
+              AND (
+                    :keyword IS NULL
+                    OR LOWER(p.name) LIKE CONCAT('%', :keyword, '%')
+                    OR LOWER(p.productsCode) LIKE CONCAT('%', :keyword, '%')
+                    OR LOWER(p.barcode) LIKE CONCAT('%', :keyword, '%')
+              )
+            """)
+    Page<Products> searchProducts(
+            @Param("status") ProductStatus status,
+            @Param("keyword") String keyword,
+            @Param("categoryId") Long categoryId,
+            Pageable pageable
+    );
 }

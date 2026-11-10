@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(
@@ -121,7 +122,7 @@ public class PurchaseOrderItems {
     /*
      * Mã nội bộ của dòng sản phẩm trong đơn mua hàng.
      */
-    @DecimalMin(value = "0.0", inclusive = true)
+    @NotBlank
     @Column(
             name = "purchase_order_items_code",
             nullable = false,
@@ -129,6 +130,7 @@ public class PurchaseOrderItems {
             length = 50
     )
     private String purchaseOrderItemsCode;
+
     /*
      * Phản hồi của nhà cung cấp đối với sản phẩm này.
      */

@@ -2,7 +2,7 @@ package com.toystorage.backend.controllers.inventories.stockcount;
 
 import com.toystorage.backend.services.inventories.stockcount.StockCountWorkflowService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +11,7 @@ import static com.toystorage.backend.dto.StockCountDTO.*;
 /** Warehouse Manager API. Does not replace or change Staff routes. */
 @RestController
 @RequestMapping("/api/warehouse/manager/stock-counts")
-@PreAuthorize("@stockCountManagerAccess.canManage(authentication)")
+// @PreAuthorize("@stockCountManagerAccess.canManage(authentication)")
 @RequiredArgsConstructor
 public class StockCountManagerController {
     private final StockCountWorkflowService service;

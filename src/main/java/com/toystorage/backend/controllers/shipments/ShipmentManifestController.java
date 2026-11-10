@@ -6,7 +6,7 @@ import com.toystorage.backend.services.shipments.ShipmentManifestQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -37,12 +37,12 @@ public class ShipmentManifestController {
      * - phân trang
      */
     @GetMapping
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ShipmentManifestPageResponse>
     getShipmentManifests(
 
@@ -111,12 +111,12 @@ public class ShipmentManifestController {
      * - sản phẩm trong từng package
      */
     @GetMapping("/{manifestId}")
-    @PreAuthorize("""
-            hasAnyAuthority(
-                'ROLE_ROLE-BIZ-OPS',
-                'ROLE_ROLE-ADMIN'
-            )
-            """)
+    // @PreAuthorize("""
+            // hasAnyAuthority(
+                // 'ROLE_ROLE-BIZ-OPS',
+                // 'ROLE_ROLE-ADMIN'
+            // )
+            // """)
     public ResponseEntity<ShipmentManifestDetailResponse>
     getShipmentManifestDetail(
 

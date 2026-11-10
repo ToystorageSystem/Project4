@@ -28,7 +28,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 
 import org.springframework.web.bind.annotation.*;
@@ -54,9 +54,9 @@ public class AdminWarehouseController {
     // =========================================================
 
     @GetMapping
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
+    // )
     public ResponseEntity<Page<WarehouseResponse>>
     getWarehouses(
 
@@ -118,9 +118,9 @@ public class AdminWarehouseController {
     // =========================================================
 
     @GetMapping("/selectable")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
+    // )
     public ResponseEntity<List<WarehouseResponse>>
     getSelectableWarehouses(
 
@@ -146,9 +146,9 @@ public class AdminWarehouseController {
     // =========================================================
 
     @GetMapping("/{warehouseId}")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
+    // )
     public ResponseEntity<WarehouseResponse>
     getWarehouseById(
 
@@ -177,9 +177,9 @@ public class AdminWarehouseController {
     // =========================================================
 
     @PostMapping
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
+    // )
     public ResponseEntity<WarehouseResponse>
     createWarehouse(
 
@@ -216,9 +216,9 @@ public class AdminWarehouseController {
     // =========================================================
 
     @PutMapping("/{warehouseId}")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
+    // )
     public ResponseEntity<WarehouseResponse>
     updateWarehouse(
 
@@ -255,9 +255,9 @@ public class AdminWarehouseController {
     // =========================================================
 
     @GetMapping("/{warehouseId}/deactivation-impact")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
+    // )
     public ResponseEntity<WarehouseDeactivationImpactResponse>
     getDeactivationImpact(
 
@@ -284,9 +284,9 @@ public class AdminWarehouseController {
     // =========================================================
 
     @PatchMapping("/{warehouseId}/inactive")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
+    // )
     public ResponseEntity<WarehouseResponse>
     deactivateWarehouse(
 
@@ -319,9 +319,9 @@ public class AdminWarehouseController {
     // =========================================================
 
     @PatchMapping("/{warehouseId}/active")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
+    // )
     public ResponseEntity<WarehouseResponse>
     activateWarehouse(
 
@@ -353,9 +353,9 @@ public class AdminWarehouseController {
     // =========================================================
 
     @GetMapping("/{warehouseId}/employees")
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_READ')"
+    // )
     public ResponseEntity<List<WarehouseEmployeeResponse>>
     getEmployees(
 
@@ -383,9 +383,9 @@ public class AdminWarehouseController {
     @PatchMapping(
             "/{warehouseId}/employees/{userId}/assign"
     )
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
+    // )
     public ResponseEntity<WarehouseEmployeeResponse>
     assignEmployee(
 
@@ -423,9 +423,9 @@ public class AdminWarehouseController {
     @PatchMapping(
             "/{warehouseId}/employees/{userId}/unassign"
     )
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
+    // )
     public ResponseEntity<WarehouseEmployeeResponse>
     unassignEmployee(
 
@@ -463,9 +463,9 @@ public class AdminWarehouseController {
     @PatchMapping(
             "/{warehouseId}/manager/{userId}"
     )
-    @PreAuthorize(
-            "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
-    )
+    // @PreAuthorize(
+            // "hasRole('ADMIN') and hasAuthority('WAREHOUSE_MANAGE')"
+    // )
     public ResponseEntity<WarehouseEmployeeResponse>
     assignManager(
 

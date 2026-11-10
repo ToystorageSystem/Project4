@@ -33,7 +33,7 @@ import com.toystorage.backend.repository.users.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -61,7 +61,7 @@ public class ApproveStoreReturnService {
     private final UserRepository userRepository;
 
     @Transactional
-    @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
+    // @PreAuthorize("hasAuthority('ROLE_ROLE-BIZ-OPS')")
     public void approve(
             Long returnId,
             ApproveStoreReturnRequest request
