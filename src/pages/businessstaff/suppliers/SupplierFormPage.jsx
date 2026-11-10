@@ -7,7 +7,6 @@ import PageHeader from "../../../components/layout/PageHeader";
 import Alert from "../../../components/ui/Alert";
 import Button from "../../../components/ui/Button";
 import Card from "../../../components/ui/Card";
-import Checkbox from "../../../components/ui/Checkbox";
 import Input from "../../../components/ui/Input";
 import Spinner from "../../../components/ui/Spinner";
 import TextArea from "../../../components/ui/TextArea";
@@ -75,7 +74,6 @@ export default function SupplierFormPage() {
     const [loading, setLoading] = useState(editing);
     const [loadFailed, setLoadFailed] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [confirmedSharedData, setConfirmedSharedData] = useState(false);
     const [errors, setErrors] = useState({});
     const [error, setError] = useState("");
 
@@ -118,7 +116,7 @@ export default function SupplierFormPage() {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        if (saving || loadFailed || !confirmedSharedData) return;
+        if (saving || loadFailed) return;
         const nextErrors = validate(form);
         setErrors(nextErrors);
         if (Object.keys(nextErrors).length) return;
@@ -131,7 +129,7 @@ export default function SupplierFormPage() {
                 : await createSupplier(toPayload(form));
             navigate(`${ROOT}/${saved.id}`, {
                 replace: true,
-                state: { notice: editing ? "Supplier updated successfully." : "Supplier added successfully." },
+                state: editing ? { notice: "Supplier updated successfully." } : null,
             });
         } catch (requestError) {
             setError(supplierErrorMessage(requestError, "Unable to save supplier details."));
@@ -163,11 +161,7 @@ export default function SupplierFormPage() {
                                 Supplier Code (read-only): <span className="font-semibold text-slate-900">{supplierCode}</span>
                             </div>
                         )}
-                        {!editing && (
-                            <div className="mb-5 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-800">
-                                Supplier code will be generated automatically after saving.
-                            </div>
-                        )}
+
                         <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                             <div className="grid gap-5 md:grid-cols-2">
                                 <Input label="Supplier Name *" required maxLength={200} value={form.name} onChange={change("name")} error={errors.name} placeholder="Enter supplier name" />
@@ -184,16 +178,10 @@ export default function SupplierFormPage() {
                                 </div>
                             </div>
 
-                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                <Checkbox
-                                    checked={confirmedSharedData}
-                                    onChange={(event) => setConfirmedSharedData(event.target.checked)}
-                                    label="I have reviewed and agree to save the supplier details."
-                                />
-                            </div>
+
                             <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
                                 <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${supplierId}` : ROOT)}>Cancel</Button>
-                                <Button type="submit" disabled={saving || !confirmedSharedData}>
+                                <Button type="submit" disabled={saving}>
                                     {saving ? "Saving..." : editing ? "Save Changes" : "Create Supplier"}
                                 </Button>
                             </div>

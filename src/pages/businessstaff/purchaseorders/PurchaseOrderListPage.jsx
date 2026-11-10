@@ -150,9 +150,7 @@ export default function PurchaseOrderListPage() {
                     description="Search purchase orders by order code, supplier, status, or creation date."
                     actions={<Button type="button" onClick={() => navigate(`${ROOT}/new`)}>+ Create Purchase Order</Button>}
                 />
-                <Alert type="info">
-                    Some orders are created automatically during goods receipt creation. Creating a new draft order does not change warehouse stock quantities.
-                </Alert>
+
                 {supplierWarning && <div role="alert"><Alert type="warning">{supplierWarning}</Alert></div>}
                 {filterError && <div role="alert"><Alert type="danger">{filterError}</Alert></div>}
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}

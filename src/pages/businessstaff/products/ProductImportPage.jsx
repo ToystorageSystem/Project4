@@ -96,14 +96,35 @@ export default function ProductImportPage() {
                             Select an .xlsx or .xls Excel file. <strong>The first worksheet</strong> must contain a header row with exactly 10 columns in the following order (case-sensitive):
                             <div className="mt-2 overflow-x-auto rounded-lg bg-white p-3 font-mono text-xs text-slate-800">{HEADERS.join(" | ")}</div>
                             <></>
-                        </Alert>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <input type="file" accept=".xlsx,.xls" aria-label="Select Product Excel File" onChange={chooseFile} className="max-w-full text-sm text-slate-600" />
-                            <Button onClick={checkExcel} disabled={!file || checking || importing}>
-                                {checking ? "Validating..." : "Preview / Validate"}
-                            </Button>
-                        </div>
-                        {file && <p className="text-xs text-slate-500">File: {file.name}</p>}
+                        </Alert>  
+                    <div className="flex flex-wrap items-center gap-3">
+
+                        {/* Nut chon file Excel */}
+                        <label className="inline-flex cursor-pointer items-center rounded-lg border border-orange-500 bg-white px-4 py-2 text-sm font-medium text-orange-600 transition hover:bg-orange-50 focus-within:ring-2 focus-within:ring-orange-300">
+                            <input
+                                type="file"
+                                accept=".xlsx,.xls"
+                                aria-label="Choose Excel File"
+                                onChange={chooseFile}
+                                className="sr-only"
+                            />
+                            Choose Excel File
+                        </label>
+
+                        {/* Hien thi ten file da chon */}
+                        <span className="max-w-full break-all text-sm text-slate-600">
+                            {file ? file.name : "No file selected"}
+                        </span>
+
+                        {/* Kiem tra file Excel */}
+                        <Button
+                            onClick={checkExcel}
+                            disabled={!file || checking || importing}
+                        >
+                            {checking ? "Validating..." : "Preview / Validate"}
+                        </Button>
+                    </div>
+
                     </div>
                 </Card>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}

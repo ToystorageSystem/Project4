@@ -62,7 +62,6 @@ export default function SupplierProductsPanel({ supplierId }) {
                 : error ? <div role="alert"><Alert type="warning">{error}</Alert></div>
                     : links.length ? <Table columns={columns} data={links} />
                         : <EmptyState title="No Linked Products" description="Open an active product's details and select Link Supplier." />}
-            <p className="text-xs text-slate-500">To create or edit an association, open the corresponding product details. This action does not modify the product itself.</p>
         </section>
     );
 }

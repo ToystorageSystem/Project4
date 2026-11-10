@@ -7,7 +7,6 @@ import PageHeader from "../../../components/layout/PageHeader";
 import Alert from "../../../components/ui/Alert";
 import Button from "../../../components/ui/Button";
 import Card from "../../../components/ui/Card";
-import Checkbox from "../../../components/ui/Checkbox";
 import Input from "../../../components/ui/Input";
 import Spinner from "../../../components/ui/Spinner";
 import TextArea from "../../../components/ui/TextArea";
@@ -76,14 +75,12 @@ export default function ProductFormPage() {
     const [saving, setSaving] = useState(false);
     const [imageFile, setImageFile] = useState(null);
     const [uploading, setUploading] = useState(false);
-    const [confirmed, setConfirmed] = useState(false);
 
     useEffect(() => {
         const controller = new AbortController();
         setLoading(true);
         setError("");
         setLoadFailed(false);
-        setConfirmed(false);
         setImageFile(null);
         const productPromise = editing ? getProduct(productId, controller.signal) : Promise.resolve(null);
         const categoryPromise = getCategoryOptions(controller.signal)
@@ -129,7 +126,6 @@ export default function ProductFormPage() {
     const change = (field) => (event) => {
         setForm((old) => ({ ...old, [field]: event.target.value }));
         setErrors((old) => ({ ...old, [field]: undefined }));
-        setConfirmed(false);
     };
 
     const upload = async () => {
@@ -141,8 +137,7 @@ export default function ProductFormPage() {
             const result = await uploadProductImage(imageFile);
             if (!result?.imageUrl) throw new Error("No image URL was returned");
             setForm((old) => ({ ...old, imageUrl: result.imageUrl }));
-            setConfirmed(false);
-            setImageFile(null);
+                setImageFile(null);
         } catch (requestError) {
             setError(productErrorMessage(requestError, "Unable to upload image."));
         } finally {
@@ -152,7 +147,7 @@ export default function ProductFormPage() {
 
     const submit = async (event) => {
         event.preventDefault();
-        if (saving || uploading || !confirmed || loadFailed) return;
+        if (saving || uploading || loadFailed) return;
         const nextErrors = validate(form);
         setErrors(nextErrors);
         if (Object.keys(nextErrors).length) return;
@@ -164,12 +159,10 @@ export default function ProductFormPage() {
                 ? await updateProduct(productId, toPayload(form))
                 : await createProduct(toPayload(form));
             const destinationId = product?.id ?? (editing ? productId : null);
-            const notice = editing
-                ? "Product updated successfully. Change history was recorded."
-                : "Product created successfully. It is now active and available for use.";
+            const notice = editing ? "Product updated successfully. Change history was recorded." : null;
             navigate(destinationId ? `${ROOT}/${destinationId}` : ROOT, {
                 replace: true,
-                state: { notice },
+                state: notice ? { notice } : null,
             });
         } catch (requestError) {
             setError(productErrorMessage(requestError, "Unable to save product."));
@@ -192,7 +185,6 @@ export default function ProductFormPage() {
                     <Card><Button variant="outline" onClick={() => navigate(ROOT)}>Back to List</Button></Card>
                 ) : (
                     <Card className="max-w-6xl">
-                        <Alert type="info">Product code and barcode must be unique. The system checks for duplicates before saving.</Alert>
                         {categoryApiWarning && (
                             <div className="mt-4"><Alert type="warning">Unable to load product categories: {categoryApiWarning} You can enter an existing category ID below; the system will validate it.</Alert></div>
                         )}
@@ -212,7 +204,7 @@ export default function ProductFormPage() {
                                     <p className="mt-1 text-xs text-slate-500">{brandSuggestions.length ? `Suggested from existing products: ${brandSuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "No brand list available. You may enter an existing brand ID."}</p>
                                 </div>
                                 <Input label="Base Unit *" maxLength={30} required value={form.baseUnit} onChange={change("baseUnit")} error={errors.baseUnit} placeholder="Example: piece, bag, box" />
-                                <Input label="Purchase Price (VND) *" type="number" min="0.01" step="0.01" required value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} placeholder="120000" />
+                                <Input label="Reference Purchase Price (VND) *" type="number" min="0.01" step="0.01" required value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} placeholder="120000" />
                                 <Input label="Selling Price (VND) *" type="number" min="0.01" step="0.01" required value={form.sellingPrice} onChange={change("sellingPrice")} error={errors.sellingPrice} placeholder="150000" />
                                 <div className="md:col-span-2"><Input label="Image URL (optional)" maxLength={500} type="url" value={form.imageUrl} onChange={change("imageUrl")} error={errors.imageUrl} placeholder="https://..." /></div>
                             </div>
@@ -220,18 +212,42 @@ export default function ProductFormPage() {
                                 <p className="text-sm font-semibold text-slate-800">Or upload a product image</p>
                                 <p className="mb-3 mt-1 text-xs text-slate-500">Your image is uploaded to storage only when you select Upload Image. Uploading an image does not create a product.</p>
                                 <div className="flex flex-wrap items-center gap-3">
-                                    <input type="file" accept="image/*" aria-label="Choose Product Image" onChange={(event) => setImageFile(event.target.files?.[0] || null)} className="max-w-full text-sm text-slate-600" />
-                                    <Button type="button" variant="outline" onClick={upload} disabled={!imageFile || uploading || saving}>{uploading ? "Uploading image..." : "Upload Image"}</Button>
+
+                                    {/* Chon anh san pham */}
+                                    <label className="inline-flex cursor-pointer items-center rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 focus-within:ring-2 focus-within:ring-orange-300">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            aria-label="Choose Product Image"
+                                            className="sr-only"
+                                            onChange={(event) =>
+                                                setImageFile(event.target.files?.[0] || null)
+                                            }
+                                        />
+                                        Choose Image
+                                    </label>
+
+                                    {/* Ten file da chon */}
+                                    <span className="text-sm text-slate-600 break-all">
+                                        {imageFile ? imageFile.name : "No file selected"}
+                                    </span>
+
+                                    {/* Tai anh len he thong */}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={upload}
+                                        disabled={!imageFile || uploading || saving}
+                                    >
+                                        {uploading ? "Uploading image..." : "Upload Image"}
+                                    </Button>
                                 </div>
                                 {form.imageUrl && <img src={form.imageUrl} alt="Image Preview" className="mt-3 h-28 max-w-full rounded-lg border object-contain" />}
                             </div>
                             <TextArea label="Change Notes (optional)" rows={3} maxLength={500} value={form.requestReason} onChange={change("requestReason")} error={errors.requestReason} placeholder="Describe the reason for adding or updating the product" />
-                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="I have reviewed the information and agree to save these changes directly." />
-                            </div>
                             <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
                                 <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>Cancel</Button>
-                                <Button type="submit" disabled={!confirmed || uploading || saving}>{saving ? "Saving..." : editing ? "Save Changes" : "Create Product"}</Button>
+                                <Button type="submit" disabled={uploading || saving}>{saving ? "Saving..." : editing ? "Save Changes" : "Create Product"}</Button>
                             </div>
                         </form>
                     </Card>

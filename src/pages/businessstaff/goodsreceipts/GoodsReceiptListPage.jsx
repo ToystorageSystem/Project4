@@ -132,9 +132,6 @@ export default function GoodsReceiptListPage() {
                     actions={<Link to={ROOT} className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700">
                         + Create Goods Receipt
                     </Link>} />
-                <Alert type="info">
-                    Business Operations can track goods receipts. Warehouse staff inspect and complete receiving; stock balances increase only after the receipt is completed. The list covers all warehouses.
-                </Alert>
                 {purchaseOrderId && <Alert type="info">
                     Viewing goods receipts linked to purchase order # {purchaseOrderId}. To view all receipts,
                     <Link to={`${ROOT}/list`} className="ml-1 font-semibold underline">click here</Link>.

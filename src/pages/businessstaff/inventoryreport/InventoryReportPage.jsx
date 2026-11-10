@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { aggregateWarehouseProducts } from "../../../utils/businessInventorySummary";
 import {
     getInventoryReport,
     getInventoryWarehouseOptions,
@@ -16,7 +17,6 @@ const initialFilters = {
     warehouseId: "",
     categoryId: "",
     brandId: "",
-    stockStatus: "",
 };
 
 const inputClass =
@@ -80,13 +80,13 @@ function ProductLocationsDialog({ product, onClose }) {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             role="dialog"
             aria-modal="true"
-            aria-label="Inventory Details by Location"
+            aria-label="Inventory Details by Warehouse"
         >
             <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
                         <h2 className="text-xl font-semibold text-slate-900">
-                            Inventory Details by Location
+                            Inventory Details by Warehouse
                         </h2>
 
                         <p className="mt-1 text-sm text-slate-500">
@@ -103,7 +103,7 @@ function ProductLocationsDialog({ product, onClose }) {
                     </button>
                 </div>
 
-                <div className="mb-5 grid gap-3 sm:grid-cols-2">
+                <div className="mb-5 grid gap-3">
                     <div className="rounded-lg bg-slate-50 p-4">
                         <p className="mb-1 text-xs font-medium text-slate-500">
                             Warehouse / Store
@@ -114,15 +114,6 @@ function ProductLocationsDialog({ product, onClose }) {
                         </p>
                     </div>
 
-                    <div className="rounded-lg bg-slate-50 p-4">
-                        <p className="mb-1 text-xs font-medium text-slate-500">
-                            Storage Location
-                        </p>
-
-                        <p className="font-semibold text-slate-900">
-                            {product.locationCode || "—"}
-                        </p>
-                    </div>
                 </div>
 
                 <div className="mb-5 grid gap-3 sm:grid-cols-3">
@@ -172,16 +163,6 @@ function ProductLocationsDialog({ product, onClose }) {
 
                     <div className="flex items-center justify-between gap-4">
                         <span className="text-slate-500">
-                            Minimum Stock Level
-                        </span>
-
-                        <strong className="text-slate-900">
-                            {formatNumber(product.minimumStockLevel)}
-                        </strong>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4">
-                        <span className="text-slate-500">
                             Last Updated
                         </span>
 
@@ -193,7 +174,7 @@ function ProductLocationsDialog({ product, onClose }) {
 
                 {unavailable && (
                     <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-                        This location has physical stock but no available quantity. The report does not specify the reason. Check with the warehouse team.
+                        Some stock is not available for allocation. Contact the warehouse team for details.
                     </p>
                 )}
             </div>
@@ -252,25 +233,40 @@ export default function InventoryReportPage() {
         return () => controller.abort();
     }, []);
 
-    // Load inventory whenever applied filters or page change.
+    // Load inventory whenever the filters change; paginate aggregated rows locally.
     useEffect(() => {
         const controller = new AbortController();
 
         setLoading(true);
         setError("");
 
-        getInventoryReport(
-            { ...filters, page, size: 10 },
-            controller.signal
-        )
-            .then((data) => {
-                if (!controller.signal.aborted) {
-                    setReport(data);
+        (async () => {
+            // Backend phan trang theo vi tri. Lay het cac trang truoc khi gom theo kho + san pham.
+            // Khong hien thi tong cong sai neu khong tai duoc du du lieu.
+            const all = [];
+            let currentPage = 0;
+            let totalPages = 1;
+            do {
+                if (currentPage >= 50) {
+                    throw new Error("Inventory is too large for this view. Please select a warehouse or narrow the filters.");
                 }
-            })
+                const data = await getInventoryReport(
+                    { ...filters, page: currentPage, size: 100 }, controller.signal
+                );
+                if (!Array.isArray(data?.items)) throw new Error("Invalid inventory response.");
+                all.push(...data.items);
+                totalPages = Number(data.totalPages) || 0;
+                currentPage += 1;
+            } while (currentPage < totalPages);
+            if (!controller.signal.aborted) {
+                const items = aggregateWarehouseProducts(all);
+                setReport({ items, totalElements: items.length, totalPages: Math.ceil(items.length / 10) });
+            }
+        })()
             .catch((err) => {
                 if (!controller.signal.aborted) {
-                    setError(inventoryReportErrorMessage(err));
+                    setError(err?.message?.startsWith("Inventory is too large") || err?.message === "Invalid inventory response."
+                        ? err.message : inventoryReportErrorMessage(err));
                 }
             })
             .finally(() => {
@@ -280,7 +276,7 @@ export default function InventoryReportPage() {
             });
 
         return () => controller.abort();
-    }, [filters, page]);
+    }, [filters]);
 
     function updateDraft(name, value) {
         setDraftFilters((current) => ({
@@ -330,7 +326,8 @@ export default function InventoryReportPage() {
         }
     }
 
-    const items = report?.items ?? [];
+    const allItems = report?.items ?? [];
+    const items = allItems.slice(page * 10, (page + 1) * 10);
     const totalPages = report?.totalPages ?? 0;
 
     return (
@@ -352,7 +349,7 @@ export default function InventoryReportPage() {
                     disabled={exporting}
                     className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
                 >
-                    {exporting ? "Exporting..." : "Export Excel"}
+                    {exporting ? "Exporting..." : "Export Detailed Excel"}
                 </button>
             </div>
 
@@ -411,16 +408,6 @@ export default function InventoryReportPage() {
                         ))}
                     </select>
 
-                    <select
-                        className={inputClass}
-                        value={draftFilters.stockStatus}
-                        onChange={(e) => updateDraft("stockStatus", e.target.value)}
-                    >
-                        <option value="">All Statuses</option>
-                        <option value="IN_STOCK">In Stock</option>
-                        <option value="LOW_STOCK">Low Stock</option>
-                        <option value="OUT_OF_STOCK">No Available Stock</option>
-                    </select>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -453,7 +440,7 @@ export default function InventoryReportPage() {
                         Inventory List
                     </h2>
                     <span className="text-sm text-slate-500">
-                        {formatNumber(report?.totalElements)} rows
+                        {formatNumber(report?.totalElements)} product / warehouse rows
                     </span>
                 </div>
 
@@ -477,12 +464,10 @@ export default function InventoryReportPage() {
                                     <th className="p-3">Product Name</th>
                                     <th className="p-3">Barcode</th>
                                     <th className="p-3">Category / Brand</th>
-                                    <th className="p-3">Location</th>
                                     <th className="p-3 text-right">Actual</th>
                                     <th className="p-3 text-right">Reserved</th>
                                     <th className="p-3 text-right">Available</th>
-                                    <th className="p-3 text-right">Minimum Stock Level</th>
-                                    <th className="p-3">Status</th>
+                                    <th className="p-3">Availability</th>
                                     <th className="p-3">Updated At</th>
                                     <th className="p-3">Details</th>
                                 </tr>
@@ -504,7 +489,6 @@ export default function InventoryReportPage() {
                                                 {item.brandName || "—"}
                                             </div>
                                         </td>
-                                        <td className="p-3">{item.locationCode || "—"}</td>
                                         <td className="p-3 text-right">
                                             {formatNumber(item.onHandQuantity)}
                                         </td>
@@ -513,14 +497,6 @@ export default function InventoryReportPage() {
                                         </td>
                                         <td className="p-3 text-right font-semibold">
                                             {formatNumber(item.availableQuantity)}
-                                        </td>
-                                        <td className="p-3 text-right">
-                                            {formatNumber(item.minimumStockLevel)}
-                                        </td>
-                                        <td className="p-3">
-                                            <StockStatusBadge status={item.stockStatus}
-                                                onHandQuantity={item.onHandQuantity}
-                                                availableQuantity={item.availableQuantity} />
                                         </td>
                                         <td className="p-3">
                                             {formatDate(item.lastUpdatedAt)}
@@ -549,7 +525,7 @@ export default function InventoryReportPage() {
 
                 <div className="flex items-center justify-between border-t p-4">
                     <span className="text-sm text-slate-500">
-                        Trang {page + 1} / {Math.max(totalPages, 1)}
+                        Page {page + 1} / {Math.max(totalPages, 1)}
                     </span>
 
                     <div className="flex gap-2">
@@ -568,7 +544,7 @@ export default function InventoryReportPage() {
                             onClick={() => setPage((current) => current + 1)}
                             className="rounded border px-4 py-2 text-sm disabled:opacity-40"
                         >
-                            Sau
+                            Next
                         </button>
                     </div>
                 </div>

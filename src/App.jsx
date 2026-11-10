@@ -135,6 +135,11 @@ export default function App() {
             <Route element={<ProtectedRoute access="business-operations" />}>
               <Route path="/business" element={<Navigate to="/business/dashboard" replace />} />
               {businessRoutes.map(({path, Page}) => <Route key={path} path={path} element={<Page/>} />)}
+              {[
+                ["supplier-invoices", "purchase-orders"],
+                ["shipment-manifests", "stock-transfers"],
+                ["in-transit-shipments", "stock-transfers"],
+              ].map(([from, to]) => <Route key={from} path={`/business/${from}/*`} element={<Navigate to={`/business/${to}`} replace />} />)}
               {["products/requests","products/rejected","approvals/products"].map(path => <Route key={path} path={`/business/${path}`} element={<Navigate to="/business/products" replace/>}/>)}
               <Route path="/business/approvals/purchase-orders" element={<Navigate to="/business/purchase-orders" replace/>}/>
               <Route path="/business-staff/*" element={<LegacyBusinessRedirect/>}/>

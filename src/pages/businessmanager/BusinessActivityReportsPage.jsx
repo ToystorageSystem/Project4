@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { getInventoryWarehouseOptions } from "../../api/business/inventoryReport";
+import { aggregateWarehouseProducts } from "../../utils/businessInventorySummary";
 import {
     getBusinessActivityExcel,
     getBusinessActivityReport,
@@ -31,7 +34,7 @@ const METRICS = {
     ],
     inventory: [
         ["totalProducts", "Distinct Products"],
-        ["totalBalanceRecords", "Stock Locations"],
+        ["warehouseProductCount", "Product / Warehouse Rows"],
         ["totalQuantity", "Physical Stock"],
         ["totalReservedQuantity", "Reserved Stock"],
         ["totalAvailableQuantity", "Available Stock"],
@@ -69,8 +72,6 @@ const COLUMNS = {
         ["productCode", "Product Code"],
         ["productName", "Product"],
         ["warehouseName", "Warehouse"],
-        ["locationCode", "Location Code"],
-        ["locationType", "Location Type"],
         ["quantity", "Physical Stock"],
         ["reservedQuantity", "Reserved"],
         ["availableQuantity", "Available"],
@@ -92,7 +93,7 @@ const STATUS_LABELS = {
 };
 
 const PAGE_SIZE = 12;
-const EMPTY_FILTER = { warehouseId: "", fromDate: "", toDate: "" };
+const EMPTY_FILTER = { keyword: "", warehouseId: "", fromDate: "", toDate: "" };
 const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 const labelClass = "mb-1.5 block text-xs font-semibold text-slate-600";
 const buttonClass = "rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
@@ -123,10 +124,41 @@ function formatCell(key, value) {
 
 function toFilters(fields, type) {
     return {
+        keyword: String(fields.keyword || "").trim(),
         warehouseId: fields.warehouseId.trim(),
         fromDate: type === "inventory" ? "" : fields.fromDate,
         toDate: type === "inventory" ? "" : fields.toDate,
     };
+}
+
+function keywordMeta(type) {
+    if (type === "inventory") {
+        return {
+            label: "Product / Warehouse Search",
+            placeholder: "Search by product code, product name, or warehouse...",
+        };
+    }
+
+    return {
+        label: "Document Search",
+        placeholder: "Search by document no., warehouse, or status...",
+    };
+}
+
+function rowMatchesKeyword(row, type, keyword) {
+    const term = String(keyword || "").trim().toLocaleLowerCase();
+    if (!term) return true;
+
+    const fieldsByType = {
+        imports: [row.receiptCode, row.warehouseName, row.status],
+        exports: [row.transferCode, row.fromWarehouseName, row.toWarehouseName, row.status],
+        transfers: [row.transferCode, row.fromWarehouseName, row.toWarehouseName, row.status],
+        inventory: [row.productCode, row.productName, row.warehouseName],
+    };
+
+    return (fieldsByType[type] || []).some((value) =>
+        String(value ?? "").toLocaleLowerCase().includes(term)
+    );
 }
 
 function validateFilters(filters) {
@@ -177,6 +209,8 @@ function Status({ value }) {
 
 export default function BusinessActivityReportsPage() {
     const [type, setType] = useState("imports");
+    const [warehouses, setWarehouses] = useState([]);
+    const [warehouseError, setWarehouseError] = useState("");
     const [draft, setDraft] = useState(EMPTY_FILTER);
     const [applied, setApplied] = useState(EMPTY_FILTER);
     const [reload, setReload] = useState(0);
@@ -188,7 +222,25 @@ export default function BusinessActivityReportsPage() {
     const [exportError, setExportError] = useState("");
     const [page, setPage] = useState(0);
 
+    useEffect(() => {
+        const controller = new AbortController();
+        getInventoryWarehouseOptions(controller.signal)
+            .then((data) => {
+                if (!controller.signal.aborted) {
+                    if (!Array.isArray(data)) throw new Error("Invalid warehouse list.");
+                    setWarehouses(data);
+                }
+            })
+            .catch((err) => {
+                if (!controller.signal.aborted && err?.code !== "ERR_CANCELED") {
+                    setWarehouseError("Unable to load warehouse options. Try reloading the page.");
+                }
+            });
+        return () => controller.abort();
+    }, []);
+
     const current = TYPES.find((entry) => entry.id === type) || TYPES[0];
+    const searchMeta = useMemo(() => keywordMeta(type), [type]);
     const filtered = useMemo(() => toFilters(applied, type), [applied, type]);
 
     useEffect(() => {
@@ -219,7 +271,14 @@ export default function BusinessActivityReportsPage() {
         return () => controller.abort();
     }, [type, filtered, reload]);
 
-    const rows = Array.isArray(report?.records) ? report.records : [];
+    const rows = useMemo(() => {
+        const records = Array.isArray(report?.records) ? report.records : [];
+        const baseRows = type === "inventory"
+            ? aggregateWarehouseProducts(records, { physicalKey: "quantity" })
+            : records;
+
+        return baseRows.filter((row) => rowMatchesKeyword(row, type, filtered.keyword));
+    }, [report, type, filtered.keyword]);
     const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
     const pageRows = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
     const breakdown = type === "transfers" && report?.transfersByStatus
@@ -304,27 +363,106 @@ export default function BusinessActivityReportsPage() {
                 </div>
 
                 <form onSubmit={applyFilters} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                    <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+
+                        {/* Tim kiem theo ma don */}
                         <label className="block">
-                            <span className={labelClass}>Warehouse ID (leave blank for all warehouses)</span>
-                            <input className={inputClass} type="text" inputMode="numeric" placeholder="Example: 9"
-                                value={draft.warehouseId} onChange={(event) => setDraft((old) => ({ ...old, warehouseId: event.target.value }))}/>
+                            <span className={labelClass}>
+                                {searchMeta.label}
+                            </span>
+
+                            <input
+                                className={inputClass}
+                                type="text"
+                                placeholder={searchMeta.placeholder}
+                                value={draft.keyword}
+                                onChange={(event) =>
+                                    setDraft((old) => ({
+                                        ...old,
+                                        keyword: event.target.value
+                                    }))
+                                }
+                            />
                         </label>
-                        {type !== "inventory" ? <>
-                            <label className="block">
-                                <span className={labelClass}>From Date</span>
-                                <input className={inputClass} type="date" value={draft.fromDate}
-                                    onChange={(event) => setDraft((old) => ({ ...old, fromDate: event.target.value }))}/>
-                            </label>
-                            <label className="block">
-                                <span className={labelClass}>To Date</span>
-                                <input className={inputClass} type="date" value={draft.toDate}
-                                    onChange={(event) => setDraft((old) => ({ ...old, toDate: event.target.value }))}/>
-                            </label>
-                        </> : <div className="sm:col-span-2 flex items-center text-sm text-slate-500">
-                            The inventory report is a current snapshot and does not support date filtering.
-                        </div>}
+
+                        {/* Loc theo kho hoac cua hang */}
+                        <label className="block">
+                            <span className={labelClass}>
+                                Warehouse / Store
+                            </span>
+
+                            <select
+                                className={inputClass}
+                                value={draft.warehouseId}
+                                onChange={(event) =>
+                                    setDraft((old) => ({
+                                        ...old,
+                                        warehouseId: event.target.value
+                                    }))
+                                }
+                            >
+                                <option value="">All Warehouses / Stores</option>
+
+                                {warehouses.map((warehouse) => (
+                                    <option
+                                        key={warehouse.id}
+                                        value={String(warehouse.id)}
+                                    >
+                                        {warehouse.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+
+                        {/* Loc theo ngay, khong ap dung cho Inventory */}
+                        {type !== "inventory" ? (
+                            <>
+                                <label className="block">
+                                    <span className={labelClass}>
+                                        From Date
+                                    </span>
+
+                                    <input
+                                        className={inputClass}
+                                        type="date"
+                                        value={draft.fromDate}
+                                        onChange={(event) =>
+                                            setDraft((old) => ({
+                                                ...old,
+                                                fromDate: event.target.value
+                                            }))
+                                        }
+                                    />
+                                </label>
+
+                                <label className="block">
+                                    <span className={labelClass}>
+                                        To Date
+                                    </span>
+
+                                    <input
+                                        className={inputClass}
+                                        type="date"
+                                        value={draft.toDate}
+                                        onChange={(event) =>
+                                            setDraft((old) => ({
+                                                ...old,
+                                                toDate: event.target.value
+                                            }))
+                                        }
+                                    />
+                                </label>
+                            </>
+                        ) : (
+                            <div className="sm:col-span-2 flex items-center text-sm text-slate-500">
+                                The inventory report is a current snapshot and does not support date filtering.
+                            </div>
+                        )}
+
+                    
+                            {/* Giữ nguyên các nút View Report, Clear Filters, Reload và Export bên dưới */}
                     </div>
+                    {warehouseError && <p role="alert" className="mt-3 text-sm text-red-600">{warehouseError}</p>}
                     {filterError && <p role="alert" className="mt-3 text-sm text-red-600">{filterError}</p>}
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                         <button type="submit" className={`${buttonClass} bg-blue-700 text-white hover:bg-blue-800`}>View Report / Apply Filters</button>
@@ -345,7 +483,7 @@ export default function BusinessActivityReportsPage() {
                                 {METRICS[type].map(([field, label]) => (
                                     <div key={field} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                                         <div className="text-xs font-semibold text-slate-500">{label}</div>
-                                        <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900">{number(report[field])}</div>
+                                        <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900">{number(field === "warehouseProductCount" ? rows.length : report[field])}</div>
                                     </div>
                                 ))}
                             </section>
@@ -378,19 +516,25 @@ export default function BusinessActivityReportsPage() {
                                             <tbody className="divide-y divide-slate-100 text-slate-700">
                                                 {pageRows.map((row, index) => <tr key={row.id ?? row.inventoryBalanceId ?? `${page}-${index}`} className="hover:bg-slate-50">
                                                     {COLUMNS[type].map(([key]) => <td key={key} className="whitespace-nowrap px-4 py-3">
-                                                        {key === "status" ? <Status value={row.status}/> : formatCell(key, row[key])}
+                                                        {((type === "imports" && key === "receiptCode")
+                                                            || ((type === "exports" || type === "transfers") && key === "transferCode")) && row.id != null
+                                                            ? <Link className="font-semibold text-blue-700 hover:underline"
+                                                                to={type === "imports" ? `/business/goods-receipts/${row.id}` : `/business/stock-transfers/${row.id}`}>
+                                                                {formatCell(key, row[key])}
+                                                            </Link>
+                                                            : key === "status" ? <Status value={row.status}/> : formatCell(key, row[key])}
                                                     </td>)}
                                                 </tr>)}
                                             </tbody>
                                         </table>
                                     </div>
                                     <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-xs text-slate-500">
-                                        <span>Trang {page + 1} / {totalPages}</span>
+                                        <span>Page {page + 1} / {totalPages}</span>
                                         <div className="flex gap-2">
                                             <button type="button" disabled={page <= 0} onClick={() => setPage((value) => Math.max(0, value - 1))}
                                                 className={`${buttonClass} border border-slate-200 bg-white text-slate-700`}>Previous</button>
                                             <button type="button" disabled={page >= totalPages - 1} onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}
-                                                className={`${buttonClass} border border-slate-200 bg-white text-slate-700`}>Sau</button>
+                                                className={`${buttonClass} border border-slate-200 bg-white text-slate-700`}>Next</button>
                                         </div>
                                     </div>
                                 </>}

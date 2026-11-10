@@ -105,12 +105,6 @@ export const businessStaffMenuItems = [
         icon: <PurchaseOrderIcon />,
     },
     {
-        key: "business-staff-supplier-invoices",
-        label: "Supplier Invoices",
-        path: "/business/supplier-invoices",
-        icon: <SupplierInvoiceIcon />,
-    },
-    {
         key: "business-staff-stock-transfer-list",
         label: "My Stock Transfers",
         path: "/business/stock-transfers",
@@ -129,27 +123,9 @@ export const businessStaffMenuItems = [
     icon: <InventoryReportIcon />,
     },
     {
-    key: "business-staff-shipment-manifests",
-    label: "Shipment Manifests",
-    path: "/business/shipment-manifests",
-    icon: <StockTransferIcon />,
-    },
-    {
-        key: "business-staff-in-transit-shipments",
-        label: "Shipment Tracking",
-        path: "/business/in-transit-shipments",
-        icon: <StockTransferIcon />,
-    },
-    {
         key: "business-staff-goods-receipt-list",
         label: "Track Goods Receipts",
         path: "/business/goods-receipts/list",
-        icon: <GoodsReceiptIcon />,
-    },
-    {
-        key: "business-staff-goods-receipt",
-        label: "Create Goods Receipt for Main Warehouse",
-        path: "/business/goods-receipts",
         icon: <GoodsReceiptIcon />,
     },
 ];

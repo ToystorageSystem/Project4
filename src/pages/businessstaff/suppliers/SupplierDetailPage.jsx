@@ -113,9 +113,7 @@ export default function SupplierDetailPage() {
                         </Card>
 
                         <SupplierProductsPanel supplierId={supplierId} />
-                        <div className="rounded-xl bg-slate-100 p-4 text-xs leading-5 text-slate-600">
-                            Changes to supplied products are recorded. Detailed history is not yet shown on this page.
-                        </div>
+
                     </>
                 )}
             </div>

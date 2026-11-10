@@ -45,7 +45,7 @@ function validationErrors(form, creating, linkedSupplierIds) {
     }
     const rawPrice = form.purchasePrice.trim();
     if (!/^\d+(\.\d{1,2})?$/.test(rawPrice) || Number(rawPrice) < 0.01 || !Number.isFinite(Number(rawPrice))) {
-        errors.purchasePrice = "Purchase price must be greater than zero, with at most two decimal places.";
+        errors.purchasePrice = "Supplier purchase price must be greater than zero, with at most two decimal places.";
     }
     if (!/^\d+$/.test(form.leadTimeDays) || !Number.isSafeInteger(Number(form.leadTimeDays))) {
         errors.leadTimeDays = "Lead time must be a non-negative integer.";
@@ -59,7 +59,7 @@ function validationErrors(form, creating, linkedSupplierIds) {
     return errors;
 }
 
-export default function SupplierProductLinksPanel({ productId, productStatus }) {
+export default function SupplierProductLinksPanel({ productId, productStatus, referencePurchasePrice }) {
     const [links, setLinks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
@@ -69,7 +69,6 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
     const [action, setAction] = useState(null); // create | edit | default | delete
     const [form, setForm] = useState(EMPTY_FORM);
     const [errors, setErrors] = useState({});
-    const [confirmed, setConfirmed] = useState(false);
     const [deleteText, setDeleteText] = useState("");
     const [saving, setSaving] = useState(false);
     const [supplierOptions, setSupplierOptions] = useState([]);
@@ -122,14 +121,19 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
         setNotice("");
         setError("");
         setErrors({});
-        setConfirmed(false);
         setDeleteText("");
         if (type === "create") {
             setSupplierPage(0);
             setSupplierKeyword("");
             setSupplierKeywordDraft("");
             setSupplierOptions([]);
-            setForm({ ...EMPTY_FORM });
+            // Chi goi y gia tham khao khi tao lien ket NCC moi.
+            // Khi sua lien ket cu, su dung gia da luu cua NCC.
+            const price = Number(referencePurchasePrice);
+            setForm({
+                ...EMPTY_FORM,
+                purchasePrice: Number.isFinite(price) && price > 0 ? String(price) : "",
+            });
         } else if (type === "edit" && link) {
             setForm({
                 supplierId: String(link.supplierId ?? ""),
@@ -152,7 +156,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
 
     const saveForm = async (event) => {
         event.preventDefault();
-        if (saving || !confirmed || !canManage || !action || !["create", "edit"].includes(action.type)) return;
+        if (saving || !canManage || !action || !["create", "edit"].includes(action.type)) return;
         const creating = action.type === "create";
         const nextErrors = validationErrors(form, creating, new Set(links.map((link) => Number(link.supplierId))));
         if (!creating && action.link?.defaultSupplier && form.status === "INACTIVE") {
@@ -190,7 +194,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
     };
 
     const confirmAction = async () => {
-        if (saving || !confirmed || !canManage || !action?.link) return;
+        if (saving || !canManage || !action?.link) return;
         if (action.type === "default" && (action.link.status !== "ACTIVE" || action.link.supplierStatus !== "ACTIVE")) return;
         if (action.type === "delete" && (deleteText !== "XOA" || action.link.defaultSupplier)) return;
         setSaving(true);
@@ -224,7 +228,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
             ),
         },
         { key: "supplierProductCode", label: "Supplier Product Code", render: display },
-        { key: "purchasePrice", label: "Purchase Price", render: formatMoney },
+        { key: "purchasePrice", label: "Supplier Purchase Price", render: formatMoney },
         { key: "minimumOrderQuantity", label: "Minimum Order Quantity", render: display },
         { key: "status", label: "Association", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} label={businessStatusLabel(value)} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ Preferred Supplier</div>}</div> },
         {
@@ -271,7 +275,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                         type={editingForm ? "submit" : "button"}
                         form={editingForm ? "supplier-product-link-form" : undefined}
                         variant={action?.type === "delete" ? "danger" : "primary"}
-                        disabled={saving || !confirmed || (action?.type === "delete" && deleteText !== "XOA")}
+                        disabled={saving || (action?.type === "delete" && deleteText !== "XOA")}
                         onClick={editingForm ? undefined : confirmAction}
                     >{saving ? "Processing..." : creating ? "Create Association" : action?.type === "edit" ? "Save Changes" : action?.type === "default" ? "Confirm Default Supplier" : "Delete Permanently"}</Button>
                 </>}
@@ -333,7 +337,10 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                                 </div>
                             ) : <p className="text-sm text-slate-700">Linked to <strong>{action.link?.supplierName}</strong> (association ID {action.link?.id}). To change the supplier, create a new association.</p>}
                             <Input label="Product code used by the supplier (maximum 100 characters)" value={form.supplierProductCode} maxLength={100} onChange={change("supplierProductCode")} error={errors.supplierProductCode} />
-                            <Input label="Purchase Price *" type="number" min="0.01" step="0.01" value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} />
+                            <Input label="Supplier Purchase Price (VND) *" type="number" min="0.01" step="0.01" value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} />
+                            {creating && Number(referencePurchasePrice) > 0 && (
+                                <p className="text-xs text-slate-500">Pre-filled from the product reference price. Adjust it to match the supplier's quote.</p>
+                            )}
                             <Input label="Minimum Order Quantity *" type="number" min="1" step="1" value={form.minimumOrderQuantity} onChange={change("minimumOrderQuantity")} error={errors.minimumOrderQuantity} />
                             {creating ? <Checkbox checked={form.defaultSupplier} onChange={change("defaultSupplier")} label="Set as the default supplier when creating this association (replaces the current default)." />
                                 : <Select label="Association Status" value={form.status} onChange={change("status")} error={errors.status} options={[{ value: "ACTIVE", label: "Active" }, { value: "INACTIVE", label: "Inactive" }]} />}
@@ -348,9 +355,6 @@ export default function SupplierProductLinksPanel({ productId, productStatus }) 
                             <Input label='Type XOA to confirm' value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="XOA" />
                         </div>
                     ) : null}
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                        <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="I understand this action will change shared production data." />
-                    </div>
                 </div>
             </Modal>
         </section>

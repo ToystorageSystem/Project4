@@ -1,6 +1,6 @@
 import { formatBusinessStatus } from "../../../utils/viStatus";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getGoodsReceiptById, goodsReceiptErrorMessage } from "../../../api/business/goodsReceipts";
 import { businessStaffMenuItems } from "../../../components/icons/businessMenuItems";
 import MainLayout from "../../../components/layout/MainLayout";
@@ -37,7 +37,6 @@ function Info({ label, value }) {
 
 export default function GoodsReceiptDetailPage() {
     const { receiptId } = useParams();
-    const location = useLocation();
     const navigate = useNavigate();
     const [receipt, setReceipt] = useState(null);
     const [error, setError] = useState("");
@@ -74,12 +73,11 @@ export default function GoodsReceiptDetailPage() {
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title={T.detailTitle} description={T.draftNote}
+                <PageHeader title={T.detailTitle}
                     actions={<div className="flex gap-2">
                         <Button type="button" variant="outline" onClick={() => navigate(LIST)}>← Goods Receipts</Button>
                         <Button type="button" onClick={() => navigate(ROOT)}>+ Create Another Receipt</Button>
                     </div>} />
-                {location.state?.notice && <div role="status"><Alert type="success">{location.state.notice}</Alert></div>}
                 {error && <div role="alert" className="space-y-2"><Alert type="danger">{error}</Alert>
                     <Button type="button" variant="outline" onClick={() => setReload((x) => x + 1)}>{T.retry}</Button>
                 </div>}
@@ -122,8 +120,6 @@ export default function GoodsReceiptDetailPage() {
                                 </div>
                             </div>
                         </div>
-                        <Alert type="info">{T.warehouseNotice}</Alert>
-                        {receipt.status !== "COMPLETED" && <Alert type="warning">{T.draftNote}</Alert>}
                     </>
                 ) : !error ? <EmptyState title={T.unknown} /> : null}
             </div>

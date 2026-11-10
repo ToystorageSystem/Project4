@@ -12,14 +12,8 @@ export const BUSINESS_NAV = [
   ] },
   { title: "Purchasing", icon: "purchasing", links: [
     { label: "Purchase Orders", path: "/business/purchase-orders" },
-    { label: "Supplier Invoices", path: "/business/supplier-invoices" },
     { label: "Goods Receipts", path: "/business/goods-receipts/list" },
-    { label: "Create Goods Receipt", path: "/business/goods-receipts" },
-  ] },
-  { title: "Distribution", icon: "distribution", links: [
     { label: "Stock Transfers", path: "/business/stock-transfers" },
-    { label: "Shipment Manifests", path: "/business/shipment-manifests" },
-    { label: "In-Transit Shipments", path: "/business/in-transit-shipments" },
   ] },
   { title: "Inventory", icon: "inventory", links: [
     { label: "Inventory Report", path: "/business/inventory-report" },

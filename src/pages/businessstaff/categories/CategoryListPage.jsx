@@ -57,7 +57,6 @@ export default function CategoryListPage() {
     const [editingCategory, setEditingCategory] = useState(null);
     const [form, setForm] = useState({ ...EMPTY_FORM });
     const [formError, setFormError] = useState("");
-    const [formConfirmed, setFormConfirmed] = useState(false);
 
     // Modal an/khoi phuc
     const [visibilityTarget, setVisibilityTarget] = useState(null);
@@ -120,7 +119,6 @@ export default function CategoryListPage() {
         setEditingCategory(null);
         setForm({ ...EMPTY_FORM });
         setFormError("");
-        setFormConfirmed(false);
         setNotice("");
     };
 
@@ -136,7 +134,6 @@ export default function CategoryListPage() {
         });
 
         setFormError("");
-        setFormConfirmed(false);
         setNotice("");
     };
 
@@ -146,7 +143,6 @@ export default function CategoryListPage() {
         setFormMode(null);
         setEditingCategory(null);
         setFormError("");
-        setFormConfirmed(false);
     };
 
     const changeForm = (field, value) => {
@@ -156,14 +152,13 @@ export default function CategoryListPage() {
         }));
 
         setFormError("");
-        setFormConfirmed(false);
     };
 
     // 5. Luu danh muc
     const saveCategory = async (event) => {
         event?.preventDefault();
 
-        if (!formMode || saving || !formConfirmed) return;
+        if (!formMode || saving) return;
 
         const categoryCode = form.categoryCode.trim();
         const name = form.name.trim();
@@ -218,7 +213,6 @@ export default function CategoryListPage() {
     const closeFormAfterSave = () => {
         setFormMode(null);
         setEditingCategory(null);
-        setFormConfirmed(false);
         setFormError("");
     };
 
@@ -485,7 +479,7 @@ export default function CategoryListPage() {
                             </Button>
 
                             <Button
-                                disabled={!formConfirmed || saving}
+                                disabled={saving}
                                 onClick={saveCategory}
                             >
                                 {saving ? "Saving..." : "Save Category"}
@@ -552,17 +546,6 @@ export default function CategoryListPage() {
                             </span>
                         </label>
 
-                        <p className="text-sm text-amber-700">
-                            This action will update category information in the system.
-                        </p>
-
-                        <Checkbox
-                            checked={formConfirmed}
-                            onChange={(event) =>
-                                setFormConfirmed(event.target.checked)
-                            }
-                            label="I confirm the category information is correct."
-                        />
                     </form>
                 </Modal>
 

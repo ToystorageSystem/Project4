@@ -79,7 +79,7 @@ export default function ProductDetailPage() {
                                 <DetailField label="Base Unit">{product.baseUnit}</DetailField>
                                 <DetailField label="Categories">{product.categoryName ? `${product.categoryName} (ID ${product.categoryId})` : `Code ${product.categoryId}`}</DetailField>
                                 <DetailField label="Brand">{product.brandId ? `${product.brandName || "Brand"} (ID ${product.brandId})` : "None"}</DetailField>
-                                <DetailField label="Purchase Price">{formatProductPrice(product.purchasePrice)}</DetailField>
+                                <DetailField label="Reference Purchase Price">{formatProductPrice(product.purchasePrice)}</DetailField>
                                 <DetailField label="Selling Price">{formatProductPrice(product.sellingPrice)}</DetailField>
                                 <DetailField label="Created By">{product.createdByName || "—"}</DetailField>
                                 <DetailField label="Created At">{formatProductDate(product.createdAt)}</DetailField>
@@ -92,7 +92,7 @@ export default function ProductDetailPage() {
                                 </div>
                             )}
                         </Card>
-                        <SupplierProductLinksPanel productId={productId} productStatus={product.status} />
+                        <SupplierProductLinksPanel productId={productId} productStatus={product.status} referencePurchasePrice={product.purchasePrice} />
                         <ProductActivityHistory productId={productId} />
                     </>
                 )}
