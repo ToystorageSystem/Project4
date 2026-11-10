@@ -5,7 +5,7 @@ import com.toystorage.backend.dto.response.shipments.InTransitShipmentPageRespon
 import com.toystorage.backend.services.shipments.InTransitTrackingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -35,12 +35,12 @@ public class InTransitTrackingController {
      * - phân trang
      */
     @GetMapping
-    // @PreAuthorize("""
-           // hasAnyAuthority(
-            // 'ROLE_ROLE-BIZ-OPS',
-            // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+            hasAnyAuthority(
+             'ROLE_ROLE-BIZ-OPS',
+             'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<InTransitShipmentPageResponse>
     getShipments(
 
@@ -96,12 +96,12 @@ public class InTransitTrackingController {
      * - lịch sử trạng thái hiện có
      */
     @GetMapping("/{deliveryId}")
-    // @PreAuthorize("""
-           // hasAnyAuthority(
-                        // 'ROLE_ROLE-BIZ-OPS',
-                        // 'ROLE_ROLE-ADMIN'
-                        // )
-            // """)
+     @PreAuthorize("""
+            hasAnyAuthority(
+                         'ROLE_ROLE-BIZ-OPS',
+                         'ROLE_ROLE-ADMIN'
+                         )
+             """)
     public ResponseEntity<InTransitShipmentDetailResponse>
     getShipmentDetail(
 

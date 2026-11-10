@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -30,7 +30,7 @@ public class GoodsReceiptCreationController {
     // BUSINESS STAFF - Theo doi phieu nhap, tim theo GR/PO va loc trang thai.
     // Khong gioi han "cua toi" vi goods_receipts chua luu created_by.
     @GetMapping("/business")
-    // @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
+     @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-ADMIN')")
     public ResponseEntity<GoodsReceiptTrackingPageResponse> getBusinessGoodsReceipts(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long purchaseOrderId,
@@ -51,13 +51,13 @@ public class GoodsReceiptCreationController {
     // =====================================================
 
     @PostMapping
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'GOODS_RECEIPT_CREATE',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'GOODS_RECEIPT_CREATE',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<GoodsReceiptDetailResponse> createGoodsReceipt(
             @Valid
             @RequestBody CreateGoodsReceiptRequest request
@@ -77,13 +77,13 @@ public class GoodsReceiptCreationController {
     // =====================================================
 
     @GetMapping("/creation-options/suppliers")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'GOODS_RECEIPT_CREATE',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'GOODS_RECEIPT_CREATE',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<List<GoodsReceiptOptionResponse>>
     getSupplierOptions() {
 
@@ -99,13 +99,13 @@ public class GoodsReceiptCreationController {
     // =====================================================
 
     @GetMapping("/creation-options/main-warehouses")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'GOODS_RECEIPT_CREATE',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'GOODS_RECEIPT_CREATE',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<List<GoodsReceiptOptionResponse>>
     getMainWarehouseOptions() {
 
@@ -121,14 +121,14 @@ public class GoodsReceiptCreationController {
     // =====================================================
 
     @GetMapping("/warehouse")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'GOODS_RECEIPT_VIEW',
-                // 'ROLE_WH_MANAGER',
-                // 'ROLE_STAFF',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'GOODS_RECEIPT_VIEW',
+                 'ROLE_WH_MANAGER',
+                 'ROLE_STAFF',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<List<GoodsReceiptSummaryResponse>>
     getWarehouseReceipts(
             @RequestParam(required = false)
@@ -149,15 +149,15 @@ public class GoodsReceiptCreationController {
     // =====================================================
 
     @GetMapping("/{receiptId}")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'GOODS_RECEIPT_VIEW',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_WH_MANAGER',
-                // 'ROLE_STAFF',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'GOODS_RECEIPT_VIEW',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_WH_MANAGER',
+                 'ROLE_STAFF',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<GoodsReceiptDetailResponse>
     getGoodsReceipt(
             @PathVariable Long receiptId

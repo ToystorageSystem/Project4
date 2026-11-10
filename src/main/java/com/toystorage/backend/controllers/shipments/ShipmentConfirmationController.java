@@ -11,7 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,9 +24,9 @@ public class ShipmentConfirmationController {
 
 
     @GetMapping("/{transferId}/shipment")
-//    @PreAuthorize(
-//            "hasAuthority('SHIPMENT_CONFIRM_VIEW')"
-//    )
+    @PreAuthorize(
+            "hasAuthority('SHIPMENT_CONFIRM_VIEW')"
+    )
     public ResponseEntity<ShipmentConfirmationResponse>
     getShipment(
             @PathVariable Long transferId
@@ -40,9 +40,9 @@ public class ShipmentConfirmationController {
 
 
     @PatchMapping("/{transferId}/confirm-shipment")
-//    @PreAuthorize(
-//            "hasAuthority('SHIPMENT_CONFIRM')"
-//    )
+    @PreAuthorize(
+            "hasAuthority('SHIPMENT_CONFIRM')"
+    )
     public ResponseEntity<ShipmentConfirmationResponse>
     confirmShipment(
             @PathVariable Long transferId,

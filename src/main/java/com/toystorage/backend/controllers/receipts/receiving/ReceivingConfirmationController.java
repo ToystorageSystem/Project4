@@ -9,7 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -37,7 +37,7 @@ public class ReceivingConfirmationController {
      * =====================================================
      */
 
-//    @PreAuthorize("hasAuthority('GOODS_RECEIVING_REVIEW')")
+    @PreAuthorize("hasAuthority('GOODS_RECEIVING_REVIEW')")
     @GetMapping("/{receiptId}/inspection-result")
     public ResponseEntity<ReceivingConfirmationResponse> getInspectionResult(
             @PathVariable Long receiptId
@@ -68,7 +68,7 @@ public class ReceivingConfirmationController {
      * =====================================================
      */
 
-//    @PreAuthorize("hasAuthority('GOODS_RECEIVING_CONFIRM')")
+    @PreAuthorize("hasAuthority('GOODS_RECEIVING_CONFIRM')")
     @PatchMapping("/{receiptId}/confirm-receiving")
     public ResponseEntity<ReceivingConfirmationResponse> confirmReceiving(
             @PathVariable Long receiptId
@@ -98,7 +98,7 @@ public class ReceivingConfirmationController {
      * =====================================================
      */
 
-//    @PreAuthorize("hasAuthority('GOODS_RECEIVING_REVIEW')")
+    @PreAuthorize("hasAuthority('GOODS_RECEIVING_REVIEW')")
     @PatchMapping("/{receiptId}/request-reinspection")
     public ResponseEntity<ReceivingConfirmationResponse> requestReinspection(
             @PathVariable Long receiptId,

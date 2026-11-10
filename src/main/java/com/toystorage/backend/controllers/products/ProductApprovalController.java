@@ -7,7 +7,7 @@ import com.toystorage.backend.services.products.ProductApprovalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,13 +24,13 @@ public class ProductApprovalController {
     // =====================================================
 
     @GetMapping
-    // @PreAuthorize(
-            // "hasAnyAuthority(" +
-                    // "'PRODUCT_APPROVE'," +
-                    // "'ROLE_ROLE-BIZ-OPS'," +
-                    // "'ROLE_ROLE-ADMIN'" +
-                    // ")"
-    // )
+     @PreAuthorize(
+             "hasAnyAuthority(" +
+                     "'PRODUCT_APPROVE'," +
+                     "'ROLE_ROLE-BIZ-OPS'," +
+                     "'ROLE_ROLE-ADMIN'" +
+                     ")"
+     )
     public ResponseEntity<ProductApprovalPageResponse>
     getPendingRequests(
 
@@ -60,12 +60,12 @@ public class ProductApprovalController {
     // =====================================================
 
     @GetMapping("/my-requests")
-    // @PreAuthorize(
-            // "hasAnyAuthority(" +
-                    // "'ROLE_ROLE-BIZ-OPS'," +
-                    // "'ROLE_ROLE-ADMIN'" +
-                    // ")"
-    // )
+     @PreAuthorize(
+             "hasAnyAuthority(" +
+                     "'ROLE_ROLE-BIZ-OPS'," +
+                     "'ROLE_ROLE-ADMIN'" +
+                     ")"
+     )
     public ResponseEntity<ProductApprovalPageResponse>
     getMyRequests(
 
@@ -95,13 +95,13 @@ public class ProductApprovalController {
     // =====================================================
 
     @GetMapping("/{requestId}")
-    // @PreAuthorize(
-            // "hasAnyAuthority(" +
-                    // "'PRODUCT_APPROVE'," +
-                    // "'ROLE_ROLE-BIZ-OPS'," +
-                    // "'ROLE_ROLE-ADMIN'" +
-                    // ")"
-    // )
+     @PreAuthorize(
+             "hasAnyAuthority(" +
+                     "'PRODUCT_APPROVE'," +
+                     "'ROLE_ROLE-BIZ-OPS'," +
+                     "'ROLE_ROLE-ADMIN'" +
+                     ")"
+     )
     public ResponseEntity<ProductApprovalRequestResponse>
     getRequestDetail(
 
@@ -123,13 +123,13 @@ public class ProductApprovalController {
     // =====================================================
 
     @PatchMapping("/{requestId}/approve")
-    // @PreAuthorize(
-            // "hasAnyAuthority(" +
-                    // "'PRODUCT_APPROVE'," +
-                    // "'ROLE_ROLE-BIZ-OPS'," +
-                    // "'ROLE_ROLE-ADMIN'" +
-                    // ")"
-    // )
+     @PreAuthorize(
+             "hasAnyAuthority(" +
+                     "'PRODUCT_APPROVE'," +
+                     "'ROLE_ROLE-BIZ-OPS'," +
+                     "'ROLE_ROLE-ADMIN'" +
+                     ")"
+     )
     public ResponseEntity<ProductApprovalRequestResponse>
     approve(
 
@@ -151,13 +151,13 @@ public class ProductApprovalController {
     // =====================================================
 
     @PatchMapping("/{requestId}/reject")
-    // @PreAuthorize(
-            // "hasAnyAuthority(" +
-                    // "'PRODUCT_APPROVE'," +
-                    // "'ROLE_ROLE-BIZ-OPS'," +
-                    // "'ROLE_ROLE-ADMIN'" +
-                    // ")"
-    // )
+     @PreAuthorize(
+             "hasAnyAuthority(" +
+                     "'PRODUCT_APPROVE'," +
+                     "'ROLE_ROLE-BIZ-OPS'," +
+                     "'ROLE_ROLE-ADMIN'" +
+                     ")"
+     )
     public ResponseEntity<ProductApprovalRequestResponse>
     reject(
 

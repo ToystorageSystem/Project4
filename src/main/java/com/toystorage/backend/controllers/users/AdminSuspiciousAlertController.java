@@ -27,7 +27,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import org.springframework.http.ResponseEntity;
 
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +39,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/suspicious-alerts")
 @RequiredArgsConstructor
-// @PreAuthorize("hasRole('ADMIN')")
+ @PreAuthorize("hasAuthority('ROLE_ROLE-ADMIN')")
 public class AdminSuspiciousAlertController {
 
     private final SuspiciousAlertQueryService

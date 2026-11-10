@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/analytics/ai/conversations")
 @RequiredArgsConstructor
-// @PreAuthorize("hasAnyRole('BIZ_MANAGER', 'BIZ_STAFF')")
+ @PreAuthorize("hasAnyAuthority('ROLE_ROLE-BIZ-OPS', 'ROLE_ROLE-BIZ-MANAGER', 'ROLE_ROLE-BIZ-STAFF', 'ROLE_BIZ_MANAGER', 'ROLE_BIZ_STAFF')")
 public class AiChatHistoryController {
 
     private final AiChatHistoryService aiChatHistoryService;

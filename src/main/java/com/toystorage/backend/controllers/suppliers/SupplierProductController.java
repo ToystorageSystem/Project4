@@ -8,7 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,13 +26,13 @@ public class SupplierProductController {
     // =====================================================
 
     @GetMapping("/products/{productId}/suppliers")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'PRODUCT_SUPPLIER_VIEW',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'PRODUCT_SUPPLIER_VIEW',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<List<SupplierProductResponse>>
     getSuppliersByProduct(
             @PathVariable Long productId
@@ -50,13 +50,13 @@ public class SupplierProductController {
     // =====================================================
 
     @GetMapping("/suppliers/{supplierId}/products")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'PRODUCT_SUPPLIER_VIEW',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'PRODUCT_SUPPLIER_VIEW',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<List<SupplierProductResponse>>
     getProductsBySupplier(
             @PathVariable Long supplierId
@@ -74,13 +74,13 @@ public class SupplierProductController {
     // =====================================================
 
     @PostMapping("/supplier-products")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'PRODUCT_SUPPLIER_CREATE',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'PRODUCT_SUPPLIER_CREATE',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<SupplierProductResponse>
     createSupplierProduct(
             @Valid
@@ -101,13 +101,13 @@ public class SupplierProductController {
     // =====================================================
 
     @PutMapping("/supplier-products/{linkId}")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'PRODUCT_SUPPLIER_UPDATE',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'PRODUCT_SUPPLIER_UPDATE',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<SupplierProductResponse>
     updateSupplierProduct(
             @PathVariable Long linkId,
@@ -128,13 +128,13 @@ public class SupplierProductController {
     // =====================================================
 
     @PatchMapping("/supplier-products/{linkId}/default")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'PRODUCT_SUPPLIER_UPDATE',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'PRODUCT_SUPPLIER_UPDATE',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<SupplierProductResponse>
     setDefaultSupplier(
             @PathVariable Long linkId
@@ -152,13 +152,13 @@ public class SupplierProductController {
     // =====================================================
 
     @DeleteMapping("/supplier-products/{linkId}")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'PRODUCT_SUPPLIER_DELETE',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-ADMIN'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'PRODUCT_SUPPLIER_DELETE',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-ADMIN'
+             )
+             """)
     public ResponseEntity<Void>
     deleteSupplierProduct(
             @PathVariable Long linkId

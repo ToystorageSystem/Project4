@@ -6,7 +6,7 @@ import com.toystorage.backend.services.inventories.discrepancy.BusinessManagerDi
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,12 +25,12 @@ public class BusinessManagerDiscrepancyController {
     // =====================================================
 
     @GetMapping
-//     @PreAuthorize(
-//             "hasAnyAuthority(" +
-//                     "'ROLE_ROLE-BIZ-OPS'," +
-//                     "'ROLE_ROLE-ADMIN'" +
-//                     ")"
-//     )
+     @PreAuthorize(
+             "hasAnyAuthority(" +
+                     "'ROLE_ROLE-BIZ-OPS'," +
+                     "'ROLE_ROLE-ADMIN'" +
+                     ")"
+     )
     public ResponseEntity<List<BusinessManagerDiscrepancyResponse>>
     getReports(
 
@@ -60,12 +60,12 @@ public class BusinessManagerDiscrepancyController {
     // =====================================================
 
     @GetMapping("/{discrepancyId}")
-//     @PreAuthorize(
-//             "hasAnyAuthority(" +
-//                     "'ROLE_ROLE-BIZ-OPS'," +
-//                     "'ROLE_ROLE-ADMIN'" +
-//                     ")"
-//     )
+     @PreAuthorize(
+             "hasAnyAuthority(" +
+                     "'ROLE_ROLE-BIZ-OPS'," +
+                     "'ROLE_ROLE-ADMIN'" +
+                     ")"
+     )
     public ResponseEntity<BusinessManagerDiscrepancyResponse>
     getDetail(
 
@@ -85,12 +85,12 @@ public class BusinessManagerDiscrepancyController {
     // =====================================================
 
     @PatchMapping("/{discrepancyId}/resolve")
-//     @PreAuthorize(
-//             "hasAnyAuthority(" +
-//                     "'ROLE_ROLE-BIZ-OPS'," +
-//                     "'ROLE_ROLE-ADMIN'" +
-//                     ")"
-//     )
+     @PreAuthorize(
+             "hasAnyAuthority(" +
+                     "'ROLE_ROLE-BIZ-OPS'," +
+                     "'ROLE_ROLE-ADMIN'" +
+                     ")"
+     )
     public ResponseEntity<BusinessManagerDiscrepancyResponse>
     resolve(
 

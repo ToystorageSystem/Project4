@@ -12,7 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,9 +27,9 @@ public class DeliveryHandoverController {
 
 
     @PostMapping("/packages/scan")
-//    @PreAuthorize(
-//            "hasRole('DELIVERY_STAFF')"
-//    )
+    @PreAuthorize(
+            "hasAnyAuthority('ROLE_ROLE-DRIVER', 'ROLE_DELIVERY_STAFF')"
+    )
     public ResponseEntity<DeliveryHandoverResponse>
     scanPackage(
             @PathVariable Long deliveryId,
@@ -49,9 +49,9 @@ public class DeliveryHandoverController {
 
 
     @PatchMapping("/complete")
-//    @PreAuthorize(
-//            "hasRole('DELIVERY_STAFF')"
-//    )
+    @PreAuthorize(
+            "hasAnyAuthority('ROLE_ROLE-DRIVER', 'ROLE_DELIVERY_STAFF')"
+    )
     public ResponseEntity<DeliveryHandoverResponse>
     complete(
             @PathVariable Long deliveryId,

@@ -14,7 +14,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -35,14 +35,14 @@ public class SupplierController {
      * DANH SÁCH, TÌM KIẾM, LỌC VÀ PHÂN TRANG
      */
     @GetMapping
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'SUPPLIER_VIEW',
-                // 'ROLE_ROLE-ADMIN',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-BIZ-OPS'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'SUPPLIER_VIEW',
+                 'ROLE_ROLE-ADMIN',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-BIZ-OPS'
+             )
+             """)
     public ResponseEntity<SupplierPageResponse>
     getSuppliers(
 
@@ -84,14 +84,14 @@ public class SupplierController {
      * XEM CHI TIẾT NHÀ CUNG CẤP
      */
     @GetMapping("/{supplierId}")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'SUPPLIER_VIEW',
-                // 'ROLE_ROLE-ADMIN',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-BIZ-OPS'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'SUPPLIER_VIEW',
+                 'ROLE_ROLE-ADMIN',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-BIZ-OPS'
+             )
+             """)
     public ResponseEntity<SupplierResponse>
     getSupplier(
 
@@ -110,15 +110,15 @@ public class SupplierController {
      * TẠO NHÀ CUNG CẤP
      */
     @PostMapping
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'SUPPLIER_CREATE',
-                // 'SUPPLIER_MANAGE',
-                // 'ROLE_ROLE-ADMIN',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-BIZ-OPS'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'SUPPLIER_CREATE',
+                 'SUPPLIER_MANAGE',
+                 'ROLE_ROLE-ADMIN',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-BIZ-OPS'
+             )
+             """)
     public ResponseEntity<SupplierResponse>
     createSupplier(
 
@@ -160,15 +160,15 @@ public class SupplierController {
      * CẬP NHẬT NHÀ CUNG CẤP
      */
     @PutMapping("/{supplierId}")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'SUPPLIER_UPDATE',
-                // 'SUPPLIER_MANAGE',
-                // 'ROLE_ROLE-ADMIN',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-BIZ-OPS'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'SUPPLIER_UPDATE',
+                 'SUPPLIER_MANAGE',
+                 'ROLE_ROLE-ADMIN',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-BIZ-OPS'
+             )
+             """)
     public ResponseEntity<SupplierResponse>
     updateSupplier(
 
@@ -202,15 +202,15 @@ public class SupplierController {
      * ẨN NHÀ CUNG CẤP
      */
     @PatchMapping("/{supplierId}/deactivate")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'SUPPLIER_STATUS_UPDATE',
-                // 'SUPPLIER_MANAGE',
-                // 'ROLE_ROLE-ADMIN',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-BIZ-OPS'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'SUPPLIER_STATUS_UPDATE',
+                 'SUPPLIER_MANAGE',
+                 'ROLE_ROLE-ADMIN',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-BIZ-OPS'
+             )
+             """)
     public ResponseEntity<SupplierResponse>
     deactivateSupplier(
 
@@ -239,15 +239,15 @@ public class SupplierController {
      * KHÔI PHỤC NHÀ CUNG CẤP
      */
     @PatchMapping("/{supplierId}/activate")
-    // @PreAuthorize("""
-            // hasAnyAuthority(
-                // 'SUPPLIER_STATUS_UPDATE',
-                // 'SUPPLIER_MANAGE',
-                // 'ROLE_ROLE-ADMIN',
-                // 'ROLE_ROLE-BIZ-OPS',
-                // 'ROLE_ROLE-BIZ-OPS'
-            // )
-            // """)
+     @PreAuthorize("""
+             hasAnyAuthority(
+                 'SUPPLIER_STATUS_UPDATE',
+                 'SUPPLIER_MANAGE',
+                 'ROLE_ROLE-ADMIN',
+                 'ROLE_ROLE-BIZ-OPS',
+                 'ROLE_ROLE-BIZ-OPS'
+             )
+             """)
     public ResponseEntity<SupplierResponse>
     activateSupplier(
 

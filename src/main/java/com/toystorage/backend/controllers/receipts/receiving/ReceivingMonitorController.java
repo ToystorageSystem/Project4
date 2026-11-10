@@ -13,7 +13,7 @@ import org.springframework.data.domain.Sort;
 
 import org.springframework.http.ResponseEntity;
 
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +32,7 @@ public class ReceivingMonitorController {
      * =====================================================
      */
 
-//    @PreAuthorize("hasAuthority('GOODS_RECEIVING_MONITOR')")
+    @PreAuthorize("hasAuthority('GOODS_RECEIVING_MONITOR')")
 @GetMapping("/monitoring")
 public ResponseEntity<Page<ReceivingMonitorResponse>>
 getReceivingReceipts(
@@ -59,7 +59,7 @@ getReceivingReceipts(
      * =====================================================
      */
 
-//    @PreAuthorize("hasAuthority('GOODS_RECEIVING_REVIEW')")
+    @PreAuthorize("hasAuthority('GOODS_RECEIVING_REVIEW')")
     @GetMapping("/waiting-review")
     public ResponseEntity<Page<ReceivingMonitorResponse>>
     getWaitingReviewReceipts(
@@ -96,7 +96,7 @@ getReceivingReceipts(
      * =====================================================
      */
 
-//    @PreAuthorize("hasAuthority('GOODS_RECEIVING_REVIEW')")
+    @PreAuthorize("hasAuthority('GOODS_RECEIVING_REVIEW')")
     @GetMapping("/completed-receiving")
     public ResponseEntity<Page<ReceivingMonitorResponse>>
     getCompletedReceipts(
@@ -133,7 +133,7 @@ getReceivingReceipts(
      * =====================================================
      */
 
-//    @PreAuthorize("hasAuthority('GOODS_RECEIVING_MONITOR')")
+    @PreAuthorize("hasAuthority('GOODS_RECEIVING_MONITOR')")
     @GetMapping("/{receiptId}/progress")
     public ResponseEntity<ReceivingProgressResponse>
     getProgress(
