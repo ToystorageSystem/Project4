@@ -17,6 +17,8 @@ import '../../features/receiving/domain/entities/receiving_result.dart';
 import '../../features/receiving/presentation/screens/manifest_detail_screen.dart';
 import '../../features/receiving/presentation/screens/manifest_list_screen.dart';
 import '../../features/receiving/presentation/screens/package_check_screen.dart';
+import '../../features/receiving/presentation/screens/package_inspection_screen.dart';
+import '../../features/receiving/presentation/screens/receive_by_manifest_screen.dart';
 import '../../features/receiving/presentation/screens/receiving_result_screen.dart';
 import '../../features/sales/domain/entities/sale_detail.dart';
 import '../../features/sales/presentation/screens/sale_detail_screen.dart';
@@ -58,6 +60,14 @@ class AppRoutes {
   static const sales = '/home/store/sales'; // new sale (cart)
   static const saleHistory = '/home/store/sales/history';
   static String saleDetail(int id) => '/home/store/sales/$id';
+
+  // Store – receive by manifest (F1 in 3 steps)
+  static const receiveByManifest = '/home/store/receive-by-manifest';
+
+  // Store – package inspection (F2 in 3 steps) + its result
+  static const packageInspection = '/home/store/package-inspection';
+  static String inspectionResult(String manifestCode) =>
+      '/home/store/inspection-result/${Uri.encodeComponent(manifestCode)}';
 
   // Store – receiving goods
   static const receiving = '/home/receiving';
@@ -146,6 +156,24 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ),
               ),
             ],
+          ),
+          GoRoute(
+            path: 'store/receive-by-manifest',
+            builder: (c, s) => const ReceiveByManifestScreen(),
+          ),
+          GoRoute(
+            path: 'store/package-inspection',
+            builder: (c, s) => const PackageInspectionScreen(),
+          ),
+          GoRoute(
+            path: 'store/inspection-result/:code',
+            builder: (c, s) => ReceivingResultScreen(
+              manifestCode: s.pathParameters['code']!,
+              // passed by context.pushReplacement(..., extra: result)
+              initialResult: s.extra is ReceivingResult
+                  ? s.extra as ReceivingResult
+                  : null,
+            ),
           ),
           GoRoute(
             path: 'store/low-shelf',

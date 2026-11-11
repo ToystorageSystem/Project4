@@ -100,9 +100,14 @@ class HomeScreen extends ConsumerWidget {
                       AppRoutes.lowShelf,
                     ),
                     tile(
-                      Icons.move_to_inbox_outlined,
-                      'Receive goods',
-                      AppRoutes.receiving,
+                      Icons.local_shipping_outlined,
+                      'Receive by Manifest',
+                      AppRoutes.receiveByManifest,
+                    ),
+                    tile(
+                      Icons.fact_check_outlined,
+                      'Package Inspection',
+                      AppRoutes.packageInspection,
                     ),
                   ],
                   tile(

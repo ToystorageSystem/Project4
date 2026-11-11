@@ -35,4 +35,8 @@ class ManifestSummary {
   bool get isInspected => receivingStatus == ReceivingStatus.inspected;
   bool get isCompleted => receivingStatus == ReceivingStatus.completed;
   int get missingPackages => totalPackages - receivedPackages;
+
+  /// The truck is at the store: packages can be received
+  bool get hasArrived =>
+      deliveryStatus == 'ARRIVED' || deliveryStatus == 'DELIVERED';
 }

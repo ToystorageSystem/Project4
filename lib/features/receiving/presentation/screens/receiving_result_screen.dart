@@ -144,8 +144,8 @@ class _ReceivingResultScreenState extends ConsumerState<ReceivingResultScreen> {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
                   ),
-                  onPressed: () => context.go(AppRoutes.receiving),
-                  child: const Text('Back to manifests'),
+                  onPressed: () => context.go(AppRoutes.home),
+                  child: const Text('Back to Home'),
                 ),
         ),
       ),

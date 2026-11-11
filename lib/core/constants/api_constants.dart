@@ -4,7 +4,7 @@ class ApiConstants {
   // Android emulator: 10.0.2.2 = localhost of your computer.
   // Real phone: your computer's LAN IP, e.g. http://192.168.1.10:8080
   // Cookies are stored per host → always use ONE baseUrl.
-  static const baseUrl = String.fromEnvironment(
+   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://10.0.2.2:8080',
   );
