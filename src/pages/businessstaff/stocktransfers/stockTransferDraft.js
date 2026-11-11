@@ -81,62 +81,80 @@ function validQuantity(value) {
     return Number.isSafeInteger(quantity) && quantity <= 2147483647;
 }
 
-export function validateStockTransferDraft(form, sources, destinations, products, today = todayLocalIso()) {
+// Keep error messages and field highlighting derived from the SAME checks.
+// Each item is keyed by its clientKey so adding/removing rows cannot misplace errors.
+export function validateStockTransferDraftDetailed(form, sources, destinations, products, today = todayLocalIso()) {
     const errors = [];
+    const fieldErrors = { items: {} };
+    const addError = (field, message, clientKey = null) => {
+        errors.push(message);
+        if (clientKey === null) {
+            if (!fieldErrors[field]) fieldErrors[field] = message;
+            return;
+        }
+        const rowErrors = fieldErrors.items[clientKey] ?? (fieldErrors.items[clientKey] = {});
+        if (!rowErrors[field]) rowErrors[field] = message;
+    };
+
     const source = sources.find((item) => String(item.id) === form.fromWarehouseId);
     const destination = destinations.find((item) => String(item.id) === form.toWarehouseId);
     if (!source || !["MAIN_WAREHOUSE", "STORE"].includes(source.type)) {
-        errors.push("Select a valid source main warehouse or store.");
+        addError("fromWarehouseId", "Select a valid source main warehouse or store.");
     }
     if (!destination || destination.type !== "STORE") {
-        errors.push("Select a valid destination store.");
+        addError("toWarehouseId", "Select a valid destination store.");
     }
     if (source && destination && String(source.id) === String(destination.id)) {
-        errors.push("Source and destination cannot be the same.");
+        addError("toWarehouseId", "Source and destination cannot be the same.");
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.expectedShipmentDate || "")) {
-        errors.push("Select an expected ship date.");
+        addError("expectedShipmentDate", "Select an expected ship date.");
     } else if (form.expectedShipmentDate < today) {
-        errors.push("Expected ship date cannot be in the past.");
+        addError("expectedShipmentDate", "Expected ship date cannot be in the past.");
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.expectedReceiptDate || "")) {
-        errors.push("Select an expected receipt date.");
+        addError("expectedReceiptDate", "Select an expected receipt date.");
     } else if (form.expectedShipmentDate && form.expectedReceiptDate < form.expectedShipmentDate) {
-        errors.push("Expected receipt date cannot be before the ship date.");
+        addError("expectedReceiptDate", "Expected receipt date cannot be before the ship date.");
     }
     if (!TRANSFER_REASONS.some((reason) => reason.value === form.reasonCode)) {
-        errors.push("Select a valid transfer reason.");
+        addError("reasonCode", "Select a valid transfer reason.");
     }
     if (form.reasonCode === "OTHER" && !form.reasonNote.trim()) {
-        errors.push("Please explain the other transfer reason.");
+        addError("reasonNote", "Please explain the other transfer reason.");
     }
     if (!Array.isArray(form.items) || !form.items.length) {
-        errors.push("Add at least one product.");
+        addError("itemList", "Add at least one product.");
     } else {
         const seen = new Set();
         form.items.forEach((row, index) => {
             const label = `Product #${index + 1}`;
             const option = products.find((item) => String(item.productId) === row.productId);
             if (!positiveId(row.productId) || !option) {
-                errors.push(`${label}: Select a product with stock at the source.`);
+                addError("productId", `${label}: Select a product with stock at the source.`, row.clientKey);
             } else if (seen.has(row.productId)) {
-                errors.push(`${label}: Duplicate product lines are not allowed.`);
+                addError("productId", `${label}: Duplicate product lines are not allowed.`, row.clientKey);
             } else {
                 seen.add(row.productId);
             }
             if (!validQuantity(row.requestedQuantity)) {
-                errors.push(`${label}: Quantity must be an integer between 1 and 2,147,483,647.`);
+                addError("requestedQuantity", `${label}: Quantity must be an integer between 1 and 2,147,483,647.`, row.clientKey);
             } else if (option) {
                 const available = Number(option.availableQuantity);
                 if (!Number.isSafeInteger(available) || available < 0) {
-                    errors.push(`${label}: Available stock is invalid. Reload the data.`);
+                    addError("requestedQuantity", `${label}: Available stock is invalid. Reload the data.`, row.clientKey);
                 } else if (Number(row.requestedQuantity) > available) {
-                    errors.push(`${label}: Requested ${row.requestedQuantity} exceeds available stock ${available}.`);
+                    addError("requestedQuantity", `${label}: Requested ${row.requestedQuantity} exceeds available stock ${available}.`, row.clientKey);
                 }
             }
         });
     }
-    return errors;
+    return { errors, fieldErrors };
+}
+
+// Preserve the original function for any other callers that expect a string array.
+export function validateStockTransferDraft(form, sources, destinations, products, today = todayLocalIso()) {
+    return validateStockTransferDraftDetailed(form, sources, destinations, products, today).errors;
 }
 
 // Create DTO for POST /api/stock-transfers.
@@ -147,7 +165,7 @@ export function toStockTransferPayload(form) {
         expectedShipmentDate: form.expectedShipmentDate,
         expectedReceiptDate: form.expectedReceiptDate,
         reasonCode: form.reasonCode,
-        reasonNote: form.reasonNote.trim() || null,
+        reasonNote: form.reasonCode === "OTHER" ? (form.reasonNote.trim() || null) : null,
         notes: form.notes.trim() || null,
         items: form.items.map((row) => ({
             productId: Number(row.productId),

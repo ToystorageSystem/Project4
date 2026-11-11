@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getProduct, productErrorMessage } from "../../../api/business/products";
+import { getLinksByProduct } from "../../../api/business/supplierProducts";
 import ProductStatusBadge, { formatProductDate, formatProductPrice } from "../../../components/business/products/ProductStatusBadge";
-import SupplierProductLinksPanel from "../../../components/business/supplierProducts/SupplierProductLinksPanel";
-import ProductActivityHistory from "../../../components/business/products/ProductActivityHistory";
 import { businessStaffMenuItems } from "../../../components/icons/businessMenuItems";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -25,6 +24,7 @@ export default function ProductDetailPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const [product, setProduct] = useState(null);
+    const [primarySupplier, setPrimarySupplier] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -32,6 +32,14 @@ export default function ProductDetailPage() {
         const controller = new AbortController();
         setLoading(true);
         setError("");
+        setPrimarySupplier(null);
+        // Gia nhap tren man hinh chi lay tu Supplier association, khong lay cot Product cu.
+        getLinksByProduct(productId, controller.signal)
+            .then((links) => {
+                if (controller.signal.aborted || !Array.isArray(links)) return;
+                setPrimarySupplier(links.find((link) => link.defaultSupplier) || links[0] || null);
+            })
+            .catch(() => { if (!controller.signal.aborted) setPrimarySupplier(null); });
         getProduct(productId, controller.signal)
             .then((result) => { if (!controller.signal.aborted) setProduct(result); })
             .catch((requestError) => {
@@ -44,7 +52,7 @@ export default function ProductDetailPage() {
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Product Details" description="View product details, edit directly, and review its change history."
+                <PageHeader title="Product Details" description="View product details and edit product information."
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Button variant="ghost" onClick={() => navigate(ROOT)}>← Back to List</Button>
@@ -76,11 +84,15 @@ export default function ProductDetailPage() {
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                 <DetailField label="Product Code">{product.productCode}</DetailField>
                                 <DetailField label="Barcode">{product.barcode}</DetailField>
+                                <DetailField label="Supplier">{product.supplierName || primarySupplier?.supplierName || "—"}</DetailField>
+                                <DetailField label="Supplier Phone">{product.supplierPhone || "—"}</DetailField>
                                 <DetailField label="Base Unit">{product.baseUnit}</DetailField>
                                 <DetailField label="Categories">{product.categoryName ? `${product.categoryName} (ID ${product.categoryId})` : `Code ${product.categoryId}`}</DetailField>
                                 <DetailField label="Brand">{product.brandId ? `${product.brandName || "Brand"} (ID ${product.brandId})` : "None"}</DetailField>
-                                <DetailField label="Reference Purchase Price">{formatProductPrice(product.purchasePrice)}</DetailField>
-                                <DetailField label="Selling Price">{formatProductPrice(product.sellingPrice)}</DetailField>
+                                {primarySupplier && (
+                                    <DetailField label="Purchase Price (VND)">{formatProductPrice(primarySupplier.purchasePrice)}</DetailField>
+                                )}
+                                <DetailField label="Selling Price (VND)">{formatProductPrice(product.sellingPrice)}</DetailField>
                                 <DetailField label="Created By">{product.createdByName || "—"}</DetailField>
                                 <DetailField label="Created At">{formatProductDate(product.createdAt)}</DetailField>
                                 <DetailField label="Updated At">{formatProductDate(product.updatedAt)}</DetailField>
@@ -92,8 +104,6 @@ export default function ProductDetailPage() {
                                 </div>
                             )}
                         </Card>
-                        <SupplierProductLinksPanel productId={productId} productStatus={product.status} referencePurchasePrice={product.purchasePrice} />
-                        <ProductActivityHistory productId={productId} />
                     </>
                 )}
             </div>

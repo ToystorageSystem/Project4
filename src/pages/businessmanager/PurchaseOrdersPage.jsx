@@ -133,7 +133,7 @@ function PurchaseOrderDetail({ order, loading, error, onClose }) {
                         <DetailField title="Receiving Warehouse">{display(order.warehouseName)}</DetailField>
                         <DetailField title="Created By">{display(order.createdByName || order.createdByCode)}</DetailField>
                         <DetailField title="Created At">{time(order.createdAt)}</DetailField>
-                        <DetailField title="Expected Delivery Date">{dateOnly(order.expectedDeliveryDate)}</DetailField>
+                        <DetailField title="Delivery Date">{dateOnly(order.expectedDeliveryDate)}</DetailField>
                         <DetailField title="Approved By">{display(order.approvedByName || order.approvedByCode)}</DetailField>
                         <DetailField title="Approved At">{time(order.approvedAt)}</DetailField>
                         <DetailField title="Last Updated">{time(order.updatedAt)}</DetailField>

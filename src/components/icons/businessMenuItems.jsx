@@ -80,12 +80,7 @@ export const businessStaffMenuItems = [
         path: "/business/dashboard",
         icon: <DashboardIcon />,
     },
-    {
-        key: "business-staff-suppliers",
-        label: "Suppliers",
-        path: "/business/suppliers",
-        icon: <SupplierIcon />,
-    },
+
     {
         key: "business-staff-products",
         label: "Product Management",
@@ -137,18 +132,7 @@ export const businessManagerMenuItems = [
         path: "/business/dashboard",
         icon: <DashboardIcon />,
     },
-    {
-        key: "business-manager-stock-transactions",
-        label: "Track Outbound / Inbound Receipts",
-        path: "/business/stock-transactions",
-        icon: <StockTransferIcon />,
-    },
-    {
-        key: "business-manager-activity-reports",
-        label: "View Activity Reports",
-        path: "/business/activity-reports",
-        icon: <InventoryReportIcon />,
-    },
+
     {
         key: "business-manager-purchase-orders",
         label: "Purchase Order List",

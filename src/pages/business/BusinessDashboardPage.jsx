@@ -1,10 +1,12 @@
+import { getInventoryReport, getInventoryWarehouseOptions } from "../../api/business/inventoryReport";
+import api from "../../api/api";
 import DashboardChart from "../../components/dashboard/DashboardCharts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatBusinessStatus } from "../../utils/viStatus";
 import { useAuth } from "../../auth/AuthContext";
 import { hasAuthority, ROLE } from "../../auth/roleRouting";
-import { getBusinessStaffSuppliers, getBusinessManagerInventory } from "../../api/business/businessDashboard";
+import { getBusinessManagerInventory } from "../../api/business/businessDashboard";
 import { listProducts } from "../../api/business/products";
 import { listPurchaseOrders } from "../../api/business/purchaseOrders";
 import { getBusinessGoodsReceipts } from "../../api/business/goodsReceipts";
@@ -58,6 +60,161 @@ function SectionTitle({ title, subtitle, to, action = "View All" }) {
   </div>;
 }
 
+// Read completed sales by store; never derive revenue from stock or purchase orders.
+async function fetchStoreRevenue(signal) {
+    const options = await getInventoryWarehouseOptions(signal);
+    const stores = (Array.isArray(options) ? options : []).filter((s) => String(s.type).toUpperCase() === "STORE");
+    const settled = await Promise.allSettled(stores.map((store) =>
+        api.get("/analytics/dashboard/sales", { params: { storeId: store.id }, signal })
+    ));
+    return {
+        complete: settled.every((r) => r.status === "fulfilled"),
+        rows: settled.flatMap((r, i) => r.status === "fulfilled" ? [{
+            storeName: stores[i].name,
+            completedRevenue: Number(r.value?.data?.completedRevenue || 0),
+            completedOrders: Number(r.value?.data?.completedOrders || 0),
+        }] : []),
+    };
+}
+
+// Inventory Report is the source of truth for available stock and minimum levels.
+// Group by warehouse/store + physical barcode so supplier-specific Product Codes
+// do not create duplicate alerts for the same physical item.
+async function fetchLowStockLocations(signal) {
+    const first = await getInventoryReport({ page: 0, size: 100 }, signal);
+    const pageCount = Number(first?.totalPages);
+    // Do not present a partial list as if it were the full inventory picture.
+    if (!Number.isSafeInteger(pageCount) || pageCount < 0 || pageCount > 30) {
+        return { complete: false, rows: [] };
+    }
+
+    const pages = [first];
+    // Limit concurrent API calls to avoid flooding the backend.
+    for (let page = 1; page < pageCount; page += 5) {
+        const batch = Array.from(
+            { length: Math.min(5, pageCount - page) },
+            (_, index) => getInventoryReport({ page: page + index, size: 100 }, signal)
+        );
+        pages.push(...await Promise.all(batch));
+    }
+
+    const groups = new Map();
+    for (const item of pages.flatMap((result) => Array.isArray(result?.items) ? result.items : [])) {
+        if (item.warehouseId == null || !item.productName) continue;
+        const available = Number(item.availableQuantity);
+        const minimum = Number(item.minimumStockLevel ?? 0);
+        const physical = Number(item.onHandQuantity ?? 0);
+        if (![available, minimum, physical].every(Number.isFinite)) continue;
+
+        const productKey = String(item.barcode || `product:${item.productId}`);
+        const key = JSON.stringify([item.warehouseId, productKey]);
+        let group = groups.get(key);
+        if (!group) {
+            group = {
+                key, locationName: item.warehouseName || `Location #${item.warehouseId}`,
+                locationType: String(item.warehouseType || '').toUpperCase(),
+                productName: item.productName,
+                barcode: item.barcode || '',
+                available: 0, physical: 0, minimum: 0, zones: new Set(),
+            };
+            groups.set(key, group);
+        }
+        group.available += available;
+        group.physical += physical;
+        group.minimum += Math.max(0, minimum);
+        const zone = String(item.zone || item.locationName || '').trim();
+        if (zone) group.zones.add(zone);
+    }
+
+    const rows = [...groups.values()].map((group) => ({
+        ...group,
+        zones: [...group.zones].sort(),
+        severity: group.available <= 0
+            ? (group.physical > 0 ? 'UNAVAILABLE' : 'OUT_OF_STOCK')
+            : group.available <= group.minimum ? 'LOW_STOCK' : 'IN_STOCK',
+    })).filter((item) => item.severity !== 'IN_STOCK');
+
+    const severityOrder = { OUT_OF_STOCK: 0, UNAVAILABLE: 0, LOW_STOCK: 1 };
+    rows.sort((a, b) =>
+        severityOrder[a.severity] - severityOrder[b.severity]
+        || a.available - b.available
+        || a.locationName.localeCompare(b.locationName)
+        || a.productName.localeCompare(b.productName)
+    );
+    return { complete: true, rows };
+}
+
+function LowStockAlerts({ result, loading }) {
+    const rows = result?.rows || [];
+    const criticalCount = rows.filter((row) => row.severity !== 'LOW_STOCK').length;
+    const visibleRows = rows.slice(0, 8);
+
+    return <section className="bo-panel" aria-label="Inventory low-stock notifications" aria-live="polite">
+        <div className="bo-panel__heading">
+            <div>
+                <h2 className="flex flex-wrap items-center gap-2">
+                    <BusinessIcon name="alert" size={19} /> Low-Stock Alerts by Location
+                    {result?.complete && rows.length > 0 && (
+                        <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-800">
+                            {rows.length} alerts
+                        </span>
+                    )}
+                </h2>
+                <p>Products running low at each warehouse or store, based on available stock.</p>
+            </div>
+            <Link to="/business/inventory-report" className="bo-subtle-link">
+                Inventory Report <BusinessIcon name="right" size={15} />
+            </Link>
+        </div>
+        {loading && !result ? (
+            <p className="px-6 pb-5 text-sm text-slate-500">Checking inventory levels...</p>
+        ) : !result ? (
+            <p className="px-6 pb-5 text-sm text-amber-800">Low-stock alerts could not be loaded. Check your inventory report or permissions.</p>
+        ) : !result.complete ? (
+            <p className="px-6 pb-5 text-sm text-amber-800">Inventory data is too large to summarize completely here. Open Inventory Report for the full list.</p>
+        ) : rows.length === 0 ? (
+            <p className="px-6 pb-5 text-sm text-green-700">No low-stock products found in the locations you can access.</p>
+        ) : <div className="px-5 pb-5">
+            <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
+                {criticalCount > 0 && <span className="font-semibold text-red-700">{criticalCount} out of stock or unavailable</span>}
+                <span className="font-semibold text-amber-700">{rows.length - criticalCount} low stock</span>
+            </div>
+            <div className={`grid gap-2 ${visibleRows.length > 1 ? "md:grid-cols-2" : "grid-cols-1"}`}>
+                {visibleRows.map((row) => {
+                    const critical = row.severity !== 'LOW_STOCK';
+                    const statusLabel = row.severity === 'UNAVAILABLE' ? 'Unavailable'
+                        : row.severity === 'OUT_OF_STOCK' ? 'Out of Stock' : 'Low Stock';
+                    return <div key={row.key} className={`rounded-lg border p-3 ${critical ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                                <p className="text-xs font-semibold text-slate-600">
+                                    {row.locationType === 'STORE' ? 'Store' : 'Warehouse'}: {row.locationName}
+                                </p>
+                                <strong className="mt-1 block break-words text-sm text-slate-900">{row.productName}</strong>
+                                {row.barcode && <p className="mt-1 text-xs text-slate-500">Barcode: {row.barcode}</p>}
+                                {row.zones.length > 0 && <p className="mt-1 text-xs text-slate-500">Area: {row.zones.slice(0, 3).join(', ')}{row.zones.length > 3 ? '...' : ''}</p>}
+                            </div>
+                            <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${critical ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'}`}>
+                                {statusLabel}
+                            </span>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-700">
+                            Available: <strong>{numberOrDash(row.available)}</strong>
+                            <span className="mx-2 text-slate-400">|</span>
+                            Minimum: <strong>{numberOrDash(row.minimum)}</strong>
+                        </p>
+                    </div>;
+                })}
+            </div>
+            {rows.length > visibleRows.length && <p className="mt-3 text-xs text-slate-600">
+                Showing {visibleRows.length} of {rows.length} alerts. Open Inventory Report for more details.
+            </p>}
+        </div>}
+    </section>;
+}
+
+const moneyVnd = (n) => new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 }).format(n) + " VND";
+
 export default function BusinessDashboardPage() {
   const { user } = useAuth();
   // Một role xem các chức năng nghiệp vụ và dữ liệu liên quan.
@@ -78,11 +235,12 @@ export default function BusinessDashboardPage() {
     // Read-only API calls. A failed endpoint must not hide all other widgets.
     const requests = [];
     if (canBusinessOperations) {
-      requests.push(["suppliers", getBusinessStaffSuppliers()]);
       requests.push(["products", listProducts({ page: 0, size: 1 }, controller.signal)]);
       requests.push(["activeProducts", listProducts({ status: "ACTIVE", page: 0, size: 1 }, controller.signal)]);
       requests.push(["purchaseOrders", listPurchaseOrders({}, controller.signal)]);
       requests.push(["receipts", getBusinessGoodsReceipts({ page: 0, size: 1 }, controller.signal)]);
+      requests.push(["storeRevenue", fetchStoreRevenue(controller.signal)]);
+      requests.push(["lowStockLocations", fetchLowStockLocations(controller.signal)]);
     }
     if (canBusinessOperations) {
       requests.push(["inventory", getBusinessManagerInventory()]);
@@ -108,15 +266,11 @@ export default function BusinessDashboardPage() {
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {}), [purchaseOrders]);
-  const firstOrders = purchaseOrders.slice(0, 5);
-  const quickActions = [
-    ...(canBusinessOperations ? [
-      { icon: "plus", label: "Create Purchase Order", description: "Create a purchase order for a supplier", path: "/business/purchase-orders/new" },
-      { icon: "products", label: "Add Product", description: "Create and save a new product directly", path: "/business/products/new" },
-      { icon: "distribution", label: "Create Stock Transfer", description: "Plan inventory distribution", path: "/business/stock-transfers/new" },
-      { icon: "receipts", label: "Create Goods Receipt", description: "Record an expected delivery", path: "/business/goods-receipts" },
-    ] : []),
-  ];
+
+  const revenueRanked = [...(data.storeRevenue?.rows || [])]
+    .sort((a, b) => b.completedRevenue - a.completedRevenue);
+  const highest = revenueRanked[0];
+  const lowest = revenueRanked.at(-1);
 
   return (
     <BusinessOperationsLayout>
@@ -137,70 +291,55 @@ export default function BusinessDashboardPage() {
           </>}
           {canBusinessOperations && <Metric icon="products" label="Active Products" value={totalOf(data.activeProducts)} helper="Products available for use" to="/business/products" />}
         </div>
-        {canBusinessOperations && <div className="analytics-grid">
-          <DashboardChart title="Purchase order statuses" type="donut" loading={loading} unavailable={data.purchaseOrders == null} data={Object.entries(orderCounts).map(([label, value]) => ({ label: formatBusinessStatus(label), value }))} />
-          <DashboardChart title="Stock quantities" loading={loading} unavailable={data.inventory == null} data={[
-            { label: "Physical stock", value: data.inventory?.totalQuantity },
-            { label: "Available stock", value: data.inventory?.totalAvailableQuantity },
-            { label: "Reserved stock", value: data.inventory?.totalReservedQuantity },
-          ]} />
-        </div>}
-        <div className="bo-dashboard-grid">
-          <section className="bo-panel bo-worklist">
-            <SectionTitle title="Action Required" subtitle="Tasks that require your attention" />
-            <div className="bo-worklist__items">
-              {canBusinessOperations && <Link to="/business/purchase-orders" className="bo-work-item">
-                <span className="bo-work-item__icon"><BusinessIcon name="orders" /></span>
-                <span className="bo-work-item__body"><strong>Draft Purchase Orders</strong></span>
-                <span className="bo-work-item__value">{data.purchaseOrders == null ? "—" : numberOrDash(orderCounts.DRAFT || 0)}</span><BusinessIcon name="right" size={15} />
-              </Link>}
-              {canBusinessOperations && <Link to="/business/purchase-orders" className="bo-work-item">
-                <span className="bo-work-item__icon"><BusinessIcon name="orders" /></span>
-                <span className="bo-work-item__body"><strong>Placed Purchase Orders</strong></span>
-                <span className="bo-work-item__value">{data.purchaseOrders == null ? "—" : numberOrDash(orderCounts.ORDERED || 0)}</span><BusinessIcon name="right" size={15} />
-              </Link>}
-              {canBusinessOperations && <Link to="/business/goods-receipts/list" className="bo-work-item">
-                <span className="bo-work-item__icon"><BusinessIcon name="receipts" /></span>
-                <span className="bo-work-item__body"><strong>Track Goods Receipts</strong></span>
-                <BusinessIcon name="right" size={15} />
-              </Link>}
+        {canBusinessOperations && <LowStockAlerts result={data.lowStockLocations} loading={loading} />}
+        {/* Fill the space to the right with cards previously stacked below. */}
+        {canBusinessOperations && (
+          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+            <div className="flex min-w-0 flex-col gap-5">
+              <DashboardChart title="Purchase order statuses" type="donut" loading={loading} unavailable={data.purchaseOrders == null} data={Object.entries(orderCounts).map(([label, value]) => ({ label: formatBusinessStatus(label), value }))} />
+              <section className="bo-panel">
+                <SectionTitle title="Store Revenue Ranking" subtitle="Completed sales, all available dates" />
+                {!data.storeRevenue ? <p className="p-4 text-sm">Revenue figures unavailable.</p>
+                  : !data.storeRevenue.complete ? <p className="p-4 text-sm">Some stores could not be loaded. Ranking is unavailable.</p>
+                  : !highest ? <p className="p-4 text-sm">No active stores are available.</p>
+                  : <div className="grid gap-3 p-4 sm:grid-cols-2">
+                    <div className="rounded-lg bg-orange-50 p-4"><p className="text-sm">Highest Revenue Store</p><strong>{highest.storeName}</strong><p>{moneyVnd(highest.completedRevenue)}</p></div>
+                    <div className="rounded-lg bg-slate-50 p-4"><p className="text-sm">Lowest Revenue Store</p><strong>{lowest.storeName}</strong><p>{moneyVnd(lowest.completedRevenue)}</p></div>
+                  </div>}
+              </section>
             </div>
-          </section>
-          <section className="bo-panel bo-quick-actions">
-            <SectionTitle title="Quick Actions" subtitle="Frequently used business tasks" />
-            <div className="bo-quick-actions__items">
-              {quickActions.map((action) => <Link className="bo-quick-action" key={action.path} to={action.path}>
-                <span className="bo-quick-action__icon"><BusinessIcon name={action.icon} size={18}/></span>
-                <span><strong>{action.label}</strong></span>
-                <BusinessIcon name="right" size={15} />
-              </Link>)}
+            <div className="flex min-w-0 flex-col gap-5">
+              <section className="bo-panel bo-worklist">
+                <SectionTitle title="Action Required" subtitle="Tasks that require your attention" />
+                <div className="bo-worklist__items">
+                  {canBusinessOperations && <Link to="/business/purchase-orders" className="bo-work-item">
+                    <span className="bo-work-item__icon"><BusinessIcon name="orders" /></span>
+                    <span className="bo-work-item__body"><strong>Draft Purchase Orders</strong></span>
+                    <span className="bo-work-item__value">{data.purchaseOrders == null ? "—" : numberOrDash(orderCounts.DRAFT || 0)}</span><BusinessIcon name="right" size={15} />
+                  </Link>}
+                  {canBusinessOperations && <Link to="/business/purchase-orders" className="bo-work-item">
+                    <span className="bo-work-item__icon"><BusinessIcon name="orders" /></span>
+                    <span className="bo-work-item__body"><strong>Placed Purchase Orders</strong></span>
+                    <span className="bo-work-item__value">{data.purchaseOrders == null ? "—" : numberOrDash(orderCounts.ORDERED || 0)}</span><BusinessIcon name="right" size={15} />
+                  </Link>}
+                  {canBusinessOperations && <Link to="/business/goods-receipts/list" className="bo-work-item">
+                    <span className="bo-work-item__icon"><BusinessIcon name="receipts" /></span>
+                    <span className="bo-work-item__body"><strong>Track Goods Receipts</strong></span>
+                    <BusinessIcon name="right" size={15} />
+                  </Link>}
+                </div>
+              </section>
+              <section className="bo-panel bo-inventory-panel">
+                <SectionTitle title="Inventory Overview" subtitle="Inventory summary across all warehouses and stores" to="/business/inventory-report" action="Inventory Report" />
+                <div className="bo-inventory-stats">
+                  <div><span>Physical Stock</span><strong>{numberOrDash(data.inventory?.totalQuantity)}</strong></div>
+                  <div><span>Available Stock</span><strong>{numberOrDash(data.inventory?.totalAvailableQuantity)}</strong></div>
+                  <div><span>Reserved Stock</span><strong>{numberOrDash(data.inventory?.totalReservedQuantity)}</strong></div>
+                </div>
+              </section>
             </div>
-          </section>
-        </div>
-        <div className="bo-dashboard-grid bo-dashboard-grid--secondary">
-          {canBusinessOperations && <section className="bo-panel bo-orders-panel">
-            <SectionTitle title="Recent Purchase Orders" subtitle="Latest purchase orders in the system" to="/business/purchase-orders" />
-            <div className="bo-table-scroll"><table className="bo-data-table">
-              <thead><tr><th>Purchase Orders</th><th>Suppliers</th><th>Status</th><th>View</th></tr></thead>
-              <tbody>{firstOrders.length ? firstOrders.map((order, index) => (
-                <tr key={order.id ?? order.orderCode ?? index}>
-                  <td><strong>{order.orderCode || order.purchaseOrderCode || `Purchase Order # ${order.id ?? index + 1}`}</strong></td>
-                  <td>{order.supplierName || order.supplier?.name || "—"}</td>
-                  <td><span className={`bo-status bo-status--${String(order.status || "unknown").toLowerCase()}`}>{formatBusinessStatus(order.status)}</span></td>
-                  <td><Link className="bo-table-link" to={`/business/purchase-orders/${order.id}`}>Details</Link></td>
-                </tr>
-              )) : <tr><td colSpan={4}>{loading ? "Loading purchase orders..." : "No purchase orders to display."}</td></tr>}</tbody>
-            </table></div>
-          </section>}
-          {canBusinessOperations && <section className="bo-panel bo-inventory-panel">
-            <SectionTitle title="Inventory Overview" subtitle="Inventory summary across all warehouses and stores" to="/business/stock-transactions" action="Transactions" />
-            <div className="bo-inventory-stats">
-              <div><span>Physical Stock</span><strong>{numberOrDash(data.inventory?.totalQuantity)}</strong></div>
-              <div><span>Available Stock</span><strong>{numberOrDash(data.inventory?.totalAvailableQuantity)}</strong></div>
-              <div><span>Reserved Stock</span><strong>{numberOrDash(data.inventory?.totalReservedQuantity)}</strong></div>
-            </div>
-          </section>}
-        </div>
+          </div>
+        )}
       </div>
     </BusinessOperationsLayout>
   );

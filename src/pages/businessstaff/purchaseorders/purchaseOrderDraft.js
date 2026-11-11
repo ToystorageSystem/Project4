@@ -23,10 +23,12 @@ export function validatePurchaseOrderDraft(form, productOptions) {
     const problems = [];
     if (!isPositiveId(form.supplierId)) problems.push("Select a valid supplier.");
     if (!isPositiveId(form.warehouseId)) problems.push("Select a valid receiving main warehouse.");
-    if (form.expectedDeliveryDate && !isDate(form.expectedDeliveryDate)) {
-        problems.push("Requested delivery date is invalid.");
-    } else if (form.expectedDeliveryDate && form.expectedDeliveryDate < todayVietnamIso()) {
-        problems.push("Expected delivery date cannot be in the past.");
+    if (!form.expectedDeliveryDate) {
+        problems.push("Select an agreed delivery date.");
+    } else if (!isDate(form.expectedDeliveryDate)) {
+        problems.push("Delivery date is invalid.");
+    } else if (form.expectedDeliveryDate < todayVietnamIso()) {
+        problems.push("Delivery date cannot be in the past.");
     }
     if (!Array.isArray(form.items) || form.items.length === 0) {
         problems.push("Purchase order must contain at least one product.");

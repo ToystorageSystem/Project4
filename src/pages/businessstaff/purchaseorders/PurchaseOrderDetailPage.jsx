@@ -26,8 +26,6 @@ import {
     formatPurchaseOrderMoney,
     PurchaseOrderStatusBadge,
 } from "./purchaseOrderFormat";
-import SupplierPriceComparisonPanel from "./SupplierPriceComparisonPanel";
-import SupplierFeedbackPanel from "./SupplierFeedbackPanel";
 import RelatedGoodsReceipts from "../goodsreceipts/RelatedGoodsReceipts";
 
 
@@ -216,7 +214,7 @@ export default function PurchaseOrderDetailPage() {
             if (!result?.id) throw new Error("Operation result is not confirmed. Refresh the order before retrying.");
             setDetail(result);
             setActionSuccess(actionType === "submit"
-                ? "Purchase order submitted successfully."
+                ? "Purchase order submitted. A goods receipt has been created for the warehouse."
                 : "Purchase order cancelled. Its history has been retained.");
             setActionType("");
             setActionConfirmed(false);
@@ -260,7 +258,7 @@ export default function PurchaseOrderDetailPage() {
                 />
                 {detail?.status === "DRAFT" && !detail.expectedDeliveryDate && (
                     <Alert type="warning">
-                        Enter the requested delivery date before submitting the order.
+                        Set the agreed delivery date before submitting the order.
                         <Button type="button" variant="outline" onClick={() => navigate(`${ROOT}/${orderId}/edit`)}>
                             Edit Draft Order
                         </Button>
@@ -290,9 +288,7 @@ export default function PurchaseOrderDetailPage() {
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <DetailField label="Supplier" value={detail.supplierName} />
                                 <DetailField label="Destination Warehouse / Store" value={detail.warehouseName} />
-                                <DetailField label="Requested Delivery Date" value={formatExpectedDeliveryDate(detail.expectedDeliveryDate)} />
-                                <DetailField label="Supplier Proposed Date" value={formatExpectedDeliveryDate(detail.supplierProposedDeliveryDate)} />
-                                <DetailField label="Agreed Delivery Date" value={formatExpectedDeliveryDate(detail.agreedDeliveryDate)} />
+                                <DetailField label="Delivery Date" value={formatExpectedDeliveryDate(detail.expectedDeliveryDate)} />
                                 <DetailField label="Created By" value={detail.createdByName} />
                                 <DetailField label="Created At" value={formatPurchaseOrderDate(detail.createdAt)} />
                                 <DetailField label="Last Updated" value={formatPurchaseOrderDate(detail.updatedAt)} />
@@ -359,12 +355,6 @@ export default function PurchaseOrderDetailPage() {
 
                         <RelatedGoodsReceipts purchaseOrderId={detail.id} />
 
-                        {/* Issue #16 - Supplier Price Comparison */}
-                        <SupplierFeedbackPanel purchaseOrder={detail} onSaved={() => setRefresh((value) => value + 1)} />
-                        <SupplierPriceComparisonPanel
-                            purchaseOrderId={detail.id}
-                            purchaseOrderStatus={detail.status}
-                        />
                     </>
                 ) : !error ? (
                     <EmptyState title="Purchase Order Not Found" />

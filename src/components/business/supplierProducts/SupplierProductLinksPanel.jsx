@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { listSuppliers } from "../../../api/business/suppliers";
+import { createSupplier, listSuppliers, supplierErrorMessage } from "../../../api/business/suppliers";
 import {
     createSupplierProductLink,
     deleteSupplierProductLink,
@@ -12,13 +11,10 @@ import {
 import Alert from "../../ui/Alert";
 import Button from "../../ui/Button";
 import Card from "../../ui/Card";
-import Checkbox from "../../ui/Checkbox";
 import EmptyState from "../../ui/EmptyState";
 import Input from "../../ui/Input";
 import Modal from "../../ui/Modal";
 import Select from "../../ui/Select";
-import StatusBadge from "../../ui/StatusBadge";
-const businessStatusLabel = (value) => ({ ACTIVE: "Active", INACTIVE: "Inactive", REJECTED: "Rejected", PENDING: "Pending Approval" }[value] || value);
 import Table from "../../ui/Table";
 
 const EMPTY_FORM = {
@@ -53,13 +49,10 @@ function validationErrors(form, creating, linkedSupplierIds) {
     if (!/^\d+$/.test(form.minimumOrderQuantity) || !Number.isSafeInteger(Number(form.minimumOrderQuantity)) || Number(form.minimumOrderQuantity) < 1) {
         errors.minimumOrderQuantity = "Minimum order quantity must be an integer of at least 1.";
     }
-    if (!creating && !["ACTIVE", "INACTIVE"].includes(form.status)) {
-        errors.status = "Invalid status.";
-    }
     return errors;
 }
 
-export default function SupplierProductLinksPanel({ productId, productStatus, referencePurchasePrice }) {
+export default function SupplierProductLinksPanel({ productId, productStatus }) {
     const [links, setLinks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
@@ -78,6 +71,13 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
     const [supplierKeyword, setSupplierKeyword] = useState("");
     const [supplierLoading, setSupplierLoading] = useState(false);
     const [supplierError, setSupplierError] = useState("");
+    const [showSupplierCreate, setShowSupplierCreate] = useState(false);
+    const [supplierCreateName, setSupplierCreateName] = useState("");
+    const [supplierCreateContact, setSupplierCreateContact] = useState("");
+    const [supplierCreateEmail, setSupplierCreateEmail] = useState("");
+    const [supplierCreateError, setSupplierCreateError] = useState("");
+    const [supplierCreateBusy, setSupplierCreateBusy] = useState(false);
+    const [supplierCreateNotice, setSupplierCreateNotice] = useState("");
     const canManage = productStatus === "ACTIVE";
 
     useEffect(() => {
@@ -127,13 +127,14 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
             setSupplierKeyword("");
             setSupplierKeywordDraft("");
             setSupplierOptions([]);
-            // Chi goi y gia tham khao khi tao lien ket NCC moi.
-            // Khi sua lien ket cu, su dung gia da luu cua NCC.
-            const price = Number(referencePurchasePrice);
-            setForm({
-                ...EMPTY_FORM,
-                purchasePrice: Number.isFinite(price) && price > 0 ? String(price) : "",
-            });
+            setShowSupplierCreate(false);
+            setSupplierCreateName("");
+            setSupplierCreateContact("");
+            setSupplierCreateEmail("");
+            setSupplierCreateError("");
+            setSupplierCreateNotice("");
+            // Gia nhap chi nhap sau khi chon nha cung cap, khong lay gia cu mac dinh.
+            setForm({ ...EMPTY_FORM });
         } else if (type === "edit" && link) {
             setForm({
                 supplierId: String(link.supplierId ?? ""),
@@ -159,9 +160,6 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
         if (saving || !canManage || !action || !["create", "edit"].includes(action.type)) return;
         const creating = action.type === "create";
         const nextErrors = validationErrors(form, creating, new Set(links.map((link) => Number(link.supplierId))));
-        if (!creating && action.link?.defaultSupplier && form.status === "INACTIVE") {
-            nextErrors.status = "Cannot deactivate the default supplier. Select another default supplier first.";
-        }
         setErrors(nextErrors);
         if (Object.keys(nextErrors).length) return;
         const payload = {
@@ -178,12 +176,12 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
                     ...payload,
                     productId: Number(productId),
                     supplierId: Number(form.supplierId),
-                    defaultSupplier: form.defaultSupplier,
+                    defaultSupplier: links.length === 0,
                 });
             } else {
-                await updateSupplierProductLink(action.link.id, { ...payload, status: form.status });
+                await updateSupplierProductLink(action.link.id, { ...payload, status: action.link.status ?? "ACTIVE" });
             }
-            setNotice(creating ? "Supplier association created." : "Supplier association updated.");
+            setNotice(creating ? "Supplier added and purchase price synchronized." : "Supplier and product purchase prices updated together.");
             setAction(null);
             setReload((current) => current + 1);
         } catch (requestError) {
@@ -216,28 +214,74 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
         }
     };
 
+    // Tao Supplier ngay trong trang Edit Product; khong tu dong gan Supplier vao Product.
+    // Nguoi dung xac nhan Create Association o buoc tiep theo de luu gia/MOQ.
+    const handleCreateSupplierInline = async () => {
+        if (supplierCreateBusy) return;
+        const name = supplierCreateName.trim();
+        const email = supplierCreateEmail.trim();
+        if (!name || name.length > 200) {
+            setSupplierCreateError("Supplier name is required (maximum 200 characters).");
+            return;
+        }
+        if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 150)) {
+            setSupplierCreateError("Enter a valid supplier email address.");
+            return;
+        }
+        setSupplierCreateBusy(true);
+        setSupplierCreateError("");
+        setSupplierCreateNotice("");
+        try {
+            const created = await createSupplier({
+                name,
+                contactPerson: supplierCreateContact.trim() || null,
+                email: email || null,
+                taxCode: null,
+                contactPosition: null,
+                phone: null,
+                address: null,
+                note: "Created from Product Supplier Setup",
+            });
+            if (!created?.id) throw new Error("Supplier was saved but no ID was returned. Check the supplier list before retrying.");
+            setSupplierOptions((previous) => [created, ...previous.filter((x) => Number(x.id) !== Number(created.id))]);
+            setForm((previous) => ({ ...previous, supplierId: String(created.id) }));
+            setSupplierCreateNotice("Supplier created. Review the purchase price and minimum quantity, then save the association.");
+            setShowSupplierCreate(false);
+            setSupplierCreateName("");
+            setSupplierCreateContact("");
+            setSupplierCreateEmail("");
+        } catch (requestError) {
+            setSupplierCreateError(supplierErrorMessage(requestError, "Unable to create supplier."));
+        } finally {
+            setSupplierCreateBusy(false);
+        }
+    };
+
     const columns = [
         {
-            key: "supplierName", label: "Supplier",
+            key: "supplierName",
+            label: "Supplier",
             render: (_value, link) => (
-                <div className="space-y-1">
-                    <Link to={`/business/suppliers/${link.supplierId}`} className="font-semibold text-[#c94810] hover:underline">{link.supplierName || link.supplierCode || "—"}</Link>
-                    <div className="text-xs text-slate-500">{display(link.supplierCode)} · {display(link.linkCode)}</div>
-                    <StatusBadge status={link.supplierStatus} label={businessStatusLabel(link.supplierStatus)} />
+                <div>
+                    <p className="font-semibold text-slate-900">{link.supplierName || link.supplierCode || "—"}</p>
+                    <p className="mt-1 text-xs text-slate-500">{display(link.supplierCode)}</p>
                 </div>
             ),
         },
-        { key: "supplierProductCode", label: "Supplier Product Code", render: display },
-        { key: "purchasePrice", label: "Supplier Purchase Price", render: formatMoney },
+        { key: "purchasePrice", label: "Purchase Price (VND)", render: formatMoney },
         { key: "minimumOrderQuantity", label: "Minimum Order Quantity", render: display },
-        { key: "status", label: "Association", render: (value, link) => <div className="space-y-1"><StatusBadge status={value} label={businessStatusLabel(value)} />{link.defaultSupplier && <div className="text-xs font-semibold text-[#c94810]">★ Preferred Supplier</div>}</div> },
         {
-            key: "id", label: "Actions",
+            key: "id",
+            label: "Actions",
             render: (_value, link) => (
                 <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" size="sm" disabled={!canManage} onClick={() => openAction("edit", link)}>Edit</Button>
-                    {!link.defaultSupplier && <Button type="button" variant="secondary" size="sm" disabled={!canManage || link.status !== "ACTIVE" || link.supplierStatus !== "ACTIVE"} onClick={() => openAction("default", link)}>Set as Default</Button>}
-                    <Button type="button" variant="danger" size="sm" disabled={!canManage || Boolean(link.defaultSupplier)} onClick={() => openAction("delete", link)}>Delete</Button>
+                    {links.length > 1 && !link.defaultSupplier && (
+                        <Button type="button" variant="secondary" size="sm" disabled={!canManage || link.status !== "ACTIVE" || link.supplierStatus !== "ACTIVE"} onClick={() => openAction("default", link)}>Set as Default</Button>
+                    )}
+                    {!link.defaultSupplier && (
+                        <Button type="button" variant="danger" size="sm" disabled={!canManage} onClick={() => openAction("delete", link)}>Delete</Button>
+                    )}
                 </div>
             ),
         },
@@ -248,26 +292,28 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
     return (
         <section className="space-y-4">
             <Card>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h2 className="text-lg font-bold text-slate-900">Linked Suppliers ({links.length})</h2>
-                        <p className="mt-1 text-sm text-slate-500">
-                            Manage purchase prices, minimum order quantities, and preferred suppliers
-                        </p>
-                    </div>
-                    <Button type="button" disabled={!canManage} onClick={() => openAction("create")}>+ Link Supplier</Button>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-bold text-slate-900">Supplier Information</h2>
+                    {!loading && links.length === 0 && (
+                        <Button type="button" disabled={!canManage} onClick={() => openAction("create")}>+ Add Supplier</Button>
+                    )}
                 </div>
-                {!canManage && <div className="mt-4"><Alert type="warning">Supplier associations can be changed only for active products. Existing associations remain visible for reference.</Alert></div>}
-                {notice && <div role="status" className="mt-4"><Alert type="success">{notice}</Alert></div>}
-                {loadError && <div role="alert" className="mt-4"><Alert type="danger">{loadError}</Alert></div>}
-                {!loading && !loadError && <p className="mt-4 text-xs text-slate-500">Yes {links.filter((link) => link.status === "ACTIVE").length} active associations. Inactive associations are retained and can be restored if needed.</p>}
+
+                {notice && <div role="status" className="mb-4"><Alert type="success">{notice}</Alert></div>}
+                {loadError && <div role="alert" className="mb-4"><Alert type="danger">{loadError}</Alert></div>}
+                {!canManage && <div className="mb-4"><Alert type="warning">Supplier information is read-only for this product.</Alert></div>}
+
+                {loading ? (
+                    <p role="status" className="text-sm text-slate-600">Loading supplier information...</p>
+                ) : !loadError && (
+                    links.length > 0
+                        ? <Table columns={columns} data={links} />
+                        : <EmptyState title="No Supplier" description="This product does not have a supplier yet." />
+                )}
             </Card>
-            {loading ? <p role="status" className="text-sm text-slate-600">Loading linked suppliers...</p>
-                : !loadError && (links.length ? <Table columns={columns} data={links} />
-                    : <EmptyState title="No Linked Suppliers" description="This product has no linked suppliers. Select Link Supplier to add one." />)}
             <Modal
                 open={Boolean(action)}
-                title={creating ? "Add Supplier Association" : action?.type === "edit" ? "Update Association" : action?.type === "default" ? "Set Default Supplier" : "Permanently Delete Association"}
+                title={creating ? "Add Supplier" : action?.type === "edit" ? "Edit Supplier Information" : action?.type === "default" ? "Set Default Supplier" : "Remove Supplier"}
                 onClose={() => { if (!saving) { setAction(null); setError(""); } }}
                 footer={<>
                     <Button type="button" variant="ghost" disabled={saving} onClick={() => { setAction(null); setError(""); }}>Cancel</Button>
@@ -277,7 +323,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
                         variant={action?.type === "delete" ? "danger" : "primary"}
                         disabled={saving || (action?.type === "delete" && deleteText !== "XOA")}
                         onClick={editingForm ? undefined : confirmAction}
-                    >{saving ? "Processing..." : creating ? "Create Association" : action?.type === "edit" ? "Save Changes" : action?.type === "default" ? "Confirm Default Supplier" : "Delete Permanently"}</Button>
+                    >{saving ? "Processing..." : creating ? "Save Supplier" : action?.type === "edit" ? "Save Changes" : action?.type === "default" ? "Confirm Default Supplier" : "Delete Permanently"}</Button>
                 </>}
             >
                 <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
@@ -307,7 +353,7 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
                                     {supplierError && <Alert type="danger">{supplierError}</Alert>}
                                     {supplierLoading ? <p className="text-sm text-slate-500">Loading suppliers...</p> : <Select
                                         label="Supplier *" value={form.supplierId} error={errors.supplierId}
-                                        onChange={change("supplierId")}
+                                        onChange={(event) => setForm((current) => ({ ...current, supplierId: event.target.value, purchasePrice: "" }))}
                                         options={[
     {
         value: "",
@@ -327,6 +373,19 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
         })),
 ]}
                                     />}
+                                    <div className="rounded-lg border border-slate-200 bg-white p-3">
+                                        <Button type="button" variant="outline" size="sm" onClick={() => { setShowSupplierCreate((old) => !old); setSupplierCreateError(""); }}>
+                                            {showSupplierCreate ? "Close New Supplier" : "+ Create New Supplier"}
+                                        </Button>
+                                        {supplierCreateNotice && <div className="mt-2"><Alert type="success">{supplierCreateNotice}</Alert></div>}
+                                        {showSupplierCreate && <div className="mt-3 grid gap-3">
+                                            <Input label="New Supplier Name *" value={supplierCreateName} onChange={(event) => setSupplierCreateName(event.target.value)} maxLength={200} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} />
+                                            <Input label="Contact Person (optional)" value={supplierCreateContact} onChange={(event) => setSupplierCreateContact(event.target.value)} maxLength={150} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} />
+                                            <Input label="Email (optional)" type="email" value={supplierCreateEmail} onChange={(event) => setSupplierCreateEmail(event.target.value)} maxLength={150} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} />
+                                            {supplierCreateError && <Alert type="danger">{supplierCreateError}</Alert>}
+                                            <div className="flex justify-end"><Button type="button" disabled={supplierCreateBusy} onClick={handleCreateSupplierInline}>{supplierCreateBusy ? "Creating Supplier..." : "Create Supplier"}</Button></div>
+                                        </div>}
+                                    </div>
                                     <div className="flex items-center justify-between text-xs text-slate-500">
                                         <span>Trang {supplierPage + 1}/{Math.max(1, supplierTotalPages)}</span>
                                         <div className="flex gap-2">
@@ -336,15 +395,11 @@ export default function SupplierProductLinksPanel({ productId, productStatus, re
                                     </div>
                                 </div>
                             ) : <p className="text-sm text-slate-700">Linked to <strong>{action.link?.supplierName}</strong> (association ID {action.link?.id}). To change the supplier, create a new association.</p>}
-                            <Input label="Product code used by the supplier (maximum 100 characters)" value={form.supplierProductCode} maxLength={100} onChange={change("supplierProductCode")} error={errors.supplierProductCode} />
-                            <Input label="Supplier Purchase Price (VND) *" type="number" min="0.01" step="0.01" value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} />
-                            {creating && Number(referencePurchasePrice) > 0 && (
-                                <p className="text-xs text-slate-500">Pre-filled from the product reference price. Adjust it to match the supplier's quote.</p>
+                            {(!creating || Boolean(form.supplierId)) && (
+                                <Input label="Purchase Price (VND) *" type="number" min="0.01" step="0.01" value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} />
                             )}
                             <Input label="Minimum Order Quantity *" type="number" min="1" step="1" value={form.minimumOrderQuantity} onChange={change("minimumOrderQuantity")} error={errors.minimumOrderQuantity} />
-                            {creating ? <Checkbox checked={form.defaultSupplier} onChange={change("defaultSupplier")} label="Set as the default supplier when creating this association (replaces the current default)." />
-                                : <Select label="Association Status" value={form.status} onChange={change("status")} error={errors.status} options={[{ value: "ACTIVE", label: "Active" }, { value: "INACTIVE", label: "Inactive" }]} />}
-                            <p className="text-xs text-slate-500">Only purchasing terms and association status can be edited. The product and supplier records remain unchanged.</p>
+                            <p className="text-xs text-slate-500">When this is the product's only supplier, updating the purchase price also updates the Product purchase price.</p>
                         </form>
                     ) : action?.type === "default" ? (
                         <p className="text-sm text-slate-700">Set <strong>{action.link?.supplierName}</strong> as the default supplier for this product? The current default supplier will be replaced.</p>

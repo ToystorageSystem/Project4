@@ -1,10 +1,6 @@
 import { lazy } from "react";
 const definitions = [
   ["dashboard", "business/BusinessDashboardPage"],
-  ["suppliers", "businessstaff/suppliers/SupplierListPage"],
-  ["suppliers/new", "businessstaff/suppliers/SupplierFormPage"],
-  ["suppliers/:supplierId/edit", "businessstaff/suppliers/SupplierFormPage"],
-  ["suppliers/:supplierId", "businessstaff/suppliers/SupplierDetailPage"],
   ["products", "businessstaff/products/ProductListPage"],
   ["categories", "businessstaff/categories/CategoryListPage"],
   ["products/new", "businessstaff/products/ProductFormPage"],
@@ -23,8 +19,6 @@ const definitions = [
   ["stock-transfers/:transferId/edit", "businessstaff/stocktransfers/StockTransferCreatePage"],
   ["stock-transfers/:transferId", "businessstaff/stocktransfers/StockTransferDetailPage"],
   ["inventory-report", "businessstaff/inventoryreport/InventoryReportPage"],
-  ["stock-transactions", "businessmanager/StockTransactionsPage"],
-  ["activity-reports", "businessmanager/BusinessActivityReportsPage"],
   ["discrepancies", "businessmanager/DiscrepanciesPage"],
 ];
 const modules = import.meta.glob("../pages/{business,businessstaff,businessmanager}/**/*.jsx");

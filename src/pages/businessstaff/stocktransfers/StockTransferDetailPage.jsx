@@ -183,7 +183,6 @@ export default function StockTransferDetailPage() {
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                             <InfoField label="Origin" value={`${detail.fromWarehouseName || "—"} (${detail.fromWarehouseCode || "—"})`} />
                             <InfoField label="Destination" value={`${detail.toWarehouseName || "—"} (${detail.toWarehouseCode || "—"})`} />
-                            <InfoField label="Transfer Type" value={detail.transferType || "—"} />
                             <InfoField label="Expected Ship Date" value={dateText(detail.expectedShipmentDate)} />
                             <InfoField label="Expected Receipt Date" value={dateText(detail.expectedReceiptDate)} />
                             <InfoField label="Transfer Reason" value={reason?.label || detail.reasonCode || "—"} />
@@ -195,7 +194,7 @@ export default function StockTransferDetailPage() {
                             <InfoField label="Confirmed By" value={detail.confirmedByName || "—"} />
                             <InfoField label="Confirmed At" value={dateText(detail.confirmedAt)} />
                         </div>
-                        {detail.reasonNote && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Reason Notes:</strong> {detail.reasonNote}</p>}
+                        {detail.reasonCode === "OTHER" && detail.reasonNote && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Other Reason Explanation:</strong> {detail.reasonNote}</p>}
                         {detail.notes && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Notes:</strong> {detail.notes}</p>}
                         {detail.status === "CANCELLED" && (detail.cancelReason || detail.rejectionReason) &&
                             <p className="rounded-xl bg-orange-50 p-4 text-sm text-slate-800"><strong>Cancellation Reason:</strong> {detail.cancelReason || detail.rejectionReason}</p>}

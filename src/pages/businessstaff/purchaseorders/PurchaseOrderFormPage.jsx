@@ -17,7 +17,7 @@ import Button from "../../../components/ui/Button";
 import Card from "../../../components/ui/Card";
 import Checkbox from "../../../components/ui/Checkbox";
 import Input from "../../../components/ui/Input";
-import Select from "../../../components/ui/Select";
+import SearchableSelect from "../../../components/ui/SearchableSelect";
 import Spinner from "../../../components/ui/Spinner";
 import TextArea from "../../../components/ui/TextArea";
 import { formatPurchaseOrderMoney } from "./purchaseOrderFormat";
@@ -50,7 +50,6 @@ export default function PurchaseOrderFormPage() {
     const [saveError, setSaveError] = useState("");
     const [saveProblems, setSaveProblems] = useState([]);
     const [saving, setSaving] = useState(false);
-    const [confirmed, setConfirmed] = useState(false);
     const [confirmedPriceChange, setConfirmedPriceChange] = useState(false);
 
     useEffect(() => {
@@ -58,7 +57,6 @@ export default function PurchaseOrderFormPage() {
         setLoading(true);
         setLoadError("");
         setDetail(null);
-        setConfirmed(false);
         setConfirmedPriceChange(false);
 
         if (editing && (!Number.isSafeInteger(Number(orderId)) || Number(orderId) <= 0)) {
@@ -139,7 +137,6 @@ export default function PurchaseOrderFormPage() {
 
     const setField = (key, value) => {
         setForm((old) => ({ ...old, [key]: value }));
-        setConfirmed(false);
         setConfirmedPriceChange(false);
         setSaveError("");
         setSaveProblems([]);
@@ -153,7 +150,6 @@ export default function PurchaseOrderFormPage() {
             // Products are supplier-specific: never silently retain old supplier's rows.
             items: [blankRow(nextKey.current)],
         }));
-        setConfirmed(false);
         setConfirmedPriceChange(false);
         setSaveProblems([]);
         setSaveError("");
@@ -171,7 +167,6 @@ export default function PurchaseOrderFormPage() {
                 return { ...row, [key]: value };
             }),
         }));
-        setConfirmed(false);
         setConfirmedPriceChange(false);
         setSaveProblems([]);
         setSaveError("");
@@ -180,13 +175,11 @@ export default function PurchaseOrderFormPage() {
     const addRow = () => {
         nextKey.current += 1;
         setForm((old) => ({ ...old, items: [...old.items, blankRow(nextKey.current)] }));
-        setConfirmed(false);
         setSaveProblems([]);
     };
 
     const removeRow = (clientKey) => {
         setForm((old) => ({ ...old, items: old.items.filter((row) => row.clientKey !== clientKey) }));
-        setConfirmed(false);
         setConfirmedPriceChange(false);
         setSaveProblems([]);
     };
@@ -212,7 +205,7 @@ export default function PurchaseOrderFormPage() {
         setSaveError("");
         const problems = validatePurchaseOrderDraft(form, productOptions);
         setSaveProblems(problems);
-        if (problems.length || !confirmed || (priceDiffers && !confirmedPriceChange)) return;
+        if (problems.length || (priceDiffers && !confirmedPriceChange)) return;
         setSaving(true);
         try {
             const payload = toPurchaseOrderPayload(form);
@@ -253,10 +246,11 @@ export default function PurchaseOrderFormPage() {
                         <Card className="space-y-5">
                             <h2 className="text-lg font-semibold text-slate-900">Supplier and Main Warehouse</h2>
                             <div className="grid gap-4 md:grid-cols-2">
-                                <Select label="Supplier *" value={form.supplierId} options={supplierSelectOptions} disabled={saving} onChange={(event) => changeSupplier(event.target.value)} />
-                                <Select label="Receiving Main Warehouse *" value={form.warehouseId} options={warehouseSelectOptions} disabled={saving} onChange={(event) => setField("warehouseId", event.target.value)} />
-                                <Input label="Requested delivery date (optional for DRAFT)" type="date" min={todayVietnamIso()} value={form.expectedDeliveryDate} disabled={saving} onChange={(event) => setField("expectedDeliveryDate", event.target.value)} />
+                                <SearchableSelect label="Supplier *" searchPlaceholder="Search supplier by name or code" value={form.supplierId} options={supplierSelectOptions} disabled={saving} onChange={(event) => changeSupplier(event.target.value)} />
+                                <SearchableSelect label="Receiving Main Warehouse *" searchPlaceholder="Search warehouse by name or code" value={form.warehouseId} options={warehouseSelectOptions} disabled={saving} onChange={(event) => setField("warehouseId", event.target.value)} />
+                                <Input label="Delivery Date *" type="date" required min={todayVietnamIso()} value={form.expectedDeliveryDate} disabled={saving} onChange={(event) => setField("expectedDeliveryDate", event.target.value)} />
                             </div>
+                            <p className="text-xs text-slate-500">This is the agreed delivery date for the order. It will not be recalculated when submitted.</p>
                             <TextArea label="Notes (optional)" value={form.note} disabled={saving} rows={3} onChange={(event) => setField("note", event.target.value)} />
                             {editing && <p className="text-sm text-slate-500">Only draft orders can be edited. If you change the supplier, reselect the ordered products.</p>}
                         </Card>
@@ -277,7 +271,7 @@ export default function PurchaseOrderFormPage() {
                                 const selectOptions = [
                                     { value: "", label: "-- Select Product --" },
                                     ...productOptions.filter((item) => !otherIds.has(String(item.productId))).map((item) => ({
-                                        value: String(item.productId), label: `${item.productCode} — ${item.productName} (${item.baseUnit || ""})`,
+                                        value: String(item.productId), label: `${item.productName} | Product Code: ${item.productCode}${item.supplierProductCode ? ` | Supplier Code: ${item.supplierProductCode}` : ""} (${item.baseUnit || ""})`,
                                     })),
                                 ];
                                 // Keep stale selections visible for review; validation prevents saving them.
@@ -293,7 +287,7 @@ export default function PurchaseOrderFormPage() {
                                             <Button type="button" size="sm" variant="outline" disabled={saving || form.items.length === 1} onClick={() => removeRow(row.clientKey)}>Remove Row</Button>
                                         </div>
                                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                            <Select label="Product *" disabled={!form.supplierId || loadingProducts || saving} value={row.productId} options={selectOptions} onChange={(event) => updateRow(row.clientKey, "productId", event.target.value)} />
+                                            <SearchableSelect label="Product *" searchPlaceholder="Search product by name or code" disabled={!form.supplierId || loadingProducts || saving} value={row.productId} options={selectOptions} onChange={(event) => updateRow(row.clientKey, "productId", event.target.value)} />
                                             <Input label="Ordered Quantity *" type="number" min="1" step="1" disabled={!option || saving} value={row.orderedQuantity} onChange={(event) => updateRow(row.clientKey, "orderedQuantity", event.target.value)} />
                                             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
                                                 <span className="block text-slate-500">Purchase Unit Price</span>
@@ -306,8 +300,9 @@ export default function PurchaseOrderFormPage() {
                                                     Order quantity must meet the minimum {option.minimumOrderQuantity || 1} (minimum order quantity).
                                                 </p>
                                             )}
+                                        {option?.supplierProductCode && <p className="text-xs text-slate-600">Supplier Product Code: <strong>{option.supplierProductCode}</strong></p>}
                                         {option && <div className="flex flex-wrap justify-between gap-3 text-sm text-slate-600">
-                                            <span>Minimum Order Quantity: <b>{option.minimumOrderQuantity}</b> · Lead Time: <b>{option.leadTimeDays} days</b>{option.defaultSupplier ? " · Default Supplier" : ""}</span>
+                                            <span>Minimum Order Quantity: <b>{option.minimumOrderQuantity}</b>{option.defaultSupplier ? " · Default Supplier" : ""}</span>
                                             <span>Estimated Line Total: <b className="text-slate-900">{formatPurchaseOrderMoney(total)}</b></span>
                                         </div>}
                                     </div>
@@ -325,12 +320,9 @@ export default function PurchaseOrderFormPage() {
                             <div className="mt-3"><Checkbox checked={confirmedPriceChange} onChange={(event) => setConfirmedPriceChange(event.target.checked)} label="I agree to update unit prices to the supplier's current prices." /></div>
                         </Alert>}
                         <Card className="space-y-4">
-                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                <Checkbox checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} label="I have reviewed the information and agree to save the purchase order." />
-                            </div>
                             <div className="flex flex-wrap justify-end gap-3">
                                 <Button type="button" variant="outline" onClick={() => navigate(editing ? `${ROOT}/${orderId}` : ROOT)}>Cancel</Button>
-                                <Button type="submit" disabled={saving || loadingProducts || !!productError || !confirmed || (priceDiffers && !confirmedPriceChange)}>{saving ? "Saving..." : editing ? "Save Draft Changes" : "Create Draft Order"}</Button>
+                                <Button type="submit" disabled={saving || loadingProducts || !!productError || (priceDiffers && !confirmedPriceChange)}>{saving ? "Saving..." : editing ? "Save Draft Changes" : "Create Draft Order"}</Button>
                             </div>
                         </Card>
                     </form>

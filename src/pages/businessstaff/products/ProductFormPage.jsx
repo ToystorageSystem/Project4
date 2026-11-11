@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import SupplierProductLinksPanel from "../../../components/business/supplierProducts/SupplierProductLinksPanel";
+import { listSuppliers, supplierErrorMessage } from "../../../api/business/suppliers";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { createProduct, getCategoryOptions, getProduct, listProducts, productErrorMessage, updateProduct, uploadProductImage } from "../../../api/business/products";
+import { createProductWithSupplier, getCategoryOptions, getProduct, listProducts, productErrorMessage, updateProduct, uploadProductImage } from "../../../api/business/products";
 import { businessStaffMenuItems } from "../../../components/icons/businessMenuItems";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -23,12 +25,12 @@ function validate(form) {
     for (const [field, maximum] of Object.entries(limits)) {
         if (form[field].trim().length > maximum) errors[field] = `Maximum ${maximum} characters.`;
     }
-    for (const field of ["productCode", "barcode", "name", "baseUnit"]) {
+    for (const field of ["barcode", "name", "baseUnit"]) {
         if (!form[field].trim()) errors[field] = "Required field.";
     }
     if (!/^[1-9]\d*$/.test(form.categoryId.trim())) errors.categoryId = "Please select a valid category.";
     if (form.brandId.trim() && !/^[1-9]\d*$/.test(form.brandId.trim())) errors.brandId = "Please enter a valid brand ID.";
-    for (const field of ["purchasePrice", "sellingPrice"]) {
+    for (const field of ["sellingPrice"]) {
         if (!form[field].trim() || !Number.isFinite(Number(form[field])) || Number(form[field]) < 0.01) {
             errors[field] = "Price must be at least 0.01.";
         }
@@ -39,7 +41,7 @@ function validate(form) {
 
 function toPayload(form) {
     return {
-        productCode: form.productCode.trim().toUpperCase(),
+        productCode: form.productCode.trim().toUpperCase() || null,
         barcode: form.barcode.trim(),
         imageUrl: form.imageUrl.trim() || null,
         name: form.name.trim(),
@@ -50,6 +52,72 @@ function toPayload(form) {
         sellingPrice: Number(form.sellingPrice),
         requestReason: form.requestReason.trim() || null,
     };
+}
+
+function validateSupplierSetup(value) {
+    const errors = {};
+    if (!value.name.trim() || value.name.trim().length > 200) {
+        errors.name = "Enter a supplier name (maximum 200 characters).";
+    }
+    if (value.phone.trim() && !/^\+?[0-9]{9,15}$/.test(value.phone.trim())) {
+        errors.phone = "Phone number must contain 9 to 15 digits (optional + prefix).";
+    }
+    if (!/^\d+(\.\d{1,2})?$/.test(value.purchasePrice)
+            || Number(value.purchasePrice) < 0.01) {
+        errors.purchasePrice = "Enter a valid purchase price greater than zero.";
+    }
+    if (!/^[1-9]\d*$/.test(value.minimumOrderQuantity)) {
+        errors.minimumOrderQuantity = "Minimum order quantity must be at least 1.";
+    }
+    return errors;
+}
+
+function SupplierNameCombobox({ value, onChange, suppliers, loadError, disabled, errors }) {
+    const [open, setOpen] = useState(false);
+    const suggestions = useMemo(() => {
+        const term = value.name.trim().toLocaleLowerCase();
+        return suppliers.filter((item) => !term
+            || item.name.toLocaleLowerCase().includes(term)
+            || (item.supplierCode || "").toLocaleLowerCase().includes(term)).slice(0, 50);
+    }, [suppliers, value.name]);
+    const selected = suppliers.find((item) => String(item.id) === String(value.supplierId));
+
+    return <div className="md:col-span-2 space-y-2">
+        <label className="block space-y-1.5">
+            <span className="text-sm font-medium text-slate-700">Supplier Name *</span>
+            <input type="text" role="combobox" aria-expanded={open} aria-controls="supplier-name-options"
+                aria-autocomplete="list" autoComplete="off" maxLength={200}
+                className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 ${errors.name ? "border-red-500" : "border-slate-300"}`}
+                value={value.name} disabled={disabled} placeholder="Select a supplier or type a new supplier name"
+                onFocus={() => setOpen(true)} onChange={(event) => {
+                    const typed = event.target.value;
+                    const exact = suppliers.filter((s) => s.name.toLocaleLowerCase() === typed.trim().toLocaleLowerCase());
+                    const match = exact.length === 1 ? exact[0] : null;
+                    onChange((current) => ({ ...current, name: typed,
+                        supplierId: match ? String(match.id) : "", phone: match?.phone || "" }));
+                    setOpen(true);
+                }}
+                onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}
+                onBlur={() => setTimeout(() => setOpen(false), 120)} />
+            {errors.name && <span className="text-xs text-red-600">{errors.name}</span>}
+        </label>
+        {open && !disabled && <div id="supplier-name-options" role="listbox"
+            className="max-h-52 space-y-1 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+            {suggestions.map((supplier) => <button type="button" role="option" key={supplier.id}
+                aria-selected={String(value.supplierId) === String(supplier.id)}
+                className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-orange-50"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => { onChange((current) => ({ ...current,
+                    name: supplier.name, supplierId: String(supplier.id), phone: supplier.phone || "" })); setOpen(false); }}>
+                {supplier.name} <span className="text-xs text-slate-500">({supplier.supplierCode || `ID ${supplier.id}`})</span>
+            </button>)}
+            {!suggestions.length && <p className="px-3 py-2 text-sm text-slate-500">No matching supplier. Your typed name will create a new supplier.</p>}
+        </div>}
+        {loadError && <p role="alert" className="text-xs text-red-600">{loadError}</p>}
+        <p className="text-xs text-slate-500">{selected
+            ? "Existing supplier selected. Its phone number is shown below."
+            : "If the name does not exist, a new supplier will be created when you save the product."}</p>
+    </div>;
 }
 
 function uniqueOptions(rows, idField, nameField) {
@@ -73,14 +141,47 @@ export default function ProductFormPage() {
     const [errors, setErrors] = useState({});
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
+    const [existingProductStatus, setExistingProductStatus] = useState("ACTIVE");
+    const [supplierSetup, setSupplierSetup] = useState({
+        supplierId: "", name: "", phone: "", purchasePrice: "", minimumOrderQuantity: "1",
+    });
+    const [supplierErrors, setSupplierErrors] = useState({});
+    const [availableSuppliers, setAvailableSuppliers] = useState([]);
+    const [supplierLoadError, setSupplierLoadError] = useState("");
     const [imageFile, setImageFile] = useState(null);
     const [uploading, setUploading] = useState(false);
+
+    useEffect(() => {
+        if (editing) return undefined;
+        const controller = new AbortController();
+        const load = async () => {
+            try {
+                const all = [];
+                let page = 0;
+                let pages = 1;
+                while (page < pages && !controller.signal.aborted) {
+                    const result = await listSuppliers({ status: "ACTIVE", page, size: 100,
+                        sortBy: "name", direction: "ASC" }, controller.signal);
+                    if (!Array.isArray(result.content)) throw new Error("Invalid supplier list");
+                    all.push(...result.content);
+                    pages = result.totalPages || 1;
+                    page++;
+                }
+                if (!controller.signal.aborted) setAvailableSuppliers(all);
+            } catch (error) {
+                if (!controller.signal.aborted) setSupplierLoadError(supplierErrorMessage(error, "Unable to load suppliers."));
+            }
+        };
+        load();
+        return () => controller.abort();
+    }, [editing]);
 
     useEffect(() => {
         const controller = new AbortController();
         setLoading(true);
         setError("");
         setLoadFailed(false);
+        setSupplierErrors({});
         setImageFile(null);
         const productPromise = editing ? getProduct(productId, controller.signal) : Promise.resolve(null);
         const categoryPromise = getCategoryOptions(controller.signal)
@@ -103,6 +204,7 @@ export default function ProductFormPage() {
                 setCategorySuggestions([...new Map([...fromProducts, ...fromApi].map((item) => [item.value, item])).values()]);
                 setBrandSuggestions(uniqueOptions([...sampleRows, ...(product ? [product] : [])], "brandId", "brandName"));
                 if (editing) {
+                    setExistingProductStatus(product.status);
                     if (product.status !== "ACTIVE" && product.status !== "INACTIVE") {
                         setLoadFailed(true);
                         setError("Only active or hidden products can be edited.");
@@ -149,23 +251,35 @@ export default function ProductFormPage() {
         event.preventDefault();
         if (saving || uploading || loadFailed) return;
         const nextErrors = validate(form);
+        const nextSupplierErrors = editing ? {} : validateSupplierSetup(supplierSetup);
         setErrors(nextErrors);
-        if (Object.keys(nextErrors).length) return;
+        setSupplierErrors(nextSupplierErrors);
+        if (Object.keys(nextErrors).length || Object.keys(nextSupplierErrors).length) return;
         setSaving(true);
         setError("");
         try {
-            // Sau khi BE trả thành công, thay đổi đã được lưu và ghi nhật ký.
+            // BE tao Product va lien ket Supplier trong cung mot transaction.
             const product = editing
                 ? await updateProduct(productId, toPayload(form))
-                : await createProduct(toPayload(form));
-            const destinationId = product?.id ?? (editing ? productId : null);
-            const notice = editing ? "Product updated successfully. Change history was recorded." : null;
-            navigate(destinationId ? `${ROOT}/${destinationId}` : ROOT, {
+                : await createProductWithSupplier({
+                    product: { ...toPayload({ ...form, purchasePrice: supplierSetup.purchasePrice }),
+                        productCode: null },
+                    supplierId: supplierSetup.supplierId ? Number(supplierSetup.supplierId) : null,
+                    supplierName: supplierSetup.name.trim(),
+                    supplierPhone: supplierSetup.supplierId ? null : supplierSetup.phone.trim() || null,
+                    minimumOrderQuantity: Number(supplierSetup.minimumOrderQuantity),
+                    leadTimeDays: 0,
+                });
+            if (!product?.id && !editing) {
+                setError("The product may have been saved, but no ID was returned. Check the product list before retrying.");
+                return;
+            }
+            navigate(`${ROOT}/${product?.id ?? productId}`, {
                 replace: true,
-                state: notice ? { notice } : null,
+                state: { notice: editing ? "Product updated successfully." : "Product and supplier saved successfully." },
             });
         } catch (requestError) {
-            setError(productErrorMessage(requestError, "Unable to save product."));
+            setError(productErrorMessage(requestError, "Unable to save product and supplier."));
         } finally {
             setSaving(false);
         }
@@ -175,8 +289,10 @@ export default function ProductFormPage() {
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader title={editing ? "Edit Product" : "Add Product"}
-                    description={editing ? "Save changes directly; the system records the user and before/after values." : "Valid product information will be saved immediately and the product will become active."}
-                    actions={<Button variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>← Back</Button>}
+                    description={editing
+                        ? "Edit product details below. Edit the purchase price in Product Supplier."
+                        : "Product Code is generated automatically. Choose a supplier or enter a new supplier name."}
+                    actions={<Button variant="ghost" onClick={() => navigate(ROOT)}>← Back</Button>}
                 />
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
                 {loading ? (
@@ -190,23 +306,42 @@ export default function ProductFormPage() {
                         )}
                         <form onSubmit={submit} noValidate className="mt-6 space-y-6">
                             <div className="grid gap-5 md:grid-cols-2">
-                                <Input label="Product Code *" required maxLength={50} value={form.productCode} onChange={change("productCode")} error={errors.productCode} placeholder="Example: SP-TOY-001" />
-                                <Input label="Barcode *" required maxLength={100} value={form.barcode} onChange={change("barcode")} error={errors.barcode} placeholder="Unique barcode" />
+                                <div className="md:col-span-2">
+                                    <Input label="Barcode *" required maxLength={100} value={form.barcode} onChange={change("barcode")} error={errors.barcode} placeholder="May be shared across different suppliers" />
+                                </div>
                                 <div className="md:col-span-2"><Input label="Product Name *" required maxLength={200} value={form.name} onChange={change("name")} error={errors.name} placeholder="Product Name" /></div>
                                 <div>
                                     <Input label="Product Category *" type="number" min="1" step="1" required list="product-category-options" value={form.categoryId} onChange={change("categoryId")} error={errors.categoryId} placeholder="Enter a category ID or select a category" />
                                     <datalist id="product-category-options">{categorySuggestions.map((item) => <option key={item.value} value={item.value} label={item.label} />)}</datalist>
-                                    <p className="mt-1 text-xs text-slate-500">{categorySuggestions.length ? `Suggestions: ${categorySuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "No category suggestions available. Enter an existing category ID."}</p>
                                 </div>
                                 <div>
                                     <Input label="Brand (optional)" type="number" min="1" step="1" list="product-brand-options" value={form.brandId} onChange={change("brandId")} error={errors.brandId} placeholder="Leave blank or enter a brand ID" />
                                     <datalist id="product-brand-options">{brandSuggestions.map((item) => <option key={item.value} value={item.value} label={item.label} />)}</datalist>
-                                    <p className="mt-1 text-xs text-slate-500">{brandSuggestions.length ? `Suggested from existing products: ${brandSuggestions.map((x) => `${x.label} (#${x.value})`).join(" · ")}` : "No brand list available. You may enter an existing brand ID."}</p>
                                 </div>
                                 <Input label="Base Unit *" maxLength={30} required value={form.baseUnit} onChange={change("baseUnit")} error={errors.baseUnit} placeholder="Example: piece, bag, box" />
-                                <Input label="Reference Purchase Price (VND) *" type="number" min="0.01" step="0.01" required value={form.purchasePrice} onChange={change("purchasePrice")} error={errors.purchasePrice} placeholder="120000" />
                                 <Input label="Selling Price (VND) *" type="number" min="0.01" step="0.01" required value={form.sellingPrice} onChange={change("sellingPrice")} error={errors.sellingPrice} placeholder="150000" />
-                                <div className="md:col-span-2"><Input label="Image URL (optional)" maxLength={500} type="url" value={form.imageUrl} onChange={change("imageUrl")} error={errors.imageUrl} placeholder="https://..." /></div>
+                                {!editing && <>
+                                    <SupplierNameCombobox value={supplierSetup} suppliers={availableSuppliers}
+                                        loadError={supplierLoadError} disabled={saving || uploading} errors={supplierErrors}
+                                        onChange={(updater) => { setSupplierSetup(updater); setSupplierErrors({}); }} />
+                                    <div>
+                                        <Input label="Supplier Phone Number (optional)" type="tel" maxLength={16}
+                                            placeholder="0901234567" value={supplierSetup.phone}
+                                            disabled={saving || uploading || Boolean(supplierSetup.supplierId)}
+                                            onChange={(event) => setSupplierSetup((s) => ({ ...s, phone: event.target.value }))}
+                                            error={supplierErrors.phone} />
+                                        {supplierSetup.supplierId && <p className="mt-1 text-xs text-slate-500">Existing supplier phone is read-only.</p>}
+                                    </div>
+                                    <Input label="Purchase Price (VND) *" type="number" min="0.01" step="0.01"
+                                        value={supplierSetup.purchasePrice} disabled={saving || uploading}
+                                        onChange={(event) => setSupplierSetup((s) => ({ ...s, purchasePrice: event.target.value }))}
+                                        error={supplierErrors.purchasePrice} placeholder="45000" />
+                                    <Input label="Minimum Order Quantity *" type="number" min="1" step="1"
+                                        value={supplierSetup.minimumOrderQuantity} disabled={saving || uploading}
+                                        onChange={(event) => setSupplierSetup((s) => ({ ...s, minimumOrderQuantity: event.target.value }))}
+                                        error={supplierErrors.minimumOrderQuantity} />
+                                </>}
+
                             </div>
                             <div className="rounded-xl border border-slate-200 p-4">
                                 <p className="text-sm font-semibold text-slate-800">Or upload a product image</p>
@@ -246,11 +381,14 @@ export default function ProductFormPage() {
                             </div>
                             <TextArea label="Change Notes (optional)" rows={3} maxLength={500} value={form.requestReason} onChange={change("requestReason")} error={errors.requestReason} placeholder="Describe the reason for adding or updating the product" />
                             <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
-                                <Button type="button" variant="ghost" onClick={() => navigate(editing ? `${ROOT}/${productId}` : ROOT)}>Cancel</Button>
+                                <Button type="button" variant="ghost" onClick={() => navigate(ROOT)}>Cancel</Button>
                                 <Button type="submit" disabled={uploading || saving}>{saving ? "Saving..." : editing ? "Save Changes" : "Create Product"}</Button>
                             </div>
                         </form>
                     </Card>
+                )}
+                {editing && !loading && !loadFailed && (
+                    <SupplierProductLinksPanel productId={productId} productStatus={existingProductStatus} />
                 )}
             </div>
         </MainLayout>

@@ -76,7 +76,6 @@ export default function GoodsReceiptDetailPage() {
                 <PageHeader title={T.detailTitle}
                     actions={<div className="flex gap-2">
                         <Button type="button" variant="outline" onClick={() => navigate(LIST)}>← Goods Receipts</Button>
-                        <Button type="button" onClick={() => navigate(ROOT)}>+ Create Another Receipt</Button>
                     </div>} />
                 {error && <div role="alert" className="space-y-2"><Alert type="danger">{error}</Alert>
                     <Button type="button" variant="outline" onClick={() => setReload((x) => x + 1)}>{T.retry}</Button>

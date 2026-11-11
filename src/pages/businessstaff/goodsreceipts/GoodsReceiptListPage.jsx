@@ -128,10 +128,7 @@ export default function GoodsReceiptListPage() {
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
                 <PageHeader title="Track Goods Receipts"
-                    description="Track goods receipts and warehouse receiving progress."
-                    actions={<Link to={ROOT} className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700">
-                        + Create Goods Receipt
-                    </Link>} />
+                    description="Track goods receipts and warehouse receiving progress." />
                 {purchaseOrderId && <Alert type="info">
                     Viewing goods receipts linked to purchase order # {purchaseOrderId}. To view all receipts,
                     <Link to={`${ROOT}/list`} className="ml-1 font-semibold underline">click here</Link>.

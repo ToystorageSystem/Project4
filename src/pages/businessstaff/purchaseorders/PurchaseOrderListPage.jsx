@@ -126,7 +126,7 @@ export default function PurchaseOrderListPage() {
         { key: "totalProducts", label: "Product Count", render: (value) => value ?? "—" },
         { key: "totalOrderedQuantity", label: "Ordered Quantity", render: (value) => value ?? "—" },
         { key: "totalAmount", label: "Total Amount", render: (value) => <span className="whitespace-nowrap font-semibold">{formatPurchaseOrderMoney(value)}</span> },
-        { key: "expectedDeliveryDate", label: "Expected Delivery", render: formatExpectedDeliveryDate },
+        { key: "expectedDeliveryDate", label: "Delivery Date", render: formatExpectedDeliveryDate },
         { key: "createdAt", label: "Created At", render: formatPurchaseOrderDate },
         { key: "id", label: "Actions", render: (_value, order) => <Link className="font-semibold text-[#c94810] hover:underline" to={`${ROOT}/${order.id}`}>Details</Link> },
     ];

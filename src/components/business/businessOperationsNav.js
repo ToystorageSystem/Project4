@@ -5,10 +5,9 @@ export const BUSINESS_NAV = [
   { title: "Overview", icon: "overview", links: [
     { label: "Dashboard", path: "/business/dashboard" },
   ] },
-  { title: "Products & Suppliers", icon: "catalog", links: [
+  { title: "Products", icon: "catalog", links: [
     { label: "Products", path: "/business/products" },
     { label: "Categories", path: "/business/categories" },
-    { label: "Suppliers", path: "/business/suppliers" },
   ] },
   { title: "Purchasing", icon: "purchasing", links: [
     { label: "Purchase Orders", path: "/business/purchase-orders" },
@@ -17,11 +16,7 @@ export const BUSINESS_NAV = [
   ] },
   { title: "Inventory", icon: "inventory", links: [
     { label: "Inventory Report", path: "/business/inventory-report" },
-    { label: "Inventory Transactions", path: "/business/stock-transactions" },
     { label: "Discrepancy Reports", path: "/business/discrepancies" },
-  ] },
-  { title: "Reports", icon: "reports", links: [
-    { label: "Operational Activity", path: "/business/activity-reports" },
   ] },
 ];
 

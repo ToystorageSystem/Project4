@@ -1,4 +1,3 @@
-import { formatBusinessStatus } from "../../../utils/viStatus";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -30,7 +29,7 @@ import {
     toUpdateStockTransferPayload,
     todayLocalIso,
     toStockTransferPayload,
-    validateStockTransferDraft,
+    validateStockTransferDraftDetailed,
 } from "./stockTransferDraft";
 
 const ROOT = "/business/stock-transfers";
@@ -51,8 +50,7 @@ export default function StockTransferCreatePage() {
     const [loadError, setLoadError] = useState("");
     const [productsError, setProductsError] = useState("");
     const [refresh, setRefresh] = useState(0);
-    const [previewRequested, setPreviewRequested] = useState(false);
-    const [confirmedDbWrite, setConfirmedDbWrite] = useState(false);
+    const [showValidationErrors, setShowValidationErrors] = useState(false);
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState("");
     const [uncertainSave, setUncertainSave] = useState(false);
@@ -87,8 +85,7 @@ export default function StockTransferCreatePage() {
                 nextRowId.current = loadedForm.items.length;
                 setForm(loadedForm);
                 setOriginalDetail(data);
-                setPreviewRequested(false);
-                setConfirmedDbWrite(false);
+                setShowValidationErrors(false);
             })
             .catch((error) => {
                 if (!controller.signal.aborted) {
@@ -171,21 +168,26 @@ export default function StockTransferCreatePage() {
         const value = Number(row.requestedQuantity);
         return sum + (Number.isSafeInteger(value) && value > 0 ? value : 0);
     }, 0), [form.items]);
-    const errors = useMemo(() => validateStockTransferDraft(form, sources, destinations, editableProducts), [form, sources, destinations, editableProducts]);
-    const previewReady = previewRequested && !loading && !loadingExisting && !loadingProducts
-        && !loadError && !existingError && !productsError && errors.length === 0;
-    const payload = useMemo(() => previewReady ? toStockTransferPayload(form) : null, [form, previewReady]);
+    const validation = useMemo(
+        () => validateStockTransferDraftDetailed(form, sources, destinations, editableProducts),
+        [form, sources, destinations, editableProducts],
+    );
+    const { errors, fieldErrors } = validation;
+    const getFieldError = (field) => showValidationErrors ? fieldErrors[field] : undefined;
+    const getItemError = (clientKey, field) => showValidationErrors ? fieldErrors.items[clientKey]?.[field] : undefined;
     const minDate = todayLocalIso();
 
-    // A material edit invalidates the previously confirmed preview and write consent.
-    const invalidatePreview = () => {
-        setPreviewRequested(false);
-        setConfirmedDbWrite(false);
-        setSaveError("");
+    // Remove stale server errors when the user edits; inline validation stays visible
+    // after the first Save click and clears itself as fields are corrected.
+    const clearSaveFeedback = () => setSaveError("");
+    const focusFirstInvalid = () => {
+        window.requestAnimationFrame(() => {
+            document.querySelector('[data-stock-transfer-form] [aria-invalid="true"]')?.focus();
+        });
     };
     const setField = (name, value) => {
         setForm((previous) => ({ ...previous, [name]: value }));
-        invalidatePreview();
+        clearSaveFeedback();
     };
     const changeSource = (value) => {
         if (isEditMode) return;
@@ -196,7 +198,7 @@ export default function StockTransferCreatePage() {
             items: [blankTransferRow(++nextRowId.current)],
         }));
         setProducts([]);
-        invalidatePreview();
+        clearSaveFeedback();
     };
     const changeRow = (key, field, value) => {
         setForm((previous) => ({
@@ -205,23 +207,28 @@ export default function StockTransferCreatePage() {
                 ? (field === "productId" ? { ...row, productId: value, requestedQuantity: value ? "1" : "" } : { ...row, [field]: value })
                 : row),
         }));
-        invalidatePreview();
+        clearSaveFeedback();
     };
     const addRow = () => {
         setForm((previous) => ({ ...previous, items: [...previous.items, blankTransferRow(++nextRowId.current)] }));
-        invalidatePreview();
+        clearSaveFeedback();
     };
     const removeRow = (key) => {
         setForm((previous) => ({ ...previous, items: previous.items.filter((row) => row.clientKey !== key) }));
-        invalidatePreview();
+        clearSaveFeedback();
     };
 
     const handleSaveDraft = async () => {
-        if (!previewReady || !confirmedDbWrite || saving || uncertainSave) return;
-        // A second check before POST/PUT reduces the chance of relying on stale inventory.
-        // Backend remains authoritative and rechecks stock inside its transaction.
-        setSaving(true);
+        if (saving || uncertainSave || loading || loadingExisting || loadingProducts
+            || loadError || existingError || productsError) return;
+        setShowValidationErrors(true);
         setSaveError("");
+        if (errors.length > 0) {
+            focusFirstInvalid();
+            return;
+        }
+        // Still re-check current stock before POST/PUT. Backend remains authoritative.
+        setSaving(true);
         let latestProducts;
         try {
             latestProducts = await getStockTransferSourceProducts(form.fromWarehouseId);
@@ -232,12 +239,11 @@ export default function StockTransferCreatePage() {
             return;
         }
         const freshOptions = productsWithCurrentReservation(latestProducts, originalDetail);
-        const freshProblems = validateStockTransferDraft(form, sources, destinations, freshOptions);
+        const freshProblems = validateStockTransferDraftDetailed(form, sources, destinations, freshOptions).errors;
         if (freshProblems.length) {
             setProducts(latestProducts);
-            setPreviewRequested(true);
-            setConfirmedDbWrite(false);
-            setSaveError("The data has changed. Fix the displayed errors and preview again.");
+            setSaveError("Available stock changed. Correct the highlighted fields before saving.");
+            focusFirstInvalid();
             setSaving(false);
             return;
         }
@@ -284,14 +290,13 @@ export default function StockTransferCreatePage() {
                 setSaveError(stockTransferErrorMessage(error, "Unable to save changes. Please try again."));
             }
         } finally {
-            setConfirmedDbWrite(false);
             setSaving(false);
         }
     };
 
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
-            <div className="space-y-6">
+            <div className="space-y-6" data-stock-transfer-form>
                 <PageHeader
                     title={isEditMode ? `Edit Stock Transfer ${originalDetail?.transferCode || `#${transferId}`}` : "Create Stock Transfer"}
                     description={isEditMode
@@ -308,17 +313,19 @@ export default function StockTransferCreatePage() {
                         <Card className="space-y-5">
                             <h2 className="text-lg font-semibold text-slate-900">Source and Destination</h2>
                             <div className="grid gap-4 md:grid-cols-2">
-                                <Select label="Source Warehouse / Store *" disabled={saving || isEditMode} value={form.fromWarehouseId} options={sourceOptions} onChange={(event) => changeSource(event.target.value)} />
-                                <Select label="Destination Store *" disabled={saving || !canChangeDestination} value={form.toWarehouseId} options={destinationOptions} onChange={(event) => setField("toWarehouseId", event.target.value)} />
+                                <Select label="Source Warehouse / Store *" error={getFieldError("fromWarehouseId")} aria-invalid={!!getFieldError("fromWarehouseId")} disabled={saving || isEditMode} value={form.fromWarehouseId} options={sourceOptions} onChange={(event) => changeSource(event.target.value)} />
+                                <Select label="Destination Store *" error={getFieldError("toWarehouseId")} aria-invalid={!!getFieldError("toWarehouseId")} disabled={saving || !canChangeDestination} value={form.toWarehouseId} options={destinationOptions} onChange={(event) => setField("toWarehouseId", event.target.value)} />
                             </div>
                             {source && <p className="text-sm text-slate-500">Source: {source.address || source.name} · Type: {source.type}</p>}
                             {destination && <p className="text-sm text-slate-500">Destination: {destination.address || destination.name}</p>}
                             <div className="grid gap-4 md:grid-cols-2">
-                                <Input label="Expected Ship Date *" disabled={saving} type="date" min={minDate} value={form.expectedShipmentDate} onChange={(event) => setField("expectedShipmentDate", event.target.value)} />
-                                <Input label="Expected Receipt Date *" disabled={saving} type="date" min={form.expectedShipmentDate || minDate} value={form.expectedReceiptDate} onChange={(event) => setField("expectedReceiptDate", event.target.value)} />
+                                <Input label="Expected Ship Date *" error={getFieldError("expectedShipmentDate")} aria-invalid={!!getFieldError("expectedShipmentDate")} disabled={saving} type="date" min={minDate} value={form.expectedShipmentDate} onChange={(event) => setField("expectedShipmentDate", event.target.value)} />
+                                <Input label="Expected Receipt Date *" error={getFieldError("expectedReceiptDate")} aria-invalid={!!getFieldError("expectedReceiptDate")} disabled={saving} type="date" min={form.expectedShipmentDate || minDate} value={form.expectedReceiptDate} onChange={(event) => setField("expectedReceiptDate", event.target.value)} />
                             </div>
-                            <Select label="Transfer Reason *" disabled={saving} value={form.reasonCode} options={[{ value: "", label: "-- Select Reason --" }, ...TRANSFER_REASONS]} onChange={(event) => setField("reasonCode", event.target.value)} />
-                            <TextArea disabled={saving} label={form.reasonCode === "OTHER" ? "Other Reason Explanation *" : "Additional Reason Notes (optional)"} rows={2} value={form.reasonNote} onChange={(event) => setField("reasonNote", event.target.value)} />
+                            <Select label="Transfer Reason *" error={getFieldError("reasonCode")} aria-invalid={!!getFieldError("reasonCode")} disabled={saving} value={form.reasonCode} options={[{ value: "", label: "-- Select Reason --" }, ...TRANSFER_REASONS]} onChange={(event) => setField("reasonCode", event.target.value)} />
+                            {form.reasonCode === "OTHER" && (
+                                <TextArea disabled={saving} label="Other Reason Explanation *" error={getFieldError("reasonNote")} aria-invalid={!!getFieldError("reasonNote")} rows={2} value={form.reasonNote} onChange={(event) => setField("reasonNote", event.target.value)} />
+                            )}
                             <TextArea disabled={saving} label="Notes (optional)" rows={2} value={form.notes} onChange={(event) => setField("notes", event.target.value)} />
                         </Card>
 
@@ -333,6 +340,7 @@ export default function StockTransferCreatePage() {
                                 <Button type="button" variant="outline" disabled={saving || !form.fromWarehouseId || loadingProducts || products.length === 0} onClick={addRow}>+ Add Product</Button>
                             </div>
                             {loadingProducts && <p className="flex items-center gap-2 text-sm text-slate-500"><Spinner /> Loading available stock...</p>}
+                            {getFieldError("itemList") && <p role="alert" className="text-sm font-medium text-red-600">{getFieldError("itemList")}</p>}
                             {form.fromWarehouseId && !loadingProducts && !productsError && editableProducts.length === 0 && <Alert type="warning">No available stock at the source. Check inventory or select another source.</Alert>}
                             {form.items.map((row, index) => {
                                 const selectedProduct = productById.get(row.productId);
@@ -354,14 +362,14 @@ export default function StockTransferCreatePage() {
                                             <Button type="button" size="sm" variant="outline" disabled={saving || form.items.length === 1} onClick={() => removeRow(row.clientKey)}>Remove Row</Button>
                                         </div>
                                         <div className="grid gap-4 md:grid-cols-3">
-                                            <Select label="Product *" value={row.productId} disabled={saving || !form.fromWarehouseId || loadingProducts} options={options} onChange={(event) => changeRow(row.clientKey, "productId", event.target.value)} />
-                                            <Input label="Requested Quantity *" type="number" min="1" step="1" max={selectedProduct?.availableQuantity ?? undefined} disabled={saving || !selectedProduct || loadingProducts} value={row.requestedQuantity} onChange={(event) => changeRow(row.clientKey, "requestedQuantity", event.target.value)} />
+                                            <Select label="Product *" error={getItemError(row.clientKey, "productId")} aria-invalid={!!getItemError(row.clientKey, "productId")} value={row.productId} disabled={saving || !form.fromWarehouseId || loadingProducts} options={options} onChange={(event) => changeRow(row.clientKey, "productId", event.target.value)} />
+                                            <Input label="Requested Quantity *" error={getItemError(row.clientKey, "requestedQuantity")} aria-invalid={!!getItemError(row.clientKey, "requestedQuantity")} type="number" min="1" step="1" max={selectedProduct?.availableQuantity ?? undefined} disabled={saving || !selectedProduct || loadingProducts} value={row.requestedQuantity} onChange={(event) => changeRow(row.clientKey, "requestedQuantity", event.target.value)} />
                                             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
                                                 <span className="block text-slate-500">{editingReservedTransfer ? "Available after accounting for this transfer's reservations (estimate)" : "Available Stock at Source"}</span>
                                                 <strong className="mt-1 block text-xl text-slate-900">{selectedProduct ? displayQuantity(selectedProduct.availableQuantity) : "—"}</strong>
                                             </div>
                                         </div>
-                                        {overStock && <p role="alert" className="text-sm font-semibold text-red-600">Request {displayQuantity(requested)} exceeds available stock {displayQuantity(selectedProduct.availableQuantity)}.</p>}
+                                        {overStock && !showValidationErrors && <p role="alert" className="text-sm font-semibold text-red-600">Request {displayQuantity(requested)} exceeds available stock {displayQuantity(selectedProduct.availableQuantity)}.</p>}
                                         {selectedProduct && <p className="text-xs text-slate-500">Code: {selectedProduct.productCode} · Barcode: {selectedProduct.barcode || "—"} · Unit: {selectedProduct.baseUnit || "—"}</p>}
                                     </div>
                                 );
@@ -374,41 +382,21 @@ export default function StockTransferCreatePage() {
                             </div>
                         </Card>
 
-                        <Card className="space-y-4">
-                            <h2 className="text-lg font-semibold text-slate-900">Validate Draft Form</h2>
-                            <p className="text-sm text-slate-600">Review the details before saving. Preview will not change any data.</p>
-                            {previewRequested && errors.length > 0 && <div role="alert"><Alert type="danger">
-                                <strong>Correct the following fields:</strong>
-                                <ul className="mt-2 list-disc space-y-1 pl-5">{errors.map((message, index) => <li key={index}>{message}</li>)}</ul>
-                            </Alert></div>}
-                            {previewReady && <Alert type="success">
-                                <strong>Validation passed — no changes saved.</strong>
-                                <p className="mt-2">{source?.name} → {destination?.name}; {payload.items.length} products, total {displayQuantity(totalQuantity)} units.</p>
-                                <p>Ship Date: {payload.expectedShipmentDate}; Receipt Date: {payload.expectedReceiptDate}; lý do: {TRANSFER_REASONS.find((item) => item.value === payload.reasonCode)?.label}.</p>
-                            </Alert>}
-                            {saveError && <div role="alert"><Alert type="danger">{saveError}</Alert></div>}
-                            {previewReady && !uncertainSave && <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-slate-700">
-                                <input type="checkbox" className="mt-1 accent-orange-600" checked={confirmedDbWrite} disabled={saving} onChange={(event) => setConfirmedDbWrite(event.target.checked)} />
-                                <span>I confirm {isEditMode ? `update the transfer ${originalDetail?.status}` : "create the draft transfer"} in the <strong>system</strong>. {editingReservedTransfer
-                                    ? "The system will recalculate reserved stock based on the updated quantities."
-                                    : "This action does not reserve stock yet."}</span>
-                            </label>}
-                            <div className="flex flex-wrap justify-end gap-3">
-                                <Button type="button" variant="outline" disabled={saving || uncertainSave} onClick={() => {
-                                    const resetForm = isEditMode && originalDetail
-                                        ? stockTransferFormFromDetail(originalDetail)
-                                        : blankStockTransferForm();
-                                    setForm(resetForm);
-                                    nextRowId.current = resetForm.items.length;
-                                    invalidatePreview();
-                                }}>{isEditMode ? "Restore Data" : "Reset Form"}</Button>
-                                <Button type="button" disabled={saving || loadingProducts || !!productsError || uncertainSave} onClick={() => setPreviewRequested(true)}>Validate / Preview</Button>
-                                <Button type="button" disabled={!previewReady || !confirmedDbWrite || saving || uncertainSave} onClick={handleSaveDraft}>
-                                    {saving ? "Saving..." : (isEditMode ? "Save Transfer Changes" : "Save Draft Transfer")}
-                                </Button>
-                            </div>
-                            <></>
-                        </Card>
+                        {saveError && <div role="alert"><Alert type="danger">{saveError}</Alert></div>}
+                        <div className="flex flex-wrap justify-end gap-3">
+                            <Button type="button" variant="outline" disabled={saving || uncertainSave} onClick={() => {
+                                const resetForm = isEditMode && originalDetail
+                                    ? stockTransferFormFromDetail(originalDetail)
+                                    : blankStockTransferForm();
+                                setForm(resetForm);
+                                nextRowId.current = resetForm.items.length;
+                                setShowValidationErrors(false);
+                                clearSaveFeedback();
+                            }}>{isEditMode ? "Restore Data" : "Reset Form"}</Button>
+                            <Button type="button" disabled={saving || loadingProducts || !!productsError || uncertainSave} onClick={handleSaveDraft}>
+                                {saving ? "Saving..." : (isEditMode ? "Save Transfer Changes" : "Save Draft Transfer")}
+                            </Button>
+                        </div>
                     </>
                 )}
             </div>

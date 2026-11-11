@@ -153,6 +153,7 @@ export default function ProductListPage() {
         { key: "productCode", label: "Product Code", render: (v, p) => <Link className="font-semibold text-[#c94810] hover:underline" to={`${ROOT}/${p.id}`}>{v || "—"}</Link> },
         { key: "name", label: "Product Name", render: (v) => <span className="font-medium text-slate-900">{v || "—"}</span> },
         { key: "barcode", label: "Barcode" },
+        { key: "supplierName", label: "Supplier", render: (value) => value || "—" },
         { key: "categoryName", label: "Categories", render: (v) => v || "—" },
         { key: "sellingPrice", label: "Selling Price", render: formatProductPrice },
         { key: "status", label: "Status", render: (v) => <ProductStatusBadge status={v} /> },
@@ -177,7 +178,7 @@ export default function ProductListPage() {
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
             <div className="space-y-6">
-                <PageHeader title="Product Management" description="View, create, edit, hide, and restore products. All changes are recorded in the history."
+                <PageHeader title="Product Management" description="View, create, edit, hide, and restore products."
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Button variant="outline" onClick={() => navigate(`${ROOT}/import`)}>Import from Excel</Button>

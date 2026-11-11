@@ -30,6 +30,12 @@ export async function createProduct(payload) {
     return response.data;
 }
 
+// Tao Product va gan mot nha cung cap trong cung mot transaction o Backend.
+export async function createProductWithSupplier(payload) {
+    const response = await api.post("/products/with-supplier", payload);
+    return response.data;
+}
+
 // Cập nhật trực tiếp thông tin sản phẩm. API BE sẽ ghi lịch sử vào activity_logs.
 export async function updateProduct(productId, payload) {
     const response = await api.put(`/products/${productId}`, payload);
@@ -58,6 +64,21 @@ export async function uploadProductImage(file) {
     const data = new FormData();
     data.append("image", file);
     const response = await api.post("/products/images", data);
+    return response.data;
+}
+
+// Easy one-sheet import with Supplier Name (existing or new).
+export async function previewProductExcelSimple(file) {
+    const data = new FormData();
+    data.append("file", file);
+    const response = await api.post("/products/import-simple/preview", data);
+    return response.data;
+}
+
+export async function importProductExcelSimple(file) {
+    const data = new FormData();
+    data.append("file", file);
+    const response = await api.post("/products/import-simple", data);
     return response.data;
 }
 
