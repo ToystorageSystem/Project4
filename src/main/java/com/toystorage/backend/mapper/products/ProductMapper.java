@@ -66,6 +66,12 @@ public class ProductMapper {
                 .id(product.getId())
                 .productCode(product.getProductsCode())
                 .barcode(product.getBarcode())
+                .supplierId(product.getOwningSupplier() != null
+                        ? product.getOwningSupplier().getId() : null)
+                .supplierName(product.getOwningSupplier() != null
+                        ? product.getOwningSupplier().getName() : null)
+                .supplierPhone(product.getOwningSupplier() != null
+                        ? product.getOwningSupplier().getPhone() : null)
                 .imageUrl(product.getImageUrl())
                 .name(product.getName())
                 .categoryId(

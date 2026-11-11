@@ -15,6 +15,7 @@ import com.toystorage.backend.repository.products.BrandRepository;
 import com.toystorage.backend.repository.products.CategoryRepository;
 import com.toystorage.backend.repository.products.ProductChangeRequestRepository;
 import com.toystorage.backend.repository.products.ProductRepository;
+import com.toystorage.backend.repository.suppliers.SupplierProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ import java.util.Locale;
 public class ProductValidationService {
 
     private final ProductRepository productRepository;
+    private final SupplierProductRepository supplierProductRepository;
 
     private final CategoryRepository categoryRepository;
 
@@ -33,27 +35,41 @@ public class ProductValidationService {
     private final ProductChangeRequestRepository
             productChangeRequestRepository;
 
-    public void validateCreateRequest(
-            CreateProductRequest request
-    ) {
-        String productCode = request.getProductCode()
-                .trim()
-                .toUpperCase(Locale.ROOT);
+    public void validateCreateRequest(CreateProductRequest request) {
+        validateCreateRequest(request, false);
+    }
 
-        String barcode = request.getBarcode().trim();
-
-        if (productRepository
-                .existsByProductsCodeIgnoreCase(productCode)) {
-
-            throw new BadRequest(
-                    "Product code already exists"
-            );
+    // Chi luong Business co Supplier cu the moi duoc phep trung Barcode.
+    public void validateCreateRequest(CreateProductRequest request, boolean allowSupplierBarcode) {
+        String productCode = request.getProductCode();
+        if (productCode != null && !productCode.isBlank()
+                && productRepository.existsByProductsCodeIgnoreCase(productCode.trim())) {
+            throw new BadRequest("Product code already exists");
         }
+        if (!allowSupplierBarcode && productRepository.existsByBarcode(request.getBarcode().trim())) {
+            throw new BadRequest("Barcode already exists");
+        }
+    }
 
-        if (productRepository.existsByBarcode(barcode)) {
-            throw new BadRequest(
-                    "Barcode already exists"
-            );
+    public void validateBarcodeForProduct(Long productId, String barcode) {
+        Products product = getProduct(productId);
+        if (product.getBarcode().equals(barcode)) return;
+        var links = product.getOwningSupplier() != null
+                ? java.util.List.of(product.getOwningSupplier().getId())
+                : supplierProductRepository.findByProduct_IdOrderByIsDefaultDescSupplier_NameAsc(productId)
+                        .stream().map(link -> link.getSupplier().getId()).distinct().toList();
+        if (links.isEmpty()) {
+            if (productRepository.existsByBarcodeAndIdNot(barcode, productId)) {
+                throw new BadRequest("Barcode already exists");
+            }
+            return;
+        }
+        for (Long supplierId : links) {
+            if (productRepository.existsLinkedBarcodeForSupplier(barcode, supplierId, productId)
+                    || productRepository.existsByBarcodeAndOwningSupplier_IdAndIdNot(
+                            barcode, supplierId, productId)) {
+                throw new BadRequest("This supplier already has a product with this barcode");
+            }
         }
     }
 
@@ -140,25 +156,12 @@ public class ProductValidationService {
 
         String barcode = request.getBarcode().trim();
 
-        if (productRepository
-                .existsByProductsCodeIgnoreCaseAndIdNot(
-                        productCode,
-                        productId
-                )) {
-
-            throw new BadRequest(
-                    "Product code already exists"
-            );
+        if (!getProduct(productId).getProductsCode().equalsIgnoreCase(productCode)) {
+            throw new BadRequest("Product code is generated automatically and cannot be changed");
         }
 
-        if (productRepository.existsByBarcodeAndIdNot(
-                barcode,
-                productId
-        )) {
-            throw new BadRequest(
-                    "Barcode already exists"
-            );
-        }
+        // Barcode trung duoc phep chi khi khac nha cung cap.
+        validateBarcodeForProduct(productId, barcode);
     }
 
     public void validateProductCanBeChanged(

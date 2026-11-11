@@ -19,6 +19,7 @@ import com.toystorage.backend.repository.suppliers.SupplierProductRepository;
 import com.toystorage.backend.repository.suppliers.SupplierRepository;
 import com.toystorage.backend.repository.users.ActivityLogRepository;
 import com.toystorage.backend.repository.users.UserRepository;
+import com.toystorage.backend.services.products.ProductAuditService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -43,6 +44,8 @@ public class SupplierProductService {
     private final ActivityLogRepository activityLogRepository;
 
     private final UserRepository userRepository;
+
+    private final ProductAuditService productAuditService;
 
 
     // =====================================================
@@ -107,7 +110,7 @@ public class SupplierProductService {
         // 1. Kiểm tra Product
         Products product =
                 productRepository
-                        .findById(request.getProductId())
+                        .findByIdForSupplierLinkUpdate(request.getProductId())
                         .orElseThrow(() ->
                                 new NotFound(
                                         "Product not found with id: "
@@ -119,7 +122,7 @@ public class SupplierProductService {
         // 2. Kiểm tra Supplier
         Suppliers supplier =
                 supplierRepository
-                        .findById(request.getSupplierId())
+                        .findByIdForProductCreation(request.getSupplierId())
                         .orElseThrow(() ->
                                 new NotFound(
                                         "Supplier not found with id: "
@@ -128,21 +131,23 @@ public class SupplierProductService {
                         );
 
 
-        // 3. Không cho tạo liên kết trùng
-        if (
-                supplierProductRepository
-                        .existsBySupplier_IdAndProduct_Id(
-                                supplier.getId(),
-                                product.getId()
-                        )
-        ) {
-
-            throw new BadRequest(
-                    "Supplier "
-                            + supplier.getId()
-                            + " is already linked to product "
-                            + product.getId()
-            );
+        // Moi Product Code chi thuoc mot Supplier. Legacy co nhieu NCC duoc giu nguyen.
+        if (supplierProductRepository.existsByProduct_Id(product.getId())) {
+            throw new BadRequest("This product already has a supplier. Create another product instead");
+        }
+        if (product.getOwningSupplier() != null
+                && !product.getOwningSupplier().getId().equals(supplier.getId())) {
+            throw new BadRequest("Supplier does not match this product");
+        }
+        if (productRepository.existsLinkedBarcodeForSupplier(
+                    product.getBarcode(), supplier.getId(), product.getId())
+                || productRepository.existsByBarcodeAndOwningSupplier_IdAndIdNot(
+                    product.getBarcode(), supplier.getId(), product.getId())) {
+            throw new BadRequest("This supplier already has a product with this barcode");
+        }
+        if (product.getOwningSupplier() == null) {
+            product.setOwningSupplier(supplier);
+            productRepository.saveAndFlush(product);
         }
 
 
@@ -211,6 +216,16 @@ public class SupplierProductService {
         entity =
                 supplierProductRepository.save(entity);
 
+        // Giá của từng nhà cung cấp lưu riêng trong supplier_products.
+        // Giá tham chiếu tại products chỉ theo nhà cung cấp mặc định, không bị nguồn hàng phụ ghi đè.
+        if (Boolean.TRUE.equals(entity.getIsDefault())
+                && product.getPurchasePrice().compareTo(entity.getPurchasePrice()) != 0) {
+            var before = productAuditService.snapshot(product);
+            product.setPurchasePrice(entity.getPurchasePrice());
+            productRepository.save(product);
+            productAuditService.logUpdate(product, currentUser, before,
+                    "Reference purchase price updated from default supplier");
+        }
 
         // 7. Lưu lịch sử CREATE
         saveHistory(
@@ -274,6 +289,19 @@ public class SupplierProductService {
         entity =
                 supplierProductRepository.save(entity);
 
+        // Khi Product co dung mot Supplier, day la mot gia nhap duy nhat.
+        // Neu du lieu cu co nhieu Supplier, khong tu dong ghi de gia cua nhung nha cung cap khac.
+        Products product = entity.getProduct();
+        List<SupplierProducts> allLinks = supplierProductRepository
+                .findByProduct_IdOrderByIsDefaultDescSupplier_NameAsc(product.getId());
+        if (allLinks.size() == 1 || Boolean.TRUE.equals(entity.getIsDefault())) {
+            if (product.getPurchasePrice().compareTo(entity.getPurchasePrice()) != 0) {
+                var before = productAuditService.snapshot(product);
+                product.setPurchasePrice(entity.getPurchasePrice());
+                productRepository.save(product);
+                productAuditService.logUpdate(product, currentUser, before, "Purchase price synchronized from supplier association");
+            }
+        }
 
         // Lưu lịch sử UPDATE
         saveHistory(
@@ -369,6 +397,16 @@ public class SupplierProductService {
                 snapshot(target)
         );
 
+        // Đổi Supplier mặc định thì cập nhật giá tham chiếu của mặt hàng.
+        // Không cập nhật giá của bất kỳ Supplier nào khác.
+        Products product = target.getProduct();
+        if (product.getPurchasePrice().compareTo(target.getPurchasePrice()) != 0) {
+            var before = productAuditService.snapshot(product);
+            product.setPurchasePrice(target.getPurchasePrice());
+            productRepository.save(product);
+            productAuditService.logUpdate(product, currentUser, before,
+                    "Reference purchase price updated after default supplier change");
+        }
 
         return supplierProductMapper.toResponse(
                 target

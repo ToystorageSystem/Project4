@@ -6,6 +6,8 @@ import com.toystorage.backend.enums.products.ProductStatus;
 import java.util.List;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import com.toystorage.backend.enums.products.CommonStatus;
 import com.toystorage.backend.entity.products.Categories;
 import com.toystorage.backend.entity.products.Brands;
@@ -19,6 +21,12 @@ import java.util.Collection;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Products, Long> {
+
+    // Khoa dong Product khi tao lien ket, tranh hai request gan Supplier dong thoi.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Products p where p.id = :id")
+    Optional<Products> findByIdForSupplierLinkUpdate(@Param("id") Long id);
+
 
 
     // Methods restored for legacy business APIs without replacing existing repository logic.
@@ -81,6 +89,26 @@ public interface ProductRepository extends JpaRepository<Products, Long> {
     boolean existsByBarcode(
                 String barcode
         );
+
+    // Kiem tra trong ca lien ket NCC legacy (chua co products.supplier_id).
+    @Query("""
+            select case when count(sp) > 0 then true else false end
+            from SupplierProducts sp
+            where sp.supplier.id = :supplierId
+              and sp.product.barcode = :barcode
+              and (:exceptProductId is null or sp.product.id <> :exceptProductId)
+            """)
+    boolean existsLinkedBarcodeForSupplier(
+            @Param("barcode") String barcode,
+            @Param("supplierId") Long supplierId,
+            @Param("exceptProductId") Long exceptProductId);
+
+    boolean existsByBarcodeAndOwningSupplier_IdAndIdNot(
+            String barcode, Long supplierId, Long id);
+    boolean existsByBarcodeAndOwningSupplierIsNull(String barcode);
+
+    java.util.List<Products> findAllByBarcodeAndStatus(
+            String barcode, ProductStatus status);
 
 
     // Kiem tra mot trang thai

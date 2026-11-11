@@ -3,6 +3,15 @@ package com.toystorage.backend.services.products;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toystorage.backend.dto.request.products.CreateProductRequest;
+import com.toystorage.backend.dto.request.products.CreateProductWithSupplierRequest;
+import com.toystorage.backend.dto.request.suppliers.CreateSupplierProductRequest;
+import com.toystorage.backend.dto.request.suppliers.CreateSupplierRequest;
+import com.toystorage.backend.entity.suppliers.Suppliers;
+import com.toystorage.backend.enums.products.CommonStatus;
+import com.toystorage.backend.repository.suppliers.SupplierRepository;
+import com.toystorage.backend.services.suppliers.SupplierService;
+import com.toystorage.backend.repository.suppliers.SupplierProductRepository;
+import com.toystorage.backend.services.suppliers.SupplierProductService;
 import com.toystorage.backend.dto.request.products.RejectProductRequest;
 import com.toystorage.backend.dto.request.products.UpdateProductRequest;
 import com.toystorage.backend.dto.response.products.ProductChangeRequestResponse;
@@ -50,6 +59,10 @@ public class ProductService {
     private final ProductMapper productMapper;
     private final ProductAuditService productAuditService;
     private final ObjectMapper objectMapper;
+    private final SupplierProductRepository supplierProductRepository;
+    private final SupplierProductService supplierProductService;
+    private final SupplierRepository supplierRepository;
+    private final SupplierService supplierService;
 
     /**
      * Business Operations tạo sản phẩm trực tiếp.
@@ -59,19 +72,106 @@ public class ProductService {
      */
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
-        validationService.validateCreateRequest(request);
+        // Endpoint cu va Excel: neu khong co Supplier thi van bat buoc Barcode duy nhat.
+        return saveProduct(request, null, false);
+    }
+
+    private ProductResponse saveProduct(
+            CreateProductRequest request, Suppliers supplier, boolean allowDuplicateBarcode) {
+        validationService.validateCreateRequest(request, allowDuplicateBarcode);
         Categories category = validationService.getActiveCategory(request.getCategoryId());
         Brands brand = validationService.getActiveBrand(request.getBrandId());
         Users actor = getCurrentUser();
 
+        boolean autoCode = request.getProductCode() == null || request.getProductCode().isBlank();
+        if (autoCode) {
+            // MySQL yeu cau products_code NOT NULL va UNIQUE truoc khi co ID.
+            request.setProductCode("TMP-" + UUID.randomUUID());
+        }
         Products product = productMapper.toEntity(request, category, brand, actor);
+        product.setOwningSupplier(supplier);
         product.setStatus(ProductStatus.ACTIVE);
-        product.setApprovedBy(null); // Không giả lập có người duyệt.
+        product.setApprovedBy(null);
         product.setRejectionReason(null);
         product = productRepository.saveAndFlush(product);
 
+        if (autoCode) {
+            String newCode = String.format(Locale.ROOT, "PROD-%06d", product.getId());
+            if (productRepository.existsByProductsCodeIgnoreCaseAndIdNot(newCode, product.getId())) {
+                newCode = "PROD-" + product.getId() + "-" + UUID.randomUUID().toString().substring(0, 6);
+            }
+            product.setProductsCode(newCode);
+            product = productRepository.saveAndFlush(product);
+        }
         productAuditService.logCreate(product, actor, request.getRequestReason());
         return productMapper.toResponse(product);
+    }
+
+    // Mot Product Code, mot Supplier. Barcode co the trung neu Supplier khac.
+    @Transactional
+    public ProductResponse createProductWithSupplier(CreateProductWithSupplierRequest request) {
+        Suppliers supplier = resolveSupplier(request);
+        CreateProductRequest productRequest = request.getProduct();
+        // Chi endpoint nay auto-generate Product Code; khong tin vao ma client.
+        productRequest.setProductCode(null);
+        String barcode = productRequest.getBarcode().trim();
+        if (productRepository.existsByBarcodeAndOwningSupplierIsNull(barcode)) {
+            throw new BadRequest("Barcode belongs to a legacy product without one confirmed supplier. Review that product first");
+        }
+        if (productRepository.existsLinkedBarcodeForSupplier(barcode, supplier.getId(), null)
+                || productRepository.existsByBarcodeAndOwningSupplier_IdAndIdNot(
+                        barcode, supplier.getId(), -1L)) {
+            throw new BadRequest("This supplier already has a product with this barcode");
+        }
+
+        ProductResponse created = saveProduct(productRequest, supplier, true);
+        CreateSupplierProductRequest link = new CreateSupplierProductRequest();
+        link.setProductId(created.getId());
+        link.setSupplierId(supplier.getId());
+        link.setSupplierProductCode(null);
+        link.setPurchasePrice(productRequest.getPurchasePrice());
+        link.setLeadTimeDays(request.getLeadTimeDays() == null ? 0 : request.getLeadTimeDays());
+        link.setMinimumOrderQuantity(request.getMinimumOrderQuantity());
+        link.setDefaultSupplier(true);
+
+        // Ca Product, Supplier moi, lien ket va audit rollback cung nhau neu co loi.
+        supplierProductService.create(link);
+        return created;
+    }
+
+    private Suppliers resolveSupplier(CreateProductWithSupplierRequest request) {
+        if (request.getSupplierId() != null) {
+            Suppliers supplier = supplierRepository.findByIdForProductCreation(request.getSupplierId())
+                    .orElseThrow(() -> new NotFound("Supplier not found"));
+            if (supplier.getStatus() != CommonStatus.ACTIVE) {
+                throw new BadRequest("Supplier is inactive");
+            }
+            return supplier;
+        }
+        String name = request.getSupplierName() == null ? "" : request.getSupplierName().trim();
+        if (name.isEmpty()) {
+            throw new BadRequest("Select an existing supplier or enter a new supplier name");
+        }
+        var matches = supplierRepository.findByNameIgnoreCase(name);
+        if (matches.size() > 1) {
+            throw new BadRequest("Multiple suppliers have this name. Please select a supplier from the list");
+        }
+        if (!matches.isEmpty()) {
+            Suppliers existing = supplierRepository.findByIdForProductCreation(matches.get(0).getId())
+                    .orElseThrow(() -> new NotFound("Supplier not found"));
+            if (existing.getStatus() != CommonStatus.ACTIVE) {
+                throw new BadRequest("Supplier already exists but is inactive");
+            }
+            return existing;
+        }
+        CreateSupplierRequest supplierRequest = new CreateSupplierRequest();
+        supplierRequest.setName(name);
+        supplierRequest.setPhone(request.getSupplierPhone() == null
+                ? null : request.getSupplierPhone().trim());
+        var created = supplierService.createSupplier(
+                supplierRequest, getCurrentUser(), null, "Created when adding a product");
+        return supplierRepository.findByIdForProductCreation(created.getId())
+                .orElseThrow(() -> new NotFound("New supplier not found"));
     }
 
     /**
@@ -92,6 +192,11 @@ public class ProductService {
 
         ProductResponse updated = productMapper.toProposedResponse(
                 product, request, category, brand);
+        // Supplier la noi duy nhat cap nhat gia nhap khi Product da lien ket.
+        // Tranh payload Edit Product cu ghi de gia vua duoc thay doi o Supplier.
+        if (supplierProductRepository.existsByProduct_Id(productId)) {
+            updated.setPurchasePrice(product.getPurchasePrice());
+        }
         applyApprovedUpdate(product, updated); // Hàm cũ kiểm tra và gán field, tái sử dụng an toàn.
         product.setRejectionReason(null);
         product = productRepository.saveAndFlush(product);
@@ -408,14 +513,7 @@ public class ProductService {
             );
         }
 
-        if (productRepository.existsByBarcodeAndIdNot(
-                barcode,
-                product.getId()
-        )) {
-            throw new BadRequest(
-                    "Barcode already exists"
-            );
-        }
+        validationService.validateBarcodeForProduct(product.getId(), barcode);
 
         Categories category =
                 validationService.getActiveCategory(

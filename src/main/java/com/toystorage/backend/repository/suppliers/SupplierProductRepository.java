@@ -20,6 +20,8 @@ public interface SupplierProductRepository
             Long productId
     );
 
+    boolean existsByProduct_Id(Long productId);
+
     /**
      * Lấy danh sách nhà cung cấp của một sản phẩm.
      * Nhà cung cấp mặc định nằm trên cùng.

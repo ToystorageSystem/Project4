@@ -247,17 +247,24 @@ public class StoreReceivingService {
             }
         }
 
-        Map<String, Products> productByBarcode = queryRepository.findProductsByBarcodes(lineByBarcode.keySet())
-                .stream().collect(Collectors.toMap(Products::getBarcode, Function.identity()));
-        for (String barcode : lineByBarcode.keySet()) {
-            if (!productByBarcode.containsKey(barcode)) {
-                throw new NotFound("Product not found: " + barcode);
-            }
-        }
-
+        // Barcode co the duoc nhieu NCC dung chung; phai lay Product tu chung tu Package.
         Map<Long, Integer> expectedByProductId = data.itemsByPackageId().getOrDefault(pkg.getId(), List.of())
                 .stream().collect(Collectors.toMap(pi -> pi.getProduct().getId(),
                         PackageItems::getQuantity, Integer::sum));
+        Map<String, List<Products>> candidatesByBarcode = queryRepository
+                .findProductsByBarcodes(lineByBarcode.keySet())
+                .stream().collect(Collectors.groupingBy(Products::getBarcode));
+        Map<String, Products> productByBarcode = new LinkedHashMap<>();
+        for (String barcode : lineByBarcode.keySet()) {
+            List<Products> candidates = candidatesByBarcode.getOrDefault(barcode, List.of());
+            if (candidates.isEmpty()) throw new NotFound("Product not found: " + barcode);
+            List<Products> expected = candidates.stream()
+                    .filter(p -> expectedByProductId.containsKey(p.getId())).toList();
+            if (expected.size() != 1) {
+                throw new BadRequest("Barcode cannot be resolved uniquely for this package: " + barcode);
+            }
+            productByBarcode.put(barcode, expected.get(0));
+        }
         Set<Long> countedIds = productByBarcode.values().stream()
                 .map(Products::getId).collect(Collectors.toSet());
         if (!countedIds.containsAll(expectedByProductId.keySet())) {

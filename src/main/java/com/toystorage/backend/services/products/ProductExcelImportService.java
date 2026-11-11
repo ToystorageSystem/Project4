@@ -1,6 +1,10 @@
 package com.toystorage.backend.services.products;
 
 import com.toystorage.backend.dto.request.products.CreateProductRequest;
+import com.toystorage.backend.dto.request.suppliers.CreateSupplierProductRequest;
+import com.toystorage.backend.entity.suppliers.Suppliers;
+import com.toystorage.backend.repository.suppliers.SupplierRepository;
+import com.toystorage.backend.services.suppliers.SupplierProductService;
 import com.toystorage.backend.dto.response.products.ProductResponse;
 import com.toystorage.backend.dto.response.products.ProductImportPreviewResponse;
 import com.toystorage.backend.dto.response.products.ProductImportResultResponse;
@@ -26,10 +30,12 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.LinkedHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -57,6 +63,10 @@ public class ProductExcelImportService {
     private final Validator validator;
 
     private final ProductService productService;
+
+    private final SupplierRepository supplierRepository;
+
+    private final SupplierProductService supplierProductService;
 
     public ProductImportPreviewResponse preview(
             MultipartFile file
@@ -88,6 +98,7 @@ public class ProductExcelImportService {
             }
 
             validateDuplicateValuesInFile(rows);
+            parseSupplierSheet(workbook, rows);
 
             int validRows = (int) rows.stream()
                     .filter(ProductImportRowResponse::isValid)
@@ -128,18 +139,36 @@ public class ProductExcelImportService {
             );
         }
 
-        // Trong một transaction: nếu một dòng lỗi, toàn bộ sản phẩm đã nhập sẽ rollback.
-        List<ProductResponse> createdProducts =
-                new ArrayList<>();
+        // Doc het lien ket NCC truoc khi bat dau ghi database.
+        List<SupplierExcelLine> supplierLines;
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            supplierLines = parseSupplierSheet(workbook, preview.getRows());
+        } catch (IOException ex) {
+            throw new BadRequest("Unable to read ProductSuppliers worksheet");
+        } catch (BadRequest ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new BadRequest("Invalid ProductSuppliers worksheet");
+        }
 
+        // Mot transaction: loi o Supplier association => rollback ca Product import.
+        List<ProductResponse> createdProducts = new ArrayList<>();
+        Map<String, Long> createdProductIds = new HashMap<>();
         for (ProductImportRowResponse row : preview.getRows()) {
-            CreateProductRequest request =
-                    toCreateProductRequest(row);
-
-            ProductResponse response =
-                    productService.createProduct(request);
-
+            ProductResponse response = productService.createProduct(toCreateProductRequest(row));
             createdProducts.add(response);
+            createdProductIds.put(normalizeCode(response.getProductCode()), response.getId());
+        }
+        for (SupplierExcelLine supplierLine : supplierLines) {
+            CreateSupplierProductRequest link = new CreateSupplierProductRequest();
+            link.setProductId(createdProductIds.get(supplierLine.productCode()));
+            link.setSupplierId(supplierLine.supplierId());
+            link.setSupplierProductCode(supplierLine.supplierProductCode());
+            link.setPurchasePrice(supplierLine.purchasePrice());
+            link.setMinimumOrderQuantity(supplierLine.minimumOrderQuantity());
+            link.setLeadTimeDays(supplierLine.leadTimeDays());
+            link.setDefaultSupplier(supplierLine.isDefault());
+            supplierProductService.create(link);
         }
 
         return ProductImportResultResponse.builder()
@@ -147,6 +176,98 @@ public class ProductExcelImportService {
                 .importedRows(createdProducts.size())
                 .products(createdProducts)
                 .build();
+    }
+
+    // Giu sheet Products 10 cot cu. Sheet thu hai la tuy chon.
+    // Mỗi dong ProductSuppliers luu mot quan he product - supplier.
+    private record SupplierExcelLine(
+            String productCode,
+            Long supplierId,
+            String supplierProductCode,
+            BigDecimal purchasePrice,
+            int minimumOrderQuantity,
+            int leadTimeDays,
+            boolean isDefault) {}
+
+    private static final List<String> SUPPLIER_HEADERS = List.of(
+            "productCode", "supplierCode", "supplierProductCode", "purchasePrice",
+            "minimumOrderQuantity", "leadTimeDays", "isDefault"
+    );
+
+    private List<SupplierExcelLine> parseSupplierSheet(
+            Workbook workbook, List<ProductImportRowResponse> productRows) {
+        Sheet sheet = workbook.getSheet("ProductSuppliers");
+        if (sheet == null) return List.of();
+        Row heading = sheet.getRow(0);
+        if (heading == null) throw new BadRequest("ProductSuppliers sheet is missing headers");
+        DataFormatter formatter = new DataFormatter();
+        for (int i = 0; i < SUPPLIER_HEADERS.size(); i++) {
+            if (!SUPPLIER_HEADERS.get(i).equals(getCellValue(heading, i, formatter))) {
+                throw new BadRequest("ProductSuppliers column " + (i+1)
+                        + " must be named: " + SUPPLIER_HEADERS.get(i));
+            }
+        }
+        Map<String, ProductImportRowResponse> byCode = new LinkedHashMap<>();
+        for (ProductImportRowResponse product : productRows) {
+            byCode.put(normalizeCode(product.getProductCode()), product);
+        }
+        Set<String> seenPairs = new HashSet<>();
+        Set<String> seenProducts = new HashSet<>();
+        Set<String> seenDefault = new HashSet<>();
+        List<SupplierExcelLine> links = new ArrayList<>();
+        for (int rowNo = 1; rowNo <= sheet.getLastRowNum(); rowNo++) {
+            Row row = sheet.getRow(rowNo);
+            boolean empty = row == null;
+            if (row != null) {
+                empty = true;
+                for (int c = 0; c < SUPPLIER_HEADERS.size(); c++) {
+                    if (!getCellValue(row, c, formatter).isBlank()) { empty = false; break; }
+                }
+            }
+            if (empty) continue;
+            String productCode = normalizeCode(getCellValue(row, 0, formatter));
+            String supplierCode = normalizeCode(getCellValue(row, 1, formatter));
+            String supplierItemCode = toNullable(getCellValue(row, 2, formatter));
+            ProductImportRowResponse owningProduct = byCode.get(productCode);
+            if (owningProduct == null) {
+                throw new BadRequest("ProductSuppliers row " + (rowNo + 1)
+                        + " references productCode not found in Products sheet: " + productCode);
+            }
+            List<String> errors = new ArrayList<>();
+            String prefix = "ProductSuppliers row " + (rowNo + 1) + ": ";
+            if (supplierCode == null || supplierCode.isBlank()) errors.add("supplierCode is required");
+            if (supplierItemCode != null && supplierItemCode.length() > 100) errors.add("supplierProductCode exceeds 100 characters");
+            BigDecimal price = parseDecimal(getCellValue(row, 3, formatter), "purchasePrice", errors);
+            if (price != null && (price.compareTo(new BigDecimal("0.01")) < 0 || price.scale() > 2)) {
+                errors.add("purchasePrice must be positive with at most 2 decimal places");
+            }
+            Long min = parseLong(getCellValue(row, 4, formatter), "minimumOrderQuantity", true, errors);
+            Long lead = parseLong(getCellValue(row, 5, formatter), "leadTimeDays", true, errors);
+            if (min != null && (min < 1 || min > Integer.MAX_VALUE)) errors.add("minimumOrderQuantity must be between 1 and 2147483647");
+            if (lead != null && (lead < 0 || lead > Integer.MAX_VALUE)) errors.add("leadTimeDays must be between 0 and 2147483647");
+            String defaultText = getCellValue(row, 6, formatter).trim().toUpperCase(Locale.ROOT);
+            if (!"TRUE".equals(defaultText) && !"FALSE".equals(defaultText)) errors.add("isDefault must be TRUE or FALSE");
+            boolean isDefault = "TRUE".equals(defaultText);
+            // Logic moi: moi Product Code moi co mot Supplier duy nhat.
+            // Muon nhap cung Barcode tu NCC khac, su dung mot dong Product Code khac.
+            if (supplierCode != null && !supplierCode.isBlank()) {
+                if (!seenPairs.add(productCode + "|" + supplierCode)) errors.add("duplicate supplier for this product");
+                if (!seenProducts.add(productCode)) errors.add("Each product code must have only one supplier");
+                var supplier = supplierRepository.findBySuppliersCodeIgnoreCase(supplierCode);
+                if (supplier.isEmpty() || supplier.get().getStatus() != CommonStatus.ACTIVE) {
+                    errors.add("supplierCode does not identify an active supplier: " + supplierCode);
+                }
+                if (errors.isEmpty()) links.add(new SupplierExcelLine(
+                        productCode, supplier.get().getId(), supplierItemCode, price,
+                        min.intValue(), lead.intValue(), isDefault));
+            }
+            if (isDefault && !seenDefault.add(productCode)) errors.add("more than one default supplier for this product");
+            for (String error : errors) addError(owningProduct, prefix + error);
+        }
+        for (ProductImportRowResponse product : productRows) {
+            product.setValid(product.getErrors().isEmpty());
+        }
+        return links;
     }
 
     private CreateProductRequest toCreateProductRequest(

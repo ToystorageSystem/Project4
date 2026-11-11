@@ -23,6 +23,10 @@ public interface GoodsReceiptRepository
 
     boolean existsByPurchaseOrder_Id(Long purchaseOrderId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT gr FROM GoodsReceipts gr WHERE gr.purchaseOrder.id = :purchaseOrderId")
+    List<GoodsReceipts> findByPurchaseOrder_IdForUpdate(@Param("purchaseOrderId") Long purchaseOrderId);
+
     // ===== CAC PHUONG THUC HIEN CO =====
 
     Optional<GoodsReceipts> findByReceiptCode(

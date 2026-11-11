@@ -39,6 +39,14 @@ public class ProductImportRowResponse {
 
     private String requestReason;
 
+    private String categoryName;
+
+    private String supplierName;
+
+    private String supplierPhone;
+
+    private Integer minimumOrderQuantity;
+
     private boolean valid;
 
     @Builder.Default

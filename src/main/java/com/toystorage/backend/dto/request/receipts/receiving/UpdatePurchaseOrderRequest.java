@@ -24,7 +24,8 @@ public class UpdatePurchaseOrderRequest {
     private Long warehouseId;
 
 
-    // Co the bo trong luc tao/sua DRAFT. Khi submit bat buoc phai co ngay.
+    // Ngay giao hang da thong nhat khi tao/sua PO. Chi dung mot ngay giao hang.
+    @NotNull(message = "Delivery date is required")
     private LocalDate expectedDeliveryDate;
 
 

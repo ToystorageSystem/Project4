@@ -1,6 +1,7 @@
 package com.toystorage.backend.controllers.products;
 
 import com.toystorage.backend.dto.request.products.CreateProductRequest;
+import com.toystorage.backend.dto.request.products.CreateProductWithSupplierRequest;
 import com.toystorage.backend.dto.request.products.RejectProductRequest;
 import com.toystorage.backend.dto.request.products.UpdateProductRequest;
 import com.toystorage.backend.dto.response.products.ProductChangeRequestResponse;
@@ -29,6 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.toystorage.backend.dto.response.products.ProductImportPreviewResponse;
 import com.toystorage.backend.dto.response.products.ProductImportResultResponse;
 import com.toystorage.backend.services.products.ProductExcelImportService;
+import com.toystorage.backend.services.products.ProductSimpleExcelImportService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,6 +42,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final ProductExcelImportService productExcelImportService;
+    private final ProductSimpleExcelImportService simpleExcelImportService;
     private final ProductImageService productImageService;
 
     /**
@@ -62,6 +66,18 @@ public class ProductController {
                 .body(
                         productService.createProduct(request)
                 );
+    }
+
+    /**
+     * Tao Product va lien ket nha cung cap trong cung transaction.
+     * Khong cho tao Product khong co nha cung cap tu giao dien moi.
+     */
+    @PostMapping("/with-supplier")
+    @PreAuthorize("hasAnyAuthority('PRODUCT_CREATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    public ResponseEntity<ProductResponse> createProductWithSupplier(
+            @Valid @RequestBody CreateProductWithSupplierRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(productService.createProductWithSupplier(request));
     }
 
     /**
@@ -304,6 +320,29 @@ public class ProductController {
         return ResponseEntity.ok(
                 productImageService.uploadImage(image)
         );
+    }
+
+    // Simple one-sheet import: one Product and one Supplier per row.
+    @GetMapping(value = "/import-simple/template", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    @PreAuthorize("hasAnyAuthority('PRODUCT_CREATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    public ResponseEntity<byte[]> downloadSimpleImportTemplate() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ToyStorage_Product_Import_Template.xlsx")
+                .body(simpleExcelImportService.template());
+    }
+
+    @PostMapping(value = "/import-simple/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('PRODUCT_CREATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    public ResponseEntity<ProductImportPreviewResponse> previewSimpleProductImport(
+            @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(simpleExcelImportService.preview(file));
+    }
+
+    @PostMapping(value = "/import-simple", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('PRODUCT_CREATE','ROLE_ROLE-BIZ-OPS','ROLE_ROLE-ADMIN')")
+    public ResponseEntity<ProductImportResultResponse> simpleProductImport(
+            @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(simpleExcelImportService.importProducts(file));
     }
 
     /**

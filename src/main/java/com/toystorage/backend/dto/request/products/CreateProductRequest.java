@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @Setter
 public class CreateProductRequest {
 
-    @NotBlank(message = "Product code is required")
+    // Neu bo trong, Backend tu sinh Product Code.
     @Size(max = 50, message = "Product code cannot exceed 50 characters")
     private String productCode;
 

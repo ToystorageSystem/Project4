@@ -20,6 +20,9 @@ public class ProductResponse {
     private Long id;
     private String productCode;
     private String barcode;
+    private Long supplierId;
+    private String supplierName;
+    private String supplierPhone;
     private String imageUrl;
     private String name;
 

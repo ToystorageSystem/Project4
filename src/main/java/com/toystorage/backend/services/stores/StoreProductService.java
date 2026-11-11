@@ -78,9 +78,13 @@ public class StoreProductService {
         if (code == null) {
             throw productNotFound();
         }
-        Products product = productRepository.findByBarcodeAndStatus(code, ProductStatus.ACTIVE)
-                .orElseThrow(StoreProductService::productNotFound);
-        return toDetail(storeId, product);
+        List<Products> matches = productRepository.findAllByBarcodeAndStatus(code, ProductStatus.ACTIVE);
+        if (matches.isEmpty()) throw productNotFound();
+        if (matches.size() > 1) {
+            // Quan ly kho/bán hàng can chot logic ton kho dung chung Barcode truoc khi scan.
+            throw new BadRequest("Barcode matches multiple supplier products. Please use the product list");
+        }
+        return toDetail(storeId, matches.get(0));
     }
 
     // ---------- helpers ----------

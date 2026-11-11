@@ -8,6 +8,9 @@ import com.toystorage.backend.entity.suppliers.Suppliers;
 import com.toystorage.backend.enums.products.CommonStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
 
 import java.util.List;
 
@@ -18,6 +21,14 @@ public interface SupplierRepository
     List<Suppliers> findByStatusOrderByNameAsc(
             CommonStatus status
     );
+
+    java.util.Optional<Suppliers> findBySuppliersCodeIgnoreCase(String suppliersCode);
+
+    List<Suppliers> findByNameIgnoreCase(String name);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Suppliers s where s.id = :id")
+    Optional<Suppliers> findByIdForProductCreation(@Param("id") Long id);
 
 
     // Methods restored for legacy business APIs without replacing existing repository logic.

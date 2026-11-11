@@ -2,6 +2,7 @@ package com.toystorage.backend.entity.products;
 
 import com.toystorage.backend.enums.products.ProductStatus;
 import com.toystorage.backend.entity.users.Users;
+import com.toystorage.backend.entity.suppliers.Suppliers;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,8 +14,8 @@ import java.time.LocalDateTime;
         name = "products",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_products_barcode",
-                        columnNames = "barcode"
+                        name = "uk_products_supplier_barcode",
+                        columnNames = {"supplier_id", "barcode"}
                 ),
                 @UniqueConstraint(
                         name = "uk_products_code",
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
                 )
         },
         indexes = {
+                @Index(name = "idx_products_barcode", columnList = "barcode"),
                 @Index(
                         name = "idx_products_name",
                         columnList = "name"
@@ -77,6 +79,12 @@ public class Products {
             length = 100
     )
     private String barcode;
+
+    // Business Operations: moi ban ghi Product duoc dang ky cho mot nha cung cap.
+    // Du lieu legacy chua co nha cung cap co the de null.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id", foreignKey = @ForeignKey(name = "fk_products_supplier"))
+    private Suppliers owningSupplier;
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;

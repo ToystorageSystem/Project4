@@ -3,6 +3,10 @@ package com.toystorage.backend.services.businessstaff;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toystorage.backend.dto.request.businessstaff.SupplierFeedbackRequest;
+import com.toystorage.backend.dto.request.receipts.receiving.CreateGoodsReceiptRequest;
+import com.toystorage.backend.dto.request.receipts.receiving.CreateGoodsReceiptItemRequest;
+import com.toystorage.backend.services.receipts.receiving.GoodsReceiptCreationService;
+import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.dto.request.businessstaff.SupplierItemFeedbackRequest;
 import com.toystorage.backend.dto.response.businessstaff.SupplierFeedbackResponse;
 import com.toystorage.backend.entity.receipts.PurchaseOrders;
@@ -34,6 +38,8 @@ import java.util.*;
 public class BusinessSupplierFeedbackService {
 
     private final BusinessPurchaseOrderRepository orderRepository;
+    private final GoodsReceiptRepository goodsReceiptRepository;
+    private final GoodsReceiptCreationService goodsReceiptCreationService;
     private final BusinessPurchaseOrderItemRepository itemRepository;
     private final BusinessSupplierAuditRepository auditRepository;
     private final UserRepository userRepository;
@@ -124,6 +130,8 @@ public class BusinessSupplierFeedbackService {
                     || request.supplierResponseStatus() == SupplierResponseStatus.DECLINED)) {
             throw new BadRequest("Cannot agree on a delivery date for pending or declined feedback");
         }
+
+        SupplierResponseStatus previousResponseStatus = order.getSupplierResponseStatus();
 
         String oldValue = snapshot(order, orderItems);
 
@@ -241,6 +249,39 @@ public class BusinessSupplierFeedbackService {
                 newValue,
                 activityCode
         );
+
+        // Chi sinh phieu nhap tu dong khi NCC vua xac nhan co hang.
+        // Khong sinh GR luc PO moi ORDERED, vi nhu vay se khoa huy PO som.
+        boolean confirmedNow = request.supplierResponseStatus()
+                == SupplierResponseStatus.AVAILABLE
+                || request.supplierResponseStatus()
+                == SupplierResponseStatus.PARTIALLY_AVAILABLE;
+        boolean confirmedBefore = previousResponseStatus
+                == SupplierResponseStatus.AVAILABLE
+                || previousResponseStatus
+                == SupplierResponseStatus.PARTIALLY_AVAILABLE;
+
+        if (confirmedNow && !confirmedBefore
+                && !goodsReceiptRepository.existsByPurchaseOrder_Id(order.getId())) {
+            List<CreateGoodsReceiptItemRequest> receiptLines = new ArrayList<>();
+            for (PurchaseOrderItems item : orderItems) {
+                int remaining = item.getRemainingQuantity();
+                int confirmed = item.getConfirmedQuantity() == null
+                        ? 0 : item.getConfirmedQuantity();
+                int expected = Math.min(remaining, confirmed);
+                if (expected <= 0) continue;
+                CreateGoodsReceiptItemRequest line = new CreateGoodsReceiptItemRequest();
+                line.setProductId(item.getProduct().getId());
+                line.setExpectedQuantity(expected);
+                receiptLines.add(line);
+            }
+            if (!receiptLines.isEmpty()) {
+                CreateGoodsReceiptRequest receiptRequest = new CreateGoodsReceiptRequest();
+                receiptRequest.setPurchaseOrderId(order.getId());
+                receiptRequest.setItems(receiptLines);
+                goodsReceiptCreationService.create(receiptRequest);
+            }
+        }
 
         return toResponse(order, orderItems);
     }
