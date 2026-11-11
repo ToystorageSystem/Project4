@@ -243,7 +243,6 @@ export default function PurchaseOrderFormPage() {
                     description="Select a supplier, receiving warehouse, and products to order. Unit prices are based on agreed supplier terms."
                     actions={<Button type="button" variant="outline" onClick={() => navigate(editing ? `${ROOT}/${orderId}` : ROOT)}>← Back</Button>}
                 />
-                <Alert type="info">New orders are saved as drafts and do not affect inventory. You can submit or cancel them from the details page.</Alert>
                 {loadError && <div role="alert"><Alert type="danger">{loadError}</Alert></div>}
                 {productError && <div role="alert"><Alert type="danger">{productError}</Alert></div>}
                 {saveError && <div role="alert"><Alert type="danger">{saveError}</Alert></div>}

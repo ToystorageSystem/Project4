@@ -1,30 +1,17 @@
+
 import { isAdmin } from "../../auth/access";
-
-import { useCallback, useEffect, useMemo, useState } from "react";
-
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle,
-  Building2,
-  CheckCircle2,
-  ClipboardList,
-  Database,
-  Eye,
-  Pencil,
-  Plus,
-  Power,
-  RefreshCw,
-  Search,
-  ShieldCheck,
-  Store,
-  UserMinus,
-  UserPlus,
-  Users,
-  Warehouse,
-  X,
+  AlertTriangle, Building2, CheckCircle2, ClipboardList, Database,
+  Eye, MapPin, Pencil, Plus, Power, RefreshCw, Search, Store,
+  UserMinus, Users, Warehouse, X,
 } from "lucide-react";
+import {
+  CircleMarker, MapContainer, TileLayer, useMap, useMapEvents,
+} from "react-leaflet";
 
+import "leaflet/dist/leaflet.css";
 import { getAdminUsers } from "./api/admin/userAccountsApi";
-
 import {
   activateWarehouse,
   assignWarehouseEmployee,
@@ -38,7 +25,6 @@ import {
   unassignWarehouseEmployee,
   updateWarehouse,
 } from "./api/admin/warehousesApi";
-
 import "./css/WarehousesPage.css";
 
 // ======================================================
@@ -56,14 +42,10 @@ function messageFor(error) {
   if (error?.status === 401) {
     return "Session expired. Please sign in again.";
   }
-
   if (error?.status === 403) {
     return "Access denied. Please check your Admin permissions.";
   }
-
-  const message =
-    error?.message || "An unexpected error occurred.";
-
+  const message = error?.message || "An unexpected error occurred.";
   return /[\u00c0-\u1ef9]/.test(message)
     ? "The Backend rejected this operation. Check the business rules and server logs."
     : message;
@@ -117,9 +99,7 @@ function managerOf(location) {
 
 function StatusBadge({ status }) {
   return (
-    <span
-      className={`wh-status ${String(status || "").toLowerCase()}`}
-    >
+    <span className={`wh-status ${String(status || "").toLowerCase()}`}>
       {status}
     </span>
   );
@@ -135,29 +115,87 @@ function InfoRow({ label, children }) {
 }
 
 // ======================================================
-// MAIN COMPONENT - ACCOUNT DATA
+// MAP - KEEP WORKING TILE PROVIDER
+// ======================================================
+
+const DEFAULT_MAP_CENTER = [10.8231, 106.6297];
+
+function MapClickListener({ onSelect }) {
+  useMapEvents({
+    click(event) {
+      onSelect(event.latlng);
+    },
+  });
+  return null;
+}
+
+function MapRecenter({ point }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (point) {
+      map.setView([point.lat, point.lng], 16);
+    }
+  }, [map, point]);
+
+  return null;
+}
+
+function AddressPickerMap({ point, onSelect }) {
+  return (
+    <div
+      style={{
+        borderRadius: 10,
+        overflow: "hidden",
+        border: "1px solid #dfe6f1",
+      }}
+    >
+      <MapContainer
+        center={DEFAULT_MAP_CENTER}
+        zoom={12}
+        scrollWheelZoom={false}
+        style={{ height: 255, width: "100%" }}
+      >
+        <TileLayer
+          url="https://tile.openstreetmap.de/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
+        <MapClickListener onSelect={onSelect} />
+        <MapRecenter point={point} />
+
+        {point && (
+          <CircleMarker
+            center={[point.lat, point.lng]}
+            radius={9}
+            pathOptions={{
+              color: "#285bd4",
+              fillColor: "#4e7cf1",
+              fillOpacity: 0.75,
+            }}
+          />
+        )}
+      </MapContainer>
+    </div>
+  );
+}
+
+// ======================================================
+// MAIN COMPONENT
 // ======================================================
 
 export default function WarehousesPage() {
   const [locations, setLocations] = useState([]);
   const [connected, setConnected] = useState(false);
   const [canManage, setCanManage] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
-
   const [error, setError] = useState("");
   const [detailWarning, setDetailWarning] = useState("");
   const [notice, setNotice] = useState(null);
 
-  // Chi hien login khi can.
-
-  // Search and filter.
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
-
-  // Dialog.
   const [dialog, setDialog] = useState(null);
 
   const [form, setForm] = useState({
@@ -166,21 +204,25 @@ export default function WarehousesPage() {
     address: "",
     phone: "",
   });
-
   const [formError, setFormError] = useState("");
 
-  // Employees and managers.
   const [candidates, setCandidates] = useState([]);
   const [candidateError, setCandidateError] = useState("");
   const [candidateLoading, setCandidateLoading] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [selectedManagerId, setSelectedManagerId] = useState("");
 
-  // Deactivation impact.
+  const [mapPoint, setMapPoint] = useState(null);
+  const [mapBusy, setMapBusy] = useState(false);
+  const [mapMessage, setMapMessage] = useState("");
+  const [mapError, setMapError] = useState("");
+  const mapRequestId = useRef(0);
+
   const [impact, setImpact] = useState(null);
   const [impactLoading, setImpactLoading] = useState(false);
 
   // ====================================================
-  // LOAD LOCATIONS
+  // LOAD WAREHOUSES
   // ====================================================
 
   const loadLocations = useCallback(async () => {
@@ -189,8 +231,6 @@ export default function WarehousesPage() {
     setDetailWarning("");
 
     try {
-      // Su dung session JSESSIONID dang co.
-      // Khong can dang nhap lai de xac nhan quyen.
       const [first, session] = await Promise.all([
         getWarehouses(0, 100),
         getWarehouseSession(),
@@ -200,24 +240,17 @@ export default function WarehousesPage() {
         ? session.authorities
         : [];
 
-      const hasManagePermission =
-        isAdmin(session) &&
-        authorities.includes("WAREHOUSE_MANAGE");
-
-      setCanManage(hasManagePermission);
+      setCanManage(
+        isAdmin(session) && authorities.includes("WAREHOUSE_MANAGE")
+      );
 
       if (!Array.isArray(first?.content)) {
-        throw new Error(
-          "Unexpected warehouse list response."
-        );
+        throw new Error("Unexpected warehouse list response.");
       }
 
       const pages = Number(first.totalPages || 1);
-
       if (pages > 20) {
-        throw new Error(
-          "Too many locations. A paginated view is required."
-        );
+        throw new Error("Too many warehouses or stores. A paginated view is required.");
       }
 
       const all = [...first.content];
@@ -226,22 +259,18 @@ export default function WarehousesPage() {
         const next = await getWarehouses(page, 100);
 
         if (!Array.isArray(next?.content)) {
-          throw new Error(
-            "A warehouse page could not be loaded."
-          );
+          throw new Error("A warehouse page could not be loaded.");
         }
 
         all.push(...next.content);
       }
 
-      // Lay employees cua tung location.
       const loaded = await Promise.all(
         all.map(async (raw) => {
           const location = mapLocation(raw);
 
           try {
-            const employees =
-              await getWarehouseEmployees(location.id);
+            const employees = await getWarehouseEmployees(location.id);
 
             if (!Array.isArray(employees)) {
               throw new Error("Invalid employee response.");
@@ -263,7 +292,7 @@ export default function WarehousesPage() {
 
       if (loaded.some((item) => !item.employeesLoaded)) {
         setDetailWarning(
-          "Some employee lists are unavailable. Assignment actions are disabled for those locations."
+          "Some employee lists are unavailable. Assignment actions are disabled for those warehouses or stores."
         );
       }
 
@@ -273,31 +302,18 @@ export default function WarehousesPage() {
       setConnected(false);
       setLocations([]);
       setCanManage(false);
-
-      // 401: session khong hop le.
-      // 403: session hop le nhung khong du quyen.
-
       return false;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // ====================================================
-  // AUTO LOAD
-  // ====================================================
-
   useEffect(() => {
     void loadLocations();
   }, [loadLocations]);
 
   // ====================================================
-  // LOGIN FALLBACK
-  // ====================================================
-
-
-  // ====================================================
-  // SEARCH AND FILTER
+  // FILTER
   // ====================================================
 
   const filtered = useMemo(() => {
@@ -310,9 +326,7 @@ export default function WarehousesPage() {
         item.address,
         item.phone,
         item.type,
-      ]
-        .join(" ")
-        .toLowerCase();
+      ].join(" ").toLowerCase();
 
       return (
         searchable.includes(query) &&
@@ -322,29 +336,20 @@ export default function WarehousesPage() {
     });
   }, [locations, search, typeFilter, statusFilter]);
 
-  // ====================================================
-  // SELECTED DATA
-  // ====================================================
-
   const selected = locations.find(
     (item) => item.id === dialog?.warehouseId
   );
 
-  const selectedEmployee = selected?.employees.find(
-    (item) => item.id === dialog?.employeeId
+  const availableEmployees = candidates.filter((item) =>
+    item.roles.includes(staffRole(selected))
   );
 
-  const requiredRole =
-    dialog?.type === "manager"
-      ? managerRole(selected)
-      : staffRole(selected);
-
-  const available = candidates.filter((item) =>
-    item.roles.includes(requiredRole)
+  const availableManagers = candidates.filter((item) =>
+    item.roles.includes(managerRole(selected))
   );
 
   // ====================================================
-  // DIALOG HELPERS
+  // DIALOG
   // ====================================================
 
   function closeDialog() {
@@ -353,7 +358,10 @@ export default function WarehousesPage() {
     setDialog(null);
     setFormError("");
     setImpact(null);
-    setSelectedUserId("");
+    setSelectedEmployeeId("");
+    setSelectedManagerId("");
+    setMapBusy(false);
+    mapRequestId.current += 1;
   }
 
   function openCreate() {
@@ -365,6 +373,10 @@ export default function WarehousesPage() {
     });
 
     setFormError("");
+    setMapPoint(null);
+    setMapBusy(false);
+    setMapMessage("");
+    setMapError("");
     setDialog({ type: "create" });
   }
 
@@ -377,29 +389,31 @@ export default function WarehousesPage() {
     });
 
     setFormError("");
+    setCandidateError("");
+    setSelectedEmployeeId("");
+    setSelectedManagerId("");
+    setMapPoint(null);
+    setMapBusy(false);
+    setMapMessage("");
+    setMapError("");
 
     setDialog({
       type: "edit",
       warehouseId: item.id,
     });
+
+    void readCandidates();
   }
 
-  function openDialog(type, location, employeeId = null) {
+  function openDialog(type, location) {
     setFormError("");
-    setSelectedUserId("");
-
     setDialog({
       type,
       warehouseId: location.id,
-      employeeId,
     });
 
     if (type === "impact") {
       void readImpact(location.id);
-    }
-
-    if (type === "employee" || type === "manager") {
-      void readCandidates();
     }
   }
 
@@ -419,9 +433,7 @@ export default function WarehousesPage() {
         typeof data?.canDeactivate !== "boolean" ||
         typeof data?.totalBlockingRecords !== "number"
       ) {
-        throw new Error(
-          "Unexpected deactivation impact response."
-        );
+        throw new Error("Unexpected deactivation impact response.");
       }
 
       setImpact(data);
@@ -433,7 +445,7 @@ export default function WarehousesPage() {
   }
 
   // ====================================================
-  // AVAILABLE EMPLOYEES
+  // LOAD EMPLOYEE CANDIDATES
   // ====================================================
 
   async function readCandidates() {
@@ -451,9 +463,7 @@ export default function WarehousesPage() {
       const pages = Number(first.totalPages || 1);
 
       if (pages > 20) {
-        throw new Error(
-          "Too many users. Please use a filtered employee search."
-        );
+        throw new Error("Too many users. Please use a filtered employee search.");
       }
 
       const users = [...first.content];
@@ -498,93 +508,431 @@ export default function WarehousesPage() {
   }
 
   // ====================================================
-  // CREATE / EDIT
+  // PHOTON ADDRESS SEARCH - FIXED
+  // ====================================================
+
+  async function locateAddress() {
+    const address = form.address.trim();
+
+    if (!address) {
+      setMapError("Enter an address before searching on the map.");
+      return;
+    }
+
+    const requestId = ++mapRequestId.current;
+
+    setMapBusy(true);
+    setMapError("");
+    setMapMessage("");
+
+    try {
+      // Chỉ gọi Photon khi người dùng nhấn Find on Map.
+      // Không dùng Nominatim, Vite proxy hoặc utm_source.
+      const params = new URLSearchParams({
+        q: address,
+        limit: "5",
+        lat: "10.8231",
+        lon: "106.6297",
+      });
+
+      const response = await fetch(
+        `https://photon.komoot.io/api/?${params.toString()}`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Address search failed (HTTP ${response.status}).`
+        );
+      }
+
+      const data = await response.json();
+
+      if (requestId !== mapRequestId.current) {
+        return;
+      }
+
+      const features = Array.isArray(data?.features)
+        ? data.features
+        : [];
+
+      const match = features.find((feature) => {
+        const coordinates = feature?.geometry?.coordinates;
+
+        return (
+          Array.isArray(coordinates) &&
+          coordinates.length >= 2 &&
+          Number.isFinite(Number(coordinates[0])) &&
+          Number.isFinite(Number(coordinates[1]))
+        );
+      });
+
+      if (!match) {
+        setMapError(
+          "Address not found. Include a street, district, and city, then try again."
+        );
+        return;
+      }
+
+      const [lng, lat] = match.geometry.coordinates;
+
+      setMapPoint({
+        lat: Number(lat),
+        lng: Number(lng),
+      });
+
+      setMapMessage(
+        "Map moved to the closest matching area. Check the position before saving."
+      );
+    } catch (error) {
+      if (requestId === mapRequestId.current) {
+        console.error("Photon address search:", error);
+
+        setMapError(
+          "Unable to search the address right now. Check the connection to Photon or enter the address manually."
+        );
+      }
+    } finally {
+      if (requestId === mapRequestId.current) {
+        setMapBusy(false);
+      }
+    }
+  }
+
+  // ====================================================
+  // PHOTON REVERSE ADDRESS LOOKUP
+  // ====================================================
+
+  async function chooseMapPoint(point) {
+    const lat = Number(point.lat);
+    const lng = Number(point.lng);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return;
+    }
+
+    const requestId = ++mapRequestId.current;
+
+    setMapPoint({ lat, lng });
+    setMapBusy(true);
+    setMapError("");
+    setMapMessage("");
+
+    try {
+      const params = new URLSearchParams({
+        lat: String(lat),
+        lon: String(lng),
+        limit: "1",
+      });
+
+      const response = await fetch(
+        `https://photon.komoot.io/reverse?${params.toString()}`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Reverse address lookup failed (HTTP ${response.status}).`
+        );
+      }
+
+      const data = await response.json();
+
+      if (requestId !== mapRequestId.current) {
+        return;
+      }
+
+      const place = data?.features?.[0]?.properties;
+
+      if (!place) {
+        setMapError(
+          "No address found near this point. You can enter it manually."
+        );
+        return;
+      }
+
+      const street = [
+        place.housenumber,
+        place.street,
+      ].filter(Boolean).join(" ");
+
+      const parts = [
+        street,
+        place.name,
+        place.district,
+        place.city,
+        place.county,
+        place.state,
+        place.country,
+      ];
+
+      const seen = new Set();
+
+      const address = parts
+        .filter((value) => {
+          const key = String(value || "")
+            .trim()
+            .toLocaleLowerCase();
+
+          if (!key || seen.has(key)) {
+            return false;
+          }
+
+          seen.add(key);
+          return true;
+        })
+        .join(", ");
+
+      if (!address) {
+        setMapError(
+          "The selected point has no mapped address. Enter it manually."
+        );
+        return;
+      }
+
+      setForm((previous) => ({
+        ...previous,
+        address: address.slice(0, 255),
+      }));
+
+      setMapMessage(
+        "Nearest mapped address selected. Verify the house number before saving."
+      );
+    } catch (error) {
+      if (requestId === mapRequestId.current) {
+        console.error("Photon reverse lookup:", error);
+
+        setMapError(
+          "Unable to read an address for this point. The marker is kept; enter the address manually."
+        );
+      }
+    } finally {
+      if (requestId === mapRequestId.current) {
+        setMapBusy(false);
+      }
+    }
+  }
+
+  // ====================================================
+  // SINGLE SAVE CHANGES
   // ====================================================
 
   async function saveLocation(event) {
     event.preventDefault();
 
-    if (busy || !canManage) return;
+    if (busy || !canManage || !dialog) {
+      return;
+    }
+
+    const creating = dialog.type === "create";
+    const editing = dialog.type === "edit";
+
+    if (!creating && !editing) {
+      return;
+    }
 
     const name = form.name.trim();
     const address = form.address.trim();
     const phone = form.phone.trim();
 
-    if (name.length < 3 || name.length > 150) {
-      setFormError(
-        "Location name must contain 3-150 characters."
+    const detailsChanged =
+      editing &&
+      selected &&
+      (
+        name !== selected.name ||
+        address !== selected.address ||
+        phone !== selected.phone
       );
-      return;
-    }
 
-    if (address.length < 5 || address.length > 255) {
-      setFormError(
-        "Address must contain 5-255 characters."
-      );
-      return;
-    }
+    const managerId = selectedManagerId
+      ? Number(selectedManagerId)
+      : null;
 
-    if (!/^\+?[0-9]{9,15}$/.test(phone)) {
-      setFormError(
-        "Phone must contain 9-15 digits, optionally starting with +."
-      );
-      return;
-    }
+    const employeeId = selectedEmployeeId
+      ? Number(selectedEmployeeId)
+      : null;
 
-    const duplicate = locations.some(
-      (item) =>
-        item.name.toLowerCase() === name.toLowerCase() &&
-        item.id !== selected?.id
-    );
-
-    if (duplicate) {
-      setFormError("This location name already exists.");
-      return;
-    }
+    const hasManagerChoice = managerId !== null;
+    const hasEmployeeChoice = employeeId !== null;
 
     if (
-      dialog?.type === "edit" &&
-      selected &&
-      name === selected.name &&
-      address === selected.address &&
-      phone === selected.phone
+      editing &&
+      !detailsChanged &&
+      !hasManagerChoice &&
+      !hasEmployeeChoice
     ) {
-      setFormError("No changes were made.");
+      setDialog(null);
       return;
+    }
+
+    if (creating || detailsChanged) {
+      if (name.length < 3 || name.length > 150) {
+        setFormError(
+          "Warehouse / store name must contain 3-150 characters."
+        );
+        return;
+      }
+
+      if (address.length < 5 || address.length > 255) {
+        setFormError(
+          "Address must contain 5-255 characters."
+        );
+        return;
+      }
+
+      if (!/^\+?[0-9]{9,15}$/.test(phone)) {
+        setFormError(
+          "Phone must contain 9-15 digits, optionally starting with +."
+        );
+        return;
+      }
+
+      const duplicate = locations.some(
+        (item) =>
+          item.name.toLowerCase() === name.toLowerCase() &&
+          item.id !== selected?.id
+      );
+
+      if (duplicate) {
+        setFormError(
+          "This warehouse / store name already exists."
+        );
+        return;
+      }
+    }
+
+    if (editing && (hasManagerChoice || hasEmployeeChoice)) {
+      if (
+        !selected ||
+        !selected.employeesLoaded ||
+        selected.status !== "ACTIVE" ||
+        candidateLoading ||
+        candidateError
+      ) {
+        setFormError(
+          "Employee assignments are unavailable. Refresh and try again."
+        );
+        return;
+      }
+
+      if (
+        hasManagerChoice &&
+        (
+          !Number.isSafeInteger(managerId) ||
+          !availableManagers.some(
+            (item) => Number(item.id) === managerId
+          )
+        )
+      ) {
+        setFormError(
+          "Select an eligible, unassigned manager."
+        );
+        return;
+      }
+
+      if (
+        hasEmployeeChoice &&
+        (
+          !Number.isSafeInteger(employeeId) ||
+          !availableEmployees.some(
+            (item) => Number(item.id) === employeeId
+          )
+        )
+      ) {
+        setFormError(
+          "Select an eligible, unassigned employee."
+        );
+        return;
+      }
+
+      if (
+        hasManagerChoice &&
+        hasEmployeeChoice &&
+        managerId === employeeId
+      ) {
+        setFormError(
+          "Select different users for manager and employee."
+        );
+        return;
+      }
     }
 
     setBusy(true);
     setFormError("");
 
+    let savedSteps = 0;
+
     try {
-      if (dialog.type === "create") {
+      if (creating) {
         await createWarehouse({
           name,
           type: form.type,
           address,
           phone,
         });
+
+        savedSteps += 1;
       } else {
-        await updateWarehouse(selected.id, {
-          name,
-          address,
-          phone,
-        });
+        if (detailsChanged) {
+          await updateWarehouse(selected.id, {
+            name,
+            address,
+            phone,
+          });
+
+          savedSteps += 1;
+        }
+
+        if (hasManagerChoice) {
+          await assignWarehouseManager(
+            selected.id,
+            managerId
+          );
+
+          savedSteps += 1;
+          setSelectedManagerId("");
+        }
+
+        if (hasEmployeeChoice) {
+          await assignWarehouseEmployee(
+            selected.id,
+            employeeId
+          );
+
+          savedSteps += 1;
+          setSelectedEmployeeId("");
+        }
       }
 
       setDialog(null);
 
       setNotice({
         type: "success",
-        message:
-          dialog.type === "create"
-            ? "Location created."
-            : "Location updated.",
+        message: creating
+          ? "Warehouse / store created."
+          : "Changes saved successfully.",
       });
 
       await loadLocations();
     } catch (err) {
-      setFormError(messageFor(err));
+      setFormError(
+        savedSteps > 0
+          ? `${messageFor(err)} Some changes were saved. Review the data before retrying.`
+          : messageFor(err)
+      );
+
+      if (savedSteps > 0) {
+        await loadLocations();
+        await readCandidates();
+      }
     } finally {
       setBusy(false);
     }
@@ -623,7 +971,7 @@ export default function WarehousesPage() {
 
       setNotice({
         type: "success",
-        message: "Location status updated.",
+        message: "Warehouse / store status updated.",
       });
 
       await loadLocations();
@@ -635,70 +983,23 @@ export default function WarehousesPage() {
   }
 
   // ====================================================
-  // ASSIGN EMPLOYEE / MANAGER
+  // REMOVE EMPLOYEE
   // ====================================================
 
-  async function changeAssignment() {
-    if (!selected || !canManage || busy) {
-      return;
-    }
-
-    const id = Number(selectedUserId);
-
-    const candidate = available.find(
-      (item) => item.id === id
-    );
-
-    if (!candidate) {
-      setFormError("Select an eligible, unassigned user.");
-      return;
-    }
-
-    const isManager = dialog?.type === "manager";
-
-    setBusy(true);
-    setFormError("");
-
-    try {
-      if (isManager) {
-        await assignWarehouseManager(selected.id, id);
-      } else {
-        await assignWarehouseEmployee(selected.id, id);
-      }
-
-      setDialog(null);
-
-      setNotice({
-        type: "success",
-        message: isManager
-          ? "Manager assigned."
-          : "Employee assigned.",
-      });
-
-      await loadLocations();
-    } catch (err) {
-      setFormError(messageFor(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  // ====================================================
-  // UNASSIGN EMPLOYEE
-  // ====================================================
-
-  async function removeAssignment() {
-    if (!selected || !selectedEmployee || !canManage || busy) {
-      return;
-    }
-
+  async function removeTeamMember(user) {
     if (
-      selectedEmployee.roles.includes(
-        managerRole(selected)
-      )
+      dialog?.type !== "edit" ||
+      !selected ||
+      !canManage ||
+      busy ||
+      !selected.employeesLoaded
     ) {
+      return;
+    }
+
+    if (user.roles.includes(managerRole(selected))) {
       setFormError(
-        "A manager cannot be unassigned here. Assign a replacement manager first."
+        "Assign a replacement manager before removing the current manager."
       );
       return;
     }
@@ -707,12 +1008,7 @@ export default function WarehousesPage() {
     setFormError("");
 
     try {
-      await unassignWarehouseEmployee(
-        selected.id,
-        selectedEmployee.id
-      );
-
-      setDialog(null);
+      await unassignWarehouseEmployee(selected.id, user.id);
 
       setNotice({
         type: "success",
@@ -720,6 +1016,7 @@ export default function WarehousesPage() {
       });
 
       await loadLocations();
+      await readCandidates();
     } catch (err) {
       setFormError(messageFor(err));
     } finally {
@@ -727,23 +1024,16 @@ export default function WarehousesPage() {
     }
   }
 
-  // ====================================================
-  // MODAL TITLE
-  // ====================================================
-
   const modalTitle = {
-    create: "Create Location",
-    edit: "Edit Location",
-    details: "Location Details",
+    create: "Create Warehouse / Store",
+    edit: "Edit Warehouse / Store",
+    details: "Warehouse / Store Details",
     impact: "Deactivation Impact",
-    activate: "Activate Location",
-    employee: "Assign Employee",
-    manager: "Assign Manager",
-    unassign: "Unassign Employee",
+    activate: "Activate Warehouse / Store",
   }[dialog?.type];
 
   // ====================================================
-  // RENDER
+  // PAGE
   // ====================================================
 
   return (
@@ -754,31 +1044,22 @@ export default function WarehousesPage() {
           <span className="eyebrow">
             ADMINISTRATION / ISSUE #25
           </span>
-
           <h1>Warehouses &amp; Stores</h1>
-
           <p>
-            Manage live locations, operations
-            and employee assignments.
+            Manage warehouses, stores, operations and employee assignments.
           </p>
         </div>
 
         <div className="wh-header-actions">
           <span className="demo-chip">ACCOUNT DATA</span>
-
           <button
             type="button"
             className="wh-button wh-button-primary"
             onClick={openCreate}
-            disabled={
-              !connected ||
-              !canManage ||
-              loading ||
-              busy
-            }
+            disabled={!connected || !canManage || loading || busy}
           >
             <Plus size={17} />
-            Create Location
+            Create Warehouse / Store
           </button>
         </div>
       </div>
@@ -788,14 +1069,13 @@ export default function WarehousesPage() {
         <div className="wh-section-header">
           <div>
             <h2>Account access</h2>
-
             <p>
               {loading
-                ? "Loading locations..."
+                ? "Loading warehouses and stores..."
                 : connected
-                  ? "Live warehouse data is available"
+                  ? "Warehouse and store data is available"
                   : error
-                    ? "Unable to load locations. See details below."
+                    ? "Unable to load warehouses and stores. See details below."
                     : "Sign in to read live data"}
             </p>
           </div>
@@ -824,37 +1104,25 @@ export default function WarehousesPage() {
             </p>
           </div>
         )}
-
-
       </section>
 
       {/* STATISTICS */}
       <div className="wh-stat-grid">
         {[
+          ["Total Warehouses / Stores", locations.length, Building2],
           [
-            "Total Locations",
-            locations.length,
-            Building2,
-          ],
-          [
-            "Active Locations",
-            locations.filter(
-              (item) => item.status === "ACTIVE"
-            ).length,
+            "Active Warehouses / Stores",
+            locations.filter((item) => item.status === "ACTIVE").length,
             CheckCircle2,
           ],
           [
             "Main Warehouses",
-            locations.filter(
-              (item) => item.type === "MAIN_WAREHOUSE"
-            ).length,
+            locations.filter((item) => item.type === "MAIN_WAREHOUSE").length,
             Warehouse,
           ],
           [
             "Stores",
-            locations.filter(
-              (item) => item.type === "STORE"
-            ).length,
+            locations.filter((item) => item.type === "STORE").length,
             Store,
           ],
         ].map(([label, value, Icon]) => (
@@ -862,7 +1130,6 @@ export default function WarehousesPage() {
             <span className="wh-stat-icon">
               <Icon size={19} />
             </span>
-
             <span>{label}</span>
             <strong>{value}</strong>
             <small>Current records</small>
@@ -872,18 +1139,13 @@ export default function WarehousesPage() {
 
       {/* NOTIFICATION */}
       {notice && (
-        <div
-          className={`wh-notice ${notice.type}`}
-          role="status"
-        >
+        <div className={`wh-notice ${notice.type}`} role="status">
           {notice.type === "success" ? (
             <CheckCircle2 size={18} />
           ) : (
             <AlertTriangle size={18} />
           )}
-
           <span>{notice.message}</span>
-
           <button
             type="button"
             aria-label="Close notification"
@@ -894,15 +1156,13 @@ export default function WarehousesPage() {
         </div>
       )}
 
-      {/* LOCATION TABLE */}
+      {/* WAREHOUSE / STORE MANAGEMENT */}
       <section className="panel wh-table-panel">
         <div className="wh-section-header">
           <div>
-            <h2>Location Management</h2>
-
+            <h2>Warehouse / Store Management</h2>
             <p>
-              {filtered.length} of {locations.length}
-              {" "}live locations shown
+              {filtered.length} of {locations.length} warehouses and stores shown
             </p>
           </div>
 
@@ -916,10 +1176,7 @@ export default function WarehousesPage() {
               <RefreshCw size={15} />
               Refresh
             </button>
-
-            <span className="demo-chip">
-              ACCOUNT DATA
-            </span>
+            <span className="demo-chip">ACCOUNT DATA</span>
           </div>
         </div>
 
@@ -927,36 +1184,27 @@ export default function WarehousesPage() {
         <div className="wh-toolbar">
           <label className="wh-search">
             <Search size={17} />
-
             <input
               value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
-              placeholder="Search locations..."
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search warehouses or stores..."
             />
           </label>
 
           <select
             aria-label="Filter by type"
             value={typeFilter}
-            onChange={(event) =>
-              setTypeFilter(event.target.value)
-            }
+            onChange={(event) => setTypeFilter(event.target.value)}
           >
             <option value="ALL">All types</option>
-            <option value="MAIN_WAREHOUSE">
-              Main Warehouse
-            </option>
+            <option value="MAIN_WAREHOUSE">Main Warehouse</option>
             <option value="STORE">Store</option>
           </select>
 
           <select
             aria-label="Filter by status"
             value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.target.value)
-            }
+            onChange={(event) => setStatusFilter(event.target.value)}
           >
             <option value="ALL">All statuses</option>
             <option value="ACTIVE">Active</option>
@@ -969,8 +1217,8 @@ export default function WarehousesPage() {
           <table className="wh-table">
             <thead>
               <tr>
-                <th>Location Code</th>
-                <th>Location Name</th>
+                <th>Warehouse / Store Code</th>
+                <th>Warehouse / Store Name</th>
                 <th>Type</th>
                 <th>Manager</th>
                 <th>Employees</th>
@@ -984,19 +1232,16 @@ export default function WarehousesPage() {
                 <tr>
                   <td colSpan={7} className="wh-empty">
                     {loading
-                      ? "Loading locations..."
-                      : "No matching locations found."}
+                      ? "Loading warehouses and stores..."
+                      : "No matching warehouses or stores found."}
                   </td>
                 </tr>
               ) : (
                 filtered.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <span className="wh-code">
-                        {item.code}
-                      </span>
+                      <span className="wh-code">{item.code}</span>
                     </td>
-
                     <td>
                       <div className="wh-location-cell">
                         <span className="wh-location-icon">
@@ -1006,14 +1251,12 @@ export default function WarehousesPage() {
                             <Warehouse size={18} />
                           )}
                         </span>
-
                         <div>
                           <strong>{item.name}</strong>
                           <small>{item.address}</small>
                         </div>
                       </div>
                     </td>
-
                     <td>
                       <span className="wh-type">
                         {item.type === "STORE"
@@ -1021,95 +1264,52 @@ export default function WarehousesPage() {
                           : "Main Warehouse"}
                       </span>
                     </td>
-
                     <td>
                       {!item.employeesLoaded
                         ? "Unavailable"
-                        : managerOf(item)?.name ||
-                          "Not assigned"}
+                        : managerOf(item)?.name || "Not assigned"}
                     </td>
-
                     <td>
                       <span className="wh-count">
                         <Users size={15} />
-
                         {item.employeesLoaded
                           ? item.employees.length
                           : "—"}
                       </span>
                     </td>
-
                     <td>
                       <StatusBadge status={item.status} />
                     </td>
-
                     <td>
                       <div className="wh-actions">
-                        {/* VIEW */}
                         <button
                           type="button"
                           title="View Details"
                           aria-label={`View ${item.name}`}
-                          onClick={() =>
-                            openDialog("details", item)
-                          }
+                          onClick={() => openDialog("details", item)}
                         >
                           <Eye size={16} />
                         </button>
 
-                        {/* EDIT */}
                         <button
                           type="button"
-                          title="Edit Location"
+                          title="Edit Warehouse / Store"
                           disabled={!canManage || busy}
                           onClick={() => openEdit(item)}
                         >
                           <Pencil size={16} />
                         </button>
 
-                        {/* EMPLOYEES */}
-                        <button
-                          type="button"
-                          title="Manage Employees"
-                          disabled={!item.employeesLoaded}
-                          onClick={() =>
-                            openDialog("details", item)
-                          }
-                        >
-                          <Users size={16} />
-                        </button>
-
-                        {/* MANAGER */}
-                        <button
-                          type="button"
-                          title="Assign Manager"
-                          disabled={
-                            !canManage ||
-                            !item.employeesLoaded ||
-                            item.status !== "ACTIVE" ||
-                            busy
-                          }
-                          onClick={() =>
-                            openDialog("manager", item)
-                          }
-                        >
-                          <ShieldCheck size={16} />
-                        </button>
-
-                        {/* STATUS / IMPACT */}
                         <button
                           type="button"
                           title={
                             item.status === "ACTIVE"
                               ? "Check Deactivation Impact"
-                              : "Activate Location"
+                              : "Activate Warehouse / Store"
                           }
                           disabled={
                             busy ||
-                            (
-                              item.status === "INACTIVE" &&
-                              !canManage
-                            )
+                            (item.status === "INACTIVE" && !canManage)
                           }
                           onClick={() =>
                             openDialog(
@@ -1133,8 +1333,7 @@ export default function WarehousesPage() {
 
         <div className="wh-table-footer">
           <Database size={15} />
-          Current records. No location delete
-          endpoint is available.
+          Current records. No warehouse/store delete endpoint is available.
         </div>
       </section>
 
@@ -1154,16 +1353,12 @@ export default function WarehousesPage() {
             aria-modal="true"
             aria-labelledby="wh-dialog-title"
           >
-            {/* MODAL HEADER */}
             <div className="wh-modal-header">
               <div>
                 <span className="eyebrow">
                   ISSUE #25 · ACCOUNT DATA
                 </span>
-
-                <h2 id="wh-dialog-title">
-                  {modalTitle}
-                </h2>
+                <h2 id="wh-dialog-title">{modalTitle}</h2>
               </div>
 
               <button
@@ -1178,18 +1373,12 @@ export default function WarehousesPage() {
             </div>
 
             {/* CREATE / EDIT */}
-            {(
-              dialog.type === "create" ||
-              dialog.type === "edit"
-            ) && (
-              <form
-                className="wh-modal-body"
-                onSubmit={saveLocation}
-              >
+            {(dialog.type === "create" ||
+              dialog.type === "edit") && (
+              <form className="wh-modal-body" onSubmit={saveLocation}>
                 <div className="wh-form-grid">
                   <label className="wh-field">
-                    Location Name *
-
+                    Warehouse / Store Name *
                     <input
                       required
                       minLength={3}
@@ -1205,8 +1394,7 @@ export default function WarehousesPage() {
                   </label>
 
                   <label className="wh-field">
-                    Location Type *
-
+                    Warehouse / Store Type *
                     <select
                       value={form.type}
                       disabled={dialog.type === "edit"}
@@ -1220,32 +1408,107 @@ export default function WarehousesPage() {
                       <option value="MAIN_WAREHOUSE">
                         Main Warehouse
                       </option>
-                      <option value="STORE">
-                        Store
-                      </option>
+                      <option value="STORE">Store</option>
                     </select>
                   </label>
 
-                  <label className="wh-field wh-field-full">
-                    Address *
+                  {/* ADDRESS AND MAP */}
+                  <div className="wh-field wh-field-full">
+                    <label htmlFor="wh-address-input">
+                      Address *
+                    </label>
 
                     <input
+                      id="wh-address-input"
                       required
                       minLength={5}
                       maxLength={255}
+                      placeholder="Street, ward, district, city..."
                       value={form.address}
-                      onChange={(event) =>
+                      onChange={(event) => {
                         setForm((previous) => ({
                           ...previous,
                           address: event.target.value,
-                        }))
+                        }));
+                        setMapMessage("");
+                      }}
+                    />
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="wh-button wh-button-secondary"
+                        onClick={() => void locateAddress()}
+                        disabled={
+                          mapBusy ||
+                          busy ||
+                          !form.address.trim()
+                        }
+                      >
+                        <MapPin size={15} />
+                        {mapBusy
+                          ? "Searching map..."
+                          : "Find on Map"}
+                      </button>
+
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "#74849b",
+                          fontWeight: 400,
+                        }}
+                      >
+                        Search the address or click a point on the map to select it.
+                      </span>
+                    </div>
+
+                    <AddressPickerMap
+                      point={mapPoint}
+                      onSelect={(point) =>
+                        void chooseMapPoint(point)
                       }
                     />
-                  </label>
+
+                    {mapMessage && (
+                      <p
+                        className="wh-note"
+                        role="status"
+                        style={{ margin: 0 }}
+                      >
+                        {mapMessage}
+                      </p>
+                    )}
+
+                    {mapError && (
+                      <p
+                        className="wh-form-error"
+                        role="alert"
+                        style={{ margin: 0 }}
+                      >
+                        {mapError}
+                      </p>
+                    )}
+
+                    <small
+                      style={{
+                        color: "#8c9ab0",
+                        fontSize: 11,
+                        fontWeight: 400,
+                      }}
+                    >
+                      Map tiles: OpenStreetMap. Address search: Photon.
+                    </small>
+                  </div>
 
                   <label className="wh-field wh-field-full">
                     Phone Number *
-
                     <input
                       required
                       type="tel"
@@ -1261,17 +1524,194 @@ export default function WarehousesPage() {
                   </label>
                 </div>
 
-                <></>
+                {/* EMPLOYEES AND MANAGER */}
+                {dialog.type === "edit" && selected && (
+                  <section
+                    style={{
+                      marginTop: 28,
+                      padding: 16,
+                      border: "1px solid #e5ebf5",
+                      borderRadius: 12,
+                    }}
+                  >
+                    <div
+                      className="wh-employees-header"
+                      style={{ marginTop: 0 }}
+                    >
+                      <div>
+                        <h3>Employees &amp; Manager</h3>
+                        <p>
+                          Assign a manager, add employees, or remove staff for this warehouse / store.
+                        </p>
+                      </div>
+                    </div>
+
+                    <InfoRow label="Current Manager">
+                      {selected.employeesLoaded
+                        ? managerOf(selected)?.name || "Not assigned"
+                        : "Unavailable"}
+                    </InfoRow>
+
+                    {selected.status !== "ACTIVE" && (
+                      <p className="wh-note">
+                        Activate this warehouse / store before changing employee assignments.
+                      </p>
+                    )}
+
+                    <div
+                      className="wh-form-grid"
+                      style={{ marginTop: 20 }}
+                    >
+                      <div className="wh-field">
+                        <label htmlFor="wh-manager-select">
+                          Assign / Change Manager
+                        </label>
+                        <select
+                          id="wh-manager-select"
+                          value={selectedManagerId}
+                          onChange={(event) =>
+                            setSelectedManagerId(event.target.value)
+                          }
+                          disabled={
+                            candidateLoading ||
+                            busy ||
+                            !canManage ||
+                            !selected.employeesLoaded ||
+                            selected.status !== "ACTIVE" ||
+                            Boolean(candidateError)
+                          }
+                        >
+                          <option value="">
+                            Select an available manager...
+                          </option>
+                          {availableManagers.map((user) => (
+                            <option key={user.id} value={user.id}>
+                              {user.name} ({user.email})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="wh-field">
+                        <label htmlFor="wh-employee-select">
+                          Add Employee
+                        </label>
+                        <select
+                          id="wh-employee-select"
+                          value={selectedEmployeeId}
+                          onChange={(event) =>
+                            setSelectedEmployeeId(event.target.value)
+                          }
+                          disabled={
+                            candidateLoading ||
+                            busy ||
+                            !canManage ||
+                            !selected.employeesLoaded ||
+                            selected.status !== "ACTIVE" ||
+                            Boolean(candidateError)
+                          }
+                        >
+                          <option value="">
+                            Select an available employee...
+                          </option>
+                          {availableEmployees.map((user) => (
+                            <option key={user.id} value={user.id}>
+                              {user.name} ({user.email})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {candidateLoading && (
+                      <p className="wh-note">
+                        Loading eligible employees...
+                      </p>
+                    )}
+
+                    {candidateError && (
+                      <p className="wh-form-error" role="alert">
+                        {candidateError}
+                      </p>
+                    )}
+
+                    {!candidateLoading &&
+                      !candidateError &&
+                      availableEmployees.length === 0 &&
+                      availableManagers.length === 0 && (
+                        <p className="wh-note">
+                          No unassigned eligible employees or managers are available.
+                        </p>
+                      )}
+
+                    <div className="wh-employees-header">
+                      <div>
+                        <h3>Assigned Employees</h3>
+                        <p>
+                          {selected.employeesLoaded
+                            ? `${selected.employees.length} assigned`
+                            : "Employee list unavailable"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="wh-employee-list">
+                      {selected.employees.length === 0 ? (
+                        <p className="wh-empty-employees">
+                          {selected.employeesLoaded
+                            ? "No employees assigned."
+                            : "Unable to load employees."}
+                        </p>
+                      ) : (
+                        selected.employees.map((user) => (
+                          <div
+                            className="wh-employee-row"
+                            key={user.id}
+                          >
+                            <div>
+                              <strong>{user.name}</strong>
+                              <small>
+                                {user.roles.join(", ") || "No role"}
+                              </small>
+                            </div>
+
+                            {user.roles.includes(
+                              managerRole(selected)
+                            ) ? (
+                              <span className="wh-manager-tag">
+                                Manager
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="wh-small-action"
+                                disabled={
+                                  !canManage ||
+                                  busy ||
+                                  selected.status !== "ACTIVE"
+                                }
+                                onClick={() =>
+                                  void removeTeamMember(user)
+                                }
+                              >
+                                <UserMinus size={15} />
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+                )}
 
                 {formError && (
-                  <p
-                    className="wh-form-error"
-                    role="alert"
-                  >
+                  <p className="wh-form-error" role="alert">
                     {formError}
                   </p>
                 )}
 
+                {/* SINGLE SAVE BUTTON */}
                 <div className="wh-modal-footer">
                   <button
                     type="button"
@@ -1281,7 +1721,6 @@ export default function WarehousesPage() {
                   >
                     Cancel
                   </button>
-
                   <button
                     type="submit"
                     className="wh-button wh-button-primary"
@@ -1290,7 +1729,7 @@ export default function WarehousesPage() {
                     {busy
                       ? "Saving..."
                       : dialog.type === "create"
-                        ? "Create Location"
+                        ? "Create Warehouse / Store"
                         : "Save Changes"}
                   </button>
                 </div>
@@ -1300,35 +1739,28 @@ export default function WarehousesPage() {
             {/* DETAILS */}
             {dialog.type === "details" && selected && (
               <div className="wh-modal-body">
-                <InfoRow label="Location Code">
+                <InfoRow label="Warehouse / Store Code">
                   {selected.code}
                 </InfoRow>
-
-                <InfoRow label="Location Name">
+                <InfoRow label="Warehouse / Store Name">
                   {selected.name}
                 </InfoRow>
-
                 <InfoRow label="Type">
                   {selected.type === "STORE"
                     ? "Store"
                     : "Main Warehouse"}
                 </InfoRow>
-
                 <InfoRow label="Address">
                   {selected.address}
                 </InfoRow>
-
                 <InfoRow label="Phone">
                   {selected.phone || "Not provided"}
                 </InfoRow>
-
                 <InfoRow label="Manager">
                   {selected.employeesLoaded
-                    ? managerOf(selected)?.name ||
-                      "Not assigned"
+                    ? managerOf(selected)?.name || "Not assigned"
                     : "Unavailable"}
                 </InfoRow>
-
                 <InfoRow label="Status">
                   {selected.status}
                 </InfoRow>
@@ -1336,32 +1768,12 @@ export default function WarehousesPage() {
                 <div className="wh-employees-header">
                   <div>
                     <h3>Assigned Employees</h3>
-
                     <p>
                       {selected.employeesLoaded
                         ? `${selected.employees.length} employees assigned`
                         : "Employee list unavailable"}
                     </p>
                   </div>
-
-                  <button
-                    type="button"
-                    className="wh-button wh-button-secondary"
-                    disabled={
-                      !canManage ||
-                      !selected.employeesLoaded ||
-                      selected.status !== "ACTIVE"
-                    }
-                    onClick={() =>
-                      openDialog(
-                        "employee",
-                        selected
-                      )
-                    }
-                  >
-                    <UserPlus size={15} />
-                    Assign Employee
-                  </button>
                 </div>
 
                 <div className="wh-employee-list">
@@ -1379,13 +1791,10 @@ export default function WarehousesPage() {
                       >
                         <div>
                           <strong>{user.name}</strong>
-
                           <small>
-                            {user.roles.join(", ") ||
-                              "No role"}
+                            {user.roles.join(", ") || "No role"}
                           </small>
                         </div>
-
                         {user.roles.includes(
                           managerRole(selected)
                         ) ? (
@@ -1393,21 +1802,9 @@ export default function WarehousesPage() {
                             Manager
                           </span>
                         ) : (
-                          <button
-                            type="button"
-                            className="wh-small-action"
-                            disabled={!canManage}
-                            onClick={() =>
-                              openDialog(
-                                "unassign",
-                                selected,
-                                user.id
-                              )
-                            }
-                          >
-                            <UserMinus size={15} />
-                            Unassign
-                          </button>
+                          <span className="wh-manager-tag">
+                            Staff
+                          </span>
                         )}
                       </div>
                     ))
@@ -1422,17 +1819,14 @@ export default function WarehousesPage() {
                   >
                     Close
                   </button>
-
                   <button
                     type="button"
                     className="wh-button wh-button-primary"
                     disabled={!canManage}
-                    onClick={() =>
-                      openEdit(selected)
-                    }
+                    onClick={() => openEdit(selected)}
                   >
                     <Pencil size={15} />
-                    Edit Location
+                    Edit Warehouse / Store
                   </button>
                 </div>
               </div>
@@ -1442,14 +1836,9 @@ export default function WarehousesPage() {
             {dialog.type === "impact" && selected && (
               <div className="wh-modal-body">
                 <p className="wh-confirm-text">
-                  Review open business operations
-                  before deactivating{" "}
+                  Review open business operations before deactivating{" "}
                   <strong>{selected.name}</strong>.
                 </p>
-
-                {impactLoading && (
-                  <></>
-                )}
 
                 {impact && (
                   <>
@@ -1462,7 +1851,6 @@ export default function WarehousesPage() {
                             <ClipboardList size={16} />
                             No blocking modules
                           </span>
-
                           <strong>0</strong>
                         </div>
                       ) : (
@@ -1475,13 +1863,8 @@ export default function WarehousesPage() {
                           >
                             <span>
                               <ClipboardList size={16} />
-
-                              {module.replaceAll(
-                                "_",
-                                " "
-                              )}
+                              {module.replaceAll("_", " ")}
                             </span>
-
                             <strong>{count}</strong>
                           </div>
                         ))
@@ -1490,9 +1873,7 @@ export default function WarehousesPage() {
 
                     <div
                       className={`wh-impact-result ${
-                        impact.canDeactivate
-                          ? "clear"
-                          : "blocked"
+                        impact.canDeactivate ? "clear" : "blocked"
                       }`}
                     >
                       {impact.canDeactivate ? (
@@ -1500,7 +1881,6 @@ export default function WarehousesPage() {
                       ) : (
                         <AlertTriangle size={19} />
                       )}
-
                       <span>
                         {impact.canDeactivate
                           ? "No blocking operations. Deactivation is allowed by the impact check."
@@ -1511,10 +1891,7 @@ export default function WarehousesPage() {
                 )}
 
                 {formError && (
-                  <p
-                    className="wh-form-error"
-                    role="alert"
-                  >
+                  <p className="wh-form-error" role="alert">
                     {formError}
                   </p>
                 )}
@@ -1528,7 +1905,6 @@ export default function WarehousesPage() {
                   >
                     Cancel
                   </button>
-
                   <button
                     type="button"
                     className="wh-button wh-button-danger"
@@ -1538,13 +1914,11 @@ export default function WarehousesPage() {
                       impactLoading ||
                       !impact?.canDeactivate
                     }
-                    onClick={() =>
-                      void changeStatus()
-                    }
+                    onClick={() => void changeStatus()}
                   >
                     {busy
                       ? "Processing..."
-                      : "Deactivate Location"}
+                      : "Deactivate Warehouse / Store"}
                   </button>
                 </div>
               </div>
@@ -1554,17 +1928,11 @@ export default function WarehousesPage() {
             {dialog.type === "activate" && selected && (
               <div className="wh-modal-body">
                 <p className="wh-confirm-text">
-                  Activate{" "}
-                  <strong>{selected.name}</strong>?
+                  Activate <strong>{selected.name}</strong>?
                 </p>
 
-                <></>
-
                 {formError && (
-                  <p
-                    className="wh-form-error"
-                    role="alert"
-                  >
+                  <p className="wh-form-error" role="alert">
                     {formError}
                   </p>
                 )}
@@ -1578,184 +1946,15 @@ export default function WarehousesPage() {
                   >
                     Cancel
                   </button>
-
                   <button
                     type="button"
                     className="wh-button wh-button-primary"
                     disabled={busy}
-                    onClick={() =>
-                      void changeStatus()
-                    }
+                    onClick={() => void changeStatus()}
                   >
                     {busy
                       ? "Processing..."
-                      : "Activate Location"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ASSIGN EMPLOYEE / MANAGER */}
-            {(
-              dialog.type === "employee" ||
-              dialog.type === "manager"
-            ) && selected && (
-              <div className="wh-modal-body">
-                <p className="wh-confirm-text">
-                  Select an unassigned{" "}
-                  {dialog.type === "manager"
-                    ? "manager"
-                    : "employee"}{" "}
-                  for{" "}
-                  <strong>{selected.name}</strong>.
-                </p>
-
-                <label className="wh-field">
-                  {dialog.type === "manager"
-                    ? "Available Managers"
-                    : "Available Employees"}
-
-                  <select
-                    value={selectedUserId}
-                    disabled={
-                      candidateLoading ||
-                      busy ||
-                      Boolean(candidateError)
-                    }
-                    onChange={(event) => {
-                      setSelectedUserId(
-                        event.target.value
-                      );
-                      setFormError("");
-                    }}
-                  >
-                    <option value="">
-                      Select a person...
-                    </option>
-
-                    {available.map((user) => (
-                      <option
-                        key={user.id}
-                        value={user.id}
-                      >
-                        {user.name} ({user.email})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <></>
-
-                {candidateLoading && (
-                  <p className="wh-note">
-                    Loading eligible users...
-                  </p>
-                )}
-
-                {candidateError && (
-                  <p className="wh-form-error">
-                    {candidateError}
-                  </p>
-                )}
-
-                {!candidateLoading &&
-                  !candidateError &&
-                  available.length === 0 && (
-                    <p className="wh-note">
-                      No eligible users available.
-                    </p>
-                  )}
-
-                {formError && (
-                  <p
-                    className="wh-form-error"
-                    role="alert"
-                  >
-                    {formError}
-                  </p>
-                )}
-
-                <div className="wh-modal-footer">
-                  <button
-                    type="button"
-                    className="wh-button wh-button-secondary"
-                    disabled={busy}
-                    onClick={closeDialog}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="button"
-                    className="wh-button wh-button-primary"
-                    disabled={
-                      busy ||
-                      candidateLoading ||
-                      Boolean(candidateError) ||
-                      !selectedUserId
-                    }
-                    onClick={() =>
-                      void changeAssignment()
-                    }
-                  >
-                    {busy
-                      ? "Saving..."
-                      : dialog.type === "manager"
-                        ? "Save Manager"
-                        : "Assign Employee"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* UNASSIGN EMPLOYEE */}
-            {dialog.type === "unassign" && selected && (
-              <div className="wh-modal-body">
-                <p className="wh-confirm-text">
-                  Unassign{" "}
-                  <strong>
-                    {selectedEmployee?.name ||
-                      "this employee"}
-                  </strong>{" "}
-                  from{" "}
-                  <strong>{selected.name}</strong>?
-                </p>
-
-                <></>
-
-                {formError && (
-                  <p
-                    className="wh-form-error"
-                    role="alert"
-                  >
-                    {formError}
-                  </p>
-                )}
-
-                <div className="wh-modal-footer">
-                  <button
-                    type="button"
-                    className="wh-button wh-button-secondary"
-                    disabled={busy}
-                    onClick={closeDialog}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="button"
-                    className="wh-button wh-button-danger"
-                    disabled={
-                      busy ||
-                      !selectedEmployee
-                    }
-                    onClick={() =>
-                      void removeAssignment()
-                    }
-                  >
-                    {busy
-                      ? "Saving..."
-                      : "Unassign Employee"}
+                      : "Activate Warehouse / Store"}
                   </button>
                 </div>
               </div>
@@ -1766,4 +1965,3 @@ export default function WarehousesPage() {
     </div>
   );
 }
-

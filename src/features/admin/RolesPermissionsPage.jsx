@@ -43,6 +43,9 @@ export function createDemoRoles() {
   return [];
 }
 
+// Tam an nut Create Role, giu nguyen logic de co the bat lai sau nay.
+const SHOW_CREATE_ROLE_BUTTON = false;
+
 const EMPTY_FORM = {
   code: "",
   name: "",
@@ -819,21 +822,24 @@ export default function RolesPermissionsPage() {
           </p>
         </div>
 
-        <div className="role-header-actions">
-          <button
-            type="button"
-            className="role-button role-button-primary"
-            disabled={
-              !connected ||
-              loading ||
-              busy
-            }
-            onClick={openCreate}
-          >
-            <Plus size={17} />
-            Create Role
-          </button>
-        </div>
+        {/* Tam an Create Role - giu nguyen phan xu ly role hien tai. */}
+        {SHOW_CREATE_ROLE_BUTTON && (
+          <div className="role-header-actions">
+            <button
+              type="button"
+              className="role-button role-button-primary"
+              disabled={
+                !connected ||
+                loading ||
+                busy
+              }
+              onClick={openCreate}
+            >
+              <Plus size={17} />
+              Create Role
+            </button>
+          </div>
+        )}
       </div>
 
       {/* BACKEND CONNECTION */}
@@ -1765,4 +1771,3 @@ export default function RolesPermissionsPage() {
     </div>
   );
 }
-
