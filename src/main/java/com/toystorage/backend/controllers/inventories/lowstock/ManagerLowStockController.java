@@ -12,7 +12,7 @@ import static com.toystorage.backend.dto.request.warehouses.manager.ManagerOpsDT
 /** Warehouse Manager: theo doi hang sap het va gui bao cao cho Business. */
 @RestController
 @RequestMapping("/api/warehouse/manager/low-stock")
-@PreAuthorize("@managerOpsAccess.isManager(authentication)")
+//@PreAuthorize("@managerOpsAccess.isManager(authentication)")
 @RequiredArgsConstructor
 public class ManagerLowStockController {
     private final LowStockReportService service;

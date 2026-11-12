@@ -17,7 +17,7 @@ import java.util.Map;
 /** San pham gan voi vi tri / khu vuc kho. Manager sua; Manager va Staff xem. */
 @RestController
 @RequestMapping("/api/warehouse/location-products")
-@PreAuthorize("@managerOpsAccess.isManager(authentication) or @managerOpsAccess.isStaff(authentication)")
+//@PreAuthorize("@managerOpsAccess.isManager(authentication) or @managerOpsAccess.isStaff(authentication)")
 @RequiredArgsConstructor
 public class WarehouseLocationProductController {
     private final WarehouseLocationProductService service;
@@ -32,7 +32,7 @@ public class WarehouseLocationProductController {
     public List<ProductRef> forLocation(@PathVariable Long locationId) { return service.forLocation(locationId); }
 
     @PutMapping("/locations/{locationId}")
-    @PreAuthorize("@managerOpsAccess.isManager(authentication)")
+//    @PreAuthorize("@managerOpsAccess.isManager(authentication)")
     public List<ProductRef> replace(@PathVariable Long locationId, @RequestBody AssignRequest request) {
         return service.replace(locationId, request);
     }

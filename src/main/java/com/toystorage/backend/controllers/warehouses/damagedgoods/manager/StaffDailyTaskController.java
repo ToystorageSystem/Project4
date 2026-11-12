@@ -14,7 +14,7 @@ import static com.toystorage.backend.dto.request.warehouses.manager.ManagerOpsDT
 /** Warehouse Staff: xem viec duoc giao hom nay, bat dau va bao hoan thanh. */
 @RestController
 @RequestMapping("/api/warehouse/staff/daily-tasks")
-@PreAuthorize("@managerOpsAccess.isStaff(authentication)")
+//@PreAuthorize("@managerOpsAccess.isStaff(authentication)")
 @RequiredArgsConstructor
 public class StaffDailyTaskController {
     private final DailyTaskService service;

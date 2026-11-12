@@ -12,7 +12,7 @@ import static com.toystorage.backend.dto.request.warehouses.manager.ManagerOpsDT
 /** Business Operations: tiep nhan bao cao sap het hang tu kho va ghi nhan ke hoach bo sung. */
 @RestController
 @RequestMapping("/api/business/low-stock-reports")
-@PreAuthorize("@managerOpsAccess.isBusiness(authentication)")
+//@PreAuthorize("@managerOpsAccess.isBusiness(authentication)")
 @RequiredArgsConstructor
 public class BusinessLowStockReportController {
     private final LowStockReportService service;

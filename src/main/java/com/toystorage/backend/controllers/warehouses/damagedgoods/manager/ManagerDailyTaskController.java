@@ -14,7 +14,7 @@ import static com.toystorage.backend.dto.request.warehouses.manager.ManagerOpsDT
 /** Warehouse Manager: phan cong cong viec hom nay cho nhan vien. */
 @RestController
 @RequestMapping("/api/warehouse/manager/daily-tasks")
-@PreAuthorize("@managerOpsAccess.isManager(authentication)")
+//@PreAuthorize("@managerOpsAccess.isManager(authentication)")
 @RequiredArgsConstructor
 public class ManagerDailyTaskController {
     private final DailyTaskService service;

@@ -14,7 +14,7 @@ import java.util.List;
 /** Warehouse Manager: ket qua nhap hang (NCC + cua hang tra), lo hang hong, quyet dinh chenh lech. */
 @RestController
 @RequestMapping("/api/warehouse/manager/inbound-results")
-@PreAuthorize("@managerOpsAccess.isManager(authentication)")
+//@PreAuthorize("@managerOpsAccess.isManager(authentication)")
 @RequiredArgsConstructor
 public class InboundResultsController {
     private final InboundResultsService service;

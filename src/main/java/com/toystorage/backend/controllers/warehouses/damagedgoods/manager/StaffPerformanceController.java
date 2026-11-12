@@ -13,7 +13,7 @@ import static com.toystorage.backend.dto.request.warehouses.manager.ManagerOpsDT
 /** Warehouse Manager: danh gia hieu suat lam viec cua nhan vien. */
 @RestController
 @RequestMapping("/api/warehouse/manager/performance")
-@PreAuthorize("@managerOpsAccess.isManager(authentication)")
+//@PreAuthorize("@managerOpsAccess.isManager(authentication)")
 @RequiredArgsConstructor
 public class StaffPerformanceController {
     private final StaffPerformanceService service;

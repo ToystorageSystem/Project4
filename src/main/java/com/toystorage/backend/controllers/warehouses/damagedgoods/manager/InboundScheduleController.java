@@ -14,7 +14,7 @@ import static com.toystorage.backend.dto.request.warehouses.manager.ManagerOpsDT
 /** Warehouse Manager: hang du kien ve kho theo ngay (de phan nguoi vao vai tro nhan hang). */
 @RestController
 @RequestMapping("/api/warehouse/manager/inbound-schedule")
-@PreAuthorize("@managerOpsAccess.isManager(authentication)")
+//@PreAuthorize("@managerOpsAccess.isManager(authentication)")
 @RequiredArgsConstructor
 public class InboundScheduleController {
     private final InboundScheduleService service;

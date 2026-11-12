@@ -12,7 +12,7 @@ import static com.toystorage.backend.dto.request.warehouses.manager.ManagerOpsDT
 /** Warehouse Manager: tong quan nhap / xuat / dieu chuyen, xu ly hang hong-thieu, lich kiem ke. */
 @RestController
 @RequestMapping("/api/warehouse/manager/operations")
-@PreAuthorize("@managerOpsAccess.isManager(authentication)")
+//@PreAuthorize("@managerOpsAccess.isManager(authentication)")
 @RequiredArgsConstructor
 public class WarehouseOperationsController {
     private final WarehouseOperationsOverviewService service;
