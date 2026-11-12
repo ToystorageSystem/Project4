@@ -7,8 +7,6 @@ import {
 
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
-import ReviewTabs from "../../../components/operations/ReviewTabs";
-import "../../../manager-ops.css";
 import Button from "../../../components/ui/Button";
 import Alert from "../../../components/ui/Alert";
 import LoadingPage from "../../../components/feedback/LoadingPage";
@@ -341,10 +339,8 @@ export default function ReceivingWaitingReviewPage() {
 
             <div className="flex min-h-0 flex-1 flex-col gap-6">
 
-                <ReviewTabs />
-
                 <PageHeader
-                    title="Review receiving · supplier receipts"
+                    title="Review receipts"
                     description="Review inspection results, resolve discrepancies and confirm receipts."
                     actions={
                         <Button

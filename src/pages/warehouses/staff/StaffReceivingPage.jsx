@@ -297,7 +297,7 @@ export default function StaffReceivingPage() {
                       onClick={() => {
                         if (
                           window.confirm(
-                            "Finish inspection and submit for manager review?",
+                            "Finish inspection? Passed goods are added to stock right away, damaged goods go to the damaged area, and the putaway task is assigned to you.",
                           )
                         )
                           action.run(() =>
@@ -305,7 +305,7 @@ export default function StaffReceivingPage() {
                           );
                       }}
                     >
-                      Submit for manager review →
+                      Finish inspection →
                     </button>
                   </div>
                 )}

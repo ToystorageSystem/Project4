@@ -50,7 +50,8 @@ const Monitor = lazy(
   () => import("./pages/warehouses/receiving/ReceivingMonitorPage"),
 );
 const Review = lazy(
-  () => import("./pages/warehouses/receiving/ReceivingWaitingReviewPage"),
+  // Review receiving: results of supplier receipts & store returns, damaged lots and discrepancy decisions.
+  () => import("./pages/warehouses/manager/InboundResultsPage"),
 );
 const Completed = lazy(
   () => import("./pages/warehouses/receiving/ReceivingCompletedPage"),

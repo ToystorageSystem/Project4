@@ -104,7 +104,16 @@ export default function StockCountsPage() {
   // A quantity counts as entered when it is a whole number ≥ 0; untouched lines keep the system quantity.
   const entered = (i) =>
     quantities[i.id] != null && quantities[i.id] !== "" && Number.isInteger(Number(quantities[i.id])) && Number(quantities[i.id]) >= 0;
-  const invalidEntry = items.some((i) => quantities[i.id] != null && quantities[i.id] !== "" && !entered(i));
+  // Damaged units found during the count (moved to the damaged area with the count's lot code).
+  const [damagedQty, setDamagedQty] = useState({});
+  const damagedOf = (i) =>
+    damagedQty[i.id] != null && damagedQty[i.id] !== "" && Number.isInteger(Number(damagedQty[i.id])) && Number(damagedQty[i.id]) >= 0
+      ? Number(damagedQty[i.id])
+      : 0;
+  const invalidDamaged = items.some((i) => damagedQty[i.id] != null && damagedQty[i.id] !== "" && !(Number.isInteger(Number(damagedQty[i.id])) && Number(damagedQty[i.id]) >= 0));
+  const changed = (i) => entered(i) || damagedOf(i) > 0;
+  const goodOf = (i) => (entered(i) ? Number(quantities[i.id]) : Math.max(0, Number(i.system ?? 0) - damagedOf(i)));
+  const invalidEntry = invalidDamaged || items.some((i) => quantities[i.id] != null && quantities[i.id] !== "" && !entered(i));
   const selectedItem = mode?.item;
   function open(value) {
     action.clear();
@@ -440,7 +449,9 @@ export default function StockCountsPage() {
                   "System",
                   "First count",
                   "Second count",
-                  "Final",
+                  "Good (on shelf)",
+                  "Damaged",
+                  "Missing",
                   "Difference",
                   "Actions",
                 ]}
@@ -449,7 +460,7 @@ export default function StockCountsPage() {
                   ...(n === 0 || (items[n - 1].zone || "") !== (i.zone || "")
                     ? [
                         <tr key={`zone-${i.zone || "none"}-${n}`} className="zone-row">
-                          <td colSpan={8}>
+                          <td colSpan={10}>
                             <strong>Zone {i.zone || "—"}</strong>{" "}
                             <small>{items.filter((x) => (x.zone || "") === (i.zone || "")).length} lines</small>
                           </td>
@@ -494,6 +505,32 @@ export default function StockCountsPage() {
                         number(i.finalQuantity)
                       )}
                     </td>
+                    <td>
+                      {plan.status === "COUNTING" && plan.assignedToId === user.id ? (
+                        <input
+                          aria-label={`Damaged quantity ${i.sku} ${i.location}`}
+                          className="quantity-input"
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0"
+                          value={damagedQty[i.id] ?? ""}
+                          onChange={(e) => setDamagedQty({ ...damagedQty, [i.id]: e.target.value })}
+                        />
+                      ) : (
+                        number(i.damaged ?? 0)
+                      )}
+                    </td>
+                    <td className="difference-value">
+                      {(() => {
+                        const counting = plan.status === "COUNTING" && plan.assignedToId === user.id;
+                        const good = counting ? goodOf(i) : i.finalQuantity;
+                        const damaged = counting ? damagedOf(i) : i.damaged ?? 0;
+                        if (good == null) return "—";
+                        const missing = Number(i.system ?? 0) - good - damaged;
+                        return missing > 0 ? number(missing) : "—";
+                      })()}
+                    </td>
                     <td className={i.difference ? "difference-value" : ""}>
                       {number(i.difference)}
                     </td>
@@ -529,24 +566,25 @@ export default function StockCountsPage() {
               {plan.status === "COUNTING" && plan.assignedToId === user.id && (
                 <button
                   className="ops-button mt-4"
-                  disabled={action.busy || !items.length || invalidEntry || !items.some(entered)}
+                  disabled={action.busy || !items.length || invalidEntry || !items.some(changed)}
                   onClick={() => {
                     if (
                       window.confirm(
-                        `Confirm the count? ${items.filter(entered).length} line(s) changed; the other lines keep the system quantity.`,
+                        `Confirm the count? ${items.filter(changed).length} line(s) changed; the other lines keep the system quantity. Damaged goods go to the damaged area and shortages are listed in Review receiving for your decision.`,
                       )
                     )
                       action.run(() =>
                         api.post(`${BASE}/${id}/confirm-manager`, {
                           items: items.map((i) => ({
                             itemId: i.id,
-                            quantity: entered(i) ? Number(quantities[i.id]) : Number(i.system ?? 0),
+                            quantity: goodOf(i),
+                            damagedQuantity: damagedOf(i),
                           })),
                         }),
                       );
                   }}
                 >
-                  Confirm count ({items.filter(entered).length} changed)
+                  Confirm count ({items.filter(changed).length} changed)
                 </button>
               )}
               <section className="ops-panel mt-6">

@@ -98,3 +98,10 @@ export const shiftIso = (iso, days) => {
 export const firstOfMonthIso = () => `${todayIso().slice(0, 8)}01`;
 export const fmtDateTime = (v) => (v ? String(v).replace("T", " ").slice(0, 16) : "—");
 export const fmtTime = (v) => (v ? String(v).slice(0, 5) : "—");
+
+// ---- Review receiving: completed receipts / store returns, damaged lots, discrepancy decisions
+export const getInboundResults = (type, days) => api.get(`${M}/inbound-results`, { params: { type, days } }).then((r) => r.data);
+export const getStockCountIssues = (days) => api.get(`${M}/inbound-results/stock-count-issues`, { params: { days } }).then((r) => r.data);
+export const getDamagedLots = () => api.get(`${M}/inbound-results/damaged-lots`).then((r) => r.data);
+export const decideDiscrepancy = (id, decision, note) =>
+  api.post(`${M}/inbound-results/discrepancies/${id}/decision`, { decision, note }).then((r) => r.data);

@@ -14,7 +14,6 @@ const sum = (map, keys) => keys.reduce((s, k) => s + (map?.[k] || 0), 0);
 const sources = (today) => ({
   overview: "/warehouse/manager/operations/overview",
   board: "/warehouse/manager/daily-tasks",
-  review: "/goods-receipts/waiting-review?size=1",
   deliveries: `/warehouse/manager/inbound-schedule?from=${today}&to=${today}`,
   availability: "/warehouse/manager/daily-tasks/availability",
 });
@@ -56,10 +55,11 @@ export default function ManagerDashboard() {
   // Accept only well-formed responses; anything else is shown as unavailable, never as zero.
   const o = Array.isArray(data.overview?.countWindows) ? data.overview : null;
   const board = Array.isArray(data.board?.staff) ? data.board : null;
-  const reviewCount = Number.isFinite(data.review?.totalElements) ? data.review.totalElements : null;
+  // Receipts no longer wait for approval; what needs the manager is the open shortage / damage / surplus issues.
+  const issuesToDecide = o ? (o.discrepancies?.OPEN || 0) : null;
   const deliveries = Array.isArray(data.deliveries) ? data.deliveries : null;
   const staff = Array.isArray(data.availability) ? data.availability : null;
-  const failed = !loading && (!o || !board || reviewCount == null || !deliveries || !staff);
+  const failed = !loading && (!o || !board || !deliveries || !staff);
   const dash = (v) => (loading || v == null ? "—" : number(v));
   const countWindow = o?.countWindows?.find((w) => w.active) || o?.countWindows?.find((w) => w.upcoming);
   const openIssues = o ? sum(o.damagedGoods, ["REPORTED", "INSPECTING", "APPROVED"]) + sum(o.discrepancies, ["OPEN", "INVESTIGATING"]) : null;
@@ -96,9 +96,9 @@ export default function ManagerDashboard() {
           hint={board?.overdue ? `${board.overdue} overdue` : "Assigned today"} alert={board?.overdue > 0} />
         <Tile label="Deliveries arrived" failed={!loading && !deliveries} value={loading || !deliveries ? "—" : `${arrived}/${deliveries.length}`}
           hint="Purchase orders & transfers due today" alert={deliveries?.some((d) => d.status === "LATE")} />
-        <Tile label="Receipts to review" failed={!loading && reviewCount == null} value={dash(reviewCount)} hint="Waiting for your decision" alert={reviewCount > 0} />
+        <Tile label="Issues to decide" failed={!loading && !o} value={dash(issuesToDecide)} hint="Keep internal or send to Business" alert={issuesToDecide > 0} />
         <Tile label="Low-stock products" failed={!loading && !o} value={dash(o?.lowStockProducts)} hint="At or below minimum" alert={o?.lowStockProducts > 0} />
-        <Tile label="Damaged & shortages" failed={!loading && !o} value={dash(openIssues)} hint="Open cases" alert={openIssues > 0} />
+        <Tile label="Damaged & shortages" failed={!loading && !o} value={dash(openIssues)} hint="Open cases (incl. sent to Business)" alert={openIssues > 0} />
         <Tile label="Staff free / total" failed={!loading && !staff} value={loading || !staff ? "—" : `${staff.filter((s) => s.status === "FREE").length}/${staff.length}`}
           hint={staff ? `${staff.filter((s) => s.status === "BUSY").length} busy now` : ""} />
       </section>
