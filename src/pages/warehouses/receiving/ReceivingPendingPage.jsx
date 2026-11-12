@@ -96,9 +96,6 @@ export default function ReceivingPendingPage() {
                         </Button>
                     }
                 />
-                <Alert type="info">
-                    A CREATED receipt is waiting for the supplier vehicle. Press "Confirm arrival" when the vehicle is at the warehouse; the receipt then appears in "Receive & inspect". It does not increase inventory yet.
-                </Alert>
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <label htmlFor="pendingReceiptSearch" className="mb-2 block text-sm font-semibold text-slate-700">
                         Search by receipt code, supplier or warehouse
