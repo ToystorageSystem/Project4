@@ -14,6 +14,7 @@ public class GoodsReceiptItemDetailResponse {
     private Long productId;
     private String productCode;
     private String productName;
+    private String barcode;
 
     private Integer expectedQuantity;
 

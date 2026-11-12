@@ -21,6 +21,8 @@ public class PurchaseOrderItemResponse {
 
     private String productName;
 
+    private String barcode;
+
     private String baseUnit;
 
     private Integer orderedQuantity;

@@ -422,6 +422,10 @@ public class GoodsReceiptCreationService {
                                     product.getName()
                             )
 
+                            .barcode(
+                                    product.getBarcode()
+                            )
+
                             .expectedQuantity(
                                     receiptItem
                                             .getExpectedQuantity()

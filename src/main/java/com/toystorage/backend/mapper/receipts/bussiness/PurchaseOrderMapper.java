@@ -170,6 +170,12 @@ public class PurchaseOrderMapper {
                                 : null
                 )
 
+                .barcode(
+                        item.getProduct() != null
+                                ? item.getProduct().getBarcode()
+                                : null
+                )
+
                 .baseUnit(
                         item.getProduct() != null
                                 ? item.getProduct().getBaseUnit()
