@@ -8,6 +8,7 @@ import Alert from "../../../components/ui/Alert";
 import Spinner from "../../../components/ui/Spinner";
 import EmptyState from "../../../components/ui/EmptyState";
 import { getPendingWarehouseGoodsReceipts } from "../../../api/receipts/receiving/pendingGoodsReceipts";
+import { confirmVehicleArrival } from "../../../api/receipts/receiving/goodsReceiving";
 
 function formatDate(value) {
     if (!value) return "-";
@@ -23,6 +24,26 @@ export default function ReceivingPendingPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [refresh, setRefresh] = useState(0);
+    const [confirmingId, setConfirmingId] = useState(null);
+    const [notice, setNotice] = useState("");
+
+    // CREATED -> CONFIRMED: the supplier truck is at the warehouse; staff can then claim & inspect (2026-11-13)
+    const confirmArrival = async (receipt) => {
+        if (confirmingId || !window.confirm(`Confirm that the supplier vehicle for ${receipt.receiptCode} has arrived?`)) return;
+        setConfirmingId(receipt.id);
+        setError("");
+        setNotice("");
+        try {
+            await confirmVehicleArrival(receipt.id);
+            setNotice(`${receipt.receiptCode} confirmed. It is now in "Receive & inspect" for warehouse staff.`);
+            setRefresh((v) => v + 1);
+        } catch (requestError) {
+            const message = requestError.response?.data?.message;
+            setError(typeof message === "string" ? message : "Cannot confirm vehicle arrival.");
+        } finally {
+            setConfirmingId(null);
+        }
+    };
 
     useEffect(() => {
         const controller = new AbortController();
@@ -67,7 +88,7 @@ export default function ReceivingPendingPage() {
             <div className="space-y-6">
                 <PageHeader
                     title="Pending Goods Receipts"
-                    description="Goods receipts in CREATED status assigned to your warehouse. This list is read-only."
+                    description="Goods receipts in CREATED status assigned to your warehouse. Confirm the vehicle arrival to start receiving."
                     actions={
                         <Button type="button" variant="outline" onClick={() => setRefresh((v) => v + 1)} disabled={loading}>
                             Refresh
@@ -75,7 +96,7 @@ export default function ReceivingPendingPage() {
                     }
                 />
                 <Alert type="info">
-                    A CREATED receipt is awaiting the warehouse arrival confirmation workflow. It does not increase inventory yet.
+                    A CREATED receipt is waiting for the supplier vehicle. Press "Confirm arrival" when the vehicle is at the warehouse; the receipt then appears in "Receive & inspect". It does not increase inventory yet.
                 </Alert>
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <label htmlFor="pendingReceiptSearch" className="mb-2 block text-sm font-semibold text-slate-700">
@@ -94,6 +115,7 @@ export default function ReceivingPendingPage() {
                     </p>
                 </div>
                 {error && <div role="alert"><Alert type="danger">{error}</Alert></div>}
+                {notice && <div role="status"><Alert type="success">{notice}</Alert></div>}
                 {loading ? (
                     <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600">
                         <Spinner /> Loading pending receipts...
@@ -112,6 +134,7 @@ export default function ReceivingPendingPage() {
                                     <th scope="col" className="px-5 py-4">Expected Qty</th>
                                     <th scope="col" className="px-5 py-4">Created At</th>
                                     <th scope="col" className="px-5 py-4">Status</th>
+                                    <th scope="col" className="px-5 py-4">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -127,6 +150,11 @@ export default function ReceivingPendingPage() {
                                             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
                                                 CREATED
                                             </span>
+                                        </td>
+                                        <td className="whitespace-nowrap px-5 py-4">
+                                            <Button type="button" disabled={confirmingId != null} onClick={() => confirmArrival(receipt)}>
+                                                {confirmingId === receipt.id ? "Confirming..." : "Confirm arrival"}
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))}

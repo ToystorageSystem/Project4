@@ -59,7 +59,8 @@ export function canAccess(user, key) {
   if (key === "stock-counts") return isManager(user);
   if (["daily-tasks", "staff-performance", "low-stock", "inbound-schedule"].includes(key)) return isManager(user);
   if (key === "my-tasks") return isStaff(user);
-  if (key === "receiving-pending") return isStaff(user);
+  // Receiving queue: Warehouse Manager confirms the vehicle arrival (staff can also see it)
+  if (key === "receiving-pending") return isStaff(user) || isManager(user);
   // Store list is not part of the Warehouse Manager job; other roles keep it via permission.
   if (key === "stores") return hasPermission(user, "STORE_VIEW") && !isManager(user);
   if (key === "trips") return isDelivery(user);
