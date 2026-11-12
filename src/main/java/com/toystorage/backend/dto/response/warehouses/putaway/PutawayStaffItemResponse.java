@@ -28,4 +28,15 @@ public class PutawayStaffItemResponse {
     private String shelf;
 
     private String status;
+
+    /* Where to put the goods (when no shelf has been scanned yet). */
+    private Long suggestedLocationId;
+
+    private String suggestedLocationCode;
+
+    private String suggestedZone;
+
+    private String suggestedShelf;
+
+    private String suggestedReason;
 }

@@ -335,6 +335,54 @@ public class DeliveryAssignmentService {
 
 
     // =====================================================
+    // MANUAL ASSIGN (fleet "Find vehicle")
+    //
+    // Warehouse Manager chooses a vehicle; allowed until the driver accepts.
+    // =====================================================
+
+    @Transactional
+    public DeliveryAssignmentResponse assignToDriver(
+            Long deliveryId,
+            Users driver
+    ) {
+
+        Deliveries delivery =
+                getDelivery(
+                        deliveryId
+                );
+
+        if (delivery.getDeliveryStatus() != DeliveryStatus.CREATED
+                && delivery.getDeliveryStatus() != DeliveryStatus.REJECTED
+                && delivery.getDeliveryStatus() != DeliveryStatus.ASSIGNED) {
+
+            throw new BadRequest(
+                    "The driver has already accepted this trip"
+            );
+        }
+
+        if (delivery.getDriver() != null
+                && delivery.getDriver().getId().equals(driver.getId())
+                && delivery.getDeliveryStatus() == DeliveryStatus.ASSIGNED) {
+
+            return mapper.toResponse(
+                    delivery,
+                    assignmentHistoryRepository
+                            .findTopByDeliveryIdAndDriverIdOrderByAssignedAtDesc(
+                                    deliveryId,
+                                    driver.getId()
+                            )
+                            .orElse(null)
+            );
+        }
+
+        return assign(
+                delivery,
+                driver
+        );
+    }
+
+
+    // =====================================================
     // FIND BEST DRIVER
     // =====================================================
 

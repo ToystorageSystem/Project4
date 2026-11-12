@@ -2,13 +2,25 @@ package com.toystorage.backend.dto.response.packages.packing;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
+@Setter
 @Builder
 public class StaffPackingSubmissionResponse {
+
+    /** Filled after submit: trip created for the driver (auto dispatch). */
+    private String shipmentCode;
+
+    private String manifestCode;
+
+    /** CREATED = waiting for a free driver, ASSIGNED = driver chosen. */
+    private String deliveryStatus;
+
+    private String driverName;
 
     private Long transferId;
 

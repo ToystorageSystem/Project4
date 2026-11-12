@@ -20,6 +20,7 @@ import com.toystorage.backend.repository.packages.packing.StaffPackageTransferIt
 
 import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepository;
 import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
+import com.toystorage.backend.services.deliveries.assignment.OutboundDispatchService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -56,6 +57,9 @@ public class StaffPackingSubmissionService {
 
     private final StaffPackingSubmissionMapper
             mapper;
+
+    private final OutboundDispatchService
+            outboundDispatchService;
 
 
     /** List the actual PACKING queue for the authenticated source warehouse. */
@@ -211,9 +215,27 @@ public class StaffPackingSubmissionService {
          *
          * Warehouse Manager xử lý bước sau.
          */
-        return buildResponse(
-                transfer
-        );
+        /*
+         * Packing finished = ready to ship: manifest + delivery trip are created
+         * and the nearest available driver is assigned automatically.
+         */
+        OutboundDispatchService.DispatchResult dispatch =
+                outboundDispatchService.dispatch(
+                        transfer,
+                        staff
+                );
+
+        StaffPackingSubmissionResponse response =
+                buildResponse(
+                        transfer
+                );
+
+        response.setShipmentCode(dispatch.shipmentCode());
+        response.setManifestCode(dispatch.manifestCode());
+        response.setDeliveryStatus(dispatch.status());
+        response.setDriverName(dispatch.driverName());
+
+        return response;
     }
 
 

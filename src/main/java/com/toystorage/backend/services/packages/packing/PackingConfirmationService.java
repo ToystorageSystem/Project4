@@ -3,6 +3,7 @@ package com.toystorage.backend.services.packages.packing;
 import com.toystorage.backend.dto.response.packages.packing.PackingConfirmationResponse;
 import com.toystorage.backend.mapper.packages.packing.PackingConfirmationMapper;
 import com.toystorage.backend.services.shipments.ShipmentManifestService;
+import com.toystorage.backend.services.deliveries.assignment.OutboundDispatchService;
 import com.toystorage.backend.entity.shipments.ShipmentManifests;
 import com.toystorage.backend.entity.transfers.StockTransferItems;
 import com.toystorage.backend.entity.transfers.StockTransfer;
@@ -55,6 +56,9 @@ public class PackingConfirmationService {
 
     private final ShipmentManifestService
             shipmentManifestService;
+
+    private final OutboundDispatchService
+            outboundDispatchService;
     private final PackingConfirmationMapper
             mapper;
     private final PackageTransferItemRepository
@@ -301,6 +305,14 @@ public class PackingConfirmationService {
                                 transferPackages,
                                 manager
                         );
+
+        /*
+         * Tạo chuyến giao và tự động gán tài xế gần nhất.
+         */
+        outboundDispatchService.dispatch(
+                transfer,
+                manager
+        );
 
         return mapper.toResponse(
                 transfer,
