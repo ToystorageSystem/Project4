@@ -1,0 +1,379 @@
+@scope (.admin-workspace) {
+
+/* ====================================
+   ISSUE #23 - USER ACCOUNT MANAGEMENT
+   ==================================== */
+
+.user-management-page {
+  width: 100%;
+}
+
+/* Header */
+
+.user-page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-primary-button,
+.user-secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.user-primary-button {
+  background: #466ae5;
+  color: white;
+  border: 1px solid #466ae5;
+}
+
+.user-primary-button:hover {
+  background: #3454c1;
+}
+
+.user-secondary-button {
+  background: white;
+  color: #52657f;
+  border: 1px solid #dce4ef;
+}
+
+.user-secondary-button:hover {
+  background: #f4f7fd;
+}
+
+/* Summary Cards */
+
+.user-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 17px;
+}
+
+.user-stat {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-stat span {
+  color: #76859b;
+  font-size: 12px;
+}
+
+.user-stat strong {
+  font-size: 29px;
+  color: #244064;
+}
+
+.user-stat strong.green {
+  color: #15946c;
+}
+
+.user-stat strong.red {
+  color: #d46a6c;
+}
+
+.user-stat strong.gray {
+  color: #65788d;
+}
+
+.user-stat small {
+  color: #9ca9ba;
+  font-size: 11px;
+}
+
+/* Table */
+
+.user-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-row-actions button {
+  width: 31px;
+  height: 31px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #6c7fa0;
+  cursor: pointer;
+}
+
+.user-row-actions button:hover {
+  background: #ecf2ff;
+  color: #315eb7;
+  border-color: #e0e9fd;
+}
+
+/* Status Badge */
+
+.user-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 18px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.user-status.active {
+  color: #138960;
+  background: #e6f7ef;
+}
+
+.user-status.locked {
+  color: #bc4f52;
+  background: #fff0ef;
+}
+
+.user-status.inactive {
+  color: #65768c;
+  background: #edf1f5;
+}
+
+.user-table-footer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+/* Notifications */
+
+.user-notice {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.user-notice.success {
+  background: #f0fbf4;
+  border: 1px solid #d2e9da;
+  color: #257454;
+}
+
+.user-notice.error {
+  background: #fff5f5;
+  border: 1px solid #f0c9cb;
+  color: #a6454d;
+}
+
+.user-notice span {
+  flex: 1;
+}
+
+.user-notice button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Modal Overlay */
+
+.user-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(13, 25, 53, 0.55);
+}
+
+/* Modal Container */
+
+.user-modal {
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  color: #24334d;
+  border-radius: 16px;
+  box-shadow: 0 25px 75px rgba(0, 0, 0, 0.2);
+}
+
+.user-modal-header {
+  padding: 24px 27px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  border-bottom: 1px solid #edf0f6;
+}
+
+.user-modal-header h2 {
+  margin: 9px 0 0;
+  font-size: 23px;
+}
+
+.user-close-button {
+  border: none;
+  background: transparent;
+  color: #8090a5;
+  cursor: pointer;
+}
+
+.user-close-button:hover {
+  color: #263b60;
+}
+
+.user-modal-content {
+  padding: 25px 27px;
+}
+
+/* Create / Edit Form */
+
+.user-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 16px;
+}
+
+.user-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #394c67;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.user-form-grid input,
+.user-form-grid select {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  border: 1px solid #dfe6f1;
+  border-radius: 9px;
+  background: white;
+  color: #283d5b;
+  font-size: 12px;
+  outline: none;
+}
+
+.user-form-grid input:focus,
+.user-form-grid select:focus {
+  border-color: #7d9cea;
+  box-shadow: 0 0 0 3px rgba(125, 156, 234, 0.13);
+}
+
+/* User Details */
+
+.user-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f0f3f7;
+  font-size: 12px;
+}
+
+.user-info-row span {
+  color: #8b98ab;
+}
+
+.user-info-row strong {
+  color: #3d4e67;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* Dialog Messages */
+
+.user-demo-note {
+  margin: 20px 0 0;
+  padding: 13px;
+  background: #f4f8ff;
+  border: 1px solid #dfebff;
+  border-radius: 9px;
+  color: #5678a5;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.user-confirm-text {
+  color: #5c6d86;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.user-error {
+  color: #bf4345;
+  background: #fff4f4;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 15px;
+  font-size: 12px;
+}
+
+.user-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+/* Responsive */
+
+@media (max-width: 1050px) {
+  .user-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 690px) {
+  .user-page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .user-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-modal-header,
+  .user-modal-content {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .user-stat-grid {
+    gap: 10px;
+  }
+
+  .user-stat {
+    padding: 15px;
+  }
+}
+
+}
+

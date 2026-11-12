@@ -1,0 +1,19 @@
+{
+  "name": "ToyStorage personal workspace",
+  "mode": "operate",
+  "tokens": {
+    "brand": "#f25d19",
+    "action": "#b54012",
+    "canvas": "#f6f6f2",
+    "navigation": "#fdfdfb",
+    "surface": "#ffffff",
+    "text": "#292c2b",
+    "muted": "#656b65",
+    "border": "#e1e3dc",
+    "priority": "#faeadd",
+    "panelRadius": "12px",
+    "controlRadius": "7px"
+  },
+  "implementation": "src/personal-workspace.css",
+  "documentation": "DESIGN.md"
+}
