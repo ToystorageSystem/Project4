@@ -1,13 +1,13 @@
-import { canAccess } from "../../auth/access";
+import { canAccess, isManager } from "../../auth/access";
 import { BUSINESS_NAV } from "../business/businessOperationsNav";
 import { STORE_NAV } from "../store/storeNav";
 const entries = [
   ["dashboard", "01 / OPERATIONS", "Dashboard", "/warehouse/dashboard", "◫"],
-  ["operations", "01 / OPERATIONS", "Operations overview", "/warehouse/operations", "◫"],
   ["daily-tasks", "01 / OPERATIONS", "Daily task assignment", "/warehouse/daily-tasks", "≡"],
   ["staff-performance", "01 / OPERATIONS", "Staff performance", "/warehouse/performance", "★"],
   ["my-tasks", "01 / OPERATIONS", "My tasks today", "/warehouse/my-tasks", "≡"],
   ["receiving-pending", "02 / INBOUND", "Receiving queue", "/warehouse/receiving/pending", "inbound"],
+  ["inbound-schedule", "02 / INBOUND", "Inbound schedule", "/warehouse/inbound-schedule", "inbound"],
   [
     "receiving-process",
     "02 / INBOUND",
@@ -149,5 +149,7 @@ export const navigation = [ ...entries.map(([key, group, label, path, icon]) => 
   ...STORE_NAV,
   { key:"fleet", group:"Transport", label:"Vehicles & routes", path:"/fleet" },
 ];
+// Pages that stay reachable by link but are not shown in the Warehouse Manager sidebar.
+const HIDDEN_FOR_MANAGER = new Set(["receiving-in-progress", "receiving-completed", "shipment-history"]);
 export const menuFor = (user) =>
-  navigation.filter((item) => canAccess(user, item.key));
+  navigation.filter((item) => canAccess(user, item.key) && !(isManager(user) && HIDDEN_FOR_MANAGER.has(item.key)));

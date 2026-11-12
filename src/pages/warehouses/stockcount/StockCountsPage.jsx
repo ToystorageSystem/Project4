@@ -14,23 +14,23 @@ import {
   number,
 } from "../../../components/operations/WorkspaceUI";
 import { useAuth } from "../../../auth/AuthContext";
+import "../../../manager-ops.css";
 const BASE = "/warehouse/manager/stock-counts";
-// Mid-month (week containing the 15th) and end-of-month (last working week) count periods.
-function PeriodicSchedule() {
-  const overview = useResource("/warehouse/manager/operations/overview");
+// First week of the month (first 5 working days) and mid-month (week containing the 15th) count periods.
+function PeriodicSchedule({ overview }) {
   const windows = overview.data?.countWindows || [];
   if (overview.loading || overview.error || !windows.length) return null;
   return (
     <section className="ops-panel" style={{ marginBottom: 16 }}>
       <div className="panel-heading">
         <h2>Periodic count schedule</h2>
-        <span>Mid-month & end-of-month · Mon–Fri only</span>
+        <span>First week & mid-month week · Mon–Fri only</span>
       </div>
       <div className="detail-ribbon" style={{ margin: 0, border: 0 }}>
         {windows.map((w) => (
           <div key={w.type + w.start}>
             <span>
-              {w.type === "MID_MONTH" ? "Mid-month" : "End of month"}
+              {w.type === "MID_MONTH" ? "Mid-month" : w.type === "BEGINNING_OF_MONTH" ? "First week" : "End of month"}
               {w.active ? " · this week" : w.upcoming ? " · upcoming" : " · past"}
             </span>
             <strong>
@@ -57,6 +57,25 @@ export default function StockCountsPage() {
     [filter, setFilter] = useState("ALL"),
     [search, setSearch] = useState("");
   const detail = useResource(id ? BASE + "/" + id : null);
+  // Count windows (first week / mid-month) and "count week has started" notifications.
+  const overview = useResource("/warehouse/manager/operations/overview");
+  const notices = useResource(BASE + "/notifications");
+  const windowByPlan = new Map();
+  (overview.data?.countWindows || []).forEach((w) => w.plans.forEach((p) => windowByPlan.set(p.id, w)));
+  async function readNotice(n, openPlan) {
+    try {
+      await api.patch(`${BASE}/notifications/${n.id}/read`);
+    } catch {
+      /* the notification list is refreshed below either way */
+    }
+    notices.reload();
+    if (openPlan) {
+      setId(n.stockCountId);
+      setReviewed({});
+      setQuantities({});
+      action.clear();
+    }
+  }
   const [scope, setScope] = useState("ALL"),
     [quantities, setQuantities] = useState({}),
     [reviewed, setReviewed] = useState({});
@@ -64,8 +83,11 @@ export default function StockCountsPage() {
     setReviewed({});
     await Promise.all([list.reload(), detail.reload()]);
   });
+  // Plans appear only when their count week (first week / mid-month) has opened.
+  const notOpenYet = (r) => r.status === "PLANNED" && windowByPlan.get(r.id)?.upcoming;
   const rows = (list.data || []).filter(
     (r) =>
+      !notOpenYet(r) &&
       (filter === "ALL" || r.status === filter) &&
       [r.code, r.assignedTo, r.warehouse]
         .join(" ")
@@ -73,7 +95,16 @@ export default function StockCountsPage() {
         .includes(search.toLowerCase()),
   );
   const plan = detail.data?.plan,
-    items = detail.data?.items || [];
+    // Count sheet grouped by zone, then shelf and location.
+    items = [...(detail.data?.items || [])].sort((a, b) =>
+      [a.zone || "~", a.shelf || "", a.location || "", a.name || ""].join("|").localeCompare(
+        [b.zone || "~", b.shelf || "", b.location || "", b.name || ""].join("|"),
+      ),
+    );
+  // A quantity counts as entered when it is a whole number ≥ 0; untouched lines keep the system quantity.
+  const entered = (i) =>
+    quantities[i.id] != null && quantities[i.id] !== "" && Number.isInteger(Number(quantities[i.id])) && Number(quantities[i.id]) >= 0;
+  const invalidEntry = items.some((i) => quantities[i.id] != null && quantities[i.id] !== "" && !entered(i));
   const selectedItem = mode?.item;
   function open(value) {
     action.clear();
@@ -164,27 +195,7 @@ export default function StockCountsPage() {
               >
                 ← Back to list
               </button>
-            ) : (
-              <>
-                <button
-                  className="ops-button secondary"
-                  disabled={action.busy}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        "Create a full stock count for the next eligible working day?",
-                      )
-                    )
-                      action.run(() => api.post(BASE + "/full"));
-                  }}
-                >
-                  Full warehouse count
-                </button>
-                <button className="ops-button" onClick={() => open("create")}>
-                  + Create stock count
-                </button>
-              </>
-            )}
+            ) : null}
             <button
               className="ops-button secondary"
               disabled={list.loading || detail.loading}
@@ -202,7 +213,27 @@ export default function StockCountsPage() {
       <Notice error={action.error}>{action.success}</Notice>
       {!id ? (
         <>
-          <PeriodicSchedule />
+          {(notices.data || []).length > 0 && (
+            <section className="ops-panel" role="status" style={{ marginBottom: 16, borderColor: "var(--brand)" }}>
+              <div className="panel-heading">
+                <h2>Stock count week has started</h2>
+                <span>Physical stock counts are open now. Assign staff or start a direct count.</span>
+              </div>
+              <div className="detail-ribbon" style={{ margin: 0, border: 0 }}>
+                {notices.data.map((n) => (
+                  <div key={n.id}>
+                    <span>{n.type === "MID_MONTH" ? "Mid-month count" : n.type === "BEGINNING_OF_MONTH" ? "First-week count" : n.type?.replaceAll("_", " ")}</span>
+                    <strong>{n.code}</strong>
+                    <small>
+                      <button className="text-link" onClick={() => readNotice(n, true)}>Open plan ↗</button>{" "}
+                      <button className="text-link" onClick={() => readNotice(n, false)}>Dismiss</button>
+                    </small>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+          <PeriodicSchedule overview={overview} />
           <div className="ops-toolbar">
             <input
               aria-label="Search stock counts"
@@ -259,18 +290,36 @@ export default function StockCountsPage() {
                   <td>{r.differences}</td>
                   <td>
                     <Status value={r.status} />
+                    {r.status === "PLANNED" && windowByPlan.get(r.id) && (
+                      <small>
+                        {windowByPlan.get(r.id).active
+                          ? "Count week is open – you can count now"
+                          : windowByPlan.get(r.id).upcoming
+                            ? `Opens ${windowByPlan.get(r.id).start}`
+                            : "Count week has ended"}
+                      </small>
+                    )}
                   </td>
                   <td>
                     <button
-                      className="text-link"
-                      onClick={() => {
-                        setId(r.id);
+                      className={r.status === "PLANNED" && windowByPlan.get(r.id)?.active ? "ops-button" : "text-link"}
+                      disabled={action.busy}
+                      onClick={async () => {
                         setReviewed({});
                         setQuantities({});
                         action.clear();
+                        // Count week is open: one click starts the count (stock is snapshotted on the server).
+                        if (r.status === "PLANNED" && windowByPlan.get(r.id)?.active) {
+                          const started = await action.run(
+                            () => api.post(`${BASE}/${r.id}/start-manager`, {}),
+                            "Count started. Enter only the quantities that differ, then confirm.",
+                          );
+                          if (!started) return;
+                        }
+                        setId(r.id);
                       }}
                     >
-                      Open ↗
+                      {r.status === "PLANNED" && windowByPlan.get(r.id)?.active ? "Open & count" : "Open ↗"}
                     </button>
                   </td>
                 </tr>
@@ -339,14 +388,13 @@ export default function StockCountsPage() {
                       disabled={
                         action.busy ||
                         !items.length ||
-                        items.some(
-                          (i) => !reviewed[i.id] || i.finalQuantity == null,
-                        )
+                        !items.some((i) => reviewed[i.id]) ||
+                        items.some((i) => i.finalQuantity == null)
                       }
                       onClick={async () => {
                         if (
                           window.confirm(
-                            "Confirm all reviewed lines and update inventory?",
+                            "Confirm the count and update inventory? Lines you did not tick are accepted as counted.",
                           )
                         ) {
                           await action.run(() =>
@@ -361,9 +409,7 @@ export default function StockCountsPage() {
                         }
                       }}
                     >
-                      Confirm all (
-                      {items.filter((i) => reviewed[i.id]).length}/
-                      {items.length})
+                      Confirm count ({items.filter((i) => reviewed[i.id]).length}/{items.length} checked)
                     </button>
                     <button
                       className="ops-button secondary"
@@ -399,7 +445,17 @@ export default function StockCountsPage() {
                   "Actions",
                 ]}
               >
-                {items.map((i) => (
+                {items.flatMap((i, n) => [
+                  ...(n === 0 || (items[n - 1].zone || "") !== (i.zone || "")
+                    ? [
+                        <tr key={`zone-${i.zone || "none"}-${n}`} className="zone-row">
+                          <td colSpan={8}>
+                            <strong>Zone {i.zone || "—"}</strong>{" "}
+                            <small>{items.filter((x) => (x.zone || "") === (i.zone || "")).length} lines</small>
+                          </td>
+                        </tr>,
+                      ]
+                    : []),
                   <tr key={i.id}>
                     <td>
                       <strong>{i.name}</strong>
@@ -425,6 +481,7 @@ export default function StockCountsPage() {
                           type="number"
                           min="0"
                           step="1"
+                          placeholder={String(i.system ?? 0)}
                           value={quantities[i.id] ?? ""}
                           onChange={(e) =>
                             setQuantities({
@@ -466,40 +523,30 @@ export default function StockCountsPage() {
                         </>
                       )}
                     </td>
-                  </tr>
-                ))}
+                  </tr>,
+                ])}
               </Table>
               {plan.status === "COUNTING" && plan.assignedToId === user.id && (
                 <button
                   className="ops-button mt-4"
-                  disabled={
-                    action.busy ||
-                    !items.length ||
-                    items.some(
-                      (i) =>
-                        quantities[i.id] == null ||
-                        quantities[i.id] === "" ||
-                        !Number.isInteger(Number(quantities[i.id])) ||
-                        Number(quantities[i.id]) < 0,
-                    )
-                  }
+                  disabled={action.busy || !items.length || invalidEntry || !items.some(entered)}
                   onClick={() => {
                     if (
                       window.confirm(
-                        "Submit counts and update inventory in one transaction?",
+                        `Confirm the count? ${items.filter(entered).length} line(s) changed; the other lines keep the system quantity.`,
                       )
                     )
                       action.run(() =>
                         api.post(`${BASE}/${id}/confirm-manager`, {
                           items: items.map((i) => ({
                             itemId: i.id,
-                            quantity: Number(quantities[i.id]),
+                            quantity: entered(i) ? Number(quantities[i.id]) : Number(i.system ?? 0),
                           })),
                         }),
                       );
                   }}
                 >
-                  Complete count & confirm inventory
+                  Confirm count ({items.filter(entered).length} changed)
                 </button>
               )}
               <section className="ops-panel mt-6">

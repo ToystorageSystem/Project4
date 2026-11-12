@@ -11,44 +11,11 @@ import {
   roleLabel,
 } from "../../../auth/access";
 import { menuFor } from "../../../components/layout/navigation";
+import ManagerDashboard from "./ManagerDashboard";
 import { number, Status } from "../../../components/operations/WorkspaceUI";
 import WorkspaceIcon, { navigationIcon } from "../../../components/ui/WorkspaceIcon";
 import { displayName, useWorkspaceClock, useWorkspacePreferences } from "../../../hooks/useWorkspacePersonalization";
 
-const managerSources = [
-  {
-    label: "Receiving in progress",
-    hint: "Receipts being inspected",
-    path: "/goods-receipts/monitoring?size=5",
-    to: "/warehouse/receiving/in-progress",
-    type: "page",
-    mark: "↓",
-  },
-  {
-    label: "Awaiting your review",
-    hint: "Receipts awaiting a decision",
-    path: "/goods-receipts/waiting-review?size=5",
-    to: "/warehouse/receiving/waiting-review",
-    type: "page",
-    mark: "◎",
-  },
-  {
-    label: "Open putaway tasks",
-    hint: "Tasks still in progress",
-    path: "/putaway-plans",
-    to: "/warehouse/putaway",
-    filter: (r) => !["COMPLETED", "CANCELLED"].includes(r.status),
-    mark: "▤",
-  },
-  {
-    label: "Packing review queue",
-    hint: "Packed transfers",
-    path: "/stock-transfers/packing-confirmations",
-    to: "/warehouse/packing",
-    type: "page",
-    mark: "↗",
-  },
-];
 const staffSources = [
   {
     label: "Ready to receive",
@@ -109,18 +76,20 @@ function recordCode(row) {
     "—"
   );
 }
+// Warehouse Manager gets the simplified manager dashboard; staff and delivery keep their queues.
 export default function WarehouseDashboardPage() {
+  const { user } = useAuth();
+  return isManager(user) ? <ManagerDashboard /> : <TeamDashboard />;
+}
+function TeamDashboard() {
   const { user } = useAuth();
   const clock = useWorkspaceClock();
   const { pins, update } = useWorkspacePreferences(user);
-  const manager = isManager(user),
-    staff = isStaff(user),
+  const staff = isStaff(user),
     delivery = isDelivery(user);
   const sources = useMemo(
     () =>
-      manager
-        ? managerSources
-        : staff
+      staff
           ? staffSources
           : delivery
             ? [
@@ -133,7 +102,7 @@ export default function WarehouseDashboardPage() {
                 },
               ]
             : [],
-    [manager, staff, delivery],
+    [staff, delivery],
   );
   const [data, setData] = useState([]),
     [loading, setLoading] = useState(true),
@@ -169,7 +138,6 @@ export default function WarehouseDashboardPage() {
     : loading ? "Checking your next step…"
     : attention?.error ? "Queue temporarily unavailable."
     : attention?.count === 0 ? "You're up to date."
-    : manager ? "Receipts need a decision."
     : staff ? "Transfers ready for picking."
     : "Keep deliveries moving.";
   function togglePin(key) {
@@ -229,9 +197,7 @@ export default function WarehouseDashboardPage() {
           <div className="panel-heading">
             <div>
               <h2>
-                {manager
-                  ? "Receiving activity"
-                  : staff
+                {staff
                     ? "Receipts awaiting inspection"
                     : delivery ? "Delivery schedule" : "Your activity"}
               </h2>
@@ -277,8 +243,8 @@ export default function WarehouseDashboardPage() {
                   <tr>
                     <th>Reference</th>
                     <th>{delivery ? "Destination" : "Staff / Source"}</th>
-                    <th>{manager ? "Progress" : "Status"}</th>
-                    <th>{manager ? "Items with issues" : "Open"}</th>
+                    <th>Status</th>
+                    <th>Open</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -296,31 +262,12 @@ export default function WarehouseDashboardPage() {
                           "Unassigned"}
                       </td>
                       <td>
-                        {manager ? (
-                          <div className="progress-cell">
-                            <progress
-                              aria-label={`Inspection progress for ${recordCode(r)}`}
-                              max="100"
-                              value={r.progressPercent ?? 0}
-                            />
-                            <span>
-                              {r.progressPercent == null
-                                ? "—"
-                                : `${Math.round(r.progressPercent)}%`}
-                            </span>
-                          </div>
-                        ) : (
-                          <Status value={r.status} />
-                        )}
+                        <Status value={r.status} />
                       </td>
                       <td>
-                        {manager ? (
-                          number(r.issueProducts)
-                        ) : (
                           <Link className="text-link" to={sources[0].to}>
                             <WorkspaceIcon name="arrow" size={17} /><span className="sr-only">Open {recordCode(r)}</span>
                           </Link>
-                        )}
                       </td>
                     </tr>
                   ))}
@@ -336,7 +283,7 @@ export default function WarehouseDashboardPage() {
           {sources.length > 0 && <div className="attention-count"><strong>{loading || data[attentionIndex]?.error ? "—" : number(data[attentionIndex]?.count)}</strong><span>{data[attentionIndex]?.error ? "Queue unavailable. Try refreshing." : sources[attentionIndex].label}</span></div>}
           {sources[1] || sources[0] ? (
             <Link to={(sources[1] || sources[0]).to} className="ops-button">
-              {manager ? "Open review queue" : "Open list"} <WorkspaceIcon name="arrow" size={17} />
+              Open list <WorkspaceIcon name="arrow" size={17} />
             </Link>
           ) : null}
 

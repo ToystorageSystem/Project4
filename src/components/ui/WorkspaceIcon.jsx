@@ -7,12 +7,12 @@ import {
   Tags, Building2, ShoppingCart, ReceiptText, ClipboardPlus, ArrowLeftRight,
   FileStack, TruckElectric, ChartColumn, ScrollText, ChartNoAxesCombined,
   PanelTop, ShoppingBag, Banknote, Layers, Route,
-  CalendarCheck, Award, TrendingDown, Gauge, ClipboardPen,
+  CalendarCheck, Award, TrendingDown, ClipboardPen, CalendarClock,
 } from "lucide-react";
 
 const menuIcons = {
   fleet: Truck,
-  operations: Gauge, "daily-tasks": CalendarCheck, "staff-performance": Award,
+  "daily-tasks": CalendarCheck, "inbound-schedule": CalendarClock, "staff-performance": Award,
   "low-stock": TrendingDown, "my-tasks": ClipboardPen, "business-low-stock-reports": TrendingDown,
   "receiving-pending": ListTodo, "receiving-process": ScanLine,
   "receiving-in-progress": MonitorCheck, "receiving-waiting-review": ClipboardCheck,

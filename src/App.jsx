@@ -114,11 +114,11 @@ const StaffDamage = lazy(
 const ScanWorkflow = lazy(
   () => import("./pages/warehouses/staff/ScanWorkflowPage"),
 );
-// Warehouse Manager: daily tasks, staff performance, low-stock report, operations overview.
+// Warehouse Manager: daily tasks, staff performance, low-stock report (overview lives on the dashboard).
 const DailyTasks = lazy(() => import("./pages/warehouses/manager/DailyTasksPage"));
 const StaffPerformance = lazy(() => import("./pages/warehouses/manager/StaffPerformancePage"));
 const LowStock = lazy(() => import("./pages/warehouses/manager/LowStockPage"));
-const Operations = lazy(() => import("./pages/warehouses/manager/OperationsOverviewPage"));
+const InboundSchedule = lazy(() => import("./pages/warehouses/manager/InboundSchedulePage"));
 const MyTasks = lazy(() => import("./pages/warehouses/staff/MyTasksPage"));
 export default function App() {
   return (
@@ -317,8 +317,9 @@ export default function App() {
                 element={<ScanWorkflow key="counts" kind="counts" />}
               />
             </Route>
-            <Route element={<ProtectedRoute access="operations" />}>
-              <Route path="/warehouse/operations" element={<Operations />} />
+            <Route path="/warehouse/operations" element={<Navigate to="/warehouse/dashboard" replace />} />
+            <Route element={<ProtectedRoute access="inbound-schedule" />}>
+              <Route path="/warehouse/inbound-schedule" element={<InboundSchedule />} />
             </Route>
             <Route element={<ProtectedRoute access="daily-tasks" />}>
               <Route path="/warehouse/daily-tasks" element={<DailyTasks />} />

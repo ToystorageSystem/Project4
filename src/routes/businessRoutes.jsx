@@ -20,6 +20,7 @@ const definitions = [
   ["stock-transfers/:transferId", "businessstaff/stocktransfers/StockTransferDetailPage"],
   ["inventory-report", "businessstaff/inventoryreport/InventoryReportPage"],
   ["discrepancies", "businessmanager/DiscrepanciesPage"],
+  ["low-stock-reports", "businessmanager/LowStockReportsPage"],
 ];
 const modules = import.meta.glob("../pages/{business,businessstaff,businessmanager}/**/*.jsx");
 export const businessRoutes = definitions.map(([path, module]) => ({ path:`/business/${path}`, Page:lazy(modules[`../pages/${module}.jsx`]) }));

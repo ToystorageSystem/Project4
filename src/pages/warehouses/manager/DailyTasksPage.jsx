@@ -10,6 +10,14 @@ import {
   createTasksBulk,
   fmtDateTime,
   fmtTime,
+  AVAILABILITY,
+  WORK_ROLES,
+  WORK_ROLE_LABEL,
+  copyShifts,
+  getAvailability,
+  getShifts,
+  setShift,
+  getJobs,
   getTaskBoard,
   getTaskStaff,
   managerCompleteTask,
@@ -23,7 +31,7 @@ import Modal from "../../../components/ui/Modal";
 import { Field, Notice, Status, number } from "../../../components/operations/WorkspaceUI";
 import "../../../manager-ops.css";
 
-const EMPTY = { taskType: "RECEIVING", title: "", description: "", priority: "NORMAL", dueTime: "", referenceCode: "", referencePath: "", targetQuantity: "", managerNote: "" };
+const EMPTY = { taskType: "RECEIVING", title: "", description: "", priority: "NORMAL", dueTime: "", referenceCode: "", referencePath: "", targetQuantity: "", managerNote: "", includePutaway: true };
 
 export function TaskCard({ task, children }) {
   const closed = ["COMPLETED", "CANCELLED"].includes(task.status);
@@ -57,9 +65,19 @@ export function TaskCard({ task, children }) {
   );
 }
 
+const JOB_CATEGORY = { ALL: "All work", INBOUND: "Inbound (receiving & putaway)", OUTBOUND: "Outbound", ISSUES: "Damaged, shortages & shelves", STOCK_COUNT: "Stock count" };
+function Availability({ value }) {
+  const [label, tone] = AVAILABILITY[value] || [value, ""];
+  return <span className={`mo-chip ${tone}`}>{label}</span>;
+}
+
 export default function DailyTasksPage() {
   const [date, setDate] = useState(todayIso());
   const [board, setBoard] = useState(null);
+  const [jobs, setJobs] = useState([]);
+  const [availability, setAvailability] = useState([]);
+  const [jobFilter, setJobFilter] = useState("ALL");
+  const [shifts, setShifts] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -74,9 +92,12 @@ export default function DailyTasksPage() {
     setLoading(true);
     setError("");
     try {
-      const [b, s] = await Promise.all([getTaskBoard(date), getTaskStaff()]);
+      const [b, s, j, a, sh] = await Promise.all([getTaskBoard(date), getTaskStaff(), getJobs(date), getAvailability(date), getShifts(date)]);
+      setShifts(sh);
       setBoard(b);
       setStaff(s);
+      setJobs(j);
+      setAvailability(a);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -89,11 +110,41 @@ export default function DailyTasksPage() {
 
   const past = date < todayIso();
 
-  function openCreate(prefill = {}, staffIds = []) {
+  async function toggleRole(row, role) {
+    const roles = row.roles.includes(role) ? row.roles.filter((r) => r !== role) : [...row.roles, role];
+    setBusy(true);
+    setError("");
+    try {
+      const saved = await setShift({ date, staffId: row.staffId, roles });
+      setShifts((list) => list.map((x) => (x.staffId === row.staffId ? saved : x)));
+      setJobs(await getJobs(date));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function copyRoles() {
+    const from = shiftIso(date, -1);
+    if (!window.confirm(`Copy the shift roles from ${from} to ${date}?`)) return;
+    setBusy(true);
+    setError("");
+    try {
+      setShifts(await copyShifts(from, date));
+      setNotice(`Shift roles copied from ${from}.`);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // locked = the task must go to this staff member (e.g. whoever inspected the goods puts them away).
+  function openCreate(prefill = {}, staffIds = [], locked = false) {
     setForm({ ...EMPTY, ...prefill });
     setSelected(staffIds);
     setModalError("");
-    setModal({ mode: "create" });
+    setModal({ mode: "create", locked });
   }
   function openEdit(task) {
     setForm({
@@ -125,6 +176,7 @@ export default function DailyTasksPage() {
       referencePath: form.referencePath || null,
       targetQuantity: form.targetQuantity === "" ? null : Number(form.targetQuantity),
       managerNote: form.managerNote || null,
+      includePutaway: form.taskType === "RECEIVING" ? form.includePutaway : null,
     };
   }
 
@@ -191,7 +243,7 @@ export default function DailyTasksPage() {
               →
             </button>
             <button className="ops-button secondary" disabled={busy || past} onClick={copyYesterday}>
-              Copy previous day
+              Copy previous day's tasks
             </button>
             <button className="ops-button" disabled={past || !staff.length} onClick={() => openCreate()}>
               + Assign task
@@ -220,40 +272,114 @@ export default function DailyTasksPage() {
             ))}
           </div>
 
-          {!past && board.suggestions?.length > 0 && (
-            <section className="ops-panel">
-              <div className="panel-heading">
-                <h2>What needs to be done today</h2>
-                <span>Generated from open receipts, putaway, transfers, damage and stock-count windows</span>
+          <section className="ops-panel">
+            <div className="panel-heading">
+              <div>
+                <h2>1. Shift roles for {date === todayIso() ? "today" : date}</h2>
+                <span>Give each staff member one or more roles. Staff then take the work of their role themselves in “My tasks today”.</span>
               </div>
-              <div className="mo-suggestions">
-                {board.suggestions.map((s) => (
-                  <div className="mo-suggestion" key={s.taskType + s.title}>
+              {!past && <button className="ops-button secondary" disabled={busy} onClick={copyRoles}>Copy previous day's roles</button>}
+            </div>
+            <div className="ops-table-wrap">
+              <table className="ops-table">
+                <thead><tr><th>Staff</th><th>Now</th>{WORK_ROLES.map(([k, l]) => <th key={k}>{l}</th>)}</tr></thead>
+                <tbody>
+                  {!shifts.length && <tr><td colSpan={2 + WORK_ROLES.length}>No warehouse staff in your warehouse.</td></tr>}
+                  {shifts.map((row) => {
+                    const a = availability.find((x) => x.staffId === row.staffId);
+                    return (
+                      <tr key={row.staffId}>
+                        <td><strong>{row.name}</strong><small>{row.roles.length ? `${row.roles.length} role(s)` : "No role – day off or not planned"}</small></td>
+                        <td>{a ? <Availability value={a.status} /> : "—"}{a?.currentWork?.length ? <small>{a.currentWork.join(" · ")}</small> : null}</td>
+                        {WORK_ROLES.map(([k, l]) => (
+                          <td key={k}>
+                            <input type="checkbox" aria-label={`${row.name}: ${l}`} checked={row.roles.includes(k)} disabled={busy || past}
+                              onChange={() => toggleRole(row, k)} />
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <div className="mo-grid two">
+            <section className="mo-card">
+              <header>
+                <div>
+                  <h3>2. Work queue for {date === todayIso() ? "today" : date}</h3>
+                  <small>Staff with the matching role take these jobs themselves. Use “Assign” only for urgent work or to give it to someone specific.</small>
+                </div>
+                <select aria-label="Job type" value={jobFilter} onChange={(e) => setJobFilter(e.target.value)}>
+                  {Object.entries(JOB_CATEGORY).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                </select>
+              </header>
+              <div className="mo-card-body">
+                {!jobs.filter((j) => jobFilter === "ALL" || j.category === jobFilter).length && <p className="mo-muted">No work in this category.</p>}
+                {jobs.filter((j) => jobFilter === "ALL" || j.category === jobFilter).map((j) => (
+                  <div className={`mo-suggestion ${j.assignedTo.length ? "done" : ""}`} key={j.key}>
                     <div>
-                      <strong>{s.title}</strong> {s.priority !== "NORMAL" && <span className={`mo-chip ${s.priority === "URGENT" ? "danger" : s.priority === "HIGH" ? "warn" : ""}`}>{s.priority}</span>}
-                      <p>{s.description}</p>
+                      <strong>{j.title}</strong>{" "}
+                      <span className="mo-chip">{WORK_ROLE_LABEL[j.role] || j.role}</span>{" "}
+                      {j.priority !== "NORMAL" && <span className={`mo-chip ${j.priority === "URGENT" ? "danger" : j.priority === "HIGH" ? "warn" : ""}`}>{j.priority}</span>}{" "}
+                      {j.lockedStaffName && <span className="mo-chip good">→ {j.lockedStaffName}</span>}
+                      <p>{j.description}</p>
+                      {j.assignedTo.length > 0 ? <p><strong>Taken by:</strong> {j.assignedTo.join(", ")}</p> : <p>Waiting for {j.lockedStaffName || "a staff member with this role"}</p>}
                     </div>
-                    <button
-                      className="ops-button secondary"
-                      disabled={!staff.length}
-                      onClick={() =>
-                        openCreate({
-                          taskType: s.taskType,
-                          title: s.title,
-                          description: s.description,
-                          priority: s.priority,
-                          referencePath: s.referencePath || "",
-                          targetQuantity: s.pendingCount > 0 ? String(s.pendingCount) : "",
-                        })
-                      }
-                    >
-                      Assign
-                    </button>
+                    {!past && (
+                      <button
+                        className="ops-button secondary"
+                        disabled={!staff.length}
+                        onClick={() =>
+                          openCreate(
+                            {
+                              taskType: j.taskType,
+                              title: j.title,
+                              description: j.description,
+                              priority: j.priority,
+                              referenceCode: j.referenceCode || "",
+                              referencePath: j.referencePath || "",
+                              targetQuantity: j.quantity != null ? String(j.quantity) : "",
+                            },
+                            j.lockedStaffId ? [j.lockedStaffId] : [],
+                            !!j.lockedStaffId,
+                          )
+                        }
+                      >
+                        {j.assignedTo.length ? "Add staff" : "Assign"}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
             </section>
-          )}
+            <section className="mo-card">
+              <header>
+                <div>
+                  <h3>3. Staff availability</h3>
+                  <small>Busy = doing a task now (receiving, putaway, picking, counting…). Free staff are listed first.</small>
+                </div>
+              </header>
+              <div className="mo-card-body">
+                {!availability.length && <p className="mo-muted">No warehouse staff in your warehouse.</p>}
+                {availability.map((a) => (
+                  <div className="mo-suggestion" key={a.staffId}>
+                    <div>
+                      <strong>{a.name}</strong> <Availability value={a.status} />
+                      <p>
+                        {a.currentWork.length ? `Now: ${a.currentWork.join(" · ")}` : "Not working on anything right now"}
+                      </p>
+                      <p>{a.openTasks} open · {a.completedToday} done today{a.nextDue ? ` · next due ${fmtTime(a.nextDue)}` : ""}</p>
+                      <p>{a.roles?.length ? a.roles.map((r) => WORK_ROLE_LABEL[r] || r).join(" · ") : "No role today"}</p>
+                    </div>
+                    {!past && <button className="text-link" onClick={() => openCreate({}, [a.staffId])}>+ Task</button>}
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
 
           {!board.staff.length ? (
             <div className="ops-empty">
@@ -320,16 +446,20 @@ export default function DailyTasksPage() {
           {(modal?.mode === "create" || modal?.mode === "edit") && (
             <>
               <Field label={modal.mode === "create" ? "Assign to (one or more staff)" : "Assigned staff"}>
-                {modal.mode === "create" ? (
+                {modal.mode === "create" && modal.locked ? (
+                  <p className="mo-muted">
+                    <strong>{staff.find((x) => x.id === selected[0])?.name || "Assigned staff"}</strong> — this staff member inspected these goods, so they must also put them away.
+                  </p>
+                ) : modal.mode === "create" ? (
                   <div className="mo-checklist">
-                    {staff.map((s) => (
+                    {(availability.length ? availability.map((a) => ({ id: a.staffId, name: a.name, status: a.status, open: a.openTasks })) : staff).map((s) => (
                       <label key={s.id}>
                         <input
                           type="checkbox"
                           checked={selected.includes(s.id)}
                           onChange={(e) => setSelected(e.target.checked ? [...selected, s.id] : selected.filter((x) => x !== s.id))}
                         />
-                        {s.name}
+                        {s.name} {s.status && <Availability value={s.status} />}
                       </label>
                     ))}
                   </div>
@@ -348,6 +478,15 @@ export default function DailyTasksPage() {
                   ))}
                 </select>
               </Field>
+              {form.taskType === "RECEIVING" && modal.mode === "create" && (
+                <label className="review-check">
+                  <input type="checkbox" checked={form.includePutaway} onChange={(e) => setForm({ ...form, includePutaway: e.target.checked })} />
+                  Also assign putaway of these goods to the same staff (whoever inspects the goods puts them on the shelves)
+                </label>
+              )}
+              {form.taskType === "PUTAWAY" && (
+                <p className="mo-muted">Rule: goods must be put away by the staff member who received and inspected them. Enter the receipt code (GR-…) as reference so the system can check.</p>
+              )}
               <Field label="Title" value={form.title} onChange={set("title")} required minLength={3} maxLength={200} placeholder="e.g. Put away GR-000123 into zone A" />
               <Field label="Instructions">
                 <textarea rows={3} maxLength={1000} value={form.description} onChange={set("description")} placeholder="Zone, shelf, products, quality checks…" />

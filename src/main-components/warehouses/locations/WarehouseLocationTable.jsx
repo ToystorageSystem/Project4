@@ -118,6 +118,13 @@ export default function WarehouseLocationTable({
                                     <td className="px-5 py-4 text-sm font-medium text-slate-700">
 
                                         {location.name ?? "-"}
+                                        {location.assignedProducts?.length > 0 && (
+                                            <p className="mt-1 text-xs font-normal text-slate-500">
+                                                {location.assignedProducts.length} product(s):{" "}
+                                                {location.assignedProducts.slice(0, 3).map((p) => p.name).join(", ")}
+                                                {location.assignedProducts.length > 3 ? "…" : ""}
+                                            </p>
+                                        )}
 
                                     </td>
 

@@ -31,6 +31,37 @@ export const cancelTask = (id, reason) => api.post(`${M}/daily-tasks/${id}/cance
 export const managerCompleteTask = (id, body) => api.post(`${M}/daily-tasks/${id}/complete`, body).then((r) => r.data);
 export const copyTasks = (fromDate, toDate) => api.post(`${M}/daily-tasks/copy`, { fromDate, toDate }).then((r) => r.data);
 
+export const getJobs = (date) => api.get(`${M}/daily-tasks/jobs`, { params: { date } }).then((r) => r.data);
+export const getAvailability = (date) => api.get(`${M}/daily-tasks/availability`, { params: { date } }).then((r) => r.data);
+
+// ---- Shift roles (manager plans roles per day; staff take work in their role)
+export const WORK_ROLES = [
+  ["RECEIVING", "Receiving & putaway"],
+  ["OUTBOUND", "Picking, packing & dispatch"],
+  ["ISSUES", "Damaged, shortages & shelves"],
+  ["STOCK_COUNT", "Stock count"],
+  ["FLEX", "Flexible (any work)"],
+];
+export const WORK_ROLE_LABEL = Object.fromEntries(WORK_ROLES);
+export const getShifts = (date) => api.get(`${M}/daily-tasks/shifts`, { params: { date } }).then((r) => r.data);
+export const setShift = (body) => api.put(`${M}/daily-tasks/shifts`, body).then((r) => r.data);
+export const copyShifts = (fromDate, toDate) => api.post(`${M}/daily-tasks/shifts/copy`, { fromDate, toDate }).then((r) => r.data);
+export const getStaffQueue = (date) => api.get("/warehouse/staff/daily-tasks/queue", { params: { date } }).then((r) => r.data);
+export const takeJob = (date, jobKey) => api.post("/warehouse/staff/daily-tasks/take", { date, jobKey }).then((r) => r.data);
+
+// ---- Inbound schedule (read-only: which deliveries are expected on which day)
+export const getInboundSchedule = (from, to) => api.get(`${M}/inbound-schedule`, { params: { from, to } }).then((r) => r.data);
+export const DELIVERY_STATUS = {
+  EXPECTED: ["Expected", ""],
+  ARRIVED: ["Arrived", "warn"],
+  RECEIVING: ["Receiving", "warn"],
+  RECEIVED: ["Received", "good"],
+  LATE: ["Late", "danger"],
+  IN_TRANSIT: ["In transit", ""],
+};
+export const countWindowLabel = (type) => (type === "MID_MONTH" ? "Mid-month count" : type === "BEGINNING_OF_MONTH" ? "First-week count" : "End-of-month count");
+export const AVAILABILITY = { FREE: ["Free", "good"], LOADED: ["Many open tasks", "warn"], BUSY: ["Busy", "danger"] };
+
 // ---- Daily tasks (staff)
 export const getMyTasks = (date) => api.get("/warehouse/staff/daily-tasks", { params: { date } }).then((r) => r.data);
 export const startMyTask = (id) => api.post(`/warehouse/staff/daily-tasks/${id}/start`).then((r) => r.data);

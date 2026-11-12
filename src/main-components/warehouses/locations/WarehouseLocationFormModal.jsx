@@ -2,6 +2,10 @@ import {
     useEffect,
     useState,
 } from "react";
+import {
+    getLocationProductOptions,
+    getLocationProducts,
+} from "../../../api/warehouses/locations/warehouseLocations.js";
 
 
 const EMPTY_FORM = {
@@ -75,6 +79,31 @@ export default function WarehouseLocationFormModal({
         error,
         setError,
     ] = useState("");
+
+    // Products assigned to this location / zone.
+    const [options, setOptions] = useState([]);
+    const [selectedProducts, setSelectedProducts] = useState([]);
+    const [productSearch, setProductSearch] = useState("");
+    const [productsError, setProductsError] = useState("");
+
+    useEffect(() => {
+        if (!open) return;
+        let active = true;
+        setProductSearch("");
+        setProductsError("");
+        setSelectedProducts(location?.assignedProducts || []);
+        getLocationProductOptions("")
+            .then((list) => active && setOptions(Array.isArray(list) ? list : []))
+            .catch(() => active && setProductsError("Products could not be loaded."));
+        if (location?.id) {
+            getLocationProducts(location.id)
+                .then((list) => active && Array.isArray(list) && setSelectedProducts(list))
+                .catch(() => {});
+        }
+        return () => {
+            active = false;
+        };
+    }, [open, location]);
 
 
     useEffect(() => {
@@ -213,6 +242,9 @@ export default function WarehouseLocationFormModal({
 
                     status:
                     form.status,
+
+                    productIds:
+                        selectedProducts.map((p) => p.id),
                 });
 
             } catch (submitError) {
@@ -435,6 +467,63 @@ export default function WarehouseLocationFormModal({
 
                         </div>
 
+                    </div>
+
+
+                    <div className="mt-6">
+                        <FieldLabel>
+                            Products stored here ({selectedProducts.length})
+                        </FieldLabel>
+                        {selectedProducts.length > 0 && (
+                            <div className="mb-2 flex flex-wrap gap-2">
+                                {selectedProducts.map((p) => (
+                                    <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-[#fff1e8] px-3 py-1 text-xs font-semibold text-[#b9470f]">
+                                        {p.code} · {p.name}
+                                        <button
+                                            type="button"
+                                            aria-label={`Remove ${p.name}`}
+                                            onClick={() => setSelectedProducts((list) => list.filter((x) => x.id !== p.id))}
+                                            className="ml-1 text-[#b9470f]"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                        <input
+                            value={productSearch}
+                            onChange={(event) => setProductSearch(event.target.value)}
+                            placeholder="Search product name, code or barcode to add…"
+                            aria-label="Search products for this location"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-[#f25d19] focus:ring-2 focus:ring-[#f25d19]/10"
+                        />
+                        {productsError && <p className="mt-1 text-xs text-red-600">{productsError}</p>}
+                        <div className="mt-2 max-h-44 overflow-y-auto rounded-xl border border-slate-100">
+                            {options
+                                .filter((p) =>
+                                    !selectedProducts.some((x) => x.id === p.id) &&
+                                    [p.code, p.name, p.barcode].join(" ").toLowerCase().includes(productSearch.trim().toLowerCase())
+                                )
+                                .slice(0, 30)
+                                .map((p) => (
+                                    <button
+                                        type="button"
+                                        key={p.id}
+                                        onClick={() => setSelectedProducts((list) => [...list, p])}
+                                        className="flex w-full items-center justify-between px-4 py-2 text-left text-sm hover:bg-[#fff8f4]"
+                                    >
+                                        <span>
+                                            <strong>{p.name}</strong>
+                                            <span className="ml-2 text-xs text-slate-500">{p.code} · {p.barcode}</span>
+                                        </span>
+                                        <span className="text-xs font-semibold text-[#d94f12]">+ Add</span>
+                                    </button>
+                                ))}
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                            Staff see these products as belonging to this zone / shelf when putting goods away.
+                        </p>
                     </div>
 
 

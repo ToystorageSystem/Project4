@@ -49,17 +49,18 @@ export function roleLabel(user) {
           : "System Account";
 }
 export function canAccess(user, key) {
-  if (key === "fleet") return isManager(user) || isStoreManager(user);
+  if (key === "fleet") return isStoreManager(user); // fleet API is not in the warehouse backend
   if (key.startsWith("admin-")) return isAdmin(user);
   if (key.startsWith("business-")) return isBusiness(user);
   if (key.startsWith("store-manager")) return isStoreManager(user);
   if (key === "dashboard") return isManager(user) || isStaff(user) || isDelivery(user);
   if (key === "inventory") return isManager(user) || isStaff(user);
   if (key === "stock-counts") return isManager(user);
-  if (["operations", "daily-tasks", "staff-performance", "low-stock"].includes(key)) return isManager(user);
+  if (["daily-tasks", "staff-performance", "low-stock", "inbound-schedule"].includes(key)) return isManager(user);
   if (key === "my-tasks") return isStaff(user);
   if (key === "receiving-pending") return isStaff(user);
-  if (key === "stores") return hasPermission(user, "STORE_VIEW");
+  // Store list is not part of the Warehouse Manager job; other roles keep it via permission.
+  if (key === "stores") return hasPermission(user, "STORE_VIEW") && !isManager(user);
   if (key === "trips") return isDelivery(user);
   if (
     [

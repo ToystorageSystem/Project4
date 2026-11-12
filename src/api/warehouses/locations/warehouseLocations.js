@@ -39,3 +39,23 @@ export const updateWarehouseLocationStatus = async (
 
     return response.data;
 };
+// Products assigned to a location / zone (which goods are stored where).
+export const getLocationProductOptions = async (keyword) => {
+    const response = await api.get("/warehouse/location-products/options", { params: { keyword } });
+    return response.data;
+};
+
+export const getAllLocationProducts = async () => {
+    const response = await api.get("/warehouse/location-products");
+    return response.data;
+};
+
+export const getLocationProducts = async (locationId) => {
+    const response = await api.get(`/warehouse/location-products/locations/${locationId}`);
+    return response.data;
+};
+
+export const setLocationProducts = async (locationId, productIds) => {
+    const response = await api.put(`/warehouse/location-products/locations/${locationId}`, { productIds });
+    return response.data;
+};

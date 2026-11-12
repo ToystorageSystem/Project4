@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../api/api";
-import { completeMyTask, getMyTasks, shiftIso, startMyTask, todayIso } from "../../../api/warehouses/manager/managerOps";
+import { TASK_TYPE_LABEL, WORK_ROLE_LABEL, completeMyTask, getMyTasks, getStaffQueue, shiftIso, startMyTask, takeJob, todayIso } from "../../../api/warehouses/manager/managerOps";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
 import Modal from "../../../components/ui/Modal";
@@ -9,10 +9,11 @@ import { Field, Notice, number } from "../../../components/operations/WorkspaceU
 import { TaskCard } from "../manager/DailyTasksPage";
 import "../../../manager-ops.css";
 
-// Warehouse Staff: tasks the manager assigned for today.
+// Warehouse Staff: roles for today, work to take from the queue, and my tasks.
 export default function MyTasksPage() {
   const [date, setDate] = useState(todayIso());
   const [tasks, setTasks] = useState([]);
+  const [queue, setQueue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -24,7 +25,9 @@ export default function MyTasksPage() {
     setLoading(true);
     setError("");
     try {
-      setTasks(await getMyTasks(date));
+      const [mine, q] = await Promise.all([getMyTasks(date), getStaffQueue(date)]);
+      setTasks(mine);
+      setQueue(q);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -41,6 +44,19 @@ export default function MyTasksPage() {
     try {
       await startMyTask(task.id);
       setNotice(`Started: ${task.title}`);
+      await load();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function take(job) {
+    setBusy(true);
+    setError("");
+    try {
+      await takeJob(date, job.key);
+      setNotice(`You took: ${job.title}. Open the work page to start.`);
       await load();
     } catch (e) {
       setError(errorMessage(e));
@@ -96,12 +112,40 @@ export default function MyTasksPage() {
           </div>
         ))}
       </div>
+      {queue && (
+        <section className="ops-panel" style={{ marginBottom: 16 }}>
+          <div className="panel-heading">
+            <div>
+              <h2>Work you can take</h2>
+              <span>
+                Your role{queue.roles.length > 1 ? "s" : ""} {isToday ? "today" : "on this day"}:{" "}
+                {queue.roles.length ? queue.roles.map((r) => WORK_ROLE_LABEL[r] || r).join(" · ") : "not assigned yet – ask your manager"}
+              </span>
+            </div>
+          </div>
+          <div className="mo-suggestions">
+            {!queue.jobs.length && <p className="mo-muted">No open work for your role right now.</p>}
+            {queue.jobs.map((j) => (
+              <div className="mo-suggestion" key={j.key}>
+                <div>
+                  <strong>{j.title}</strong> <span className="mo-chip">{TASK_TYPE_LABEL[j.taskType] || j.taskType}</span>{" "}
+                  {j.priority !== "NORMAL" && <span className={`mo-chip ${j.priority === "URGENT" ? "danger" : j.priority === "HIGH" ? "warn" : ""}`}>{j.priority}</span>}{" "}
+                  {j.lockedStaffId && <span className="mo-chip good">Only you</span>}
+                  <p>{j.description}</p>
+                </div>
+                {isToday && <button className="ops-button" disabled={busy} onClick={() => take(j)}>Take</button>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      <h2 style={{ margin: "8px 0 12px" }}>My tasks</h2>
       {loading ? (
         <div className="ops-empty" role="status">Loading tasks…</div>
       ) : !tasks.length ? (
         <div className="ops-empty">
           <h3>No tasks assigned</h3>
-          <p>Your manager has not assigned any tasks for this day yet.</p>
+          <p>Take a job from the list above, or wait for your manager to assign one.</p>
         </div>
       ) : (
         <div className="mo-card-body" style={{ padding: 0 }}>

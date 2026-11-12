@@ -8,7 +8,9 @@ import {
 
 import {
     createWarehouseLocation,
+    getAllLocationProducts,
     getWarehouseLocations,
+    setLocationProducts,
     updateWarehouseLocation,
     updateWarehouseLocationStatus,
 } from "../../../api/warehouses/locations/warehouseLocations.js";
@@ -153,13 +155,21 @@ export default function WarehouseLocationsMain() {
                     setError("");
 
 
-                    const data =
-                        await getWarehouseLocations();
-
+                    const [data, assigned] = await Promise.all([
+                        getWarehouseLocations(),
+                        // Products assigned to each location; the page still works if this list is unavailable.
+                        getAllLocationProducts().catch(() => []),
+                    ]);
+                    const byLocation = new Map(
+                        (Array.isArray(assigned) ? assigned : []).map((row) => [row.locationId, row.products])
+                    );
 
                     setLocations(
                         Array.isArray(data)
-                            ? data
+                            ? data.map((location) => ({
+                                ...location,
+                                assignedProducts: byLocation.get(location.id) || [],
+                            }))
                             : []
                     );
 
@@ -355,19 +365,28 @@ export default function WarehouseLocationsMain() {
                 setSaving(true);
 
 
+                const { productIds, ...locationPayload } = payload;
+                let saved;
+
                 if (editingLocation) {
 
-                    await updateWarehouseLocation(
+                    saved = await updateWarehouseLocation(
                         editingLocation.id,
-                        payload
+                        locationPayload
                     );
 
                 } else {
 
-                    await createWarehouseLocation(
-                        payload
+                    saved = await createWarehouseLocation(
+                        locationPayload
                     );
 
+                }
+
+                // Products stored in this location / zone.
+                const locationId = saved?.id ?? editingLocation?.id;
+                if (locationId && Array.isArray(productIds)) {
+                    await setLocationProducts(locationId, productIds);
                 }
 
 

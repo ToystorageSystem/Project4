@@ -188,10 +188,6 @@ function NccDiscrepancyTab() {
 
     return (
         <div className="space-y-4">
-            <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4 text-sm text-slate-700">
-                <b>SUPPLIER / GOODS_RECEIPT:</b> discrepancies found while receiving supplier goods.
-                MINOR issues do not block completion; the Warehouse Manager must resolve MAJOR issues before proceeding.
-            </div>
 
             {error && <Alert type="danger">{error}</Alert>}
             {success && <Alert type="success">{success}</Alert>}
@@ -375,9 +371,6 @@ function StoreReturnTab() {
 
     return (
         <div className="space-y-4">
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-slate-700">
-                <b>STORE_RETURN:</b> discrepancies found in goods returned from a store to the warehouse. The Warehouse Manager can accept warehouse responsibility or request Store Manager confirmation.
-            </div>
 
             {error && <Alert type="danger">{error}</Alert>}
             {success && <Alert type="success">{success}</Alert>}
