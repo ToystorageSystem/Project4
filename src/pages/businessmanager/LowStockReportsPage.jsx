@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import usePager, { searchRows, rowText } from "../../hooks/usePager";
+import Pager, { SearchBox } from "../../components/operations/Pager";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../api/api";
 import {
@@ -27,6 +29,7 @@ export default function LowStockReportsPage() {
   const [mode, setMode] = useState(null);
   const [busy, setBusy] = useState(false);
   const [modalError, setModalError] = useState("");
+  const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,6 +76,8 @@ export default function LowStockReportsPage() {
     }
   }
 
+  const shown = searchRows(rows, query, (x) => [x.code, x.warehouseName, x.createdBy, x.status]);
+  const pager = usePager(shown, 20, [query, status]);
   const r = detail?.report;
   const totalSuggested = (detail?.items || []).reduce((s, i) => s + i.suggestedQuantity, 0);
 
@@ -94,13 +99,15 @@ export default function LowStockReportsPage() {
       />
       <p className="mo-muted">Warehouse Managers report products at or below their minimum stock level. Acknowledge the report, then record the replenishment plan (purchase order or stock transfer).</p>
       <Notice error={error}>{notice}</Notice>
+      <div className="ops-toolbar"><SearchBox value={query} onChange={setQuery} label="Search reports" placeholder="Search report code, warehouse or sender…" /></div>
       {loading ? (
         <div className="ops-empty" role="status">Loading reports…</div>
-      ) : !rows.length ? (
-        <div className="ops-empty"><h3>No reports</h3><p>There are no low-stock reports with this status.</p></div>
+      ) : !shown.length ? (
+        <div className="ops-empty"><h3>No reports</h3><p>{query ? "No report matches your search." : "There are no low-stock reports with this status."}</p></div>
       ) : (
+        <>
         <Table head={["Report", "Warehouse", "Sent by", "Sent", "Products", "Out of stock", "Critical", "Status", ""]}>
-          {rows.map((x) => (
+          {pager.rows.map((x) => (
             <tr key={x.id}>
               <td><strong>{x.code}</strong></td>
               <td>{x.warehouseName}</td>
@@ -114,6 +121,8 @@ export default function LowStockReportsPage() {
             </tr>
           ))}
         </Table>
+        <Pager pager={pager} label="reports" />
+        </>
       )}
 
       <Modal open={!!detail} title={r ? `${r.code} · ${r.warehouseName}` : "Report"} onClose={() => !busy && setDetail(null)}>

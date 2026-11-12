@@ -1,3 +1,5 @@
+import usePager from "../../../hooks/usePager";
+import Pager from "../../operations/Pager";
 export default function DispatchHandoverList({
                                                  items,
                                                  loading,
@@ -7,6 +9,7 @@ export default function DispatchHandoverList({
                                                  onSearch,
                                                  onView,
                                              }) {
+    const pager = usePager(items || [], 20, [keyword]);
 
     return (
         <div className="w-full">
@@ -201,7 +204,7 @@ export default function DispatchHandoverList({
 
 
                     {!loading &&
-                        items.map((item) => (
+                        pager.rows.map((item) => (
 
                             <tr
                                 key={item.transferId}
@@ -296,6 +299,7 @@ export default function DispatchHandoverList({
                     </tbody>
 
                 </table>
+                {!loading && <Pager pager={pager} label="shipments" />}
 
             </div>
 

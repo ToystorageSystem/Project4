@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import usePager, { searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../api/api";
 import { TASK_TYPE_LABEL, WORK_ROLE_LABEL, completeMyTask, getMyTasks, getStaffQueue, shiftIso, startMyTask, takeJob, todayIso } from "../../../api/warehouses/manager/managerOps";
@@ -84,6 +86,11 @@ export default function MyTasksPage() {
   const done = tasks.filter((t) => t.status === "COMPLETED").length;
   const open = tasks.filter((t) => ["ASSIGNED", "IN_PROGRESS"].includes(t.status)).length;
   const isToday = date === todayIso();
+  const [query, setQuery] = useState("");
+  const pick = (x) => [x.title, x.description, x.referenceCode, x.taskType, x.status, x.priority];
+  const queueJobs = searchRows(queue?.jobs, query, pick);
+  const myTasks = searchRows(tasks, query, pick);
+  const taskPager = usePager(myTasks, 10, [query, date]);
 
   return (
     <MainLayout>
@@ -124,8 +131,8 @@ export default function MyTasksPage() {
             </div>
           </div>
           <div className="mo-suggestions">
-            {!queue.jobs.length && <p className="mo-muted">No open work for your role right now.</p>}
-            {queue.jobs.map((j) => (
+            {!queueJobs.length && <p className="mo-muted">No open work for your role right now.</p>}
+            {queueJobs.map((j) => (
               <div className="mo-suggestion" key={j.key}>
                 <div>
                   <strong>{j.title}</strong> <span className="mo-chip">{TASK_TYPE_LABEL[j.taskType] || j.taskType}</span>{" "}
@@ -139,6 +146,9 @@ export default function MyTasksPage() {
           </div>
         </section>
       )}
+      <div className="ops-toolbar">
+        <SearchBox value={query} onChange={setQuery} placeholder="Search tasks and work: title, PO / transfer code…" />
+      </div>
       <h2 style={{ margin: "8px 0 12px" }}>My tasks</h2>
       {loading ? (
         <div className="ops-empty" role="status">Loading tasks…</div>
@@ -149,7 +159,7 @@ export default function MyTasksPage() {
         </div>
       ) : (
         <div className="mo-card-body" style={{ padding: 0 }}>
-          {tasks.map((t) => (
+          {taskPager.rows.map((t) => (
             <TaskCard key={t.id} task={t}>
               {t.referencePath && ["ASSIGNED", "IN_PROGRESS"].includes(t.status) && (
                 <Link className="text-link" to={t.referencePath}>Go to work page ↗</Link>
@@ -164,6 +174,7 @@ export default function MyTasksPage() {
           ))}
         </div>
       )}
+      {!loading && <Pager pager={taskPager} sizes={[10, 20, 50]} label="tasks" />}
       <Modal open={!!completing} title="Complete task" onClose={() => !busy && setCompleting(null)}>
         <form className="ops-form" onSubmit={complete} key={completing?.id || "none"}>
           <Notice error={modalError} />

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import usePager from "../../../hooks/usePager";
+import Pager from "../../../components/operations/Pager";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
 import Button from "../../../components/ui/Button";
@@ -59,6 +61,7 @@ export default function ReceivingPendingPage() {
         ].some((value) => String(value ?? "").toLocaleLowerCase().includes(needle)));
     }, [receipts, search]);
 
+    const pager = usePager(matching, 20, [search]);
     return (
         <MainLayout>
             <div className="space-y-6">
@@ -112,7 +115,7 @@ export default function ReceivingPendingPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {matching.map((receipt) => (
+                                {pager.rows.map((receipt) => (
                                     <tr key={receipt.id ?? receipt.receiptCode} className="hover:bg-slate-50">
                                         <td className="px-5 py-4 font-semibold text-[#f25d19]">{receipt.receiptCode}</td>
                                         <td className="px-5 py-4">{receipt.supplierName || "-"}</td>
@@ -131,6 +134,7 @@ export default function ReceivingPendingPage() {
                         </table>
                     </div>
                 ) : null}
+                <Pager pager={pager} label="receipts" />
             </div>
         </MainLayout>
     );

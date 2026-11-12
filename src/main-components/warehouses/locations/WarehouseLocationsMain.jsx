@@ -5,6 +5,8 @@ import {
     useMemo,
     useState,
 } from "react";
+import usePager from "../../../hooks/usePager";
+import Pager from "../../../components/operations/Pager";
 
 import {
     createWarehouseLocation,
@@ -442,6 +444,9 @@ export default function WarehouseLocationsMain() {
         };
 
 
+    // Table view is paged (20 per page); the layout view still shows every location.
+    const locationPager = usePager(filteredLocations, 20, [filteredLocations.length, view]);
+
     return (
         <div className="space-y-6">
 
@@ -736,9 +741,10 @@ export default function WarehouseLocationsMain() {
 
             ) : view === "TABLE" ? (
 
+                <>
                 <WarehouseLocationTable
                     locations={
-                        filteredLocations
+                        locationPager.rows
                     }
                     onEdit={
                         openEdit
@@ -747,6 +753,8 @@ export default function WarehouseLocationsMain() {
                         handleToggleStatus
                     }
                 />
+                <Pager pager={locationPager} label="locations" />
+                </>
 
             ) : (
 

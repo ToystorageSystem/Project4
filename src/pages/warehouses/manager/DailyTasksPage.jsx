@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import usePager, { searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../api/api";
 import {
@@ -109,6 +111,13 @@ export default function DailyTasksPage() {
   }, [load]);
 
   const past = date < todayIso();
+  const [jobSearch, setJobSearch] = useState("");
+  const shownJobs = searchRows(
+    jobs.filter((j) => jobFilter === "ALL" || j.category === jobFilter),
+    jobSearch,
+    (j) => [j.title, j.description, j.referenceCode, j.lockedStaffName, j.assignedTo, j.taskType, j.role],
+  );
+  const jobPager = usePager(shownJobs, 10, [jobSearch, jobFilter, date]);
 
   async function toggleRole(row, role) {
     const roles = row.roles.includes(role) ? row.roles.filter((r) => r !== role) : [...row.roles, role];
@@ -317,8 +326,9 @@ export default function DailyTasksPage() {
                 </select>
               </header>
               <div className="mo-card-body">
-                {!jobs.filter((j) => jobFilter === "ALL" || j.category === jobFilter).length && <p className="mo-muted">No work in this category.</p>}
-                {jobs.filter((j) => jobFilter === "ALL" || j.category === jobFilter).map((j) => (
+                <SearchBox value={jobSearch} onChange={setJobSearch} placeholder="Search job, PO / transfer code, staff…" />
+                {!shownJobs.length && <p className="mo-muted">No work matches.</p>}
+                {jobPager.rows.map((j) => (
                   <div className={`mo-suggestion ${j.assignedTo.length ? "done" : ""}`} key={j.key}>
                     <div>
                       <strong>{j.title}</strong>{" "}
@@ -353,6 +363,7 @@ export default function DailyTasksPage() {
                     )}
                   </div>
                 ))}
+                <Pager pager={jobPager} sizes={[10, 20, 50]} label="jobs" />
               </div>
             </section>
             <section className="mo-card">

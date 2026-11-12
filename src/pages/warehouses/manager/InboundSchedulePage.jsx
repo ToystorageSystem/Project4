@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import usePager, { searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import { errorMessage } from "../../../api/api";
 import { DELIVERY_STATUS, getInboundSchedule, shiftIso, todayIso } from "../../../api/warehouses/manager/managerOps";
 import MainLayout from "../../../components/layout/MainLayout";
@@ -40,7 +42,8 @@ export default function InboundSchedulePage() {
 
   // Late deliveries are shown on today until they arrive.
   const dayOf = (r) => (r.status === "LATE" && r.deliveryDate < today ? today : r.deliveryDate);
-  const visible = rows.filter((r) => dayOf(r) === day);
+  const [query, setQuery] = useState("");
+  const visible = searchRows(rows.filter((r) => dayOf(r) === day), query, (r) => [r.orderCode, r.supplierName, r.supplierPhone, r.receiptCode, r.receivingStaff, r.status, r.note]);
   const units = visible.reduce((s, r) => s + (r.status === "RECEIVED" ? 0 : r.remainingQuantity || 0), 0);
   const go = (d) => { setStart(d); setDay(d); };
 
@@ -69,6 +72,9 @@ export default function InboundSchedulePage() {
             {d === today ? "Today" : weekday(d)} <span className="mo-chip">{loading ? "…" : rows.filter((r) => dayOf(r) === d).length}</span>
           </button>
         ))}
+      </div>
+      <div className="ops-toolbar">
+        <SearchBox value={query} onChange={setQuery} placeholder="Search PO / transfer code, supplier, receipt, staff…" />
       </div>
       {!loading && visible.length > 0 && (
         <p className="mo-muted">{visible.length} deliveries · {number(units)} units still to receive</p>

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager from "../../../hooks/usePager";
+import Pager from "../../../components/operations/Pager";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
 import useResource from "../../../hooks/useResource";
@@ -21,6 +23,7 @@ export default function InventoryPage() {
         .includes(search.toLowerCase()) &&
       (filter !== "zero" || row.available === 0),
   );
+  const pager = usePager(filtered, 20, [search, filter]);
   return (
     <MainLayout>
       <PageHeader
@@ -80,7 +83,7 @@ export default function InventoryPage() {
             "Location",
           ]}
         >
-          {filtered.map((row) => (
+          {pager.rows.map((row) => (
             <tr key={row.productId}>
               <td>
                 <strong>{row.productName}</strong>
@@ -126,6 +129,7 @@ export default function InventoryPage() {
             </tr>
           ))}
         </Table>
+        <Pager pager={pager} label="products" />
       </ResourceState>
     </MainLayout>
   );

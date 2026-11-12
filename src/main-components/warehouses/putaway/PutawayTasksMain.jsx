@@ -4,6 +4,8 @@ import {
     useMemo,
     useState,
 } from "react";
+import usePager from "../../../hooks/usePager";
+import Pager from "../../../components/operations/Pager";
 
 import {
     useNavigate,
@@ -219,6 +221,8 @@ export default function PutawayTasksMain() {
         };
 
 
+    const taskPager = usePager(filteredTasks, 20, [filteredTasks.length]);
+
     return (
         <div className="space-y-6">
 
@@ -400,10 +404,13 @@ export default function PutawayTasksMain() {
 
             ) : (
 
+                <>
                 <PutawayTaskTable
-                    tasks={filteredTasks}
+                    tasks={taskPager.rows}
                     onView={handleView}
                 />
+                <Pager pager={taskPager} label="tasks" />
+                </>
 
             )}
 

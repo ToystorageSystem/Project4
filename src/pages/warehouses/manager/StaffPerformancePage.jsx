@@ -1,4 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
+import usePager, { searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import { errorMessage } from "../../../api/api";
 import {
   TASK_TYPE_LABEL,
@@ -104,6 +106,9 @@ export default function StaffPerformancePage() {
   }
 
   const s = detail?.summary;
+  const [staffSearch, setStaffSearch] = useState("");
+  const staffRows = searchRows(board?.staff, staffSearch, (x) => [x.name, x.email, x.code, x.grade, x.remark]);
+  const staffPager = usePager(staffRows, 20, [staffSearch, from, to]);
   const maxDaily = Math.max(1, ...(detail?.daily || []).map((d) => d.assigned));
 
   return (
@@ -142,8 +147,13 @@ export default function StaffPerformancePage() {
               <div><span>Grade A</span><strong>{board.staff.filter((x) => x.grade === "A").length}</strong></div>
               <div><span>Needs attention (C/D)</span><strong>{board.staff.filter((x) => ["C", "D"].includes(x.grade)).length}</strong></div>
             </div>
+            <div className="ops-toolbar">
+              <SearchBox value={staffSearch} onChange={setStaffSearch} placeholder="Search staff name, email, grade…" />
+              <span>{staffRows.length} staff</span>
+            </div>
             <Table head={["#", "Staff", "Grade", "Score", "Tasks done", "On time", "Overdue", "System activity", "Rating", "Remark", ""]}>
-              {board.staff.map((x, i) => {
+              {staffPager.rows.map((x, idx) => {
+                const i = staffPager.from - 1 + idx;
                 const m = x.metrics;
                 return (
                   <tr key={x.staffId}>
@@ -168,6 +178,7 @@ export default function StaffPerformancePage() {
                 );
               })}
             </Table>
+            <Pager pager={staffPager} label="staff" />
           </>
         ) : null
       ) : (

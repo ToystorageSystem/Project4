@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager from "../../../hooks/usePager";
+import Pager from "../../../components/operations/Pager";
 import api from "../../../api/api";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -185,6 +187,7 @@ export default function StockCountsPage() {
       </Field>
     );
   }
+  const countPager = usePager(rows, 20, [search, filter]);
   return (
     <MainLayout>
       <PageHeader
@@ -280,7 +283,7 @@ export default function StockCountsPage() {
                 "",
               ]}
             >
-              {rows.map((r) => (
+              {countPager.rows.map((r) => (
                 <tr key={r.id}>
                   <td>
                     <strong>{r.code}</strong>
@@ -334,6 +337,7 @@ export default function StockCountsPage() {
                 </tr>
               ))}
             </Table>
+            <Pager pager={countPager} label="stock counts" />
           </ResourceState>
         </>
       ) : (

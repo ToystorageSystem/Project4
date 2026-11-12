@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import usePager from "../../../hooks/usePager";
+import Pager from "../../../components/operations/Pager";
 import { errorMessage } from "../../../api/api";
 import {
   fmtDateTime,
@@ -119,6 +121,9 @@ export default function LowStockPage() {
     }
   }
 
+  const itemPager = usePager(items, 20, [search, tab, threshold]);
+  const reportPager = usePager(reports, 20, [tab]);
+
   return (
     <MainLayout>
       <PageHeader
@@ -181,8 +186,9 @@ export default function LowStockPage() {
         !reports.length ? (
           <div className="ops-empty"><h3>No reports sent yet</h3></div>
         ) : (
+          <>
           <Table head={["Report", "Sent", "Products", "Out of stock", "Status", "Business response", ""]}>
-            {reports.map((r) => (
+            {reportPager.rows.map((r) => (
               <tr key={r.id}>
                 <td><strong>{r.code}</strong><small>{r.createdBy}</small></td>
                 <td>{fmtDateTime(r.createdAt)}</td>
@@ -194,12 +200,15 @@ export default function LowStockPage() {
               </tr>
             ))}
           </Table>
+          <Pager pager={reportPager} label="reports" />
+        </>
         )
       ) : !items.length ? (
         <div className="ops-empty"><h3>{tab === "low" ? "No low-stock products" : "No products"}</h3><p>Stock levels are above the minimum.</p></div>
       ) : (
+        <>
         <Table head={[...(tab === "low" ? [""] : []), "Product / SKU", "On hand", "Reserved", "Available", "Minimum", "Status", ...(tab === "low" ? ["Suggested qty"] : []), "Set minimum"]}>
-          {items.map((i) => (
+          {itemPager.rows.map((i) => (
             <tr key={i.productId}>
               {tab === "low" && (
                 <td>
@@ -235,6 +244,8 @@ export default function LowStockPage() {
             </tr>
           ))}
         </Table>
+        <Pager pager={itemPager} label="products" />
+        </>
       )}
 
       <Modal open={sending} title="Send low-stock report to Business" onClose={() => !busy && setSending(false)}>

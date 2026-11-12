@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager, { rowText, searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import useResource from "../../../hooks/useResource";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -48,6 +50,9 @@ export default function StaffDamagePage() {
       setImage(null);
     }
   }
+  const [listSearch, setListSearch] = useState("");
+  const listRows = searchRows(list.data, listSearch, rowText);
+  const pager = usePager(listRows, 20, [listSearch]);
   return (
     <MainLayout>
       <PageHeader
@@ -76,9 +81,10 @@ export default function StaffDamagePage() {
         }
       />
       <Notice error={action.error}>{action.success}</Notice>
+      <div className="ops-toolbar"><SearchBox value={listSearch} onChange={setListSearch} placeholder="Search report code, source, status…" /><span>{listRows.length} reports</span></div>
       <ResourceState resource={list} empty={!list.data?.length}>
         <Table head={["Report", "Source", "Description", "Status", ""]}>
-          {(list.data || []).map((r) => (
+          {pager.rows.map((r) => (
             <tr key={r.reportId}>
               <td>
                 <strong>{r.reportCode}</strong>
@@ -100,6 +106,7 @@ export default function StaffDamagePage() {
             </tr>
           ))}
         </Table>
+        <Pager pager={pager} label="reports" />
       </ResourceState>
       <Modal
         open={open}

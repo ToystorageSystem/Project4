@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import usePager, { searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../api/api";
 import {
@@ -103,6 +105,15 @@ export default function InboundResultsPage() {
   }
   const decide = (issue, decision) => { setModalError(""); setDeciding({ issue, decision }); };
 
+  // Search + pagination for every tab (documents, stock count issues, damaged lots).
+  const [query, setQuery] = useState("");
+  const shown = searchRows(data, query, (r) => [
+    r.code, r.from, r.inspectedBy, r.lotCode, r.lotCodes, r.sourceCode, r.productName, r.productCode,
+    r.referenceCode, r.description, r.type, r.decision,
+    ...(r.items || []).map((l) => [l.productName, l.productCode]),
+    ...(r.issues || []).map((i) => [i.productName, i.code]),
+  ]);
+  const pager = usePager(shown, 20, [query, tab, days]);
   const pending = (r) => r.issues.filter((i) => i.decision === "PENDING").length;
 
   return (
@@ -132,13 +143,18 @@ export default function InboundResultsPage() {
         ))}
       </div>
       <Notice error={error}>{notice}</Notice>
+      <div className="ops-toolbar">
+        <SearchBox value={query} onChange={setQuery} placeholder="Search document, supplier / store, product, lot code…" />
+        <span>{shown.length} results</span>
+      </div>
 
       {loading ? (
         <div className="ops-empty" role="status">Loading…</div>
       ) : tab === "LOTS" ? (
-        !data.length ? <div className="ops-empty"><h3>No damaged stock</h3></div> : (
+        !shown.length ? <div className="ops-empty"><h3>No damaged stock</h3></div> : (
+          <>
           <Table head={["Lot", "Source", "Product", "Quantity", "Location", "Note", "Recorded"]}>
-            {data.map((l) => (
+            {pager.rows.map((l) => (
               <tr key={l.id}>
                 <td><strong>{l.lotCode}</strong></td>
                 <td>{l.sourceType?.replaceAll("_", " ")}<small>{l.sourceCode}</small></td>
@@ -150,14 +166,20 @@ export default function InboundResultsPage() {
               </tr>
             ))}
           </Table>
+            <Pager pager={pager} label="lots" />
+          </>
         )
       ) : tab === "STOCK_COUNT" ? (
-        <IssueRows issues={data} onDecide={decide} showReference />
-      ) : !data.length ? (
+        <>
+          <IssueRows issues={pager.rows} onDecide={decide} showReference />
+          <Pager pager={pager} label="issues" />
+        </>
+      ) : !shown.length ? (
         <div className="ops-empty"><h3>No completed {tab === "SUPPLIER" ? "receipts" : "store returns"} in this period</h3></div>
       ) : (
+        <>
         <Table head={["Document", "From", "Inspected by", "Passed", "Damaged", "Shortage", "Surplus", "Issues", ""]}>
-          {data.flatMap((r) => [
+          {pager.rows.flatMap((r) => [
             <tr key={r.type + r.id}>
               <td><strong>{r.code}</strong><small>{fmtDateTime(r.completedAt)}{r.lotCodes.length ? ` · ${r.lotCodes.join(", ")}` : ""}</small></td>
               <td>{r.from}</td>
@@ -204,6 +226,8 @@ export default function InboundResultsPage() {
               : []),
           ])}
         </Table>
+        <Pager pager={pager} label="documents" />
+        </>
       )}
 
       <Modal open={!!deciding} title={deciding?.decision === "BUSINESS" ? "Send to Business" : "Keep internal"} onClose={() => !busy && setDeciding(null)}>

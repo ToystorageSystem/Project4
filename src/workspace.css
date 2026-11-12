@@ -592,7 +592,7 @@ textarea {
   min-width: 140px;
 }
 .metric-strip span,
-.detail-ribbon span:not(.ops-status) {
+.detail-ribbon span:not(.ops-status):not(.mo-grade) {
   display: block;
   font-size: 11px;
   color: var(--muted);
@@ -1603,4 +1603,39 @@ progress::-moz-progress-bar {
   .auth-story {
     display: none;
   }
+}
+
+/* Shared pagination bar (components/operations/Pager.jsx) */
+.ops-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ops-pager > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ops-pager .ops-button {
+  min-width: 34px;
+  padding: 6px 10px;
+}
+.ops-pager strong {
+  color: var(--ink);
+  padding: 0 6px;
+  white-space: nowrap;
+}
+.ops-pager select {
+  padding: 6px 8px;
+}
+.ops-search {
+  min-width: 240px;
+  flex: 1 1 240px;
+  max-width: 420px;
+  padding: 9px 12px;
 }

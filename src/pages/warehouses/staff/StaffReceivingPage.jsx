@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager from "../../../hooks/usePager";
+import Pager from "../../../components/operations/Pager";
 import api from "../../../api/api";
 import useResource from "../../../hooks/useResource";
 import MainLayout from "../../../components/layout/MainLayout";
@@ -60,6 +62,7 @@ export default function StaffReceivingPage() {
     )
       setDrafts({});
   }
+  const pager = usePager(rows, 20, [search]);
   return (
     <MainLayout>
       <PageHeader
@@ -114,7 +117,7 @@ export default function StaffReceivingPage() {
                 "",
               ]}
             >
-              {rows.map((r) => (
+              {pager.rows.map((r) => (
                 <tr key={r.receiptId}>
                   <td>
                     <strong>{r.receiptCode}</strong>
@@ -142,6 +145,7 @@ export default function StaffReceivingPage() {
                 </tr>
               ))}
             </Table>
+            <Pager pager={pager} label="receipts" />
           </ResourceState>
         </>
       ) : (

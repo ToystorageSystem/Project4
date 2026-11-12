@@ -71,7 +71,6 @@ export default function ManagerDashboard() {
       <div className={`personal-welcome period-${clock.key}`}>
         <div>
           <h1>{clock.greeting}, <span>{displayName(user)}.</span></h1>
-          <div className="welcome-context"><span>Warehouse Manager · daily report</span></div>
         </div>
         <div className="day-clock">
           <WorkspaceIcon name={clock.icon} size={34} />

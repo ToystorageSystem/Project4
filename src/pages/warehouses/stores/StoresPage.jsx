@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager from "../../../hooks/usePager";
+import Pager from "../../../components/operations/Pager";
 import api from "../../../api/api";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -33,6 +35,7 @@ export default function StoresPage() {
     );
     if (result) setSelected(null);
   }
+  const pager = usePager(rows, 20, [search]);
   return (
     <MainLayout>
       <PageHeader
@@ -61,7 +64,7 @@ export default function StoresPage() {
         <Table
           head={["Stores", "Manager", "Opening hours", "Phone", "Actions"]}
         >
-          {rows.map((r) => (
+          {pager.rows.map((r) => (
             <tr key={r.warehouseId}>
               <td>
                 <strong>{r.storeName}</strong>
@@ -86,6 +89,7 @@ export default function StoresPage() {
             </tr>
           ))}
         </Table>
+        <Pager pager={pager} label="stores" />
       </ResourceState>
       <Modal
         open={!!selected}

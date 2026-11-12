@@ -6,6 +6,8 @@ import useResource from "../../../hooks/useResource";
 import { Notice, ResourceState, Table, number } from "../../../components/operations/WorkspaceUI";
 import { STORE_API } from "../../../api/stores/manager/storeApi";
 import { Metrics, Pager } from "../components/StoreUI";
+import { searchRows } from "../../../hooks/usePager";
+import { SearchBox } from "../../../components/operations/Pager";
 import { dateTime, daysAgo, isoDate, money } from "../storeFormat";
 
 const PAGE_SIZE = 20;
@@ -44,10 +46,12 @@ export default function SalesPage() {
   const [to, setTo] = useState(isoDate());
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(null);
+  const [query, setQuery] = useState("");
   const valid = from && to && from <= to;
   const summary = useResource(valid ? STORE_API.salesSummary({ from, to }) : null);
   const list = useResource(valid ? STORE_API.sales({ page, size: PAGE_SIZE, from, to }) : null);
-  const rows = list.data?.content || [];
+  const allRows = list.data?.content || [];
+  const rows = searchRows(allRows, query, (r) => [r.code, r.createdByName, r.note]);
   const s = summary.data;
   const setRange = (f, t) => { setFrom(f); setTo(t); setPage(0); };
   const firstOfMonth = isoDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
@@ -65,6 +69,7 @@ export default function SalesPage() {
         <button className="ops-button secondary" onClick={() => setRange(isoDate(), isoDate())}>Today</button>
         <button className="ops-button secondary" onClick={() => setRange(daysAgo(6), isoDate())}>Last 7 days</button>
         <button className="ops-button secondary" onClick={() => setRange(firstOfMonth, isoDate())}>This month</button>
+        <SearchBox value={query} onChange={setQuery} label="Search sales" placeholder="Search sale code or cashier (this page)…" />
       </div>
       {!valid && <Notice error="Choose a start date that is on or before the end date." />}
       <Metrics

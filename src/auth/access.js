@@ -49,7 +49,8 @@ export function roleLabel(user) {
           : "System Account";
 }
 export function canAccess(user, key) {
-  if (key === "fleet") return isStoreManager(user); // fleet API is not in the warehouse backend
+  // Vehicles & routes: Warehouse Manager dispatches, Store Manager sets the store coordinates.
+  if (key === "fleet") return isManager(user) || isStoreManager(user);
   if (key.startsWith("admin-")) return isAdmin(user);
   if (key.startsWith("business-")) return isBusiness(user);
   if (key.startsWith("store-manager")) return isStoreManager(user);

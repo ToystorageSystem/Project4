@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager, { rowText, searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import Barcode from "react-barcode";
 import api from "../../../api/api";
 import useResource from "../../../hooks/useResource";
@@ -50,6 +52,9 @@ export default function StaffPackingPage() {
       setQuantity(1);
     }
   }
+  const [listSearch, setListSearch] = useState("");
+  const listRows = searchRows(list.data, listSearch, rowText);
+  const pager = usePager(listRows, 20, [listSearch]);
   return (
     <MainLayout>
       <PageHeader
@@ -84,6 +89,7 @@ export default function StaffPackingPage() {
         }
       />
       <Notice error={action.error}>{action.success}</Notice>
+      {!id && (<div className="ops-toolbar"><SearchBox value={listSearch} onChange={setListSearch} placeholder="Search transfer code, store, status…" /><span>{listRows.length} transfers</span></div>)}
       {!id ? (
         <ResourceState resource={list} empty={!list.data?.length}>
           <Table
@@ -96,7 +102,7 @@ export default function StaffPackingPage() {
               "",
             ]}
           >
-            {(list.data || []).map((r) => (
+            {pager.rows.map((r) => (
               <tr key={r.transferId}>
                 <td>
                   <strong>{r.transferCode}</strong>
@@ -124,6 +130,7 @@ export default function StaffPackingPage() {
               </tr>
             ))}
           </Table>
+          <Pager pager={pager} label="transfers" />
         </ResourceState>
       ) : (
         <ResourceState resource={detail}>

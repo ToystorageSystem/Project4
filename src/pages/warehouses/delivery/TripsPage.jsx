@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager, { rowText, searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import api from "../../../api/api";
 import useResource from "../../../hooks/useResource";
 import MainLayout from "../../../components/layout/MainLayout";
@@ -25,6 +27,9 @@ export default function TripsPage() {
     if (window.confirm(label))
       await action.run(() => api.patch(`${BASE}/${id}/${path}`));
   }
+  const [listSearch, setListSearch] = useState("");
+  const listRows = searchRows(list.data, listSearch, rowText);
+  const pager = usePager(listRows, 20, [listSearch]);
   return (
     <MainLayout>
       <PageHeader
@@ -58,6 +63,7 @@ export default function TripsPage() {
         }
       />
       <Notice error={action.error}>{action.success}</Notice>
+      {!id && (<div className="ops-toolbar"><SearchBox value={listSearch} onChange={setListSearch} placeholder="Search trip, destination, status…" /><span>{listRows.length} trips</span></div>)}
       {!id ? (
         <ResourceState resource={list} empty={!list.data?.length}>
           <Table
@@ -71,7 +77,7 @@ export default function TripsPage() {
               "",
             ]}
           >
-            {(list.data || []).map((r) => (
+            {pager.rows.map((r) => (
               <tr key={r.deliveryId}>
                 <td>
                   <strong>{r.shipmentCode}</strong>
@@ -97,6 +103,7 @@ export default function TripsPage() {
               </tr>
             ))}
           </Table>
+          <Pager pager={pager} label="trips" />
         </ResourceState>
       ) : (
         <ResourceState resource={detail}>

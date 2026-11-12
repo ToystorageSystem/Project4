@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager from "../../../hooks/usePager";
+import Pager from "../../../components/operations/Pager";
 import api from "../../../api/api";
 import useResource from "../../../hooks/useResource";
 import MainLayout from "../../../components/layout/MainLayout";
@@ -96,6 +98,7 @@ export default function ScanWorkflowPage({ kind }) {
       setQuantity("");
     }
   }
+  const pager = usePager(rows, 20, [search, kind]);
   return (
     <MainLayout>
       <PageHeader
@@ -148,7 +151,7 @@ export default function ScanWorkflowPage({ kind }) {
                 "",
               ]}
             >
-              {rows.map((r) => (
+              {pager.rows.map((r) => (
                 <tr key={r[c.id]}>
                   <td>
                     <strong>{r[c.code]}</strong>
@@ -181,6 +184,7 @@ export default function ScanWorkflowPage({ kind }) {
                 </tr>
               ))}
             </Table>
+            <Pager pager={pager} label="tasks" />
           </ResourceState>
         </>
       ) : (

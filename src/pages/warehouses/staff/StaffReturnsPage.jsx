@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager, { rowText, searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import { useParams } from "react-router-dom";
 import api from "../../../api/api";
 import useResource from "../../../hooks/useResource";
@@ -48,6 +50,9 @@ export default function StaffReturnsPage() {
       api.post(`${BASE}/${id}/items/${selected}/evidence`, body),
     );
   }
+  const [listSearch, setListSearch] = useState("");
+  const listRows = searchRows(list.data, listSearch, rowText);
+  const pager = usePager(listRows, 20, [listSearch]);
   return (
     <MainLayout>
       <PageHeader
@@ -80,6 +85,7 @@ export default function StaffReturnsPage() {
         }
       />
       <Notice error={action.error}>{action.success}</Notice>
+      {!id && (<div className="ops-toolbar"><SearchBox value={listSearch} onChange={setListSearch} placeholder="Search return code, store, status…" /><span>{listRows.length} returns</span></div>)}
       {!id ? (
         <ResourceState resource={list} empty={!list.data?.length}>
           <Table
@@ -91,7 +97,7 @@ export default function StaffReturnsPage() {
               "",
             ]}
           >
-            {(list.data || []).map((r) => (
+            {pager.rows.map((r) => (
               <tr key={r.returnId}>
                 <td>
                   <strong>{r.returnCode}</strong>
@@ -118,6 +124,7 @@ export default function StaffReturnsPage() {
               </tr>
             ))}
           </Table>
+          <Pager pager={pager} label="returns" />
         </ResourceState>
       ) : (
         <ResourceState resource={detail}>

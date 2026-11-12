@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import usePager, { searchRows, rowText } from "../../hooks/usePager";
+import Pager, { SearchBox } from "../../components/operations/Pager";
 import {
     getBusinessManagerDiscrepancy,
     listBusinessManagerDiscrepancies,
@@ -165,6 +167,7 @@ export default function DiscrepanciesPage() {
         return items.filter((item) => [item.reportCode, item.referenceCode, item.description, item.warehouseName, item.warehouseCode, item.id, item.purchaseOrderCode, item.fromWarehouseName, item.toWarehouseName]
             .some((value) => String(value ?? "").toLocaleLowerCase("vi-VN").includes(q)));
     }, [items, search]);
+    const pager = usePager(shown, 20, [search, filters.referenceType, filters.discrepancyType, filters.status]);
 
     const resetForm = (report) => {
         setAction("");
@@ -269,7 +272,7 @@ export default function DiscrepanciesPage() {
                         <div className="overflow-x-auto rounded-xl border border-slate-200">
                             <table className="min-w-full divide-y divide-slate-200 text-sm">
                                 <thead className="bg-orange-50/60 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"><tr><th className="px-4 py-3">{T.reports}</th><th className="px-4 py-3">{T.source}</th><th className="px-4 py-3">{T.discrepancy}</th><th className="px-4 py-3">{T.status}</th><th className="px-4 py-3">{T.fields}</th><th className="px-4 py-3">{T.view}</th></tr></thead>
-                                <tbody className="divide-y divide-slate-100">{shown.map((r) => <tr key={r.id} className="hover:bg-slate-50">
+                                <tbody className="divide-y divide-slate-100">{pager.rows.map((r) => <tr key={r.id} className="hover:bg-slate-50">
                                     <td className="min-w-48 px-4 py-3"><div className="font-semibold text-slate-900">{r.reportCode || `#${r.id}`}</div><div className="mt-1 text-xs text-slate-500">No. {r.id} | {time(r.createdAt)}</div><div className="mt-1 text-xs text-slate-500">{r.warehouseName || r.warehouseCode || "\u2014"}</div></td>
                                     <td className="min-w-40 px-4 py-3"><div>{sourceName(r.referenceType)}</div><div className="mt-1 font-mono text-xs text-slate-500">{r.referenceCode || `Code ${r.referenceId}`}</div></td>
                                     <td className="px-4 py-3">{discrepancyName(r.discrepancyType)}</td>
@@ -280,6 +283,7 @@ export default function DiscrepanciesPage() {
                             </table>
                         </div>
                     )}
+                    {!loading && shown.length > 0 && <Pager pager={pager} label="reports" />}
                     <p className="text-xs text-slate-500">{T.all}: {shown.length} / {items.length}. Only discrepancies within your access rights are shown.</p>
                 </Card>
 

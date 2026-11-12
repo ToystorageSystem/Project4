@@ -1,4 +1,6 @@
 import { useState } from "react";
+import usePager, { searchRows } from "../../../hooks/usePager";
+import Pager, { SearchBox } from "../../../components/operations/Pager";
 import { Link, useSearchParams } from "react-router-dom";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -25,10 +27,10 @@ export default function ReceivingListPage() {
   const filter = FILTERS[params.get("status")] ? params.get("status") : "ALL";
   const [search, setSearch] = useState("");
   const rows = Array.isArray(resource.data) ? resource.data : [];
-  const filtered = rows
+  const filtered = searchRows(rows, search, (m) => [m.manifestCode, m.shipmentCode, m.fromWarehouseName])
     .filter(FILTERS[filter][1])
-    .filter((m) => [m.manifestCode, m.shipmentCode, m.fromWarehouseName].join(" ").toLowerCase().includes(search.trim().toLowerCase()))
-    .sort((a, b) => (PRIORITY[a.receivingStatus] ?? 9) - (PRIORITY[b.receivingStatus] ?? 9));
+        .sort((a, b) => (PRIORITY[a.receivingStatus] ?? 9) - (PRIORITY[b.receivingStatus] ?? 9));
+  const pager = usePager(filtered, 20, [search, filter]);
   const count = (key) => (resource.data ? number(rows.filter(FILTERS[key][1]).length) : "—");
   const setFilter = (key) => setParams(key === "ALL" ? {} : { status: key });
 
@@ -55,7 +57,7 @@ export default function ReceivingListPage() {
       </div>
       <ResourceState resource={resource} empty={!filtered.length}>
         <Table head={["Manifest", "From", "Delivery", "Expected", "Packages (received / counted / total)", "Receiving", ""]}>
-          {filtered.map((m) => (
+          {pager.rows.map((m) => (
             <tr key={m.manifestId}>
               <td><strong className="mono">{m.manifestCode}</strong><small>{m.shipmentCode}</small></td>
               <td>{m.fromWarehouseName || "—"}</td>
@@ -71,6 +73,7 @@ export default function ReceivingListPage() {
             </tr>
           ))}
         </Table>
+        <Pager pager={pager} label="manifests" />
       </ResourceState>
     </MainLayout>
   );

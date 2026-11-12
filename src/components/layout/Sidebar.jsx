@@ -37,7 +37,6 @@ export default function Sidebar({ items = [], user }) {
         aria-label="Main navigation"
       >
         <div className="workspace-identity"><span className="identity-avatar">{(user?.name || user?.email || "T").charAt(0).toUpperCase()}</span><div><strong>{user?.name || "My workspace"}</strong><span>{roleLabel(user)}</span></div></div>
-        <label className="navigation-search"><WorkspaceIcon name="search" size={17} /><input type="search" aria-label="Find a page" placeholder="Find a page…" value={query} onChange={e => setQuery(e.target.value)} /></label>
         {!filtered.length && <p className="nav-empty" role="status">No pages match “{query}”.</p>}
         {groups.map((group) => (
           <div className="nav-group" key={group}>

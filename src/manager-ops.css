@@ -161,6 +161,14 @@
   background: #f1e6dd;
   color: #6b4a33;
 }
+.detail-ribbon .mo-grade {
+  display: inline-flex;
+  margin: 0;
+  width: 34px;
+  height: 34px;
+  font-size: 15px;
+  line-height: 1;
+}
 .mo-grade.A {
   background: #dcebd8;
   color: #2f5e42;
