@@ -478,6 +478,11 @@
   box-shadow: 0 0 0 3px rgba(125, 156, 234, 0.13);
 }
 
+/* Chua cho mui ten cua o goi y (ComboboxSelect) */
+.wh-field input[role="combobox"] {
+  padding-right: 36px;
+}
+
 .wh-field select:disabled {
   background: #f5f7fb;
   color: #8b98ab;
@@ -752,3 +757,38 @@
 
 }
 
+
+/* Danh sach ket qua tim dia chi tren ban do */
+.wh-map-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 400;
+}
+
+.wh-map-results > span {
+  color: #74849b;
+  font-size: 11px;
+}
+
+.wh-map-results button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #dfe6f1;
+  border-radius: 8px;
+  background: white;
+  color: #283d5b;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wh-map-results button:hover,
+.wh-map-results button.active {
+  border-color: #7d9cea;
+  background: #f3f6fd;
+}

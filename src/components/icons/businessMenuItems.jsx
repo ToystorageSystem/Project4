@@ -94,6 +94,12 @@ export const businessStaffMenuItems = [
         icon: <ProductIcon />,
     },
     {
+        key: "business-staff-brands",
+        label: "Product Brands",
+        path: "/business/brands",
+        icon: <ProductIcon />,
+    },
+    {
         key: "business-staff-purchase-orders",
         label: "Purchase Orders",
         path: "/business/purchase-orders",

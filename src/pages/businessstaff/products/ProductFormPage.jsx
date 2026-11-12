@@ -2,7 +2,7 @@ import SupplierProductLinksPanel from "../../../components/business/supplierProd
 import { listSuppliers, supplierErrorMessage } from "../../../api/business/suppliers";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { createProductWithSupplier, getCategoryOptions, getProduct, listProducts, productErrorMessage, updateProduct, uploadProductImage } from "../../../api/business/products";
+import { createProductWithSupplier, getCategoryOptions, getProduct, productErrorMessage, updateProduct, uploadProductImage } from "../../../api/business/products";
 import { businessStaffMenuItems } from "../../../components/icons/businessMenuItems";
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
@@ -10,6 +10,9 @@ import Alert from "../../../components/ui/Alert";
 import Button from "../../../components/ui/Button";
 import Card from "../../../components/ui/Card";
 import Input from "../../../components/ui/Input";
+import ComboboxSelect from "../../../components/ui/ComboboxSelect";
+import BrandFormModal from "../../../components/business/brands/BrandFormModal";
+import { getActiveBrands } from "../../../api/business/brands";
 import Spinner from "../../../components/ui/Spinner";
 import TextArea from "../../../components/ui/TextArea";
 
@@ -19,7 +22,7 @@ const EMPTY_FORM = {
     brandId: "", baseUnit: "", purchasePrice: "", sellingPrice: "", requestReason: "",
 };
 
-function validate(form) {
+function validate(form, activeCategoryIds, activeBrandIds) {
     const errors = {};
     const limits = { productCode: 50, barcode: 100, imageUrl: 500, name: 200, baseUnit: 30, requestReason: 500 };
     for (const [field, maximum] of Object.entries(limits)) {
@@ -28,8 +31,10 @@ function validate(form) {
     for (const field of ["barcode", "name", "baseUnit"]) {
         if (!form[field].trim()) errors[field] = "Required field.";
     }
-    if (!/^[1-9]\d*$/.test(form.categoryId.trim())) errors.categoryId = "Please select a valid category.";
-    if (form.brandId.trim() && !/^[1-9]\d*$/.test(form.brandId.trim())) errors.brandId = "Please enter a valid brand ID.";
+    // Chi chap nhan category ACTIVE da duoc them trong Category Management.
+    if (!activeCategoryIds.has(form.categoryId.trim())) errors.categoryId = "Please select an active category from the list.";
+    // Brand khong bat buoc, nhung neu chon thi phai la brand ACTIVE.
+    if (form.brandId.trim() && !activeBrandIds.has(form.brandId.trim())) errors.brandId = "Please select an active brand from the list.";
     for (const field of ["sellingPrice"]) {
         if (!form[field].trim() || !Number.isFinite(Number(form[field])) || Number(form[field]) < 0.01) {
             errors[field] = "Price must be at least 0.01.";
@@ -120,12 +125,13 @@ function SupplierNameCombobox({ value, onChange, suppliers, loadError, disabled,
     </div>;
 }
 
-function uniqueOptions(rows, idField, nameField) {
-    const options = new Map();
-    for (const row of rows) {
-        if (row?.[idField] > 0) options.set(String(row[idField]), row[nameField] || `ID ${row[idField]}`);
-    }
-    return [...options].map(([value, label]) => ({ value, label })).sort((a, b) => Number(a.value) - Number(b.value));
+// Chuyen danh sach Category/Brand ACTIVE thanh option cho dropdown
+function toActiveOptions(rows, codeField) {
+    if (!Array.isArray(rows)) return [];
+    return rows
+        .filter((item) => item?.id > 0 && item.status === "ACTIVE")
+        .map((item) => ({ value: String(item.id), label: item[codeField] ? `${item.name} (${item[codeField]})` : item.name }))
+        .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export default function ProductFormPage() {
@@ -136,6 +142,8 @@ export default function ProductFormPage() {
     const [categorySuggestions, setCategorySuggestions] = useState([]);
     const [brandSuggestions, setBrandSuggestions] = useState([]);
     const [categoryApiWarning, setCategoryApiWarning] = useState("");
+    const [brandApiWarning, setBrandApiWarning] = useState("");
+    const [brandModalOpen, setBrandModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [loadFailed, setLoadFailed] = useState(false);
     const [errors, setErrors] = useState({});
@@ -189,20 +197,18 @@ export default function ProductFormPage() {
                 if (!controller.signal.aborted) setCategoryApiWarning(productErrorMessage(requestError, "Unable to load categories."));
                 return [];
             });
-        // No /api/brands endpoint exists in this BE snapshot. Suggestions
-        // from products are non-exhaustive; users can enter another valid ID.
-        const samplePromise = listProducts({ page: 0, size: 100 }, controller.signal).catch(() => ({ content: [] }));
-        Promise.all([productPromise, categoryPromise, samplePromise])
-            .then(([product, categories, sample]) => {
+        const brandPromise = getActiveBrands(controller.signal)
+            .catch((requestError) => {
+                if (!controller.signal.aborted) setBrandApiWarning(productErrorMessage(requestError, "Unable to load brands."));
+                return [];
+            });
+        Promise.all([productPromise, categoryPromise, brandPromise])
+            .then(([product, categories, brands]) => {
                 if (controller.signal.aborted) return;
-                const sampleRows = Array.isArray(sample?.content) ? sample.content : [];
-                const categoryRows = [...sampleRows, ...(product ? [product] : [])];
-                const fromProducts = uniqueOptions(categoryRows, "categoryId", "categoryName");
-                const fromApi = Array.isArray(categories) ? categories
-                    .filter((item) => item.status === "ACTIVE")
-                    .map((item) => ({ value: String(item.id), label: item.name })) : [];
-                setCategorySuggestions([...new Map([...fromProducts, ...fromApi].map((item) => [item.value, item])).values()]);
-                setBrandSuggestions(uniqueOptions([...sampleRows, ...(product ? [product] : [])], "brandId", "brandName"));
+                // Chi lay Category/Brand ACTIVE tu API /options
+                // (khong lay tu product mau vi co the dang dung muc da bi an).
+                setCategorySuggestions(toActiveOptions(categories, "categoryCode"));
+                setBrandSuggestions(toActiveOptions(brands, "brandCode"));
                 if (editing) {
                     setExistingProductStatus(product.status);
                     if (product.status !== "ACTIVE" && product.status !== "INACTIVE") {
@@ -224,6 +230,9 @@ export default function ProductFormPage() {
             .finally(() => { if (!controller.signal.aborted) setLoading(false); });
         return () => controller.abort();
     }, [editing, productId]);
+
+    // Dung cho ComboboxSelect (tra ve value truc tiep, khong phai event)
+    const pick = (field) => (value) => change(field)({ target: { value } });
 
     const change = (field) => (event) => {
         setForm((old) => ({ ...old, [field]: event.target.value }));
@@ -250,7 +259,9 @@ export default function ProductFormPage() {
     const submit = async (event) => {
         event.preventDefault();
         if (saving || uploading || loadFailed) return;
-        const nextErrors = validate(form);
+        const nextErrors = validate(form,
+            new Set(categorySuggestions.map((item) => item.value)),
+            new Set(brandSuggestions.map((item) => item.value)));
         const nextSupplierErrors = editing ? {} : validateSupplierSetup(supplierSetup);
         setErrors(nextErrors);
         setSupplierErrors(nextSupplierErrors);
@@ -302,7 +313,7 @@ export default function ProductFormPage() {
                 ) : (
                     <Card className="max-w-6xl">
                         {categoryApiWarning && (
-                            <div className="mt-4"><Alert type="warning">Unable to load product categories: {categoryApiWarning} You can enter an existing category ID below; the system will validate it.</Alert></div>
+                            <div className="mt-4"><Alert type="warning">Unable to load product categories: {categoryApiWarning} Please reload the page before saving.</Alert></div>
                         )}
                         <form onSubmit={submit} noValidate className="mt-6 space-y-6">
                             <div className="grid gap-5 md:grid-cols-2">
@@ -311,12 +322,31 @@ export default function ProductFormPage() {
                                 </div>
                                 <div className="md:col-span-2"><Input label="Product Name *" required maxLength={200} value={form.name} onChange={change("name")} error={errors.name} placeholder="Product Name" /></div>
                                 <div>
-                                    <Input label="Product Category *" type="number" min="1" step="1" required list="product-category-options" value={form.categoryId} onChange={change("categoryId")} error={errors.categoryId} placeholder="Enter a category ID or select a category" />
-                                    <datalist id="product-category-options">{categorySuggestions.map((item) => <option key={item.value} value={item.value} label={item.label} />)}</datalist>
+                                    <ComboboxSelect label="Product Category *" value={form.categoryId} onChange={pick("categoryId")} error={errors.categoryId}
+                                        disabled={!categorySuggestions.length} options={categorySuggestions}
+                                        placeholder={categorySuggestions.length ? "Type to search category..." : "No active category available"}
+                                        noMatchText="No matching category." />
+                                    {editing && form.categoryId && !categorySuggestions.some((item) => item.value === form.categoryId) && (
+                                        <p className="mt-1 text-xs text-amber-600">The current category is inactive or no longer exists. Please choose an active category.</p>
+                                    )}
                                 </div>
                                 <div>
-                                    <Input label="Brand (optional)" type="number" min="1" step="1" list="product-brand-options" value={form.brandId} onChange={change("brandId")} error={errors.brandId} placeholder="Leave blank or enter a brand ID" />
-                                    <datalist id="product-brand-options">{brandSuggestions.map((item) => <option key={item.value} value={item.value} label={item.label} />)}</datalist>
+                                    <div className="flex items-end gap-2">
+                                        <div className="min-w-0 flex-1">
+                                            <ComboboxSelect label="Brand (optional)" value={form.brandId} onChange={pick("brandId")} error={errors.brandId}
+                                                options={brandSuggestions} emptyLabel="No brand"
+                                                placeholder="Type to search brand or leave blank"
+                                                noMatchText="No matching brand. Use + New to add one." />
+                                        </div>
+                                        {/* Mo popup them brand moi */}
+                                        <Button type="button" variant="outline" disabled={saving || uploading}
+                                            className={errors.brandId ? "mb-5" : ""}
+                                            onClick={() => setBrandModalOpen(true)}>+ New</Button>
+                                    </div>
+                                    {brandApiWarning && <p role="alert" className="mt-1 text-xs text-red-600">Unable to load brands: {brandApiWarning}</p>}
+                                    {editing && form.brandId && !brandSuggestions.some((item) => item.value === form.brandId) && (
+                                        <p className="mt-1 text-xs text-amber-600">The current brand is inactive or no longer exists. Choose an active brand or "No brand".</p>
+                                    )}
                                 </div>
                                 <Input label="Base Unit *" maxLength={30} required value={form.baseUnit} onChange={change("baseUnit")} error={errors.baseUnit} placeholder="Example: piece, bag, box" />
                                 <Input label="Selling Price (VND) *" type="number" min="0.01" step="0.01" required value={form.sellingPrice} onChange={change("sellingPrice")} error={errors.sellingPrice} placeholder="150000" />
@@ -387,6 +417,21 @@ export default function ProductFormPage() {
                         </form>
                     </Card>
                 )}
+                {/* Popup them brand moi: luu xong thi tu dong chon brand do */}
+                <BrandFormModal
+                    open={brandModalOpen}
+                    onClose={() => setBrandModalOpen(false)}
+                    onSaved={(brand) => {
+                        setBrandModalOpen(false);
+                        if (!brand?.id) return;
+                        const option = toActiveOptions([{ ...brand, status: brand.status || "ACTIVE" }], "brandCode")[0];
+                        setBrandSuggestions((current) => [...current.filter((item) => item.value !== option.value), option]
+                            .sort((a, b) => a.label.localeCompare(b.label)));
+                        setForm((old) => ({ ...old, brandId: option.value }));
+                        setErrors((old) => ({ ...old, brandId: undefined }));
+                        setBrandApiWarning("");
+                    }}
+                />
                 {editing && !loading && !loadFailed && (
                     <SupplierProductLinksPanel productId={productId} productStatus={existingProductStatus} />
                 )}

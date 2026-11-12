@@ -83,9 +83,8 @@ function getError(error) {
   const message =
     error?.message || "An unexpected error occurred.";
 
-  return /[\u00c0-\u1ef9]/.test(message)
-    ? "The server rejected this request. Check for duplicate names or permission restrictions."
-    : message;
+  // Hi\u1ec7n \u0111\u00fang message backend tr\u1ea3 v\u1ec1
+  return message;
 }
 
 function StatusBadge({ status }) {

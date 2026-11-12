@@ -8,6 +8,7 @@ export const BUSINESS_NAV = [
   { title: "Products", icon: "catalog", links: [
     { label: "Products", path: "/business/products" },
     { label: "Categories", path: "/business/categories" },
+    { label: "Brands", path: "/business/brands" },
   ] },
   { title: "Purchasing", icon: "purchasing", links: [
     { label: "Purchase Orders", path: "/business/purchase-orders" },

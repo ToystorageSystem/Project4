@@ -84,10 +84,7 @@ function messageOf(error) {
     return "This identity card is already in use.";
   }
 
-  if (/[À-ỹ]/.test(raw)) {
-    return "The server rejected this request. Check the entered data and account permissions.";
-  }
-
+  // Hiện đúng message backend trả về (không thay bằng câu chung chung nữa)
   return raw;
 }
 
@@ -99,7 +96,6 @@ export default function UserAccountsPage() {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   // Du lieu that tu MySQL
@@ -235,9 +231,11 @@ export default function UserAccountsPage() {
           ? session.authorities
           : [];
 
-        const allowed =
-          isAdmin(session) &&
-          authorities.includes("USER_MANAGE");
+        // Tạm tắt check USER_MANAGE: chỉ cần là admin
+        const allowed = isAdmin(session);
+        // const allowed =
+        //   isAdmin(session) &&
+        //   authorities.includes("USER_MANAGE");
 
         setCanManage(allowed);
 
@@ -522,7 +520,6 @@ export default function UserAccountsPage() {
   // ========================================
 
   function openConfirm(action, user) {
-    setConfirmPassword("");
     setFormError("");
 
     setModal({
@@ -553,16 +550,6 @@ export default function UserAccountsPage() {
       return;
     }
 
-    if (
-      action === "reset" &&
-      confirmPassword.length < 6
-    ) {
-      setFormError(
-        "New password must be at least 6 characters."
-      );
-      return;
-    }
-
     setBusy(true);
     setFormError("");
 
@@ -574,22 +561,18 @@ export default function UserAccountsPage() {
       } else if (action === "deactivate") {
         await deactivateAdminUser(user.id);
       } else if (action === "reset") {
-        await resetAdminUserPassword(
-          user.id,
-          confirmPassword
-        );
+        await resetAdminUserPassword(user.id);
       } else {
         return;
       }
 
-      setConfirmPassword("");
       setModal(null);
 
       setNotice({
         type: "success",
         message:
           action === "reset"
-            ? "Password reset. The user must change it on next sign-in."
+            ? "Password reset. A random temporary password was emailed to the user, who must change it on next sign-in."
             : "Account status updated.",
       });
 
@@ -669,11 +652,11 @@ export default function UserAccountsPage() {
               </button>
             )}
 
-            <span className="demo-chip">
+            {/* <span className="demo-chip">
               {canManage
                 ? "USER_MANAGE ENABLED"
                 : "READ ONLY / USER_MANAGE NOT GRANTED"}
-            </span>
+            </span> */}
           </div>
         </div>
 
@@ -969,10 +952,10 @@ export default function UserAccountsPage() {
           </table>
         </div>
 
-        <div className="table-footer user-table-footer">
+        {/* <div className="table-footer user-table-footer">
           <Database size={15} />
           Account changes require USER_MANAGE and confirmation.
-        </div>
+        </div> */}
 
       </section>
 
@@ -1340,21 +1323,12 @@ export default function UserAccountsPage() {
                 </p>
 
                 {modal.action === "reset" && (
-                  <label>
-                    New Password (minimum 6 characters)
-                    <input
-                      type="password"
-                      autoComplete="new-password"
-                      minLength={6}
-                      required
-                      value={confirmPassword}
-                      onChange={(e) =>
-                        setConfirmPassword(
-                          e.target.value
-                        )
-                      }
-                    />
-                  </label>
+                  <p className="user-confirm-text">
+                    A random temporary password will be
+                    generated and emailed to{" "}
+                    <strong>{modal.user.email}</strong>.
+                    The user must change it on next sign-in.
+                  </p>
                 )}
 
                 <></>

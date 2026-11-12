@@ -25,7 +25,7 @@ const menuIcons = {
   "receiving-completed": History, "shipment-history": Archive,
   "admin-users": Users, "admin-roles": KeyRound, "admin-warehouses": Warehouse,
   "admin-logs": Activity, "admin-alerts": ShieldAlert,
-  "business-products": PackageOpen, "business-categories": Tags, "business-suppliers": Building2,
+  "business-products": PackageOpen, "business-categories": Tags, "business-brands": Tags, "business-suppliers": Building2,
   "business-purchase-orders": ShoppingCart, "business-supplier-invoices": ReceiptText,
   "business-goods-receipts-list": ClipboardList, "business-goods-receipts": ClipboardPlus,
   "business-stock-transfers": ArrowLeftRight, "business-shipment-manifests": FileStack,

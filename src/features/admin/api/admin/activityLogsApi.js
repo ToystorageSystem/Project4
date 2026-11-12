@@ -146,7 +146,9 @@ export async function downloadAdminActivityLogsCsv(
     credentials: "include",
     cache: "no-store",
     headers: {
-      Accept: "text/csv",
+      // Cho phép backend trả lỗi dạng JSON; nếu chỉ "text/csv"
+      // thì mọi lỗi (400, 404...) đều bị biến thành 500.
+      Accept: "text/csv, application/json",
     },
   });
 

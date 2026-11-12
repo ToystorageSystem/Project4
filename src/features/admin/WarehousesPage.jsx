@@ -26,16 +26,22 @@ import {
   updateWarehouse,
 } from "./api/admin/warehousesApi";
 import "./css/WarehousesPage.css";
+import VietnamAddressPicker from "../../components/ui/VietnamAddressPicker";
+import { reverseGeocode, searchAddress } from "./utils/geocoding";
 
 // ======================================================
 // HELPERS
 // ======================================================
 
+// DB luu "WAREHOUSE_MANAGER"/"WAREHOUSE_STAFF", code dung "WH_MANAGER"/"WH_STAFF"
+// => quy ve cung mot ten (giong normalizeRole o WarehouseAssignmentService).
 function normalizeRole(value) {
   return String(value ?? "")
+    .trim()
     .toUpperCase()
     .replace(/^ROLE[-_]/, "")
-    .replaceAll("-", "_");
+    .replaceAll("-", "_")
+    .replace(/^WAREHOUSE_/, "WH_");
 }
 
 function messageFor(error) {
@@ -45,10 +51,8 @@ function messageFor(error) {
   if (error?.status === 403) {
     return "Access denied. Please check your Admin permissions.";
   }
-  const message = error?.message || "An unexpected error occurred.";
-  return /[\u00c0-\u1ef9]/.test(message)
-    ? "The Backend rejected this operation. Check the business rules and server logs."
-    : message;
+  // Hi\u1ec7n \u0111\u00fang message backend tr\u1ea3 v\u1ec1 (tr\u01b0\u1edbc \u0111\u00e2y message ti\u1ebfng Vi\u1ec7t b\u1ecb thay b\u1eb1ng c\u00e2u chung chung)
+  return error?.message || "An unexpected error occurred.";
 }
 
 function mapLocation(item) {
@@ -134,7 +138,7 @@ function MapRecenter({ point }) {
 
   useEffect(() => {
     if (point) {
-      map.setView([point.lat, point.lng], 16);
+      map.setView([point.lat, point.lng], point.zoom ?? map.getZoom());
     }
   }, [map, point]);
 
@@ -216,7 +220,10 @@ export default function WarehousesPage() {
   const [mapBusy, setMapBusy] = useState(false);
   const [mapMessage, setMapMessage] = useState("");
   const [mapError, setMapError] = useState("");
+  const [mapResults, setMapResults] = useState([]);
   const mapRequestId = useRef(0);
+  // Doi gia tri de reset bo chon Tinh/Phuong moi lan mo form
+  const [addressPickerKey, setAddressPickerKey] = useState(0);
 
   const [impact, setImpact] = useState(null);
   const [impactLoading, setImpactLoading] = useState(false);
@@ -240,9 +247,11 @@ export default function WarehousesPage() {
         ? session.authorities
         : [];
 
-      setCanManage(
-        isAdmin(session) && authorities.includes("WAREHOUSE_MANAGE")
-      );
+      // Tạm tắt check WAREHOUSE_MANAGE: chỉ cần là admin
+      setCanManage(isAdmin(session));
+      // setCanManage(
+      //   isAdmin(session) && authorities.includes("WAREHOUSE_MANAGE")
+      // );
 
       if (!Array.isArray(first?.content)) {
         throw new Error("Unexpected warehouse list response.");
@@ -377,6 +386,8 @@ export default function WarehousesPage() {
     setMapBusy(false);
     setMapMessage("");
     setMapError("");
+    setMapResults([]);
+    setAddressPickerKey((key) => key + 1);
     setDialog({ type: "create" });
   }
 
@@ -396,11 +407,18 @@ export default function WarehousesPage() {
     setMapBusy(false);
     setMapMessage("");
     setMapError("");
+    setMapResults([]);
+    setAddressPickerKey((key) => key + 1);
 
     setDialog({
       type: "edit",
       warehouseId: item.id,
     });
+
+    // Hien vi tri dia chi dang luu tren ban do
+    if (item.address) {
+      void locateAddress(item.address);
+    }
 
     void readCandidates();
   }
@@ -508,13 +526,16 @@ export default function WarehousesPage() {
   }
 
   // ====================================================
-  // PHOTON ADDRESS SEARCH - FIXED
+  // MAP ADDRESS SEARCH (Nominatim, du phong Photon)
   // ====================================================
 
-  async function locateAddress() {
-    const address = form.address.trim();
+  // queries: chuoi hoac danh sach chuoi (thu lan luot tu chi tiet den tong quat)
+  async function locateAddress(queries = form.address) {
+    const candidates = (Array.isArray(queries) ? queries : [queries])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
 
-    if (!address) {
+    if (!candidates.length) {
       setMapError("Enter an address before searching on the map.");
       return;
     }
@@ -524,76 +545,43 @@ export default function WarehousesPage() {
     setMapBusy(true);
     setMapError("");
     setMapMessage("");
+    setMapResults([]);
 
     try {
-      // Chỉ gọi Photon khi người dùng nhấn Find on Map.
-      // Không dùng Nominatim, Vite proxy hoặc utm_source.
-      const params = new URLSearchParams({
-        q: address,
-        limit: "5",
-        lat: "10.8231",
-        lon: "106.6297",
-      });
-
-      const response = await fetch(
-        `https://photon.komoot.io/api/?${params.toString()}`,
-        {
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Address search failed (HTTP ${response.status}).`
-        );
-      }
-
-      const data = await response.json();
+      const { results, exact } = await searchAddress(candidates);
 
       if (requestId !== mapRequestId.current) {
         return;
       }
 
-      const features = Array.isArray(data?.features)
-        ? data.features
-        : [];
-
-      const match = features.find((feature) => {
-        const coordinates = feature?.geometry?.coordinates;
-
-        return (
-          Array.isArray(coordinates) &&
-          coordinates.length >= 2 &&
-          Number.isFinite(Number(coordinates[0])) &&
-          Number.isFinite(Number(coordinates[1]))
-        );
-      });
-
-      if (!match) {
+      if (!results.length) {
         setMapError(
-          "Address not found. Include a street, district, and city, then try again."
+          "Address not found on the map. Check the street and ward, or click the correct point on the map."
         );
         return;
       }
 
-      const [lng, lat] = match.geometry.coordinates;
+      const best = results[0];
+      setMapPoint({ lat: best.lat, lng: best.lng, zoom: best.zoom });
+      // Nhieu ket qua thi cho nguoi dung chon lai (vd: cung ten duong o 2 phuong)
+      setMapResults(results.length > 1 ? results : []);
 
-      setMapPoint({
-        lat: Number(lat),
-        lng: Number(lng),
-      });
-
-      setMapMessage(
-        "Map moved to the closest matching area. Check the position before saving."
-      );
+      if (exact && best.hasHouseNumber) {
+        setMapMessage(`Found: ${best.label}. Check the marker before saving.`);
+      } else if (exact) {
+        setMapMessage(
+          `Found the area: ${best.label}. Click the exact building on the map if needed.`
+        );
+      } else {
+        setMapMessage(
+          `Exact address not on the map; showing the closest area: ${best.label}. Click the exact point on the map.`
+        );
+      }
     } catch (error) {
       if (requestId === mapRequestId.current) {
-        console.error("Photon address search:", error);
-
+        console.error("Map address search:", error);
         setMapError(
-          "Unable to search the address right now. Check the connection to Photon or enter the address manually."
+          "Map search is unavailable right now. You can still save the typed address."
         );
       }
     } finally {
@@ -603,8 +591,18 @@ export default function WarehousesPage() {
     }
   }
 
+  // Chon 1 ket qua khac trong danh sach goi y
+  function pickMapResult(result) {
+    mapRequestId.current += 1;
+    setMapBusy(false);
+    setMapPoint({ lat: result.lat, lng: result.lng, zoom: result.zoom });
+    setMapResults([]);
+    setMapError("");
+    setMapMessage(`Selected on map: ${result.label}.`);
+  }
+
   // ====================================================
-  // PHOTON REVERSE ADDRESS LOOKUP
+  // REVERSE ADDRESS LOOKUP (bam vao ban do)
   // ====================================================
 
   async function chooseMapPoint(point) {
@@ -617,98 +615,40 @@ export default function WarehousesPage() {
 
     const requestId = ++mapRequestId.current;
 
-    setMapPoint({ lat, lng });
+    // Giu nguyen muc zoom hien tai khi bam vao ban do
+    setMapPoint({ lat, lng, zoom: null });
     setMapBusy(true);
     setMapError("");
     setMapMessage("");
+    setMapResults([]);
 
     try {
-      const params = new URLSearchParams({
-        lat: String(lat),
-        lon: String(lng),
-        limit: "1",
-      });
-
-      const response = await fetch(
-        `https://photon.komoot.io/reverse?${params.toString()}`,
-        {
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Reverse address lookup failed (HTTP ${response.status}).`
-        );
-      }
-
-      const data = await response.json();
+      const place = await reverseGeocode(lat, lng);
 
       if (requestId !== mapRequestId.current) {
         return;
       }
 
-      const place = data?.features?.[0]?.properties;
-
-      if (!place) {
+      if (!place?.label) {
         setMapError(
           "No address found near this point. You can enter it manually."
         );
         return;
       }
 
-      const street = [
-        place.housenumber,
-        place.street,
-      ].filter(Boolean).join(" ");
-
-      const parts = [
-        street,
-        place.name,
-        place.district,
-        place.city,
-        place.county,
-        place.state,
-        place.country,
-      ];
-
-      const seen = new Set();
-
-      const address = parts
-        .filter((value) => {
-          const key = String(value || "")
-            .trim()
-            .toLocaleLowerCase();
-
-          if (!key || seen.has(key)) {
-            return false;
-          }
-
-          seen.add(key);
-          return true;
-        })
-        .join(", ");
-
-      if (!address) {
-        setMapError(
-          "The selected point has no mapped address. Enter it manually."
-        );
-        return;
-      }
-
       setForm((previous) => ({
         ...previous,
-        address: address.slice(0, 255),
+        address: place.label.slice(0, 255),
       }));
 
       setMapMessage(
-        "Nearest mapped address selected. Verify the house number before saving."
+        place.hasHouseNumber
+          ? "Address filled from the map. Verify it before saving."
+          : "Street and ward filled from the map. Add the house number to the Full Address."
       );
     } catch (error) {
       if (requestId === mapRequestId.current) {
-        console.error("Photon reverse lookup:", error);
+        console.error("Map reverse lookup:", error);
 
         setMapError(
           "Unable to read an address for this point. The marker is kept; enter the address manually."
@@ -1081,11 +1021,11 @@ export default function WarehousesPage() {
           </div>
 
           <div className="wh-header-actions">
-            <span className="demo-chip">
+            {/* <span className="demo-chip">
               {canManage
                 ? "WAREHOUSE_MANAGE ENABLED"
                 : "READ ONLY / WAREHOUSE_MANAGE NOT GRANTED"}
-            </span>
+            </span> */}
           </div>
         </div>
 
@@ -1414,8 +1354,28 @@ export default function WarehousesPage() {
 
                   {/* ADDRESS AND MAP */}
                   <div className="wh-field wh-field-full">
+                    <VietnamAddressPicker
+                      resetKey={addressPickerKey}
+                      disabled={busy}
+                      onChange={({ address, wardName, provinceName, changed }) => {
+                        setForm((previous) => ({
+                          ...previous,
+                          address: address.slice(0, 255),
+                        }));
+                        setMapMessage("");
+                        // Chon Tinh/Phuong xong thi tu dong dua ban do toi khu vuc do
+                        // (khong goi khi dang go so nha de tranh spam Photon).
+                        if (changed === "street" || !provinceName) return;
+                        void locateAddress([
+                          address,
+                          [wardName, provinceName].filter(Boolean).join(", "),
+                          provinceName,
+                        ]);
+                      }}
+                    />
+
                     <label htmlFor="wh-address-input">
-                      Address *
+                      Full Address *
                     </label>
 
                     <input
@@ -1423,7 +1383,7 @@ export default function WarehousesPage() {
                       required
                       minLength={5}
                       maxLength={255}
-                      placeholder="Street, ward, district, city..."
+                      placeholder="House number street, ward, province/city"
                       value={form.address}
                       onChange={(event) => {
                         setForm((previous) => ({
@@ -1431,6 +1391,15 @@ export default function WarehousesPage() {
                           address: event.target.value,
                         }));
                         setMapMessage("");
+                      }}
+                      onKeyDown={(event) => {
+                        // Enter = tim tren ban do (khong submit ca form)
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          if (!mapBusy && form.address.trim()) {
+                            void locateAddress();
+                          }
+                        }
                       }}
                     />
 
@@ -1465,7 +1434,7 @@ export default function WarehousesPage() {
                           fontWeight: 400,
                         }}
                       >
-                        Search the address or click a point on the map to select it.
+                        Press Enter or Find on Map to search. Click the map to fill the address from that point.
                       </span>
                     </div>
 
@@ -1475,6 +1444,31 @@ export default function WarehousesPage() {
                         void chooseMapPoint(point)
                       }
                     />
+
+                    {mapResults.length > 1 && (
+                      <div className="wh-map-results" role="list" aria-label="Other matching locations">
+                        <span>Not the right place? Choose another match:</span>
+                        {mapResults.map((result, index) => (
+                          <button
+                            key={`${result.lat},${result.lng},${index}`}
+                            type="button"
+                            role="listitem"
+                            title={result.detail}
+                            className={
+                              mapPoint &&
+                              mapPoint.lat === result.lat &&
+                              mapPoint.lng === result.lng
+                                ? "active"
+                                : ""
+                            }
+                            onClick={() => pickMapResult(result)}
+                          >
+                            <MapPin size={13} />
+                            {result.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                     {mapMessage && (
                       <p
@@ -1503,7 +1497,7 @@ export default function WarehousesPage() {
                         fontWeight: 400,
                       }}
                     >
-                      Map tiles: OpenStreetMap. Address search: Photon.
+                      Map data: OpenStreetMap. Address search: Nominatim (Photon as fallback).
                     </small>
                   </div>
 

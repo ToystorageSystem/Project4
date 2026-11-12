@@ -17,7 +17,7 @@ import Button from "../../../components/ui/Button";
 import Card from "../../../components/ui/Card";
 import Checkbox from "../../../components/ui/Checkbox";
 import Input from "../../../components/ui/Input";
-import SearchableSelect from "../../../components/ui/SearchableSelect";
+import ComboboxSelect from "../../../components/ui/ComboboxSelect";
 import Spinner from "../../../components/ui/Spinner";
 import TextArea from "../../../components/ui/TextArea";
 import { formatPurchaseOrderMoney } from "./purchaseOrderFormat";
@@ -143,6 +143,8 @@ export default function PurchaseOrderFormPage() {
     };
 
     const changeSupplier = (value) => {
+        // Chon lai dung supplier dang chon thi khong xoa cac dong san pham
+        if (String(value) === String(form.supplierId)) return;
         nextKey.current += 1;
         setForm((old) => ({
             ...old,
@@ -225,8 +227,8 @@ export default function PurchaseOrderFormPage() {
     };
 
     const blocked = Boolean(loadError);
-    const supplierSelectOptions = [{ value: "", label: "-- Select Supplier --" }, ...supplierOptions.map((item) => ({ value: String(item.id), label: `${item.name} (${item.code})` }))];
-    const warehouseSelectOptions = [{ value: "", label: "-- Select Main Warehouse --" }, ...warehouseOptions.map((item) => ({ value: String(item.id), label: `${item.name} (${item.code})` }))];
+    const supplierSelectOptions = [...supplierOptions.map((item) => ({ value: String(item.id), label: `${item.name} (${item.code})` }))];
+    const warehouseSelectOptions = [...warehouseOptions.map((item) => ({ value: String(item.id), label: `${item.name} (${item.code})` }))];
 
     return (
         <MainLayout title="Business Operations" items={businessStaffMenuItems}>
@@ -246,8 +248,8 @@ export default function PurchaseOrderFormPage() {
                         <Card className="space-y-5">
                             <h2 className="text-lg font-semibold text-slate-900">Supplier and Main Warehouse</h2>
                             <div className="grid gap-4 md:grid-cols-2">
-                                <SearchableSelect label="Supplier *" searchPlaceholder="Search supplier by name or code" value={form.supplierId} options={supplierSelectOptions} disabled={saving} onChange={(event) => changeSupplier(event.target.value)} />
-                                <SearchableSelect label="Receiving Main Warehouse *" searchPlaceholder="Search warehouse by name or code" value={form.warehouseId} options={warehouseSelectOptions} disabled={saving} onChange={(event) => setField("warehouseId", event.target.value)} />
+                                <ComboboxSelect label="Supplier *" placeholder="Type to search supplier by name or code" noMatchText="No matching supplier." value={form.supplierId} options={supplierSelectOptions} disabled={saving} onChange={changeSupplier} />
+                                <ComboboxSelect label="Receiving Main Warehouse *" placeholder="Type to search warehouse by name or code" noMatchText="No matching main warehouse." value={form.warehouseId} options={warehouseSelectOptions} disabled={saving} onChange={(value) => setField("warehouseId", value)} />
                                 <Input label="Delivery Date *" type="date" required min={todayVietnamIso()} value={form.expectedDeliveryDate} disabled={saving} onChange={(event) => setField("expectedDeliveryDate", event.target.value)} />
                             </div>
                             <p className="text-xs text-slate-500">This is the agreed delivery date for the order. It will not be recalculated when submitted.</p>
@@ -269,7 +271,6 @@ export default function PurchaseOrderFormPage() {
                                 const option = productById.get(row.productId);
                                 const otherIds = new Set(form.items.filter((item) => item.clientKey !== row.clientKey).map((item) => item.productId));
                                 const selectOptions = [
-                                    { value: "", label: "-- Select Product --" },
                                     ...productOptions.filter((item) => !otherIds.has(String(item.productId))).map((item) => ({
                                         value: String(item.productId), label: `${item.productName} | Product Code: ${item.productCode}${item.supplierProductCode ? ` | Supplier Code: ${item.supplierProductCode}` : ""} (${item.baseUnit || ""})`,
                                     })),
@@ -287,7 +288,7 @@ export default function PurchaseOrderFormPage() {
                                             <Button type="button" size="sm" variant="outline" disabled={saving || form.items.length === 1} onClick={() => removeRow(row.clientKey)}>Remove Row</Button>
                                         </div>
                                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                            <SearchableSelect label="Product *" searchPlaceholder="Search product by name or code" disabled={!form.supplierId || loadingProducts || saving} value={row.productId} options={selectOptions} onChange={(event) => updateRow(row.clientKey, "productId", event.target.value)} />
+                                            <ComboboxSelect label="Product *" placeholder={!form.supplierId ? "Select a supplier first" : loadingProducts ? "Loading products..." : "Type to search product by name or code"} noMatchText="No matching product for this supplier." disabled={!form.supplierId || loadingProducts || saving} value={row.productId} options={selectOptions} onChange={(value) => { if (String(value) !== String(row.productId)) updateRow(row.clientKey, "productId", value); }} />
                                             <Input label="Ordered Quantity *" type="number" min="1" step="1" disabled={!option || saving} value={row.orderedQuantity} onChange={(event) => updateRow(row.clientKey, "orderedQuantity", event.target.value)} />
                                             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
                                                 <span className="block text-slate-500">Purchase Unit Price</span>

@@ -3,6 +3,7 @@ const definitions = [
   ["dashboard", "business/BusinessDashboardPage"],
   ["products", "businessstaff/products/ProductListPage"],
   ["categories", "businessstaff/categories/CategoryListPage"],
+  ["brands", "businessstaff/brands/BrandListPage"],
   ["products/new", "businessstaff/products/ProductFormPage"],
   ["products/import", "businessstaff/products/ProductImportPage"],
   ["products/:productId/edit", "businessstaff/products/ProductFormPage"],

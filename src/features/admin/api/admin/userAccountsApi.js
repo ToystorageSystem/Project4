@@ -283,15 +283,12 @@ export function deactivateAdminUser(userId) {
 
 // Backend nhan newPassword.
 // Khong luu mat khau vao localStorage.
-export function resetAdminUserPassword(
-  userId,
-  newPassword
-) {
+// Backend tu sinh mat khau ngau nhien va gui qua email cho user.
+export function resetAdminUserPassword(userId) {
   return apiRequest(
     `${userPath(userId)}/reset-password`,
     {
       method: "PATCH",
-      body: { newPassword },
     }
   );
 }
