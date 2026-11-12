@@ -24,6 +24,16 @@ public class StaffDailyTaskController {
         return service.myTasks(date);
     }
 
+    /** Vai tro hom nay va cac viec co the tu nhan. */
+    @GetMapping("/queue")
+    public StaffQueue queue(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return service.staffQueue(date);
+    }
+
+    /** Tu nhan mot viec trong vai tro cua minh. */
+    @PostMapping("/take")
+    public Task take(@RequestBody TakeJobRequest request) { return service.takeJob(request); }
+
     @PostMapping("/{id}/start")
     public Task start(@PathVariable Long id) { return service.start(id); }
 

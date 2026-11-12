@@ -17,7 +17,7 @@ public final class ManagerOpsDTO {
     public record TaskRequest(Long staffId, LocalDate taskDate, String taskType, String title,
                               String description, String priority, LocalTime dueTime,
                               String referenceCode, String referencePath, Integer targetQuantity,
-                              String managerNote) {}
+                              String managerNote, Boolean includePutaway) {}
 
     public record BulkTaskRequest(List<Long> staffIds, TaskRequest task) {}
 
@@ -38,10 +38,42 @@ public final class ManagerOpsDTO {
                            long inProgress, long overdue, List<Task> tasks) {}
 
     public record DayBoard(LocalDate date, long total, long completed, long inProgress, long assigned,
-                           long overdue, List<StaffDay> staff, List<Suggestion> suggestions) {}
+                           long overdue, List<StaffDay> staff) {}
 
-    public record Suggestion(String taskType, String title, String description, String referencePath,
-                             String priority, long pendingCount) {}
+    /**
+     * Mot dau viec trong ngay (hang ve, cat hang, lay hang, dong goi, hang hong, hang thieu, kiem ke...).
+     * role: vai tro trong ca duoc phep tu nhan viec nay.
+     * lockedStaffId != null: chi dung nhan vien do duoc lam (nguoi kiem hang thi phai cat hang).
+     * assignedTo: nhan vien da duoc giao / da tu nhan trong ngay.
+     */
+    public record Job(String key, String category, String role, String taskType, String title, String description,
+                      String referenceCode, String referencePath, String priority, Integer quantity,
+                      LocalDate expectedDate, Long lockedStaffId, String lockedStaffName,
+                      List<String> assignedTo, boolean taken) {}
+
+    /** FREE: ranh; BUSY: dang lam viec; LOADED: con nhieu viec chua lam. */
+    public record StaffAvailability(Long staffId, String name, String email, String status,
+                                    long openTasks, long inProgressTasks, long completedToday,
+                                    List<String> currentWork, LocalTime nextDue, List<String> roles) {}
+
+    // ================= SHIFT ROLES (phan vai tro theo ngay) =================
+    public record ShiftRequest(LocalDate date, Long staffId, List<String> roles, String note) {}
+
+    public record CopyShiftRequest(LocalDate fromDate, LocalDate toDate) {}
+
+    public record ShiftRow(Long staffId, String name, String email, List<String> roles, String note) {}
+
+    /** Man hinh nhan vien: vai tro hom nay va cac viec co the tu nhan. */
+    public record StaffQueue(LocalDate date, List<String> roles, List<Job> jobs) {}
+
+    public record TakeJobRequest(LocalDate date, String jobKey) {}
+
+    // ================= INBOUND SCHEDULE =================
+    /** Hang du kien ve kho: don mua hang (PO) cua nha cung cap hoac hang dieu chuyen den. */
+    public record Delivery(String type, Long purchaseOrderId, Long transferId, String orderCode, String supplierName,
+                           String supplierPhone, LocalDate deliveryDate, String dateSource, String note,
+                           String status, int lines, long orderedQuantity, long remainingQuantity,
+                           String receiptCode, String receiptStatus, String receivingStaff) {}
 
     // ================= PERFORMANCE =================
     public record ReviewRequest(LocalDate periodFrom, LocalDate periodTo, Integer rating,

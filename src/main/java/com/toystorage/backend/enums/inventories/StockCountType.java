@@ -24,7 +24,12 @@ public enum StockCountType {
     MID_MONTH,
 
     /*
-     * Kiểm kê cuối tháng.
+     * Kiểm kê cuối tháng (giữ lại cho dữ liệu cũ, không còn tạo mới).
      */
-    END_OF_MONTH
+    END_OF_MONTH,
+
+    /*
+     * Kiểm kê tuần đầu tháng: 5 ngày làm việc đầu tiên của tháng.
+     */
+    BEGINNING_OF_MONTH
 }

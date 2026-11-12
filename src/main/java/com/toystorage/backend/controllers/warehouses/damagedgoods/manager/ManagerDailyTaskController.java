@@ -27,6 +27,30 @@ public class ManagerDailyTaskController {
     @GetMapping("/staff")
     public List<StaffOption> staff() { return service.staff(); }
 
+    /** Dau viec trong ngay de chon va giao. */
+    @GetMapping("/jobs")
+    public List<Job> jobs(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return service.jobs(date);
+    }
+
+    /** Phan vai tro trong ngay: nhan hang, xuat hang, hang hong/thieu, kiem ke, ho tro. */
+    @GetMapping("/shifts")
+    public List<ShiftRow> shifts(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return service.shifts(date);
+    }
+
+    @PutMapping("/shifts")
+    public ShiftRow setShift(@RequestBody ShiftRequest request) { return service.setShift(request); }
+
+    @PostMapping("/shifts/copy")
+    public List<ShiftRow> copyShifts(@RequestBody CopyShiftRequest request) { return service.copyShifts(request); }
+
+    /** Nhan vien ranh / ban. */
+    @GetMapping("/availability")
+    public List<StaffAvailability> availability(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return service.availability(date);
+    }
+
     @PostMapping
     public Task create(@RequestBody TaskRequest request) { return service.create(request); }
 

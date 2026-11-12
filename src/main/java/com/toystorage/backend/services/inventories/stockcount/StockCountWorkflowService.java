@@ -209,6 +209,7 @@ public class StockCountWorkflowService {
         return count.getCountType() == StockCountType.FULL
                 || count.getCountType() == StockCountType.MID_MONTH
                 || count.getCountType() == StockCountType.END_OF_MONTH
+                || count.getCountType() == StockCountType.BEGINNING_OF_MONTH
                 || count.getScopeType() == null || "ALL".equals(count.getScopeType());
     }
 
@@ -298,7 +299,7 @@ public class StockCountWorkflowService {
     private void scope(StockCounts c, String type, String value) {
         String key = type == null ? "ALL" : type.toUpperCase(Locale.ROOT);
         if (!Set.of("ALL", "ZONE", "LOCATION", "PRODUCT").contains(key)) throw bad("Invalid scope type");
-        if (Set.of(StockCountType.FULL, StockCountType.MID_MONTH, StockCountType.END_OF_MONTH)
+        if (Set.of(StockCountType.FULL, StockCountType.MID_MONTH, StockCountType.END_OF_MONTH, StockCountType.BEGINNING_OF_MONTH)
                 .contains(c.getCountType()) && !"ALL".equals(key))
             throw bad("Full and periodic stock counts must include ALL catalog products");
         if (!key.equals("ALL") && (value == null || value.isBlank())) throw bad("Scope value is required");

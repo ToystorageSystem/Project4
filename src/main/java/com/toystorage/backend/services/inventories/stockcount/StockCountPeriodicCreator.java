@@ -37,7 +37,7 @@ public class StockCountPeriodicCreator {
         if (managers.isEmpty()) return false; // Cannot satisfy created_by NOT NULL; log is emitted by caller.
 
         String code = "SC-" + date.toString().replace("-", "") + "-W" + warehouse.getId() +
-                (type == StockCountType.MID_MONTH ? "-MID" : "-EOM");
+                (type == StockCountType.MID_MONTH ? "-MID" : type == StockCountType.BEGINNING_OF_MONTH ? "-BOM" : "-EOM");
         StockCounts c = new StockCounts();
         c.setCountCode(code); c.setStockCountsCode(code); c.setPeriodicKey(warehouse.getId() + ":" + date);
         c.setWarehouse(warehouse); c.setCountType(type); c.setScheduledDate(date);
