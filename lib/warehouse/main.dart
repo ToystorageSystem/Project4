@@ -2160,7 +2160,17 @@ class _PackingState extends State<PackingPage> {
       }
     });
     final d = dispatch;
-    if (!mounted || d == null || d['shipmentCode'] == null) return;
+    if (!mounted || d == null) return;
+    if (d['shipmentCode'] == null) {
+      // 2026-11-13: staff only submits; the warehouse manager reviews packing
+      // and that creates the trip.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Packing submitted. Waiting for the warehouse manager to review it.'),
+        ),
+      );
+      return;
+    }
     await showDialog<void>(
       context: context,
       builder: (c) => AlertDialog(

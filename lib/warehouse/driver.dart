@@ -607,7 +607,15 @@ class _DriverTripState extends State<DriverTripPage> {
                   label: const Text('Vehicle & location sharing'),
                 ),
               ],
-              if (status == 'ARRIVED') ...[
+              // 2026-11-13: at a store the store staff scans the packages and finishes
+              // package receiving; that marks the trip Delivered.
+              if (status == 'ARRIVED' && data?['toLocationType'] == 'STORE')
+                const _Notice(
+                  'Stay at the store while the staff scans every package. '
+                  'The trip becomes Delivered when the store finishes package receiving. '
+                  'Pull down to refresh.',
+                ),
+              if (status == 'ARRIVED' && data?['toLocationType'] != 'STORE') ...[
                 const _Notice(
                   'Scan each package and verify the seal. '
                   'The recipient must belong to the destination location.',
