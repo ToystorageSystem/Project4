@@ -877,7 +877,8 @@ class _TaskState extends State<TaskPage> {
   bool get canStart => [
     ['CONFIRMED', 'RECEIVING'],
     ['AVAILABLE'],
-    ['PENDING_SOURCE_CONFIRMATION'],
+    // 2026-11-13: Business submit -> CREATED; the warehouse can start picking it
+    ['CREATED', 'PENDING_SOURCE_CONFIRMATION'],
     ['PLANNED'],
   ][widget.module].contains(task['status']);
   bool get done => taskComplete(widget.module, task);
