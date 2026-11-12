@@ -118,6 +118,11 @@ public interface ProductRepository extends JpaRepository<Products, Long> {
     );
 
     // Kiem tra nhieu trang thai
+    boolean existsByBrand_IdAndStatusIn(
+            Long brandId,
+            java.util.Collection<ProductStatus> statuses
+    );
+
     boolean existsByCategory_IdAndStatusIn(
             Long categoryId,
             java.util.Collection<ProductStatus> statuses

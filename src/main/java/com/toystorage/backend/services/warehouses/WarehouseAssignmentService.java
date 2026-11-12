@@ -155,13 +155,7 @@ public class WarehouseAssignmentService {
          * Admin phải gán manager khác trước,
          * hoặc làm endpoint remove manager riêng.
          */
-        if (
-                userRoleRepository
-                        .existsByUser_IdAndRole_RoleCode(
-                                userId,
-                                managerRoleCode
-                        )
-        ) {
+        if (hasRole(userId, managerRoleCode)) {
             throw new BadRequest(
                     "Không thể bỏ phân công người quản lý bằng chức năng nhân viên"
             );
@@ -213,17 +207,11 @@ public class WarehouseAssignmentService {
         // USER MUST HAVE CORRECT MANAGER ROLE
         // =====================================================
 
-        if (
-                !userRoleRepository
-                        .existsByUser_IdAndRole_RoleCode(
-                                userId,
-                                requiredRoleCode
-                        )
-        ) {
+        if (!hasRole(userId, requiredRoleCode)) {
             throw new BadRequest(
                     warehouse.getType()
                             == WarehouseType.MAIN_WAREHOUSE
-                            ? "Người quản lý kho tổng phải có vai trò WH_MANAGER"
+                            ? "Người quản lý kho tổng phải có vai trò WAREHOUSE_MANAGER"
                             : "Người quản lý cửa hàng phải có vai trò STORE_MANAGER"
             );
         }
@@ -249,10 +237,12 @@ public class WarehouseAssignmentService {
 
         List<Users> currentManagers =
                 userRepository
-                        .findWarehouseUsersByRoleCode(
-                                warehouseId,
-                                requiredRoleCode
-                        );
+                        .findByWarehouse_IdOrderByIdAsc(warehouseId)
+                        .stream()
+                        .filter(user ->
+                                hasRole(user.getId(), requiredRoleCode)
+                        )
+                        .toList();
 
         /*
          * Kiểm tra nếu người dùng đã là manager.
@@ -422,6 +412,44 @@ public class WarehouseAssignmentService {
     }
 
     // =========================================================
+    // ROLE MATCHING
+    // =========================================================
+
+    /*
+     * So khớp role code không phân biệt kiểu đặt tên:
+     * "ROLE-STORE-MANAGER", "ROLE_STORE_MANAGER", "STORE_MANAGER"
+     * đều được coi là "STORE_MANAGER" (giống normalizeRole ở frontend).
+     *
+     * DB dang luu "WAREHOUSE_MANAGER"/"WAREHOUSE_STAFF", con code dung
+     * "ROLE-WH-MANAGER"/"ROLE-WH-STAFF" => coi WAREHOUSE_* va WH_* la mot.
+     */
+    private static String normalizeRole(String code) {
+        if (code == null) {
+            return "";
+        }
+        return code
+                .trim()
+                .toUpperCase()
+                .replaceFirst("^ROLE[-_]", "")
+                .replace('-', '_')
+                .replaceFirst("^WAREHOUSE_", "WH_");
+    }
+
+    private boolean hasRole(Long userId, String roleCode) {
+        String wanted = normalizeRole(roleCode);
+
+        return userRoleRepository
+                .findByUser_Id(userId)
+                .stream()
+                .filter(userRole -> userRole.getRole() != null)
+                .anyMatch(userRole ->
+                        normalizeRole(
+                                userRole.getRole().getRoleCode()
+                        ).equals(wanted)
+                );
+    }
+
+    // =========================================================
     // ENTITY -> RESPONSE
     // =========================================================
 
@@ -447,8 +475,14 @@ public class WarehouseAssignmentService {
                         )
                         .toList();
 
+        String wanted = normalizeRole(managerRoleCode);
+
         boolean manager =
-                roleCodes.contains(managerRoleCode);
+                roleCodes
+                        .stream()
+                        .anyMatch(code ->
+                                normalizeRole(code).equals(wanted)
+                        );
 
         return WarehouseEmployeeResponse
                 .builder()

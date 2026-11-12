@@ -1,7 +1,6 @@
 package com.toystorage.backend.controllers.users;
 
 import com.toystorage.backend.dto.request.users.CreateUserRequest;
-import com.toystorage.backend.dto.request.users.ResetPasswordRequest;
 import com.toystorage.backend.dto.request.users.UpdateUserRequest;
 import com.toystorage.backend.dto.request.users.UpdateUserRolesRequest;
 
@@ -420,17 +419,13 @@ public class UserController {
     public ResponseEntity<Void> resetPassword(
 
             @PathVariable
-            Long userId,
-
-            @Valid
-            @RequestBody
-            ResetPasswordRequest request
+            Long userId
     ) {
 
+        // Backend tu sinh mat khau ngau nhien va gui qua email cho user.
         userManagementService
                 .resetPassword(
-                        userId,
-                        request
+                        userId
                 );
 
 

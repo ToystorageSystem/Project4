@@ -2,7 +2,6 @@ package com.toystorage.backend.services.users;
 
 import com.toystorage.backend.services.auth.PasswordResetMailer;
 import com.toystorage.backend.dto.request.users.CreateUserRequest;
-import com.toystorage.backend.dto.request.users.ResetPasswordRequest;
 import com.toystorage.backend.dto.request.users.UpdateUserRequest;
 import com.toystorage.backend.dto.request.users.UpdateUserRolesRequest;
 import com.toystorage.backend.repository.warehouses.business.WarehouseRepository;
@@ -43,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1112,13 +1112,38 @@ public class UserManagementService {
     // RESET PASSWORD
     // =========================================================
 
+    private static final SecureRandom PASSWORD_RANDOM =
+            new SecureRandom();
+
+    // Mat khau tam: 6 chu so, moi so tu 1 den 9.
+    private static final String PASSWORD_CHARS =
+            "123456789";
+
+    private static final int GENERATED_PASSWORD_LENGTH = 6;
+
+    private static String generateTemporaryPassword() {
+        StringBuilder sb =
+                new StringBuilder(GENERATED_PASSWORD_LENGTH);
+
+        for (int i = 0; i < GENERATED_PASSWORD_LENGTH; i++) {
+            sb.append(
+                    PASSWORD_CHARS.charAt(
+                            PASSWORD_RANDOM.nextInt(PASSWORD_CHARS.length())
+                    )
+            );
+        }
+
+        return sb.toString();
+    }
+
     @Transactional
     public void resetPassword(
 
-            Long userId,
-
-            ResetPasswordRequest request
+            Long userId
     ) {
+
+        String temporaryPassword =
+                generateTemporaryPassword();
 
         Users user =
                 getUserEntity(
@@ -1145,7 +1170,7 @@ public class UserManagementService {
 
         String encodedPassword =
                 passwordEncoder.encode(
-                        request.getNewPassword()
+                        temporaryPassword
                 );
 
 
@@ -1188,7 +1213,7 @@ public class UserManagementService {
                 newValue
         );
         userRepository.flush();
-        credentialMailer.sendCredentials(savedUser.getEmail(), request.getNewPassword(), false);
+        credentialMailer.sendCredentials(savedUser.getEmail(), temporaryPassword, false);
 
     }
 

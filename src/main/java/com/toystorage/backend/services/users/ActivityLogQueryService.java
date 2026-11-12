@@ -16,9 +16,13 @@ import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.repository.auth.UserRoleRepository;
 import com.toystorage.backend.repository.users.ActivityLogRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
 
 import lombok.RequiredArgsConstructor;
+
+import org.hibernate.Hibernate;
+import org.hibernate.ObjectNotFoundException;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -137,8 +141,8 @@ public class ActivityLogQueryService {
                 .stream()
                 .map(log -> {
 
-                    // Lay nguoi thuc hien
-                    Users actor = log.getUser();
+                    // Lay nguoi thuc hien (null neu user da bi xoa)
+                    Users actor = resolveActor(log);
 
                     List<String> actorRoles;
 
@@ -425,7 +429,7 @@ public class ActivityLogQueryService {
             ActivityLogs log
     ) {
 
-        Users actor = log.getUser();
+        Users actor = resolveActor(log);
 
         List<String> actorRoles =
                 getActorRoles(actor);
@@ -450,7 +454,13 @@ public class ActivityLogQueryService {
             List<String> actorRoles
     ) {
 
-        Users actor = log.getUser();
+        Users actor = resolveActor(log);
+
+        // ID goc trong log (van con ke ca khi user da bi xoa)
+        Long rawActorId =
+                log.getUser() != null
+                        ? log.getUser().getId()
+                        : null;
 
         return ActivityLogResponse
                 .builder()
@@ -472,9 +482,7 @@ public class ActivityLogQueryService {
                 // =================================================
 
                 .actorUserId(
-                        actor != null
-                                ? actor.getId()
-                                : null
+                        rawActorId
                 )
 
                 .actorUserCode(
@@ -486,7 +494,9 @@ public class ActivityLogQueryService {
                 .actorName(
                         actor != null
                                 ? actor.getName()
-                                : null
+                                : rawActorId != null
+                                        ? "(Người dùng đã bị xoá)"
+                                        : null
                 )
 
                 .actorEmail(
@@ -556,6 +566,32 @@ public class ActivityLogQueryService {
                 )
 
                 .build();
+    }
+
+    // =========================================================
+    // RESOLVE ACTOR
+    //
+    // Tra ve user thuc hien log, hoac null neu user do
+    // khong con trong DB (vd: da bi xoa truc tiep trong DB).
+    // Tranh loi "Unable to find Users with id ...".
+    // =========================================================
+
+    private Users resolveActor(
+            ActivityLogs log
+    ) {
+
+        Users actor = log.getUser();
+
+        if (actor == null) {
+            return null;
+        }
+
+        try {
+            Hibernate.initialize(actor);
+            return actor;
+        } catch (EntityNotFoundException | ObjectNotFoundException e) {
+            return null;
+        }
     }
 
     // =========================================================
