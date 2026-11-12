@@ -106,7 +106,7 @@ export default function ProductImportPage() {
                             <FileSpreadsheet className="mt-1 shrink-0 text-orange-600" size={23} />
                             <div>
                                 <h2 className="font-semibold text-slate-900">Product & Supplier Excel Template</h2>
-                                <p className="mt-1 text-sm text-slate-500">Only one visible worksheet. Category and Supplier have dropdown suggestions; you can type a new supplier name.</p>
+                                <p className="mt-1 text-sm text-slate-500">Only one visible worksheet. Category, Supplier and Brand have dropdown suggestions; you can type a new supplier name.</p>
                             </div>
                         </div>
                         <a href={TEMPLATE} download className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700">
@@ -118,6 +118,7 @@ export default function ProductImportPage() {
                         <p><strong className="text-slate-800">Supplier:</strong> choose an existing name or type a new one.</p>
                         <p><strong className="text-slate-800">Same Barcode:</strong> allowed for different suppliers.</p>
                         <p><strong className="text-slate-800">Purchase Price / MOQ:</strong> enter on the same row.</p>
+                        <p><strong className="text-slate-800">Brand (optional):</strong> choose an active brand from the list or leave it empty. A new brand must be created in Brands first.</p>
                     </div>
                 </Card>
 
@@ -175,9 +176,9 @@ export default function ProductImportPage() {
                             </div>
                         </div>
                         <div className="mt-4 max-h-[450px] overflow-auto rounded-xl border border-slate-200">
-                            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                            <table className="w-full min-w-[1050px] border-collapse text-left text-sm">
                                 <thead className="sticky top-0 bg-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                    <tr>{["Row", "Product", "Barcode", "Category", "Supplier", "Purchase / Selling", "MOQ", "Result"].map((label) => <th key={label} className="whitespace-nowrap px-3 py-3">{label}</th>)}</tr>
+                                    <tr>{["Row", "Product", "Barcode", "Category", "Brand", "Supplier", "Purchase / Selling", "MOQ", "Result"].map((label) => <th key={label} className="whitespace-nowrap px-3 py-3">{label}</th>)}</tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {preview.rows.map((item) => (
@@ -186,6 +187,7 @@ export default function ProductImportPage() {
                                             <td className="px-3 py-3 font-medium">{cell(item.name)}</td>
                                             <td className="px-3 py-3 font-mono text-xs">{cell(item.barcode)}</td>
                                             <td className="px-3 py-3">{cell(item.categoryName)}</td>
+                                            <td className="px-3 py-3">{cell(item.brandName)}</td>
                                             <td className="px-3 py-3"><div>{cell(item.supplierName)}</div><div className="text-xs text-slate-500">{cell(item.supplierPhone)}</div></td>
                                             <td className="px-3 py-3"><div>Buy: {money(item.purchasePrice)}</div><div className="text-slate-500">Sell: {money(item.sellingPrice)}</div></td>
                                             <td className="px-3 py-3">{cell(item.minimumOrderQuantity)}</td>
