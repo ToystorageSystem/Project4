@@ -53,6 +53,7 @@ public class StoreSaleService {
     private final StoreStockTransactionRepository transactionRepository;
     private final StoreSaleMapper mapper;
     private final SalesOrderMirrorService salesOrderMirrorService;
+    private final StoreInventorySyncService storeInventorySyncService;
 
     /**
      * POST /api/store/sales
@@ -123,6 +124,11 @@ public class StoreSaleService {
 
         // 6. copy to sales_orders (COMPLETED) so Business revenue / analytics see store sales
         salesOrderMirrorService.mirror(sale, seller);
+
+        // 7. copy the new store totals to inventory_balances (reports / low-stock alerts)
+        for (StoreSaleItems item : sale.getItems()) {
+            storeInventorySyncService.sync(stocks.get(item.getProduct().getId()));
+        }
 
         return mapper.toDetail(sale);   // stock rows are managed -> updated at commit (@Version checked)
     }

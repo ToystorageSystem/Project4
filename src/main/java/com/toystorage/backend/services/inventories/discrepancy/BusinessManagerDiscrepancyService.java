@@ -25,6 +25,7 @@ import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepo
 import com.toystorage.backend.repository.receipts.receiving.GoodsReceiptRepository;
 import com.toystorage.backend.repository.receipts.receiving.ReceiptInspectionRepository;
 import com.toystorage.backend.repository.receipts.store.StoreReceiptRepository;
+import com.toystorage.backend.services.stores.StoreTransferResolutionService;
 import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepository;
 import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
 import com.toystorage.backend.dto.request.inventories.discrepancy.BusinessManagerResolveDiscrepancyItemRequest;
@@ -58,6 +59,9 @@ public class BusinessManagerDiscrepancyService {
 
     private static final String BUSINESS_MANAGER =
             "BUSINESS_MANAGER";
+
+    private final StoreTransferResolutionService
+            storeTransferResolutionService;
 
     private final DiscrepancyReportRepository
             discrepancyReportRepository;
@@ -345,6 +349,18 @@ public class BusinessManagerDiscrepancyService {
         DiscrepancyReports saved =
                 discrepancyReportRepository
                         .save(report);
+
+        /*
+         * Last open report of a store receiving -> transfer COMPLETED.
+         */
+        if (saved.getReferenceType()
+                == DiscrepancyReferenceType.STOCK_TRANSFER) {
+            discrepancyReportRepository.flush();
+            storeTransferResolutionService
+                    .completeTransferIfResolved(
+                            saved.getReferenceId()
+                    );
+        }
 
 
         /*
@@ -1344,14 +1360,11 @@ public class BusinessManagerDiscrepancyService {
                     );
 
 
-            if (transferItem == null) {
-
-                throw new NotFound(
-                        "Stock transfer item not found "
-                                + "for product: "
-                                + productId
-                );
-            }
+            /*
+             * transferItem == null: product found in the store
+             * but not on the transfer (surplus, expected 0).
+             * Only the store receipt line is updated.
+             */
 
 
             StoreReceiptItems storeReceiptItem =
@@ -1395,24 +1408,30 @@ public class BusinessManagerDiscrepancyService {
             /*
              * Đồng bộ Stock Transfer.
              */
-            transferItem.setReceivedQuantity(
-                    finalQuantity
-            );
+            if (transferItem != null) {
 
+                transferItem.setReceivedQuantity(
+                        finalQuantity
+                );
 
-            transferItem
-                    .recalculateDiscrepancy();
+                transferItem
+                        .recalculateDiscrepancy();
 
-
-            stockTransferItemRepository
-                    .save(
-                            transferItem
-                    );
+                stockTransferItemRepository
+                        .save(
+                                transferItem
+                        );
+            }
 
 
             /*
              * Đồng bộ Store Receipt.
              */
+            int previousActual =
+                    storeReceiptItem.getActualQuantity() == null
+                            ? 0
+                            : storeReceiptItem.getActualQuantity();
+
             storeReceiptItem.setActualQuantity(
                     finalQuantity
             );
@@ -1425,6 +1444,18 @@ public class BusinessManagerDiscrepancyService {
             storeReceiptItemRepository
                     .save(
                             storeReceiptItem
+                    );
+
+            /*
+             * Store already added the stock (receipt CONFIRMED):
+             * correct the backroom by the changed quantity.
+             */
+            storeTransferResolutionService
+                    .applyFinalQuantityChange(
+                            storeReceipt,
+                            storeReceiptItem.getProduct(),
+                            finalQuantity - previousActual,
+                            validationService.getCurrentUser()
                     );
         }
     }

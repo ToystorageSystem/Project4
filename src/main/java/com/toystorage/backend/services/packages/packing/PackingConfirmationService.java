@@ -219,6 +219,15 @@ public class PackingConfirmationService {
             );
         }
 
+        /*
+         * Option B: staff must submit the packing result first.
+         */
+        if (transfer.getPackingCompletedAt() == null) {
+            throw new BadRequest(
+                    "Warehouse staff has not submitted the packing result yet"
+            );
+        }
+
         List<PackageTransferItem> transferPackages =
                 validationService
                         .getTransferPackages(

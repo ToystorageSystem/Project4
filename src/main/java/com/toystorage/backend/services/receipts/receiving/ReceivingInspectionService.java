@@ -797,14 +797,27 @@ public class ReceivingInspectionService {
 
 
         /*
-         * Nghiep vu moi: kiem xong la hoan thanh, khong can Manager duyet.
-         * Hang dat duoc cong ton + tao putaway cho chinh nguoi kiem;
-         * hang hong vao khu hang hong theo lo; thieu/hong/du vao bien ban su co.
+         * Quy tac chung (2026-11-13):
+         * - khong thieu / du / hong -> kiem xong la hoan thanh (cong ton + putaway), khong can Manager;
+         * - co lech -> dung o INSPECTED, Warehouse Manager xac nhan (confirm-receiving)
+         *   hoac yeu cau kiem lai (request-reinspection).
          */
-        receivingConfirmationService.completeAfterInspection(
-                receiptId,
-                staff
-        );
+        boolean hasDiscrepancy =
+                goodsReceiptItemRepository
+                        .findByGoodsReceiptId(receiptId)
+                        .stream()
+                        .anyMatch(item ->
+                                positive(item.getShortageQuantity())
+                                        || positive(item.getSurplusQuantity())
+                                        || positive(item.getDamagedQuantity())
+                        );
+
+        if (!hasDiscrepancy) {
+            receivingConfirmationService.completeAfterInspection(
+                    receiptId,
+                    staff
+            );
+        }
 
         return queryService
                 .buildResponse(
@@ -899,4 +912,8 @@ public class ReceivingInspectionService {
                 .toUpperCase();
     }
 
+
+    private static boolean positive(Integer value) {
+        return value != null && value > 0;
+    }
 }

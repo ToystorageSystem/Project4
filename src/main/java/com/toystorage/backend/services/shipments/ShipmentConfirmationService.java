@@ -68,6 +68,9 @@ public class ShipmentConfirmationService {
     private final ShipmentConfirmationMapper
             mapper;
 
+    private final TransferShipmentInventoryService
+            transferShipmentInventoryService;
+
 
     // =====================================================
     // VIEW SHIPMENT
@@ -286,6 +289,13 @@ public class ShipmentConfirmationService {
             packageRepository.save(pack);
         }
 
+
+        /*
+         * Goods leave the warehouse: shipped_quantity + deduct source stock.
+         */
+        transferShipmentInventoryService.shipFromSource(
+                transfer
+        );
 
         /*
          * Transfer -> SHIPPED

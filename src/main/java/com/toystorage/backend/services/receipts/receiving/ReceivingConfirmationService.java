@@ -54,6 +54,8 @@ public class ReceivingConfirmationService {
 
     private final PutawayTaskService putawayTaskService;
 
+    private final PurchaseOrderReceivingService purchaseOrderReceivingService;
+
     private final WarehouseLocationService warehouseLocationService;
 
     private final ReceivingConfirmationMapper
@@ -254,6 +256,9 @@ public class ReceivingConfirmationService {
         LocalDateTime now = LocalDateTime.now();
         receipt.setInspectionConfirmedBy(actor);
         receipt.setInspectionConfirmedAt(now);
+        // PO learns what arrived: received_quantity + PARTIALLY_RECEIVED / COMPLETED (2026-11-13)
+        purchaseOrderReceivingService.applyCompletedReceipt(receipt, items);
+
         receipt.setStatus(GoodsReceiptStatus.COMPLETED);
         receipt.setUpdatedAt(now);
         goodsReceiptRepository.save(receipt);

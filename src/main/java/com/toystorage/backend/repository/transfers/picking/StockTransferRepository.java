@@ -28,6 +28,7 @@ public interface StockTransferRepository
         FROM StockTransfer st
         WHERE st.fromWarehouse.id = :warehouseId
           AND st.status = :status
+          AND st.packingCompletedAt IS NOT NULL
           AND (
                 :keyword = ''
                 OR LOWER(st.transferCode)

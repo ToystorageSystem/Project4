@@ -89,6 +89,18 @@ public class StoreStocks {
         return s;
     }
 
+    /**
+     * Correction after Business resolves a receiving discrepancy (final quantity changed).
+     * delta may be negative; the backroom can not go below 0.
+     */
+    public void adjustBackroom(int delta) {
+        if (this.backroomQuantity + delta < 0) {
+            throw new IllegalStateException("Backroom quantity can not go below 0");
+        }
+        this.backroomQuantity += delta;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     /** goods received from the warehouse go to the backroom first */
     public void addToBackroom(int quantity) {
         if (quantity < 0) {

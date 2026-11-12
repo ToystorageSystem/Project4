@@ -517,6 +517,18 @@ public class DeliveryTripService {
 
 
         /*
+         * 2026-11-13: store deliveries become DELIVERED when the store
+         * finishes package receiving (F1), not by the driver.
+         */
+        if (delivery.getToWarehouse() != null
+                && delivery.getToWarehouse().getType()
+                == com.toystorage.backend.enums.warehouses.WarehouseType.STORE) {
+            throw new BadRequest(
+                    "Deliveries to a store are completed by the store: it scans the packages and finishes package receiving"
+            );
+        }
+
+        /*
          * Phải ARRIVED trước khi hoàn tất giao hàng.
          */
         if (delivery.getDeliveryStatus()

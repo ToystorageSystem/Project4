@@ -44,11 +44,12 @@ public record StoreManifestData(
         if (receipts.isEmpty()) {
             return StoreReceivingStatus.NOT_STARTED;
         }
-        if (receipts.stream().allMatch(r -> r.getStatus() == StoreReceiptStatus.COMPLETED)) {
+        // CONFIRMED = stock already added, discrepancies waiting for Business -> done for the store
+        if (receipts.stream().allMatch(r -> r.getStatus() == StoreReceiptStatus.COMPLETED
+                || r.getStatus() == StoreReceiptStatus.CONFIRMED)) {
             return StoreReceivingStatus.COMPLETED;
         }
-        if (receipts.stream().allMatch(r -> r.getStatus() == StoreReceiptStatus.INSPECTED
-                || r.getStatus() == StoreReceiptStatus.CONFIRMED)) {
+        if (receipts.stream().allMatch(r -> r.getStatus() == StoreReceiptStatus.INSPECTED)) {
             return StoreReceivingStatus.INSPECTED;
         }
         if (receipts.stream().allMatch(r -> r.getReceivedAt() != null)) {

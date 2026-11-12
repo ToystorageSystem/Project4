@@ -17,5 +17,14 @@ public interface StoreShelfRepository extends JpaRepository<StoreShelves, Long> 
 
     /** a shelf only if it belongs to this store (other store -> empty -> 404) */
     Optional<StoreShelves> findByIdAndStoreId(Long id, Long storeId);
+
+    /** Store Manager screen: every shelf (ACTIVE + INACTIVE) */
+    List<StoreShelves> findByStoreIdOrderByNameAsc(Long storeId);
+
+    boolean existsByStoreIdAndNameIgnoreCase(Long storeId, String name);
+
+    boolean existsByStoreIdAndNameIgnoreCaseAndIdNot(Long storeId, String name, Long id);
+
+    boolean existsByCode(String code);
 }
 

@@ -18,7 +18,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * A shelf in a store. Table created by hand (store_tables_create.sql).
- * Shelves are seeded – this phase has no create/update/delete API.
+ * Store Manager creates / renames / deactivates shelves (StoreShelfAdminService, 2026-11-13).
+ * No delete: a shelf is kept for the stock history.
  */
 @Entity
 @Table(name = "store_shelves")
@@ -55,5 +56,29 @@ public class StoreShelves {
 
     public boolean isActive() {
         return status == ShelfStatus.ACTIVE;
+    }
+
+    public static StoreShelves create(Long storeId, String code, String name, String description) {
+        StoreShelves shelf = new StoreShelves();
+        LocalDateTime now = LocalDateTime.now();
+        shelf.storeId = storeId;
+        shelf.code = code;
+        shelf.name = name;
+        shelf.description = description;
+        shelf.status = ShelfStatus.ACTIVE;
+        shelf.createdAt = now;
+        shelf.updatedAt = now;
+        return shelf;
+    }
+
+    public void rename(String name, String description) {
+        this.name = name;
+        this.description = description;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void changeStatus(ShelfStatus status) {
+        this.status = status;
+        this.updatedAt = LocalDateTime.now();
     }
 }

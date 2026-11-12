@@ -24,6 +24,7 @@ import com.toystorage.backend.dto.response.receipts.store.ManifestSummaryRespons
 import com.toystorage.backend.dto.response.receipts.store.PackageCheckDetailResponse;
 import com.toystorage.backend.dto.response.receipts.store.ReceivingResultResponse;
 import com.toystorage.backend.entity.deliveries.Deliveries;
+import com.toystorage.backend.entity.inventories.DiscrepancyItems;
 import com.toystorage.backend.entity.inventories.DiscrepancyReports;
 import com.toystorage.backend.entity.packages.PackageItems;
 import com.toystorage.backend.entity.packages.Packages;
@@ -54,6 +55,7 @@ import com.toystorage.backend.enums.transfers.TransferStatus;
 import com.toystorage.backend.exceptions.BadRequest;
 import com.toystorage.backend.exceptions.NotFound;
 import com.toystorage.backend.mapper.receipts.store.StoreReceivingMapper;
+import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyItemRepository;
 import com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyReportRepository;
 import com.toystorage.backend.repository.receipts.store.PackageReceivingCheckRepository;
 import com.toystorage.backend.repository.receipts.store.StorePackageItemCheckRepository;
@@ -64,6 +66,7 @@ import com.toystorage.backend.repository.receipts.store.StoreStockRepository;
 import com.toystorage.backend.repository.receipts.store.StoreStockTransactionRepository;
 import com.toystorage.backend.services.inventories.discrepancy.DiscrepancySeverityPolicy;
 import com.toystorage.backend.services.stores.StoreAccessService;
+import com.toystorage.backend.services.stores.StoreInventorySyncService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -95,6 +98,8 @@ public class StoreReceivingService {
     private final StoreStockTransactionRepository stockTransactionRepository;
     private final DiscrepancyReportRepository discrepancyReportRepository;
     private final DiscrepancySeverityPolicy severityPolicy;
+    private final DiscrepancyItemRepository discrepancyItemRepository;
+    private final StoreInventorySyncService storeInventorySyncService;
 
     // =====================================================================
     // READ
@@ -201,6 +206,14 @@ public class StoreReceivingService {
         for (StoreReceipts receipt : data.receipts()) {
             receipt.setReceivedAt(now);
             receipt.setReceivedBy(user);
+        }
+
+        // finishing F1 with the driver present = handover signed -> trip DELIVERED (2026-11-13)
+        Deliveries delivery = data.delivery();
+        if (delivery.getDeliveryStatus() == DeliveryStatus.ARRIVED) {
+            delivery.setDeliveryStatus(DeliveryStatus.DELIVERED);
+            delivery.setDeliveredAt(now);
+            delivery.setUpdatedAt(now);
         }
         return mapper.toDetail(loader.load(data.delivery()));
     }
@@ -368,6 +381,12 @@ public class StoreReceivingService {
 
         data.receipts().forEach(r -> r.setStatus(StoreReceiptStatus.INSPECTED));
 
+        // common rule (2026-11-13): nothing missing / extra / damaged -> completed without the manager
+        if (items.stream().noneMatch(StoreReceivingService::hasDiscrepancy)) {
+            applyConfirm(data, user.getWarehouse().getId(), user, null, items);
+            return mapper.toResult(data.manifest().getManifestCode(), StoreReceivingStatus.COMPLETED,
+                    items, List.of());
+        }
         return mapper.toResult(data.manifest().getManifestCode(), StoreReceivingStatus.INSPECTED,
                 items, List.of());
     }
@@ -391,10 +410,25 @@ public class StoreReceivingService {
             throw new BadRequest("Inspection is not finished");
         }
 
-        LocalDateTime now = LocalDateTime.now();
         String note = request == null ? null : normalize(request.note());
         List<Long> receiptIds = data.receipts().stream().map(StoreReceipts::getId).toList();
         List<StoreReceiptItems> items = receiptItemRepository.findByStoreReceipt_IdIn(receiptIds);
+
+        List<String> reportCodes = applyConfirm(data, storeId, manager, note, items);
+        return mapper.toResult(data.manifest().getManifestCode(), StoreReceivingStatus.COMPLETED,
+                items, reportCodes);
+    }
+
+    /**
+     * Adds the stock and closes the receipts. Used by the manager's confirm and by finish-inspection
+     * when there is no discrepancy.
+     * - transfer without discrepancy -> COMPLETED, receipt COMPLETED
+     * - transfer with discrepancy -> RECEIVED, receipt CONFIRMED, reports sent to Business;
+     *   Business resolving the last report completes the transfer.
+     */
+    private List<String> applyConfirm(StoreManifestData data, Long storeId, Users manager, String note,
+                                      List<StoreReceiptItems> items) {
+        LocalDateTime now = LocalDateTime.now();
 
         // ---- 1. store stock: backroom += actual - damaged, + RECEIVE history ----
         for (StoreReceiptItems item : items) {
@@ -406,6 +440,7 @@ public class StoreReceivingService {
                     .orElseGet(() -> StoreStocks.newRow(storeId, item.getProduct()));
             stock.addToBackroom(accepted);
             stockRepository.save(stock);
+            storeInventorySyncService.sync(stock);              // total -> inventory_balances
 
             StoreReceipts receipt = item.getStoreReceipt();
             stockTransactionRepository.save(StoreStockTransactions.builder()
@@ -438,8 +473,14 @@ public class StoreReceivingService {
                 sti.setSurplusQuantity(item.getSurplusQuantity());
             }
         }
+        Set<Long> transfersWithDiscrepancy = items.stream()
+                .filter(StoreReceivingService::hasDiscrepancy)
+                .map(i -> i.getStoreReceipt().getStockTransfer().getId())
+                .collect(Collectors.toSet());
         for (StockTransfer transfer : data.transfers()) {
-            transfer.setStatus(TransferStatus.RECEIVED);
+            transfer.setStatus(transfersWithDiscrepancy.contains(transfer.getId())
+                    ? TransferStatus.RECEIVED          // waits for Business to resolve the reports
+                    : TransferStatus.COMPLETED);
             transfer.setReceivedAt(now);
         }
 
@@ -451,14 +492,23 @@ public class StoreReceivingService {
             addReport(reportCodes, item, DiscrepancyType.DAMAGED, item.getDamagedQuantity(), manager, note);
         }
 
-        // ---- 4. receipts done ----
+        // ---- 4. receipts done (CONFIRMED = Business still has to resolve the reports) ----
         for (StoreReceipts receipt : data.receipts()) {
-            receipt.setStatus(StoreReceiptStatus.COMPLETED);
+            receipt.setStatus(transfersWithDiscrepancy.contains(receipt.getStockTransfer().getId())
+                    ? StoreReceiptStatus.CONFIRMED
+                    : StoreReceiptStatus.COMPLETED);
             receipt.setConfirmedBy(manager);
         }
+        return reportCodes;
+    }
 
-        return mapper.toResult(data.manifest().getManifestCode(), StoreReceivingStatus.COMPLETED,
-                items, reportCodes);
+    private static boolean hasDiscrepancy(StoreReceiptItems item) {
+        return positive(item.getShortageQuantity()) || positive(item.getSurplusQuantity())
+                || positive(item.getDamagedQuantity());
+    }
+
+    private static boolean positive(Integer value) {
+        return value != null && value > 0;
     }
 
     // =====================================================================
@@ -482,20 +532,32 @@ public class StoreReceivingService {
                 + receipt.getStoreReceiptsCode() + ", transfer " + receipt.getStockTransfer().getTransferCode()
                 + (managerNote == null ? "" : ". Note: " + managerNote);
 
-        discrepancyReportRepository.save(DiscrepancyReports.builder()
+        // Business resolves store receiving discrepancies as STOCK_TRANSFER reports (BusinessManagerDiscrepancyService)
+        DiscrepancyReports report = discrepancyReportRepository.save(DiscrepancyReports.builder()
                 .reportCode(code)
                 .discrepancyReportsCode(code)
-                .referenceType(DiscrepancyReferenceType.STORE_RECEIPT)
-                .referenceId(receipt.getId())
+                .referenceType(DiscrepancyReferenceType.STOCK_TRANSFER)
+                .referenceId(receipt.getStockTransfer().getId())
                 .productId(item.getProduct().getId())
                 .warehouse(receipt.getStore())
                 .discrepancyType(type)
                 .severity(severity)
                 .blocking(severityPolicy.isBlocking(severity))
-                .status(DiscrepancyStatus.OPEN)
+                .status(DiscrepancyStatus.INVESTIGATING)
                 .reportedBy(reporter)
-                .responsibleParty("WAREHOUSE_MANAGER")
+                .responsibleParty("BUSINESS_MANAGER")
                 .description(description)
+                .build());
+
+        int expected = item.getExpectedQuantity() == null ? 0 : item.getExpectedQuantity();
+        int actual = item.getActualQuantity() == null ? 0 : item.getActualQuantity();
+        discrepancyItemRepository.save(DiscrepancyItems.builder()
+                .discrepancyReport(report)
+                .product(item.getProduct())
+                .expectedQuantity(expected)
+                .actualQuantity(actual)
+                .differenceQuantity(type == DiscrepancyType.DAMAGED ? -quantity : actual - expected)
+                .discrepancyItemsCode("DI-" + code.substring(3))
                 .build());
         codes.add(code);
     }

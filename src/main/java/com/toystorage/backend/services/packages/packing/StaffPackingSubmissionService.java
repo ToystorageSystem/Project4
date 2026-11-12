@@ -20,7 +20,6 @@ import com.toystorage.backend.repository.packages.packing.StaffPackageTransferIt
 
 import com.toystorage.backend.repository.transfers.picking.StockTransferItemRepository;
 import com.toystorage.backend.repository.transfers.picking.StockTransferRepository;
-import com.toystorage.backend.services.deliveries.assignment.OutboundDispatchService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -58,8 +57,6 @@ public class StaffPackingSubmissionService {
     private final StaffPackingSubmissionMapper
             mapper;
 
-    private final OutboundDispatchService
-            outboundDispatchService;
 
 
     /** List the actual PACKING queue for the authenticated source warehouse. */
@@ -72,7 +69,9 @@ public class StaffPackingSubmissionService {
         return stockTransferRepository
                 .findByFromWarehouseIdAndStatusInOrderByCreatedAtDesc(
                         staff.getWarehouse().getId(), List.of(TransferStatus.PACKING))
-                .stream().map(transfer -> StaffPackingSubmissionResponse.builder()
+                .stream()
+                // already submitted to the manager -> no longer in the staff queue
+                .filter(transfer -> transfer.getPackingCompletedAt() == null).map(transfer -> StaffPackingSubmissionResponse.builder()
                         .transferId(transfer.getId())
                         .transferCode(transfer.getTransferCode())
                         .status(transfer.getStatus().name())
@@ -178,62 +177,28 @@ public class StaffPackingSubmissionService {
 
 
         /*
-         * Staff chỉ gửi kết quả đóng hàng.
-         *
-         * Đây KHÔNG phải xác nhận xuất kho.
+         * Option B (2026-11-13): staff only SUBMITS the packing result.
+         * The transfer stays PACKING; packing_completed_at marks it "waiting for manager review".
+         * The Warehouse Manager confirms packing -> PACKED + manifest + delivery trip + driver.
+         * No inventory change, no SHIPPED, packages not CHECKED here.
          */
-        transfer.setStatus(
-                TransferStatus.PACKED
-        );
-
-
         transfer.setPackingCompletedBy(
                 staff
         );
-
-
         transfer.setPackingCompletedAt(
                 LocalDateTime.now()
         );
-
-
         transfer.setUpdatedAt(
                 LocalDateTime.now()
         );
-
-
         stockTransferRepository
                 .save(
                         transfer
                 );
-
-
-        /*
-         * Không chỉnh inventory.
-         * Không chuyển SHIPPED.
-         * Không CHECKED package.
-         *
-         * Warehouse Manager xử lý bước sau.
-         */
-        /*
-         * Packing finished = ready to ship: manifest + delivery trip are created
-         * and the nearest available driver is assigned automatically.
-         */
-        OutboundDispatchService.DispatchResult dispatch =
-                outboundDispatchService.dispatch(
-                        transfer,
-                        staff
-                );
-
         StaffPackingSubmissionResponse response =
                 buildResponse(
                         transfer
                 );
-
-        response.setShipmentCode(dispatch.shipmentCode());
-        response.setManifestCode(dispatch.manifestCode());
-        response.setDeliveryStatus(dispatch.status());
-        response.setDriverName(dispatch.driverName());
 
         return response;
     }

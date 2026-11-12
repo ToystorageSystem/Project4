@@ -1,5 +1,10 @@
 package com.toystorage.backend.controllers.stores;
 
+import com.toystorage.backend.dto.request.stores.ShelfRequest;
+import com.toystorage.backend.dto.request.stores.ShelfStatusRequest;
+import com.toystorage.backend.dto.response.stores.ShelfAdminItem;
+import com.toystorage.backend.services.stores.StoreShelfAdminService;
+import org.springframework.web.bind.annotation.PatchMapping;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +48,7 @@ import lombok.RequiredArgsConstructor;
 public class StoreShelfController {
 
     private final StoreShelfService shelfService;
+    private final StoreShelfAdminService shelfAdminService;
 
     @GetMapping("/shelves")
     public List<ShelfSummary> listShelves(@AuthenticationPrincipal CustomUserDetails principal) {
@@ -53,6 +59,34 @@ public class StoreShelfController {
     public ShelfDetail getShelf(@AuthenticationPrincipal CustomUserDetails principal,
                                 @PathVariable Long id) {
         return shelfService.getShelf(principal.getId(), id);
+    }
+
+    // ---------- shelf management: store manager only (checked in service) ----------
+
+    /** literal path -> wins over /shelves/{id} */
+    @GetMapping("/shelves/manage")
+    public List<ShelfAdminItem> listAllShelves(@AuthenticationPrincipal CustomUserDetails principal) {
+        return shelfAdminService.listAll(principal.getId());
+    }
+
+    @PostMapping("/shelves")
+    public ResponseEntity<ShelfAdminItem> createShelf(@AuthenticationPrincipal CustomUserDetails principal,
+                                                      @Valid @RequestBody ShelfRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(shelfAdminService.create(principal.getId(), request));
+    }
+
+    @PutMapping("/shelves/{id}")
+    public ShelfAdminItem updateShelf(@AuthenticationPrincipal CustomUserDetails principal,
+                                      @PathVariable Long id,
+                                      @Valid @RequestBody ShelfRequest request) {
+        return shelfAdminService.update(principal.getId(), id, request);
+    }
+
+    @PatchMapping("/shelves/{id}/status")
+    public ShelfAdminItem changeShelfStatus(@AuthenticationPrincipal CustomUserDetails principal,
+                                            @PathVariable Long id,
+                                            @Valid @RequestBody ShelfStatusRequest request) {
+        return shelfAdminService.changeStatus(principal.getId(), id, request);
     }
 
     /** literal path -> wins over /products/{id} of StoreProductController */

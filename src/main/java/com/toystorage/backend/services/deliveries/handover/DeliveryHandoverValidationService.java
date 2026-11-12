@@ -18,6 +18,19 @@ public class DeliveryHandoverValidationService {
             Users driver
     ) {
 
+        /*
+         * 2026-11-13: at a store the store staff scans the packages (store receiving F1);
+         * the driver handover is only used for other destinations.
+         */
+        if (delivery.getToWarehouse() != null
+                && delivery.getToWarehouse().getType()
+                == com.toystorage.backend.enums.warehouses.WarehouseType.STORE) {
+            throw new com.toystorage.backend.exceptions.BadRequest(
+                    "Deliveries to a store are completed by the store: it scans the packages and finishes package receiving"
+            );
+        }
+
+
         if (delivery.getDeliveryStatus()
                 != DeliveryStatus.ARRIVED) {
 

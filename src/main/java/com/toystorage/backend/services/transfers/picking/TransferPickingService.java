@@ -83,6 +83,8 @@ public class TransferPickingService {
                                         .getId(),
 
                                 List.of(
+                                        // Business submit -> CREATED: the warehouse can pick it (2026-11-13).
+                                        TransferStatus.CREATED,
                                         TransferStatus.PENDING_SOURCE_CONFIRMATION,
                                         TransferStatus.PICKING
                                 )
@@ -177,7 +179,8 @@ public class TransferPickingService {
         }
 
 
-        if (transfer.getStatus()
+        if (transfer.getStatus() != TransferStatus.CREATED
+                && transfer.getStatus()
                 != TransferStatus.PENDING_SOURCE_CONFIRMATION) {
 
             throw new BadRequest(
