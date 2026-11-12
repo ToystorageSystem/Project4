@@ -24,7 +24,9 @@ const configs = {
     base: "/warehouse/picking/transfers",
     id: "transferId",
     code: "transferCode",
-    start: "PENDING_SOURCE_CONFIRMATION",
+    // Business submit -> CREATED: the warehouse can start picking (2026-11-13)
+    start: "CREATED",
+    startAlso: ["PENDING_SOURCE_CONFIRMATION"],
     active: ["PICKING"],
     finish: "complete",
   },
@@ -207,6 +209,7 @@ export default function ScanWorkflowPage({ kind }) {
                 </div>
               </div>
               {(row.status === c.start ||
+                (c.startAlso || []).includes(row.status) ||
                 (kind === "putaway" && row.status === "PENDING")) && (
                 <button
                   className="ops-button mb-5"

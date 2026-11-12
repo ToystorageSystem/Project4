@@ -11,6 +11,7 @@ export const STORE_API = Object.freeze({
   manifest: (code) => `/store/receiving/manifests/${enc(code)}`,
   packageItems: (code) => `/store/receiving/packages/${enc(code)}/items`,
   shelves: "/store/shelves",
+  manageShelves: "/store/shelves/manage",
   shelf: (id) => `/store/shelves/${enc(id)}`,
   lowShelf: "/store/products/low-shelf",
   products: (params) => `/store/products?${qs(params)}`,
@@ -28,5 +29,12 @@ export const finishInspection = async (manifestCode) =>
   (await api.post(`${STORE_API.manifest(manifestCode)}/finish-inspection`)).data;
 export const confirmReceiving = async (manifestCode, note) =>
   (await api.post(`${STORE_API.manifest(manifestCode)}/confirm`, { note: note?.trim() || null })).data;
+// Shelf management (Store Manager only, 2026-11-13)
+export const createShelf = async (name, description) =>
+  (await api.post("/store/shelves", { name: name.trim(), description: description?.trim() || null })).data;
+export const updateShelf = async (id, name, description) =>
+  (await api.put(`/store/shelves/${enc(id)}`, { name: name.trim(), description: description?.trim() || null })).data;
+export const changeShelfStatus = async (id, status) =>
+  (await api.patch(`/store/shelves/${enc(id)}/status`, { status })).data;
 export const changeMinShelf = async (productId, minShelfQuantity) =>
   (await api.put(`/store/products/${enc(productId)}/min-shelf`, { minShelfQuantity })).data;
