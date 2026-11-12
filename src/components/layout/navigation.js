@@ -25,7 +25,7 @@ const entries = [
   [
     "receiving-waiting-review",
     "02 / INBOUND",
-    "Review receipts",
+    "Review receiving",
     "/warehouse/receiving/waiting-review",
     "✓",
   ],
@@ -130,7 +130,7 @@ const entries = [
   [
     "shipment-history",
     "06 / HISTORY",
-    "Shipment history",
+    "Shipment history & documents",
     "/warehouse/shipment-history",
     "↑",
   ],
@@ -150,6 +150,16 @@ export const navigation = [ ...entries.map(([key, group, label, path, icon]) => 
   { key:"fleet", group:"Transport", label:"Vehicles & routes", path:"/fleet" },
 ];
 // Pages that stay reachable by link but are not shown in the Warehouse Manager sidebar.
-const HIDDEN_FOR_MANAGER = new Set(["receiving-in-progress", "receiving-completed", "shipment-history"]);
+// Removed from the Warehouse Manager sidebar (pages stay reachable by link):
+// receiving monitor & history (dashboard Records), putaway monitor (putaway goes to whoever inspected),
+// store-return review (tab inside "Review receiving"), damaged goods & discrepancy reports (handled in stock counts / incident reports).
+const HIDDEN_FOR_MANAGER = new Set([
+  "receiving-in-progress",
+  "receiving-completed",
+  "putaway",
+  "return-review",
+  "damaged-goods",
+  "discrepancies",
+]);
 export const menuFor = (user) =>
   navigation.filter((item) => canAccess(user, item.key) && !(isManager(user) && HIDDEN_FOR_MANAGER.has(item.key)));

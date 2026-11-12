@@ -190,7 +190,7 @@ export default function ManagerDashboard() {
           <header><div><h3>Records</h3><small>History and documents</small></div></header>
           <div className="mo-card-body mo-kv">
             <span><Link className="text-link" to="/warehouse/receiving/completed">Receiving history ↗</Link></span><span />
-            <span><Link className="text-link" to="/warehouse/shipment-history">Shipment history ↗</Link></span><span />
+            <span><Link className="text-link" to="/warehouse/putaway">Putaway progress ↗</Link></span><span />
             <span><Link className="text-link" to="/warehouse/receiving/in-progress">Receiving progress ↗</Link></span><span />
           </div>
         </section>

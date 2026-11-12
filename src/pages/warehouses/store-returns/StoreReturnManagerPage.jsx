@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import MainLayout from "../../../components/layout/MainLayout";
 import PageHeader from "../../../components/layout/PageHeader";
+import ReviewTabs from "../../../components/operations/ReviewTabs";
+import "../../../manager-ops.css";
 import Button from "../../../components/ui/Button";
 import Card from "../../../components/ui/Card";
 import Alert from "../../../components/ui/Alert";
@@ -377,8 +379,9 @@ export default function StoreReturnManagerPage() {
     return (
         <MainLayout>
             <div className="space-y-6">
+                <ReviewTabs />
                 <PageHeader
-                    title="Review store returns"
+                    title="Review receiving · store returns"
                     description="Review returned goods, resolve discrepancies and determine responsibility."
                     actions={<Button variant="outline" onClick={loadList}>Refresh</Button>}
                 />

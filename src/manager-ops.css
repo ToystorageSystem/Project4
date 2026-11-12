@@ -342,3 +342,19 @@ a.mo-suggestion:hover {
   padding-top: 8px;
   padding-bottom: 8px;
 }
+.review-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+}
+.review-tab {
+  padding: 10px 14px;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  font-weight: 600;
+  text-decoration: none;
+}
+.review-tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--brand);
+}
