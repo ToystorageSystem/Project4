@@ -52,6 +52,7 @@ public class StoreSaleService {
     private final StoreSaleRepository saleRepository;
     private final StoreStockTransactionRepository transactionRepository;
     private final StoreSaleMapper mapper;
+    private final SalesOrderMirrorService salesOrderMirrorService;
 
     /**
      * POST /api/store/sales
@@ -119,6 +120,9 @@ public class StoreSaleService {
                     .build());
         }
         transactionRepository.saveAll(history);
+
+        // 6. copy to sales_orders (COMPLETED) so Business revenue / analytics see store sales
+        salesOrderMirrorService.mirror(sale, seller);
 
         return mapper.toDetail(sale);   // stock rows are managed -> updated at commit (@Version checked)
     }
