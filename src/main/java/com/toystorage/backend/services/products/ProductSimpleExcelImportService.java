@@ -6,10 +6,12 @@ import com.toystorage.backend.dto.response.products.ProductImportPreviewResponse
 import com.toystorage.backend.dto.response.products.ProductImportResultResponse;
 import com.toystorage.backend.dto.response.products.ProductImportRowResponse;
 import com.toystorage.backend.dto.response.products.ProductResponse;
+import com.toystorage.backend.entity.products.Brands;
 import com.toystorage.backend.entity.products.Categories;
 import com.toystorage.backend.entity.suppliers.Suppliers;
 import com.toystorage.backend.enums.products.CommonStatus;
 import com.toystorage.backend.exceptions.BadRequest;
+import com.toystorage.backend.repository.products.BrandRepository;
 import com.toystorage.backend.repository.products.CategoryRepository;
 import com.toystorage.backend.repository.products.ProductRepository;
 import com.toystorage.backend.repository.suppliers.SupplierRepository;
@@ -36,7 +38,7 @@ public class ProductSimpleExcelImportService {
     private static final List<String> HEADERS = List.of(
             "Barcode", "Product Name", "Category", "Base Unit", "Selling Price (VND)",
             "Supplier Name", "Supplier Phone (optional)", "Purchase Price (VND)",
-            "Minimum Order Quantity");
+            "Minimum Order Quantity", "Brand (optional)");
     private static final int MAX_ROWS = 300;
     private static final long MAX_BYTES = 5L * 1024 * 1024;
 
@@ -44,6 +46,7 @@ public class ProductSimpleExcelImportService {
     private final ProductRepository productRepository;
     private final SupplierRepository supplierRepository;
     private final CategoryRepository categoryRepository;
+    private final BrandRepository brandRepository;
 
     public ProductImportPreviewResponse preview(MultipartFile file) {
         return parse(file);
@@ -62,7 +65,7 @@ public class ProductSimpleExcelImportService {
             product.setBarcode(row.getBarcode());
             product.setName(row.getName());
             product.setCategoryId(row.getCategoryId());
-            product.setBrandId(null); // Optional; may be edited later
+            product.setBrandId(row.getBrandId()); // optional: null when the Brand column is empty
             product.setBaseUnit(row.getBaseUnit());
             product.setSellingPrice(row.getSellingPrice());
             product.setPurchasePrice(row.getPurchasePrice());
@@ -106,7 +109,7 @@ public class ProductSimpleExcelImportService {
             }
             for (int i = HEADERS.size(); i < header.getLastCellNum(); i++) {
                 if (!cell(header, i, formatter).isEmpty()) {
-                    throw new BadRequest("Unexpected column after Minimum Order Quantity. Use the template");
+                    throw new BadRequest("Unexpected column after Brand (optional). Use the template");
                 }
             }
             if (sheet.getLastRowNum() > MAX_ROWS + 20) {
@@ -155,6 +158,7 @@ public class ProductSimpleExcelImportService {
         String supplierPhone = cell(excelRow, 6, formatter);
         BigDecimal purchase = positiveMoney(cell(excelRow, 7, formatter), "Purchase Price", errors);
         Integer minimum = positiveInt(cell(excelRow, 8, formatter), errors);
+        String brandText = cell(excelRow, 9, formatter);
 
         if (barcode.isEmpty() || barcode.length() > 100) errors.add("Barcode is required (max 100 characters)");
         if (name.isEmpty() || name.length() > 200) errors.add("Product Name is required (max 200 characters)");
@@ -169,6 +173,15 @@ public class ProductSimpleExcelImportService {
         Long categoryId = null;
         if (categories.size() == 1) categoryId = categories.get(0).getId();
         else errors.add("Category is not an active category name: " + categoryText);
+
+        // Brand is optional: empty -> no brand; otherwise it must be exactly one ACTIVE brand name
+        Long brandId = null;
+        if (!brandText.isEmpty()) {
+            List<Brands> brands = brandRepository.findByStatusOrderByNameAsc(CommonStatus.ACTIVE)
+                    .stream().filter(b -> b.getName().equalsIgnoreCase(brandText)).toList();
+            if (brands.size() == 1) brandId = brands.get(0).getId();
+            else errors.add("Brand is not an active brand name: " + brandText);
+        }
 
         if (!barcode.isEmpty() && productRepository.existsByBarcodeAndOwningSupplierIsNull(barcode)) {
             errors.add("Barcode belongs to a legacy product with no confirmed supplier. Review it before importing");
@@ -191,7 +204,8 @@ public class ProductSimpleExcelImportService {
 
         return ProductImportRowResponse.builder()
                 .rowNumber(rowNo).barcode(barcode).name(name).categoryId(categoryId)
-                .categoryName(categoryText).baseUnit(unit.toUpperCase(Locale.ROOT))
+                .categoryName(categoryText)
+                .brandId(brandId).brandName(brandText.isEmpty() ? null : brandText).baseUnit(unit.toUpperCase(Locale.ROOT))
                 .sellingPrice(selling).purchasePrice(purchase)
                 .supplierName(supplierName).supplierPhone(supplierPhone.isEmpty() ? null : supplierPhone)
                 .minimumOrderQuantity(minimum).errors(errors).valid(errors.isEmpty()).build();
@@ -240,7 +254,7 @@ public class ProductSimpleExcelImportService {
         row.setValid(false);
     }
 
-    /** Returns a template with English columns and dropdowns for existing categories/suppliers. */
+    /** Returns a template with English columns and dropdowns for existing categories/suppliers/brands. */
     public byte[] template() {
         try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             Sheet products = workbook.createSheet("Products");
@@ -275,8 +289,16 @@ public class ProductSimpleExcelImportService {
                 if (row == null) row = lookup.createRow(i + 1);
                 row.createCell(1).setCellValue(suppliers.get(i));
             }
+            List<String> brands = brandRepository.findByStatusOrderByNameAsc(CommonStatus.ACTIVE)
+                    .stream().map(Brands::getName).toList();
+            for (int i = 0; i < brands.size(); i++) {
+                Row row = lookup.getRow(i + 1);
+                if (row == null) row = lookup.createRow(i + 1);
+                row.createCell(2).setCellValue(brands.get(i));
+            }
             if (!categories.isEmpty()) addList(workbook, products, "CategoryOptions", "A", categories.size(), 2);
             if (!suppliers.isEmpty()) addList(workbook, products, "SupplierOptions", "B", suppliers.size(), 5);
+            if (!brands.isEmpty()) addList(workbook, products, "BrandOptions", "C", brands.size(), 9);
             workbook.setSheetHidden(workbook.getSheetIndex(lookup), true);
 
             workbook.write(stream);

@@ -40,6 +40,7 @@ public class ProductImportRowResponse {
     private String requestReason;
 
     private String categoryName;
+    private String brandName;
 
     private String supplierName;
 
