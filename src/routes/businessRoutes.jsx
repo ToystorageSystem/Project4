@@ -8,7 +8,6 @@ const definitions = [
   ["products/import", "businessstaff/products/ProductImportPage"],
   ["products/:productId/edit", "businessstaff/products/ProductFormPage"],
   ["products/:productId", "businessstaff/products/ProductDetailPage"],
-  ["goods-receipts", "businessstaff/goodsreceipts/GoodsReceiptCreatePage"],
   ["goods-receipts/list", "businessstaff/goodsreceipts/GoodsReceiptListPage"],
   ["goods-receipts/:receiptId", "businessstaff/goodsreceipts/GoodsReceiptDetailPage"],
   ["purchase-orders", "businessstaff/purchaseorders/PurchaseOrderListPage"],

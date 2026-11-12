@@ -21,10 +21,6 @@ export async function getActiveProductsForGoodsReceipt(page = 0, signal) {
 }
 
 // The only mutation in this module. Never invoke on mount or as a side effect.
-export async function createMainWarehouseGoodsReceipt(payload) {
-    const response = await api.post("/goods-receipts", payload);
-    return response.data;
-}
 
 export async function getGoodsReceiptById(receiptId, signal) {
     const response = await api.get(`/goods-receipts/${encodeURIComponent(receiptId)}`, { signal });

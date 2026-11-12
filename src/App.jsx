@@ -149,6 +149,8 @@ export default function App() {
               ].map(([from, to]) => <Route key={from} path={`/business/${from}/*`} element={<Navigate to={`/business/${to}`} replace />} />)}
               {["products/requests","products/rejected","approvals/products"].map(path => <Route key={path} path={`/business/${path}`} element={<Navigate to="/business/products" replace/>}/>)}
               <Route path="/business/approvals/purchase-orders" element={<Navigate to="/business/purchase-orders" replace/>}/>
+              {/* Goods receipts are created only from purchase orders (2026-11-13). */}
+              <Route path="/business/goods-receipts" element={<Navigate to="/business/goods-receipts/list" replace/>}/>
               <Route path="/business-staff/*" element={<LegacyBusinessRedirect/>}/>
               <Route path="/business-manager/*" element={<LegacyBusinessRedirect/>}/>
               <Route path="/business-staff" element={<Navigate to="/business/dashboard" replace/>}/>
