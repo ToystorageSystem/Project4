@@ -96,7 +96,7 @@ class _HomeState extends State<HomePage> {
       });
   }
 
-  Future<void> open(int i, Json row) async {
+  Future<void> open(int i, Json row, {bool autoStart = false}) async {
     await Navigator.push(
       context,
       MaterialPageRoute<void>(
@@ -105,10 +105,45 @@ class _HomeState extends State<HomePage> {
           demo: widget.demo,
           module: i,
           initial: row,
+          autoStart: autoStart,
         ),
       ),
     );
     if (mounted) refresh();
+  }
+
+  /// Supplier delivery: scan the purchase order (PO) code on the delivery note
+  /// -> the matching goods receipt opens and inspection starts right away.
+  Future<void> scanPurchaseOrder() async {
+    final code = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const ScanPage()),
+    );
+    if (code == null || !mounted) return;
+    Json? match(List<Json> rows) {
+      final wanted = code.trim().toUpperCase();
+      for (final r in rows) {
+        final po = '${r['purchaseOrderCode'] ?? ''}'.trim().toUpperCase();
+        final receipt = '${r['receiptCode'] ?? ''}'.trim().toUpperCase();
+        if (wanted.isNotEmpty && (po == wanted || receipt == wanted)) return r;
+      }
+      return null;
+    }
+
+    var found = match(data[0]);
+    if (found == null && !widget.demo) {
+      await refresh();
+      if (!mounted) return;
+      found = match(data[0]);
+    }
+    if (found == null) {
+      message(
+        context,
+        'No goods receipt is waiting for $code. Check the PO code or ask the manager.',
+      );
+      return;
+    }
+    await open(0, found, autoStart: true);
   }
 
   Widget tile(int i, Json row) => Card(
@@ -308,6 +343,15 @@ class _HomeState extends State<HomePage> {
                 ),
               ),
               const SizedBox(height: 20),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                onPressed: loading ? null : scanPurchaseOrder,
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Scan PO to receive goods'),
+              ),
+              const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => Navigator.push(
                   context,
@@ -364,6 +408,14 @@ class _HomeState extends State<HomePage> {
                 ),
               ),
               const SizedBox(height: 16),
+              if (selected == 0) ...[
+                FilledButton.icon(
+                  onPressed: loading ? null : scanPurchaseOrder,
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Scan PO to receive goods'),
+                ),
+                const SizedBox(height: 12),
+              ],
               TextField(
                 onChanged: (v) => setState(() {
                   query = v;
@@ -632,12 +684,16 @@ class TaskPage extends StatefulWidget {
   final bool demo;
   final int module;
   final Json initial;
+
+  /// Start the task as soon as it opens (scan PO -> inspect, inspect -> putaway).
+  final bool autoStart;
   const TaskPage({
     super.key,
     required this.api,
     required this.demo,
     required this.module,
     required this.initial,
+    this.autoStart = false,
   });
   @override
   State<TaskPage> createState() => _TaskState();
@@ -656,7 +712,106 @@ class _TaskState extends State<TaskPage> {
   void initState() {
     super.initState();
     task = widget.initial;
-    if (!widget.demo) load();
+    if (!widget.demo) {
+      load().then((_) {
+        if (mounted && widget.autoStart && canStart && error == null) start();
+      });
+    } else if (widget.autoStart && canStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) start();
+      });
+    }
+  }
+
+  Future<void> start() => action(
+    'PATCH',
+    widget.module == 0 ? '/start-receiving' : '/start',
+    demo: () => task['status'] = [
+      'RECEIVING',
+      'IN_PROGRESS',
+      'PICKING',
+      'COUNTING',
+    ][widget.module],
+  );
+
+  /// Location the staff has to walk to for this line (putaway: assigned or suggested shelf).
+  String? targetLocation(Json item) {
+    final value = widget.module == 1
+        ? (item['toLocationCode'] ?? item['suggestedLocationCode'])
+        : item['locationCode'];
+    final text = '${value ?? ''}'.trim();
+    return text.isEmpty ? null : text;
+  }
+
+  String targetPlace(Json item) {
+    final zone = widget.module == 1
+        ? (item['toLocationCode'] != null ? item['zone'] : item['suggestedZone'])
+        : item['zone'];
+    final shelf = widget.module == 1
+        ? (item['toLocationCode'] != null ? item['shelf'] : item['suggestedShelf'])
+        : item['shelf'];
+    return [
+      if ('${zone ?? ''}'.isNotEmpty) 'Zone $zone',
+      if ('${shelf ?? ''}'.isNotEmpty) 'Shelf $shelf',
+    ].join(' · ');
+  }
+
+  /// Lines in walking order: grouped by location so the staff does not go back and forth.
+  List<Json> get routeItems {
+    final list = items;
+    if (widget.module == 1 || widget.module == 2) {
+      list.sort((a, b) {
+        final doneA = (a['remainingQuantity'] as num? ?? 0) <= 0 ? 1 : 0;
+        final doneB = (b['remainingQuantity'] as num? ?? 0) <= 0 ? 1 : 0;
+        if (doneA != doneB) return doneA - doneB;
+        return (targetLocation(a) ?? '~').compareTo(targetLocation(b) ?? '~');
+      });
+    }
+    return list;
+  }
+
+  Json? get nextStop {
+    if (widget.module != 1 && widget.module != 2) return null;
+    for (final item in routeItems) {
+      if ((item['remainingQuantity'] as num? ?? 0) > 0) return item;
+    }
+    return null;
+  }
+
+  /// After inspection the same staff puts the goods on the shelf: open that putaway task.
+  Future<void> continueToPutaway() async {
+    if (widget.demo) return;
+    try {
+      final tasks = (await widget.api.call('GET', modules[1].listPath) as List)
+          .map((x) => Map<String, dynamic>.from(x as Map))
+          .toList();
+      final next = tasks
+          .where((t) => t['goodsReceiptId'] == id)
+          .firstOrNull;
+      if (!mounted) return;
+      if (next == null) {
+        message(
+          context,
+          'Inspection finished. No goods to put away (all damaged or missing).',
+        );
+        return;
+      }
+      message(context, 'Inspection finished. Now put the goods on the shelves.');
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => TaskPage(
+            api: widget.api,
+            demo: widget.demo,
+            module: 1,
+            initial: next,
+            autoStart: true,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) message(context, e);
+    }
   }
 
   Future<void> load() async {
@@ -740,7 +895,8 @@ class _TaskState extends State<TaskPage> {
         numeric: {'actualQuantity', 'damagedQuantity'},
         optional: {'packageCode', 'notes'},
         initial: {
-          'actualQuantity': '${item['actualQuantity'] ?? ''}',
+          'actualQuantity':
+              '${item['actualQuantity'] ?? item['expectedQuantity'] ?? ''}',
           'damagedQuantity': '${item['damagedQuantity'] ?? 0}',
           'notes': '${item['notes'] ?? ''}',
           'packageCode': '${item['packageCode'] ?? ''}',
@@ -790,10 +946,18 @@ class _TaskState extends State<TaskPage> {
               : 'Processed quantity',
         },
         numeric: {'quantity'},
-        initial: {if (scannedBarcode != null) 'productBarcode': scannedBarcode},
+        initial: {
+          if (scannedBarcode != null) 'productBarcode': scannedBarcode,
+          if (widget.module != 3 && targetLocation(item) != null)
+            'locationCode': targetLocation(item)!,
+          if (widget.module != 3)
+            'quantity': '${item['remainingQuantity'] ?? ''}',
+        },
         helpText: widget.module == 1
             ? item['toLocationCode'] == null
-                  ? 'Scan an active NORMAL shelf in this warehouse. The first entry assigns it as the destination shelf.'
+                  ? item['suggestedLocationCode'] != null
+                        ? 'Go to ${item['suggestedLocationCode']}${targetPlace(item).isEmpty ? '' : ' (${targetPlace(item)})'} — ${item['suggestedReason'] ?? 'suggested shelf'}. If it is full, scan another NORMAL shelf.'
+                        : 'Scan an active NORMAL shelf in this warehouse. The first entry assigns it as the destination shelf.'
                   : 'Continue putaway on shelf ${item['toLocationCode']}. Do not change the shelf after recording stock.'
             : null,
       );
@@ -884,6 +1048,7 @@ class _TaskState extends State<TaskPage> {
       ),
     );
     if (ok != true || !mounted) return;
+    final before = task['status'];
     await action(
       'PATCH',
       [
@@ -899,6 +1064,9 @@ class _TaskState extends State<TaskPage> {
         'PENDING_CONFIRMATION',
       ][widget.module],
     );
+    if (widget.module == 0 && mounted && error == null && task['status'] != before) {
+      await continueToPutaway();
+    }
   }
 
   @override
@@ -953,18 +1121,7 @@ class _TaskState extends State<TaskPage> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: FilledButton.icon(
-              onPressed: busy
-                  ? null
-                  : () => action(
-                      'PATCH',
-                      widget.module == 0 ? '/start-receiving' : '/start',
-                      demo: () => task['status'] = [
-                        'RECEIVING',
-                        'IN_PROGRESS',
-                        'PICKING',
-                        'COUNTING',
-                      ][widget.module],
-                    ),
+              onPressed: busy ? null : start,
               icon: const Icon(Icons.play_arrow),
               label: const Text('Accept and start'),
             ),
@@ -993,12 +1150,25 @@ class _TaskState extends State<TaskPage> {
             icon: const Icon(Icons.broken_image_outlined),
             label: const Text('Damaged goods report'),
           ),
+        if (active && nextStop != null) _NextStopCard(
+          title: widget.module == 1 ? 'Put away next' : 'Pick next',
+          location: targetLocation(nextStop!) ??
+              (widget.module == 1 ? 'Scan any NORMAL shelf' : 'No location'),
+          place: targetPlace(nextStop!),
+          reason: widget.module == 1 && nextStop!['toLocationCode'] == null
+              ? nextStop!['suggestedReason']?.toString()
+              : null,
+          product:
+              '${nextStop!['productName'] ?? nextStop!['productCode'] ?? ''}',
+          quantity: '${nextStop!['remainingQuantity'] ?? ''}',
+          onConfirm: busy || error != null ? null : () => editItem(nextStop!),
+        ),
         Text(
           '${items.length} products',
           style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
-        for (final item in items)
+        for (final item in routeItems)
           Card(
             elevation: 0,
             color: Colors.white,
@@ -1061,8 +1231,12 @@ class _TaskState extends State<TaskPage> {
                         Expanded(
                           child: Text(
                             widget.module == 1
-                                ? '${item['toLocationCode'] ?? 'No shelf assigned — scan during putaway'}'
-                                : '${item['locationCode'] ?? 'No location'}',
+                                ? item['toLocationCode'] != null
+                                      ? '${item['toLocationCode']}'
+                                      : item['suggestedLocationCode'] != null
+                                      ? 'Suggested: ${item['suggestedLocationCode']}${targetPlace(item).isEmpty ? '' : ' · ${targetPlace(item)}'}'
+                                      : 'No shelf assigned — scan during putaway'
+                                : '${item['locationCode'] ?? 'No location'}${targetPlace(item).isEmpty ? '' : ' · ${targetPlace(item)}'}',
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               color: teal,
@@ -1250,6 +1424,7 @@ class PackingPage extends StatefulWidget {
 }
 
 class _PackingState extends State<PackingPage> {
+  Json? dispatch;
   Json summary = {};
   List<Json> packages = [];
   bool busy = false;
@@ -1451,9 +1626,31 @@ class _PackingState extends State<PackingPage> {
           );
           summary['completedAt'] = 'completed';
         }
-        await widget.api.call('POST', '$preview/submit');
+        final r = await widget.api.call('POST', '$preview/submit');
+        if (r is Map) dispatch = Map<String, dynamic>.from(r);
       }
     });
+    final d = dispatch;
+    if (!mounted || d == null || d['shipmentCode'] == null) return;
+    await showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Ready to ship'),
+        content: Text(
+          d['driverName'] != null
+              ? 'Trip ${d['shipmentCode']} was sent to driver ${d['driverName']}. '
+                    'Hand over the packages when the driver arrives.'
+              : 'Trip ${d['shipmentCode']} is waiting for a free driver. '
+                    'The system keeps trying and assigns the nearest one automatically.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(c),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> inspect(Json p) async {
@@ -1643,6 +1840,87 @@ class _PackingState extends State<PackingPage> {
           ),
         ],
       ],
+    ),
+  );
+}
+
+
+/// Big "go here next" card for putaway and picking.
+class _NextStopCard extends StatelessWidget {
+  final String title, location, place, product, quantity;
+  final String? reason;
+  final VoidCallback? onConfirm;
+  const _NextStopCard({
+    required this.title,
+    required this.location,
+    required this.place,
+    required this.product,
+    required this.quantity,
+    required this.onConfirm,
+    this.reason,
+  });
+
+  @override
+  Widget build(BuildContext context) => Card(
+    elevation: 0,
+    color: brandSoft,
+    margin: const EdgeInsets.only(bottom: 18),
+    child: Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: const TextStyle(
+              letterSpacing: 1.5,
+              fontSize: 12,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.place_rounded, color: teal, size: 30),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  location,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: teal,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (place.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 38, top: 2),
+              child: Text(place, style: const TextStyle(fontSize: 16)),
+            ),
+          if (reason != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 38, top: 2),
+              child: Text(
+                reason!,
+                style: const TextStyle(color: Colors.black54),
+              ),
+            ),
+          const Divider(height: 24),
+          Text(
+            '$product  ×  $quantity',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: onConfirm,
+            icon: const Icon(Icons.qr_code_scanner),
+            label: const Text('Arrived — scan & confirm'),
+          ),
+        ],
+      ),
     ),
   );
 }
