@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface StockCountNoticeRepository extends JpaRepository<StockCountNotice, Long> {
     List<StockCountNotice> findTop30ByUserIdOrderByCreatedAtDesc(Long userId);
     Optional<StockCountNotice> findByIdAndUserId(Long id, Long userId);
+    // Thong bao "da den tuan kiem ke" chi tao mot lan cho moi ke hoach / nguoi dung.
+    boolean existsByStockCountIdAndUserIdAndCreatedAtGreaterThanEqual(Long stockCountId, Long userId, java.time.LocalDateTime from);
 }

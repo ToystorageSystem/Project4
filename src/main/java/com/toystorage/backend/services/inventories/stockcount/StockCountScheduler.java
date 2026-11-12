@@ -53,6 +53,12 @@ public class StockCountScheduler {
                         boolean created = creator.ensure(warehouse, window.start(), window.type());
                         if (created) log.info("Stock count prepared for warehouse {}: {} to {}",
                                 warehouse.getId(), window.start(), window.end());
+                        // Den dung tuan kiem ke: thong bao de Manager / nhan vien bat dau kiem.
+                        if (window.contains(date) || (!date.isBefore(window.start()) && !date.isAfter(window.end()))) {
+                            int notified = creator.notifyWindowOpened(warehouse, window.start(), window.end());
+                            if (notified > 0) log.info("Stock count week opened for warehouse {}: {} notification(s)",
+                                    warehouse.getId(), notified);
+                        }
                     } catch (org.springframework.dao.DataIntegrityViolationException ignored) {
                         log.info("Concurrent stock count creation skipped: {} {}", warehouse.getId(), window.start());
                     } catch (Exception ex) {

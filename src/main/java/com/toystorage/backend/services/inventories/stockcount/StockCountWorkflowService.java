@@ -48,6 +48,8 @@ public class StockCountWorkflowService {
     private final UserRepository users;
     private final ProductRepository productCatalog;
     private final WarehouseLocationRepository warehouseLocations;
+    // Products assigned to a zone / shelf decide where a zero-stock product is counted.
+    private final com.toystorage.backend.repository.warehouses.location.WarehouseLocationProductRepository locationProducts;
     private final StockCountValidationService validation;
     private final StockCountManagerAccess managerAccess;
 
@@ -102,6 +104,25 @@ public class StockCountWorkflowService {
         if ("ZONE".equals(scopeType) && !Objects.equals(location.getZone(), count.getScopeValue()))
             throw bad("The counting location must belong to the selected zone");
         return location;
+    }
+
+    /** Location assigned to each product (Storage locations → "Products stored here"), active locations only. */
+    private Map<Long, WarehouseLocations> assignedLocations(StockCounts count) {
+        Map<Long, WarehouseLocations> map = new HashMap<>();
+        for (var lp : locationProducts.findForWarehouse(count.getWarehouse().getId())) {
+            WarehouseLocations l = lp.getLocation();
+            if (l.getStatus() != WarehouseStatus.ACTIVE) continue;
+            if ("ZONE".equals(count.getScopeType()) && !Objects.equals(l.getZone(), count.getScopeValue())) continue;
+            map.putIfAbsent(lp.getProduct().getId(), l);
+        }
+        return map;
+    }
+
+    /** First active NORMAL storage location: lets the periodic count open with one click. */
+    private WarehouseLocations defaultCountLocation(StockCounts count) {
+        return warehouseLocations.findFirstByWarehouseIdAndLocationTypeAndStatus(count.getWarehouse().getId(),
+                        com.toystorage.backend.enums.warehouses.WarehouseLocationType.NORMAL, WarehouseStatus.ACTIVE)
+                .orElseThrow(() -> bad("Create at least one active storage location before counting"));
     }
 
     private List<Item> plannedCatalogPreview(StockCounts count) {
@@ -407,8 +428,9 @@ public class StockCountWorkflowService {
             throw bad("This PLANNED count already has stored items; please review before starting");
         List<InventoryBalances> currentBalances = balancesForScope(c);
         List<Products> missing = missingCatalogItems(c, currentBalances);
-        WarehouseLocations fallback = missing.isEmpty() ? null :
-                fallbackLocation(c, request == null ? null : request.fallbackLocationId());
+        Long requestedFallback = request == null ? null : request.fallbackLocationId();
+        Map<Long, WarehouseLocations> assignedLocation = missing.isEmpty() ? Map.of() : assignedLocations(c);
+        WarehouseLocations fallback = null;
         int snapshots = 0;
         for (InventoryBalances balance : currentBalances) {
             if (items.existsByStockCountIdAndProductIdAndLocationId(id,
@@ -422,8 +444,16 @@ public class StockCountWorkflowService {
         for (Products product : missing) {
             // The Manager explicitly chose the counting location for this zero-stock SKU.
             // Creating a count item does NOT create or modify an inventory balance.
+            // Zero-stock SKU: count it at the location / zone it is assigned to; otherwise at the chosen
+            // location, otherwise at the first active normal storage location of the warehouse.
+            WarehouseLocations target = assignedLocation.get(product.getId());
+            if (target == null) {
+                if (fallback == null) fallback = requestedFallback != null || "LOCATION".equals(c.getScopeType()) || "ZONE".equals(c.getScopeType())
+                        ? fallbackLocation(c, requestedFallback) : defaultCountLocation(c);
+                target = fallback;
+            }
             StockCountItems item = new StockCountItems();
-            item.setStockCount(c); item.setProduct(product); item.setLocation(fallback);
+            item.setStockCount(c); item.setProduct(product); item.setLocation(target);
             item.setStockCountItemsCode("SCI-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase(Locale.ROOT));
             item.setSystemQuantity(0); item.setRecountRequested(false);
             items.save(item); snapshots++;

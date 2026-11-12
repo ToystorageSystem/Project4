@@ -49,4 +49,32 @@ public class StockCountPeriodicCreator {
         }
         return true;
     }
+
+    /**
+     * Ngay dau tien cua tuan kiem ke (tuan dau thang / tuan giua thang): gui thong bao cho Manager cua kho
+     * va cho nhan vien duoc phan cong de bat dau kiem ke ton kho thuc te. Chay lai nhieu lan van chi tao 1 thong bao.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int notifyWindowOpened(Warehouses warehouse, LocalDate windowStart, LocalDate windowEnd) {
+        int created = 0;
+        List<Users> managers = users.findActiveUsersByRoleCode("WAREHOUSE_MANAGER").stream()
+                .filter(u -> u.getWarehouse() != null && warehouse.getId().equals(u.getWarehouse().getId()))
+                .toList();
+        for (StockCounts plan : plans.findByWarehouseIdOrderByIdDesc(warehouse.getId())) {
+            if (plan.getScheduledDate() == null || plan.getScheduledDate().isBefore(windowStart)
+                    || plan.getScheduledDate().isAfter(windowEnd)) continue;
+            if (plan.getStatus() == StockCountStatus.COMPLETED || plan.getStatus() == StockCountStatus.CANCELLED) continue;
+            List<Users> recipients = new java.util.ArrayList<>(managers);
+            if (plan.getAssignedTo() != null && recipients.stream().noneMatch(u -> u.getId().equals(plan.getAssignedTo().getId()))) {
+                recipients.add(plan.getAssignedTo());
+            }
+            for (Users user : recipients) {
+                if (notices.existsByStockCountIdAndUserIdAndCreatedAtGreaterThanEqual(plan.getId(), user.getId(), windowStart.atStartOfDay())) continue;
+                StockCountNotice notice = new StockCountNotice();
+                notice.setStockCount(plan); notice.setUser(user); notices.save(notice);
+                created++;
+            }
+        }
+        return created;
+    }
 }
