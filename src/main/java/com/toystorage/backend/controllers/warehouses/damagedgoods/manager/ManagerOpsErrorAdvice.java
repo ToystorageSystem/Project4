@@ -20,7 +20,7 @@ import java.util.Map;
  */
 @RestControllerAdvice(assignableTypes = {
         ManagerDailyTaskController.class, StaffDailyTaskController.class, StaffPerformanceController.class,
-        WarehouseOperationsController.class, InboundScheduleController.class, ManagerLowStockController.class, BusinessLowStockReportController.class
+        WarehouseOperationsController.class, InboundScheduleController.class, InboundResultsController.class, ManagerLowStockController.class, BusinessLowStockReportController.class
 })
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ManagerOpsErrorAdvice {

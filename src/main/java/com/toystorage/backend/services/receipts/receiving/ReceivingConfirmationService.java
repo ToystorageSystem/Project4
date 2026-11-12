@@ -27,6 +27,8 @@ import com.toystorage.backend.enums.warehouses.WarehouseTaskType;
 import com.toystorage.backend.repository.receipts.receiving.ReceivingReinspectionRequestRepository;
 
 import com.toystorage.backend.services.warehouses.taskclaim.WarehouseTaskClaimService;
+import com.toystorage.backend.enums.inventories.InventoryReferenceType;
+import com.toystorage.backend.enums.inventories.InventoryTransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -65,6 +67,12 @@ public class ReceivingConfirmationService {
 
     private final ReceivingDiscrepancyService
             receivingDiscrepancyService;
+
+    private final com.toystorage.backend.services.inventories.damagedlot.DamagedStockService
+            damagedStockService;
+
+    private final com.toystorage.backend.services.receipts.incidents.ReceivingIncidentReportService
+            receivingIncidentReportService;
 
 
     // =====================================================
@@ -189,90 +197,66 @@ public class ReceivingConfirmationService {
             );
         }
 
-        receivingDiscrepancyService.assertCanConfirm(receiptId);
-        /*
-         * =============================================
-         * WAREHOUSE
-         * =============================================
-         */
+        complete(receipt, items, latestClaim, manager);
+        return buildResponse(receipt);
+    }
 
+    // =====================================================
+    // AUTO COMPLETE AFTER STAFF INSPECTION
+    // =====================================================
+
+    /**
+     * Nghiep vu moi: Warehouse Staff kiem xong la phieu nhap hoan thanh, khong can Manager duyet.
+     *  - Hang dat (accepted) duoc cong ton tai khu nhan hang, sau do nguoi da kiem cat len ke (putaway).
+     *  - Hang hong / loi KHONG cong ton kha dung: dua vao khu hang hong, ghi theo lo LOT-<ma phieu nhap>.
+     *  - Hang thieu / hong / du duoc ghi vao bien ban su co de Manager xem, sua, in cho Business.
+     */
+    @Transactional
+    public void completeAfterInspection(Long receiptId, Users staff) {
+        GoodsReceipts receipt = getReceiptForUpdate(receiptId);
+        if (receipt.getStatus() == GoodsReceiptStatus.COMPLETED) return;
+        List<GoodsReceiptItems> items = goodsReceiptItemRepository.findByGoodsReceiptId(receiptId);
+        if (items.isEmpty()) throw new BadRequest("Goods receipt contains no items");
+        WarehouseTaskClaim latestClaim = warehouseTaskClaimService.getLatestClaim(WarehouseTaskType.GOODS_RECEIVING, receiptId);
+        if (latestClaim == null) throw new BadRequest("Receiving task claim was not found");
+        complete(receipt, items, latestClaim, staff);
+    }
+
+    private void complete(GoodsReceipts receipt, List<GoodsReceiptItems> items, WarehouseTaskClaim latestClaim, Users actor) {
         WarehouseLocations receivingLocation =
-                warehouseLocationService
-                        .getReceivingLocation(
-                                receipt
-                                        .getWarehouse()
-                                        .getId()
-                        );
+                warehouseLocationService.getReceivingLocation(receipt.getWarehouse().getId());
 
-        /*
-         * =============================================
-         * INVENTORY
-         * =============================================
-         */
+        // Hang dat: cong ton (khu nhan hang), sau putaway moi thanh ton kha dung.
+        receivingInventoryService.updateReceivingInventory(receipt, items, actor, receivingLocation);
 
-        receivingInventoryService
-                .updateReceivingInventory(
-                        receipt,
-                        items,
-                        manager,
-                        receivingLocation
-                );
-
-        /*
-         * =============================================
-         * PUTAWAY
-         * =============================================
-         */
-
-        Users receivingStaff =
-                latestClaim.getClaimedBy();
-
-        if (receivingStaff == null) {
-            throw new BadRequest(
-                    "Receiving staff was not found"
-            );
+        // Hang hong / loi: vao khu hang hong, ma lo = ma don PO cua nha cung cap (khong co PO thi dung ma phieu nhap).
+        // Khong cong ton kha dung.
+        String poCode = receipt.getPurchaseOrder() != null ? receipt.getPurchaseOrder().getOrderCode() : null;
+        String lotCode = poCode != null && !poCode.isBlank() ? poCode : receipt.getReceiptCode();
+        for (GoodsReceiptItems item : items) {
+            int damaged = item.getDamagedQuantity() == null ? 0 : item.getDamagedQuantity();
+            if (damaged <= 0) continue;
+            damagedStockService.record(receipt.getWarehouse(), item.getProduct(), damaged,
+                    "GOODS_RECEIPT", receipt.getId(), receipt.getReceiptCode(), lotCode,
+                    "Damaged / defective when receiving from supplier (PO " + (poCode == null ? "—" : poCode)
+                            + ", receipt " + receipt.getReceiptCode() + ")", actor,
+                    InventoryReferenceType.GOODS_RECEIPT, InventoryTransactionType.DAMAGED);
         }
 
-        putawayTaskService
-                .createFromGoodsReceipt(
-                        receipt,
-                        items,
-                        receivingStaff,
-                        receivingLocation
-                );
+        Users receivingStaff = latestClaim.getClaimedBy();
+        if (receivingStaff == null) throw new BadRequest("Receiving staff was not found");
+        // Nguoi da kiem hang thi cat hang len ke.
+        putawayTaskService.createFromGoodsReceipt(receipt, items, receivingStaff, receivingLocation);
 
-        /*
-         * =============================================
-         * RECEIPT
-         * =============================================
-         */
+        // Bien ban su co (thieu / hong / du) de Manager in cho Business lam viec voi nha cung cap.
+        receivingIncidentReportService.generateForCompletedReceipt(receipt, receivingStaff);
 
-        receipt.setInspectionConfirmedBy(
-                manager
-        );
-
-        receipt.setInspectionConfirmedAt(
-                LocalDateTime.now()
-        );
-
-        receipt.setStatus(
-                GoodsReceiptStatus.COMPLETED
-        );
-
-        receipt.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        goodsReceiptRepository.save(
-                receipt
-        );
-
-        /*
-         * Build response directly after confirmation.
-         * getInspectionResult() also supports COMPLETED
-         * for read-only history viewing.
-         */
-        return buildResponse(receipt);
+        LocalDateTime now = LocalDateTime.now();
+        receipt.setInspectionConfirmedBy(actor);
+        receipt.setInspectionConfirmedAt(now);
+        receipt.setStatus(GoodsReceiptStatus.COMPLETED);
+        receipt.setUpdatedAt(now);
+        goodsReceiptRepository.save(receipt);
     }
 
 

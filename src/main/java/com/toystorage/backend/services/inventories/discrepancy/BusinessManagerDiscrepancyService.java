@@ -281,7 +281,8 @@ public class BusinessManagerDiscrepancyService {
                     finalQuantities
             );
 
-        } else {
+        } else if (report.getReferenceType()
+                == DiscrepancyReferenceType.STOCK_TRANSFER) {
 
             applyStockTransferFinalQuantities(
                     report,
@@ -1130,6 +1131,15 @@ public class BusinessManagerDiscrepancyService {
          * Warehouse Staff đã kiểm hàng
          * nhưng inventory chưa được cộng.
          */
+        /*
+         * Nghiep vu moi: phieu nhap hoan thanh ngay khi nhan vien kiem xong (ton da duoc ghi nhan).
+         * Business chi ghi nhan quyet dinh / lam viec voi nha cung cap, khong sua lai so luong phieu.
+         */
+        if (receipt.getStatus()
+                == GoodsReceiptStatus.COMPLETED) {
+            return;
+        }
+
         if (receipt.getStatus()
                 != GoodsReceiptStatus.INSPECTED) {
 
@@ -1731,7 +1741,21 @@ public class BusinessManagerDiscrepancyService {
                 ||
 
                 report.getReferenceType()
-                        == DiscrepancyReferenceType.STOCK_TRANSFER;
+                        == DiscrepancyReferenceType.STOCK_TRANSFER
+
+                ||
+
+                /*
+                 * Hang hong / thieu tu tra hang cua cua hang va tu kiem ke
+                 * ma Warehouse Manager chon "gui Business": Business ghi nhan quyet dinh.
+                 */
+                report.getReferenceType()
+                        == DiscrepancyReferenceType.STORE_RETURN
+
+                ||
+
+                report.getReferenceType()
+                        == DiscrepancyReferenceType.STOCK_COUNT;
     }
 
 

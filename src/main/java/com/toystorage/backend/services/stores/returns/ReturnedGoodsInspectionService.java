@@ -52,6 +52,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReturnedGoodsInspectionService {
 
+    private final com.toystorage.backend.repository.inventories.damagedlot.DamagedStockLotRepository
+            damagedStockLotRepository;
+
     private final WarehouseReturnRepository
             returnRepository;
 
@@ -730,6 +733,23 @@ public class ReturnedGoodsInspectionService {
                         quantity,
                         staff
                 );
+
+
+        // Ghi lo hang hong de theo doi: ma lo = ma phieu tra hang.
+        damagedStockLotRepository.save(
+                com.toystorage.backend.entity.inventories.DamagedStockLot.builder()
+                        .lotCode("LOT-" + (storeReturn.getReturnCode() != null ? storeReturn.getReturnCode() : "SR-" + storeReturn.getId()))
+                        .sourceType("STORE_RETURN")
+                        .sourceId(storeReturn.getId())
+                        .sourceCode(storeReturn.getReturnCode())
+                        .warehouse(storeReturn.getWarehouse())
+                        .location(quarantineLocation)
+                        .product(item.getProduct())
+                        .quantity(quantity)
+                        .note(item.getConditionStatus() + (item.getNote() == null ? "" : " · " + item.getNote()))
+                        .recordedBy(staff)
+                        .build()
+        );
 
 
         item.setApprovedQuantity(

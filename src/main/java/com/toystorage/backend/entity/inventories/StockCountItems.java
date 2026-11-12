@@ -51,6 +51,10 @@ public class StockCountItems {
     private String stockCountItemsCode;
     @Builder.Default @Column(name = "recount_requested")
     private Boolean recountRequested = false;
+    /** Hang hong phat hien khi kiem ke (khong tinh vao so luong tot o vi tri; chuyen sang khu hang hong). */
+    @Column(name = "damaged_quantity")
+    private Integer damagedQuantity;
+
     public void calculateDifference() {
         differenceQuantity = finalQuantity == null || systemQuantity == null
                 ? null : finalQuantity - systemQuantity;

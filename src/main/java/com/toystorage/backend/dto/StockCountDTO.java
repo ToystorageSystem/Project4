@@ -14,7 +14,7 @@ public final class StockCountDTO {
                        Long locationId, String location, String zone, String shelf,
                        int system, Integer first, Integer second, Integer finalQuantity,
                        Integer difference, boolean recountRequested, String firstBy,
-                       String secondBy, String correctionReason) {}
+                       String secondBy, String correctionReason, Integer damaged) {}
     public record Detail(Plan plan, List<Item> items, List<AuditEntry> audit,
                          int catalogTotal, int coveredSkus, List<String> missingSkus) {}
     public record AuditEntry(String action, String actor, Long itemId,
@@ -28,7 +28,8 @@ public final class StockCountDTO {
     public record CorrectionRequest(Integer quantity, String reason) {}
     public record CountLocation(Long id, String code, String name, String zone, String shelf) {}
     public record StartManagerRequest(Long fallbackLocationId) {}
-    public record ManagerCountLine(Long itemId, java.math.BigDecimal quantity) {}
+    /** quantity = so hang tot dem duoc tai vi tri; damagedQuantity = so hang hong tim thay (tuy chon). */
+    public record ManagerCountLine(Long itemId, java.math.BigDecimal quantity, Integer damagedQuantity) {}
     public record ManagerCountRequest(List<ManagerCountLine> items) {}
     // A manager explicitly reviews EVERY item, including lines with zero difference.
     // The finalQuantity echo catches a stale detail view or concurrent corrections.

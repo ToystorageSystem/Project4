@@ -41,6 +41,8 @@ public class ReceivingIncidentReportService {
     private final ReceiptInspectionRepository receiptInspectionRepository;
     private final UserRepository userRepository;
     private final ReceivingIncidentReportMapper mapper;
+    private final com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyReportRepository discrepancyReportRepository;
+    private final com.toystorage.backend.repository.receipts.receiving.GoodsReceiptItemRepository goodsReceiptItemRepository;
 
     /*
      * ONE RECEIPT + WAREHOUSE_ACCEPT = ONE REPORT.
@@ -127,6 +129,64 @@ public class ReceivingIncidentReportService {
         return mapper.toResponse(
                 incidentReportRepository.save(report)
         );
+    }
+
+    /**
+     * Nghiep vu moi: phieu nhap hoan thanh ngay khi nhan vien kiem xong.
+     * Moi san pham thieu / hong / du duoc ghi tu dong vao bien ban su co cua phieu nhap
+     * de Warehouse Manager xem, sua ly do va in cho Business lam viec voi nha cung cap.
+     */
+    @Transactional
+    public void generateForCompletedReceipt(
+            com.toystorage.backend.entity.receipts.GoodsReceipts receipt,
+            Users warehouseStaff
+    ) {
+        List<DiscrepancyReports> discrepancies = discrepancyReportRepository
+                .findByReferenceTypeAndReferenceId(
+                        com.toystorage.backend.enums.inventories.DiscrepancyReferenceType.GOODS_RECEIPT,
+                        receipt.getId())
+                .stream()
+                .filter(d -> d.getStatus() == com.toystorage.backend.enums.inventories.DiscrepancyStatus.OPEN
+                        || d.getStatus() == com.toystorage.backend.enums.inventories.DiscrepancyStatus.INVESTIGATING)
+                .toList();
+        if (discrepancies.isEmpty()) return;
+
+        // Bien ban can mot Warehouse Manager: lay Manager dang hoat dong cua kho, neu chua co thi ghi nguoi kiem.
+        Users manager = userRepository.findActiveUsersByRoleCode("WAREHOUSE_MANAGER").stream()
+                .filter(u -> u.getWarehouse() != null && u.getWarehouse().getId().equals(receipt.getWarehouse().getId()))
+                .findFirst().orElse(warehouseStaff);
+
+        ReceivingIncidentReports report = null;
+        for (DiscrepancyReports discrepancy : discrepancies) {
+            if (discrepancy.getProductId() == null) continue;
+            if (incidentReportItemRepository.findByDiscrepancyReportId(discrepancy.getId()).isPresent()) continue;
+            GoodsReceiptItems receiptItem = goodsReceiptItemRepository
+                    .findByGoodsReceiptIdAndProductId(receipt.getId(), discrepancy.getProductId())
+                    .orElse(null);
+            if (receiptItem == null) continue;
+            if (report == null) {
+                report = incidentReportRepository
+                        .findByGoodsReceiptIdAndSourceDecision(receipt.getId(), ReceivingIncidentSourceDecision.WAREHOUSE_ACCEPT)
+                        .orElseGet(() -> createNewWarehouseReport(receiptItem, warehouseStaff, manager));
+            }
+            report.addItem(ReceivingIncidentReportItems.builder()
+                    .receivingIncidentReportItemsCode(generateItemCode())
+                    .discrepancyReport(discrepancy)
+                    .product(receiptItem.getProduct())
+                    .discrepancyType(discrepancy.getDiscrepancyType())
+                    .expectedQuantity(receiptItem.getExpectedQuantity())
+                    .actualQuantity(receiptItem.getActualQuantity())
+                    .acceptedQuantity(receiptItem.getAcceptedQuantity())
+                    .damagedQuantity(receiptItem.getDamagedQuantity())
+                    .shortageQuantity(receiptItem.getShortageQuantity())
+                    .surplusQuantity(receiptItem.getSurplusQuantity())
+                    .reason(discrepancy.getDescription() == null ? "Recorded during receiving inspection" : discrepancy.getDescription())
+                    .build());
+        }
+        if (report != null) {
+            report.setUpdatedAt(LocalDateTime.now());
+            incidentReportRepository.save(report);
+        }
     }
 
     @Transactional(readOnly = true)

@@ -58,6 +58,9 @@ public class ReceivingInspectionService {
 
     private final WarehouseTaskClaimService
             warehouseTaskClaimService;
+    private final ReceivingConfirmationService
+            receivingConfirmationService;
+
     private final ReceivingDiscrepancyService
             receivingDiscrepancyService;
 
@@ -794,11 +797,15 @@ public class ReceivingInspectionService {
 
 
         /*
-         * Không update Inventory.
-         *
-         * Manager Confirm Receiving
-         * mới update Inventory và tạo Putaway.
+         * Nghiep vu moi: kiem xong la hoan thanh, khong can Manager duyet.
+         * Hang dat duoc cong ton + tao putaway cho chinh nguoi kiem;
+         * hang hong vao khu hang hong theo lo; thieu/hong/du vao bien ban su co.
          */
+        receivingConfirmationService.completeAfterInspection(
+                receiptId,
+                staff
+        );
+
         return queryService
                 .buildResponse(
                         receipt

@@ -699,7 +699,7 @@ public class AuthService {
 
         session.removeAttribute(PENDING);
 
-        session.setMaxInactiveInterval(900);
+        session.setMaxInactiveInterval(3*60*60);
 
         return response(
                 user,

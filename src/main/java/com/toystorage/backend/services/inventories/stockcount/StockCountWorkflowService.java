@@ -48,6 +48,8 @@ public class StockCountWorkflowService {
     private final UserRepository users;
     private final ProductRepository productCatalog;
     private final WarehouseLocationRepository warehouseLocations;
+    private final com.toystorage.backend.services.inventories.damagedlot.DamagedStockService damagedStock;
+    private final com.toystorage.backend.repository.inventories.discrepancy.DiscrepancyReportRepository discrepancyReports;
     // Products assigned to a zone / shelf decide where a zero-stock product is counted.
     private final com.toystorage.backend.repository.warehouses.location.WarehouseLocationProductRepository locationProducts;
     private final StockCountValidationService validation;
@@ -125,6 +127,48 @@ public class StockCountWorkflowService {
                 .orElseThrow(() -> bad("Create at least one active storage location before counting"));
     }
 
+    /**
+     * Kiem ke ton thuc te co them cot hang hong / hang thieu:
+     *  - hang hong: chuyen vao khu hang hong theo lo LOT-<ma phieu kiem ke>, khong tinh ton kha dung;
+     *  - hang thieu (he thong - tot - hong > 0), hang hong, hang du: tao bao cao chenh lech de Manager
+     *    chon luu noi bo hoac gui Business (trang Review receiving > Stock count issues).
+     */
+    private void recordDamagedAndDiscrepancies(StockCounts c, List<StockCountItems> lines, Users manager) {
+        for (StockCountItems i : lines) {
+            int system = i.getSystemQuantity() == null ? 0 : i.getSystemQuantity();
+            int good = i.getFinalQuantity() == null ? 0 : i.getFinalQuantity();
+            int damaged = i.getDamagedQuantity() == null ? 0 : i.getDamagedQuantity();
+            if (damaged > 0) {
+                damagedStock.record(c.getWarehouse(), i.getProduct(), damaged, "STOCK_COUNT", c.getId(), c.getCountCode(),
+                        "Found damaged during stock count at " + i.getLocation().getWarehouseCode(), manager,
+                        InventoryReferenceType.STOCK_COUNT, InventoryTransactionType.DAMAGED);
+                countDiscrepancy(c, i, manager, DiscrepancyType.DAMAGED,
+                        damaged + " damaged at " + i.getLocation().getWarehouseCode() + " (moved to the damaged area)");
+            }
+            int missing = system - good - damaged;
+            if (missing > 0) {
+                countDiscrepancy(c, i, manager, DiscrepancyType.SHORTAGE,
+                        missing + " missing at " + i.getLocation().getWarehouseCode() + " (system " + system + ", good " + good
+                                + ", damaged " + damaged + ")");
+            } else if (missing < 0) {
+                countDiscrepancy(c, i, manager, DiscrepancyType.SURPLUS,
+                        (-missing) + " more than the system at " + i.getLocation().getWarehouseCode());
+            }
+        }
+    }
+
+    private void countDiscrepancy(StockCounts c, StockCountItems i, Users manager, DiscrepancyType type, String description) {
+        String code = "DR-SC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase(Locale.ROOT);
+        discrepancyReports.save(DiscrepancyReports.builder()
+                .reportCode(code).discrepancyReportsCode(code)
+                .referenceType(DiscrepancyReferenceType.STOCK_COUNT).referenceId(c.getId())
+                .productId(i.getProduct().getId()).warehouse(c.getWarehouse())
+                .discrepancyType(type).severity(DiscrepancySeverity.MINOR).blocking(false)
+                .status(DiscrepancyStatus.OPEN).reportedBy(manager).responsibleParty("WAREHOUSE_MANAGER")
+                .description(description.length() > 500 ? description.substring(0, 500) : description)
+                .build());
+    }
+
     private List<Item> plannedCatalogPreview(StockCounts count) {
         List<InventoryBalances> current = balancesForScope(count);
         List<Item> result = new ArrayList<>();
@@ -132,7 +176,7 @@ public class StockCountWorkflowService {
             var p = balance.getProduct(); var loc = balance.getLocation();
             result.add(new Item(null, p.getId(), p.getProductsCode(), p.getName(), p.getBarcode(),
                     loc.getId(), loc.getWarehouseCode(), loc.getZone(), loc.getShelf(),
-                    balance.getQuantity(), null, null, null, null, false, null, null, null));
+                    balance.getQuantity(), null, null, null, null, false, null, null, null, null));
         }
         WarehouseLocations scopedLocation = "LOCATION".equals(count.getScopeType()) ?
                 fallbackLocation(count, null) : null;
@@ -143,7 +187,7 @@ public class StockCountWorkflowService {
                     scopedLocation == null ? "Location required" : scopedLocation.getWarehouseCode(),
                     scopedLocation == null ? null : scopedLocation.getZone(),
                     scopedLocation == null ? null : scopedLocation.getShelf(),
-                    0, null, null, null, null, false, null, null, null));
+                    0, null, null, null, null, false, null, null, null, null));
         }
         result.sort(Comparator.comparing(Item::sku).thenComparing(i -> i.location() == null ? "" : i.location()));
         return result;
@@ -283,7 +327,7 @@ public class StockCountWorkflowService {
                 Boolean.TRUE.equals(i.getRecountRequested()),
                 i.getCountedBy() == null ? null : i.getCountedBy().getName(),
                 i.getRecountedBy() == null ? null : i.getRecountedBy().getName(),
-                i.getCorrectionReason());
+                i.getCorrectionReason(), i.getDamagedQuantity());
         }).toList();
         // Catalog is authoritative for FULL stock-count scope. A product with no
         // balance row in this warehouse is still represented as a zero-stock line.
@@ -490,7 +534,12 @@ public class StockCountWorkflowService {
                 request.items().size() != lines.size())
             throw bad("Every product and location needs a counted quantity");
         Map<Long, Integer> quantities = new HashMap<>();
+        Map<Long, Integer> damagedByItem = new HashMap<>();
         for (ManagerCountLine entry : request.items()) {
+            if (entry != null && entry.itemId() != null && entry.damagedQuantity() != null) {
+                if (entry.damagedQuantity() < 0) throw bad("Damaged quantity cannot be negative");
+                damagedByItem.put(entry.itemId(), entry.damagedQuantity());
+            }
             if (entry == null || entry.itemId() == null || entry.quantity() == null)
                 throw bad("Quantity must be a non-negative integer for every item");
             int quantity;
@@ -506,6 +555,7 @@ public class StockCountWorkflowService {
             Integer before = line.getFirstCountQuantity();
             line.setFirstCountQuantity(value);
             line.setFinalQuantity(value);
+            line.setDamagedQuantity(damagedByItem.getOrDefault(line.getId(), 0));
             line.setCountedBy(manager);
             line.calculateDifference();
             log(c, line, manager, "MANAGER_COUNT_ENTERED", before, value, null);
@@ -680,6 +730,7 @@ public class StockCountWorkflowService {
             t.setPerformedBy(manager); transactions.save(t);
             log(c, i, manager, "STOCK_UPDATED", before, after, null);
         }
+        recordDamagedAndDiscrepancies(c, lines, manager);
         c.setStatus(StockCountStatus.COMPLETED); c.setConfirmedBy(manager);
         c.setConfirmedAt(LocalDateTime.now()); c.setCompletedAt(LocalDateTime.now());
         log(c, null, manager, "CONFIRMED", null, null, null);
