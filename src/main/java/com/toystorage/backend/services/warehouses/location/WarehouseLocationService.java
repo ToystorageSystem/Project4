@@ -35,6 +35,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WarehouseLocationService {
 
+    private final DefaultLocationService
+            defaultLocationService;
+
     private final WarehouseLocationRepository
             warehouseLocationRepository;
 
@@ -483,23 +486,19 @@ public class WarehouseLocationService {
      * =====================================================
      */
 
-    @Transactional(readOnly = true)
+    @Transactional
     public WarehouseLocations getReceivingLocation(
             Long warehouseId
     ) {
 
-        return warehouseLocationRepository
-                .findFirstByWarehouseIdAndLocationTypeAndStatus(
-                        warehouseId,
-                        WarehouseLocationType.RECEIVING,
-                        WarehouseStatus.ACTIVE
-                )
-                .orElseThrow(() ->
-                        new NotFound(
-                                "Receiving location not found for warehouse: "
-                                        + warehouseId
-                        )
-                );
+        /*
+         * 2026-11-13: a warehouse without a receiving area gets a default one
+         * (RCV-AUTO) instead of failing the goods receipt.
+         */
+        return defaultLocationService.ensure(
+                warehouseId,
+                WarehouseLocationType.RECEIVING
+        );
     }
 
 

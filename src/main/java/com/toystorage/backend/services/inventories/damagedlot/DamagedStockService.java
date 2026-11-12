@@ -34,15 +34,16 @@ public class DamagedStockService {
     private final InventoryBalanceRepository balances;
     private final InventoryTransactionRepository transactions;
     private final WarehouseLocationRepository locations;
+    private final com.toystorage.backend.services.warehouses.location.DefaultLocationService defaultLocationService;
     private final DamagedStockLotRepository lots;
 
     /** Khu hang hong cua kho: uu tien QUARANTINE, neu khong co thi DAMAGED. */
-    @Transactional(readOnly = true)
+    @Transactional
     public WarehouseLocations damagedArea(Long warehouseId) {
         return locations.findFirstByWarehouseIdAndLocationTypeAndStatus(warehouseId, WarehouseLocationType.QUARANTINE, WarehouseStatus.ACTIVE)
                 .or(() -> locations.findFirstByWarehouseIdAndLocationTypeAndStatus(warehouseId, WarehouseLocationType.DAMAGED, WarehouseStatus.ACTIVE))
-                .orElseThrow(() -> new BadRequest(
-                        "Create an active QUARANTINE or DAMAGED location in Storage locations before recording damaged goods"));
+                // 2026-11-13: no damaged area yet -> default QUARANTINE location (QRN-AUTO)
+                .orElseGet(() -> defaultLocationService.ensure(warehouseId, WarehouseLocationType.QUARANTINE));
     }
 
     /**
