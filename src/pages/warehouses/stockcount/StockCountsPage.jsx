@@ -17,6 +17,7 @@ import {
 } from "../../../components/operations/WorkspaceUI";
 import { useAuth } from "../../../auth/AuthContext";
 import "../../../manager-ops.css";
+import { confirmDialog } from "../../../utils/confirmDialog";
 const BASE = "/warehouse/manager/stock-counts";
 // First week of the month (first 5 working days) and mid-month (week containing the 15th) count periods.
 function PeriodicSchedule({ overview }) {
@@ -406,7 +407,7 @@ export default function StockCountsPage() {
                       }
                       onClick={async () => {
                         if (
-                          window.confirm(
+                          await confirmDialog(
                             "Confirm the count and update inventory? Lines you did not tick are accepted as counted.",
                           )
                         ) {
@@ -571,9 +572,9 @@ export default function StockCountsPage() {
                 <button
                   className="ops-button mt-4"
                   disabled={action.busy || !items.length || invalidEntry || !items.some(changed)}
-                  onClick={() => {
+                  onClick={async () => {
                     if (
-                      window.confirm(
+                      await confirmDialog(
                         `Confirm the count? ${items.filter(changed).length} line(s) changed; the other lines keep the system quantity. Damaged goods go to the damaged area and shortages are listed in Review receiving for your decision.`,
                       )
                     )

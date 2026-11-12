@@ -23,6 +23,7 @@ import PackingSummaryCards
 
 import PackingPackageCards
     from "./PackingPackageCards.jsx";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 
 export default function PackingConfirmationDetailMain() {
@@ -105,7 +106,7 @@ export default function PackingConfirmationDetailMain() {
             }
 
             const accepted =
-                window.confirm(
+                await confirmDialog(
                     "Confirm packing for this transfer?\n\n" +
                     "All packages will be marked CHECKED and a shipment manifest will be created."
                 );

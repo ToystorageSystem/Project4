@@ -21,6 +21,7 @@ import Alert from "../../../components/ui/Alert";
 import Button from "../../../components/ui/Button";
 import EmptyState from "../../../components/ui/EmptyState";
 import Spinner from "../../../components/ui/Spinner";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 const PAGE_SIZE = 10;
 
@@ -578,7 +579,7 @@ export default function RejectedProductsPage() {
         if (!detail || saving || showClosed) return;
 
         if (
-            !window.confirm(
+            !await confirmDialog(
                 "Stop processing this request? Its rejection history will be retained."
             )
         ) {

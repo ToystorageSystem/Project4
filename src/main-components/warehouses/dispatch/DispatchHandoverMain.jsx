@@ -16,6 +16,7 @@ import {
     confirmShipment,
     getShipment,
 } from "../../../api/packages/packing/managerPacking.js";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 
 export default function DispatchHandoverMain() {
@@ -225,7 +226,7 @@ export default function DispatchHandoverMain() {
 
 
             const accepted =
-                window.confirm(
+                await confirmDialog(
                     "Confirm that all packages have left the warehouse and have been handed over to the delivery person?"
                 );
 

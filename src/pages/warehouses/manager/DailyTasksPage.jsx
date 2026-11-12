@@ -32,6 +32,7 @@ import PageHeader from "../../../components/layout/PageHeader";
 import Modal from "../../../components/ui/Modal";
 import { Field, Notice, Status, number } from "../../../components/operations/WorkspaceUI";
 import "../../../manager-ops.css";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 const EMPTY = { taskType: "RECEIVING", title: "", description: "", priority: "NORMAL", dueTime: "", referenceCode: "", referencePath: "", targetQuantity: "", managerNote: "", includePutaway: true };
 
@@ -135,7 +136,7 @@ export default function DailyTasksPage() {
   }
   async function copyRoles() {
     const from = shiftIso(date, -1);
-    if (!window.confirm(`Copy the shift roles from ${from} to ${date}?`)) return;
+    if (!await confirmDialog(`Copy the shift roles from ${from} to ${date}?`)) return;
     setBusy(true);
     setError("");
     try {
@@ -222,7 +223,7 @@ export default function DailyTasksPage() {
 
   async function copyYesterday() {
     const from = shiftIso(date, -1);
-    if (!window.confirm(`Copy all non-cancelled tasks from ${from} to ${date}?`)) return;
+    if (!await confirmDialog(`Copy all non-cancelled tasks from ${from} to ${date}?`)) return;
     setBusy(true);
     setError("");
     try {

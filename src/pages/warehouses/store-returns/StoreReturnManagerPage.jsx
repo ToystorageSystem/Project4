@@ -15,6 +15,7 @@ import {
     resolveStoreReturnAsWarehouse,
     sendStoreReturnDiscrepancyToStore,
 } from "../../../api/stores/returns/storeReturnInspection.js";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 const number = (value) =>
     typeof value === "number" && Number.isFinite(value) ? value : 0;
@@ -85,7 +86,7 @@ function StoreReturnDetail({ data, onBack, onRefresh }) {
 
     const handleConfirm = async () => {
         if (
-            !window.confirm(
+            !await confirmDialog(
                 "Confirm this Store Return? Unposted inventory will be released according to item condition."
             )
         ) {

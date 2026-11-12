@@ -29,6 +29,7 @@ import {
     getReceivingInspectionResult,
     requestReceivingReinspection,
 } from "../../../api/receipts/receiving/receivingConfirmation";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 
 export default function ReceivingWaitingReviewPage() {
@@ -247,7 +248,7 @@ export default function ReceivingWaitingReviewPage() {
             }
 
             if (
-                !window.confirm(
+                !await confirmDialog(
                     "Confirm this receiving result? Inventory will be updated and Putaway will be created."
                 )
             ) {

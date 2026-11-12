@@ -25,6 +25,7 @@ import DamagedGoodsReportInfo
 
 import DamagedGoodsItemCard
     from "./DamagedGoodsItemCard.jsx";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 
 export default function DamagedGoodsDetailMain() {
@@ -122,7 +123,7 @@ export default function DamagedGoodsDetailMain() {
         async () => {
 
             const confirmed =
-                window.confirm(
+                await confirmDialog(
                     "Start inspection for this damaged goods report?"
                 );
 
@@ -208,7 +209,7 @@ export default function DamagedGoodsDetailMain() {
 
 
             const confirmed =
-                window.confirm(
+                await confirmDialog(
                     confirmMessage
                 );
 

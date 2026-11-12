@@ -9,6 +9,7 @@ import Spinner from "../../../components/ui/Spinner";
 import EmptyState from "../../../components/ui/EmptyState";
 import { getPendingWarehouseGoodsReceipts } from "../../../api/receipts/receiving/pendingGoodsReceipts";
 import { confirmVehicleArrival } from "../../../api/receipts/receiving/goodsReceiving";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 function formatDate(value) {
     if (!value) return "-";
@@ -29,7 +30,7 @@ export default function ReceivingPendingPage() {
 
     // CREATED -> CONFIRMED: the supplier truck is at the warehouse; staff can then claim & inspect (2026-11-13)
     const confirmArrival = async (receipt) => {
-        if (confirmingId || !window.confirm(`Confirm that the supplier vehicle for ${receipt.receiptCode} has arrived?`)) return;
+        if (confirmingId || !(await confirmDialog(`The supplier vehicle for ${receipt.receiptCode} (${receipt.supplierName || "supplier"}) is at the warehouse?\n\nAfter confirming, warehouse staff can start receiving and inspecting the goods.`, { title: "Confirm vehicle arrival", confirmLabel: "Confirm arrival" }))) return;
         setConfirmingId(receipt.id);
         setError("");
         setNotice("");

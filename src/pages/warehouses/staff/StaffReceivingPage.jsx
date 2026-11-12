@@ -13,6 +13,7 @@ import {
   useAction,
   number,
 } from "../../../components/operations/WorkspaceUI";
+import { confirmDialog } from "../../../utils/confirmDialog";
 const BASE = "/warehouse/goods-receipts";
 export default function StaffReceivingPage() {
   const list = useResource(BASE + "/receiving"),
@@ -298,9 +299,9 @@ export default function StaffReceivingPage() {
                         Object.keys(drafts).length > 0 ||
                         items.some((i) => !i.inspected)
                       }
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          window.confirm(
+                          await confirmDialog(
                             "Finish inspection? Passed goods are added to stock right away, damaged goods go to the damaged area, and the putaway task is assigned to you.",
                           )
                         )

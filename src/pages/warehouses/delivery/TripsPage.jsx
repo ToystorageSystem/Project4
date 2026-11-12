@@ -13,6 +13,7 @@ import {
   Table,
   useAction,
 } from "../../../components/operations/WorkspaceUI";
+import { confirmDialog } from "../../../utils/confirmDialog";
 const BASE = "/delivery-staff/trips";
 export default function TripsPage() {
   const list = useResource(BASE),
@@ -24,7 +25,7 @@ export default function TripsPage() {
     await Promise.all([list.reload(), detail.reload()]);
   });
   async function mutate(path, label) {
-    if (window.confirm(label))
+    if (await confirmDialog(label))
       await action.run(() => api.patch(`${BASE}/${id}/${path}`));
   }
   const [listSearch, setListSearch] = useState("");
@@ -242,7 +243,7 @@ export default function TripsPage() {
                       const f = Object.fromEntries(
                         new FormData(e.currentTarget),
                       );
-                      if (window.confirm("Complete the handover to the recipient?")) {
+                      if (await confirmDialog("Complete the handover to the recipient?")) {
                         const result = await action.run(
                           async () =>
                             (

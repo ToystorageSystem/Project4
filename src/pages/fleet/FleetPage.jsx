@@ -6,6 +6,7 @@ import MainLayout from "../../components/layout/MainLayout";
 import PageHeader from "../../components/layout/PageHeader";
 import { Table } from "../../components/operations/WorkspaceUI";
 import WorkspaceIcon from "../../components/ui/WorkspaceIcon";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 const list = value => Array.isArray(value) ? value : [];
 const hasPoint = value => Number.isFinite(value?.latitude) && Number.isFinite(value?.longitude);
@@ -96,7 +97,7 @@ export default function FleetPage() {
         <h2>Vehicle options · {suggestions.manifest.manifestCode}</h2>
         {!suggestions.items.length && <p>No available vehicle has enough capacity.</p>}
         <Table head={["Vehicle", "Active deliveries", "Peak load", "Added distance", "Position", "Assign"]}>{suggestions.items.map(c => <tr key={c.vehicleId}><td>{c.plate}<br />{c.driverName}</td><td>{c.activeDeliveries}</td><td>{c.peakLoad}/{c.capacityPackages}</td><td>{km(c.extraKm)}<br />{c.distanceModel === "ROAD_DISTANCE" ? "Road distance" : "Straight-line estimate"}</td><td>{c.positionSource === "LIVE_GPS" ? "Live GPS" : "Warehouse base"}</td><td><button className="ops-button" disabled={busy} onClick={() => action(async () => {
-          if (!window.confirm(`Assign ${suggestions.manifest.manifestCode} to ${c.plate}?`)) return;
+          if (!await confirmDialog(`Assign ${suggestions.manifest.manifestCode} to ${c.plate}?`)) return;
           await api.post(`/fleet/manifests/${suggestions.manifest.id}/assign`, { vehicleId: c.vehicleId }); setSuggestions(null); setRoute(null); selectedVehicleId.current = null;
         })}>Assign</button></td></tr>)}</Table>
       </section>}

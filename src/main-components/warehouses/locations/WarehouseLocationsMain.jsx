@@ -25,6 +25,7 @@ import WarehouseLocationFormModal
 
 import WarehouseLayoutView
     from "./WarehouseLayoutView";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 
 const TYPE_OPTIONS = [
@@ -415,7 +416,7 @@ export default function WarehouseLocationsMain() {
 
 
             const confirmed =
-                window.confirm(
+                await confirmDialog(
                     `Change ${location.warehouseCode} to ${newStatus}?`
                 );
 

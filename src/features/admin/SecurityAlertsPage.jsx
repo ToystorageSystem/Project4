@@ -28,6 +28,7 @@ import {
 } from "./api/admin/securityAlertsApi";
 
 import "./css/SecurityAlertsPage.css";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 // ======================================================
 // ISSUE #27 - SECURITY ALERTS - ACCOUNT DATA
@@ -581,7 +582,7 @@ export default function SecurityAlertsPage() {
       }
 
       // Backend khong co API mo lai canh bao da dong.
-      const confirmed = window.confirm(
+      const confirmed = await confirmDialog(
         `Mark ${selectedAlert.alertCode} as ${formatLabel(nextStatus)}? ` +
         "This action cannot be reversed from this screen."
       );

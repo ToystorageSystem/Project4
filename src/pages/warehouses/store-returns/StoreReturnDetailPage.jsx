@@ -15,6 +15,7 @@ import {
     resolveStoreReturnAsWarehouse,
     sendStoreReturnDiscrepancyToStore,
 } from "../../../api/stores/returns/storeReturnInspection.js";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 const formatDateTime = (value) => {
     if (!value) return "-";
@@ -135,7 +136,7 @@ export default function StoreReturnDetailPage() {
             return;
         }
 
-        if (!window.confirm("Confirm this Store Return and release all remaining held inventory?")) {
+        if (!await confirmDialog("Confirm this Store Return and release all remaining held inventory?")) {
             return;
         }
 

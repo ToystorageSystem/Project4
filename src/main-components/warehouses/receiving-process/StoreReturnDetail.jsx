@@ -17,6 +17,7 @@ import {
 import ReceivingStatusBadge, {
     normalizeStatus,
 } from "./ReceivingStatusBadge";
+import { confirmDialog } from "../../../utils/confirmDialog";
 
 
 const formatDateTime = (value) => {
@@ -308,7 +309,7 @@ export default function StoreReturnDetail({
 
 
             if (
-                !window.confirm(
+                !await confirmDialog(
                     "Confirm this Store Return? Inventory will be updated based on the inspection result."
                 )
             ) {

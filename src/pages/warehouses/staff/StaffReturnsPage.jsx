@@ -15,6 +15,7 @@ import {
   useAction,
   number,
 } from "../../../components/operations/WorkspaceUI";
+import { confirmDialog } from "../../../utils/confirmDialog";
 const BASE = "/warehouse/staff/store-returns";
 export default function StaffReturnsPage() {
   const params = useParams();
@@ -270,8 +271,8 @@ export default function StaffReturnsPage() {
                     <button
                       className="ops-button"
                       disabled={action.busy}
-                      onClick={() => {
-                        if (window.confirm("Submit this return inspection?"))
+                      onClick={async () => {
+                        if (await confirmDialog("Submit this return inspection?"))
                           action.run(() => api.patch(`${BASE}/${id}/submit`));
                       }}
                     >

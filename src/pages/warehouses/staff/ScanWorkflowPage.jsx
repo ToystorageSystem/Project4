@@ -14,6 +14,7 @@ import {
   useAction,
   number,
 } from "../../../components/operations/WorkspaceUI";
+import { confirmDialog } from "../../../utils/confirmDialog";
 const configs = {
   picking: {
     title: "Picking",
@@ -325,9 +326,9 @@ export default function ScanWorkflowPage({ kind }) {
                   <button
                     className="ops-button"
                     disabled={action.busy}
-                    onClick={() => {
+                    onClick={async () => {
                       if (
-                        window.confirm(
+                        await confirmDialog(
                           "Complete this task and submit the results?",
                         )
                       )

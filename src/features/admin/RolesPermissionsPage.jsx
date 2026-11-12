@@ -35,6 +35,7 @@ import {
 } from "./api/admin/rolesPermissionsApi";
 
 import "./css/RolesPermissionsPage.css";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 // App.jsx van import ham nay.
 // Giu export de tranh loi khi build.
@@ -600,7 +601,7 @@ export default function RolesPermissionsPage() {
 
       // Xac nhan neu Role dang co User.
       if (role.assignedUsers > 0) {
-        const approved = window.confirm(
+        const approved = await confirmDialog(
           `This role has ${role.assignedUsers} assigned user(s). ` +
           "Changing permissions can invalidate their sessions. Continue?"
         );

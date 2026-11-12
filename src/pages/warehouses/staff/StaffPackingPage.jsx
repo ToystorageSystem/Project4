@@ -15,6 +15,7 @@ import {
   useAction,
   number,
 } from "../../../components/operations/WorkspaceUI";
+import { confirmDialog } from "../../../utils/confirmDialog";
 const BASE = "/warehouse/staff/packing",
   SUB = "/warehouse/staff/packing-submissions/transfers";
 export default function StaffPackingPage() {
@@ -170,9 +171,9 @@ export default function StaffPackingPage() {
                         row.totalPackedQuantity !== row.totalPickedQuantity ||
                         packages.some((p) => p.packageStatus !== "PACKED")
                       }
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          window.confirm(
+                          await confirmDialog(
                             "Submit all sealed packages for manager review?",
                           )
                         )
@@ -279,7 +280,7 @@ export default function StaffPackingPage() {
                               className="ops-form"
                               onSubmit={async (e) => {
                                 e.preventDefault();
-                                if (window.confirm("Seal this package?"))
+                                if (await confirmDialog("Seal this package?"))
                                   await action.run(() =>
                                     api.patch(
                                       `${BASE}/packages/${packageId}/seal`,
