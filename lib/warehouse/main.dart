@@ -701,6 +701,8 @@ class TaskPage extends StatefulWidget {
 
 class _TaskState extends State<TaskPage> {
   late Json task;
+  /// Picking: lines the staff skipped for now (e.g. shelf empty); shown again at the end.
+  final Set<dynamic> skippedPicks = {};
   bool busy = false;
   String? error;
   Module get m => modules[widget.module];
@@ -1103,36 +1105,141 @@ class _TaskState extends State<TaskPage> {
     );
   }
 
+  /// Picking goes one line at a time in walking order. Skipped lines come back last.
+  Json? get pickCurrent {
+    final open = routeItems.where((x) => _remaining(x) > 0).toList();
+    if (open.isEmpty) return null;
+    return open.where((x) => !skippedPicks.contains(x['itemId'])).firstOrNull ??
+        open.first;
+  }
+
+  int get pickOpenCount => items.where((x) => _remaining(x) > 0).length;
+
+  void skipPick() {
+    final current = pickCurrent;
+    if (current == null) return;
+    setState(() {
+      if (skippedPicks.length >= pickOpenCount - 1) skippedPicks.clear();
+      skippedPicks.add(current['itemId']);
+    });
+  }
+
   Future<void> pickFlow() async {
-    final next = nextStop;
-    final shelf = await scanCode(
-      next != null && targetLocation(next) != null
-          ? 'Go to shelf ${targetLocation(next)} and scan the shelf code'
-          : 'Scan the shelf code',
-    );
-    if (shelf == null || !mounted) return;
-    final atShelf = items
-        .where((x) => _norm(x['locationCode']) == _norm(shelf) && _remaining(x) > 0)
-        .toList();
-    if (atShelf.isEmpty) {
-      message(context, 'Nothing left to pick on shelf $shelf.');
-      return;
-    }
-    final code = await scanCode('Shelf $shelf — now scan the product barcode');
+    final item = pickCurrent;
+    if (item == null) return;
+    final code = await scanCode('Scan the barcode of ${_productName(item)}');
     if (code == null || !mounted) return;
-    final item = atShelf.where((x) => _sameProduct(x, code)).firstOrNull;
-    if (item == null) {
-      message(context, 'This product is not to be picked from shelf $shelf.');
+    if (!_sameProduct(item, code)) {
+      message(
+        context,
+        'This is not ${_productName(item)}. Check shelf ${item['locationCode']} and scan again.',
+      );
       return;
     }
     final qty = await askQuantity(
       context,
       title: 'Pick ${_productName(item)}',
-      info: ['Shelf: ${item['locationCode']}', 'Still to pick: ${_remaining(item)}'],
+      info: ['Shelf: ${item['locationCode']}', 'To pick: ${_remaining(item)}'],
       max: _remaining(item),
+      initial: _remaining(item),
     );
     if (qty == null || !mounted) return;
     await submitLine(item, '${item['locationCode']}', qty);
+    if (mounted) setState(() => skippedPicks.remove(item['itemId']));
+  }
+
+  Widget pickStep() {
+    final item = pickCurrent;
+    final total = items.length;
+    if (item == null) {
+      return const Card(
+        elevation: 0,
+        color: Color(0xFFE8F5E9),
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 32),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'All products picked. Tap Finish picking.',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final doneCount = total - pickOpenCount;
+    final place = targetPlace(item);
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Product ${doneCount + 1} of $total',
+              style: const TextStyle(color: Colors.black54),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined, color: teal),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '${item['locationCode'] ?? 'No location'}${place.isEmpty ? '' : ' · $place'}',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: teal,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _productName(item),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            Text(
+              '${item['productCode'] ?? ''} • ${item['barcode'] ?? ''}',
+              style: const TextStyle(color: Colors.black54),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'To pick: ${_remaining(item)}'
+              '${(item['pickedQuantity'] as num? ?? 0) > 0 ? '  (already picked ${item['pickedQuantity']})' : ''}',
+              style: const TextStyle(fontSize: 17),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(56),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              onPressed: busy || error != null ? null : pickFlow,
+              icon: const Icon(Icons.qr_code_scanner),
+              label: const Text('Scan product'),
+            ),
+            if (pickOpenCount > 1)
+              TextButton(
+                onPressed: busy ? null : skipPick,
+                child: const Text('Skip for now'),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> putawayFlow() async {
@@ -1344,7 +1451,8 @@ class _TaskState extends State<TaskPage> {
               label: const Text('Accept and start'),
             ),
           ),
-        if (active)
+        if (active && widget.module == 2) ...[pickStep(), const SizedBox(height: 18)],
+        if (active && widget.module != 2)
           FilledButton.icon(
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(56),
@@ -1356,14 +1464,14 @@ class _TaskState extends State<TaskPage> {
               const [
                 'Scan product',
                 'Scan product',
-                'Scan shelf',
+                'Scan product',
                 'Scan product code',
               ][widget.module],
             ),
           ),
         const SizedBox(height: 18),
-        if (active && nextStop != null) _NextStopCard(
-          title: widget.module == 1 ? 'Put away next' : 'Pick next',
+        if (active && widget.module == 1 && nextStop != null) _NextStopCard(
+          title: 'Put away next',
           location: targetLocation(nextStop!) ??
               (widget.module == 1 ? 'Scan any NORMAL shelf' : 'No location'),
           place: targetPlace(nextStop!),
@@ -1375,12 +1483,15 @@ class _TaskState extends State<TaskPage> {
           quantity: '${nextStop!['remainingQuantity'] ?? ''}',
           onConfirm: null, // info only: the Scan button does the work
         ),
+        if (!(active && widget.module == 2)) ...[
         Text(
           '${items.length} products',
           style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
-        for (final item in routeItems)
+        ],
+        // Picking in progress: only the current step is shown (no full list).
+        for (final item in active && widget.module == 2 ? const <Json>[] : routeItems)
           Card(
             elevation: 0,
             color: Colors.white,
@@ -1473,10 +1584,12 @@ class _TaskState extends State<TaskPage> {
             child: Text(
               widget.module == 3
                   ? 'Submit stock count'
+                  : widget.module == 2
+                  ? 'Finish picking'
                   : 'Complete ${m.title.toLowerCase()}',
             ),
           ),
-        if (active && !done)
+        if (active && !done && widget.module != 2)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text(
@@ -1505,15 +1618,18 @@ class _TaskState extends State<TaskPage> {
   );
 }
 
-/// Quantity after a successful scan. Starts at 1, can go down to 0, never above [max].
+/// Quantity after a successful scan. Starts at [initial] (default 1), can go down to 0,
+/// never above [max].
 /// 0 cannot be confirmed (nothing to record) — the user cancels instead.
 Future<int?> askQuantity(
   BuildContext context, {
   required String title,
   required List<String> info,
   required int max,
+  int initial = 1,
 }) {
-  final ctrl = TextEditingController(text: max < 1 ? '0' : '1');
+  final start = initial > max ? max : (initial < 0 ? 0 : initial);
+  final ctrl = TextEditingController(text: '$start');
   return showDialog<int>(
     context: context,
     builder: (c) => StatefulBuilder(
