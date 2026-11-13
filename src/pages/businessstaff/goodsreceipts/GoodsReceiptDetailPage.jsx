@@ -65,6 +65,7 @@ export default function GoodsReceiptDetailPage() {
     const columns = [
         { key: "productCode", label: "SKU" },
         { key: "productName", label: T.product },
+        { key: "barcode", label: "Barcode", render: (value) => value || "—" },
         { key: "expectedQuantity", label: T.quantity },
         { key: "unitPrice", label: T.price, render: (value) => formatReceiptMoney(value) },
         { key: "subtotal", label: T.subtotal, render: (value) => formatReceiptMoney(value) },

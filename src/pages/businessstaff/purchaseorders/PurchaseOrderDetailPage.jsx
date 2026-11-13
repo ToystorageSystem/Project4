@@ -231,6 +231,7 @@ export default function PurchaseOrderDetailPage() {
     const columns = [
         { key: "productCode", label: "Product Code", render: (value) => value || "—" },
         { key: "productName", label: "Product Name", render: (value) => value || "—" },
+        { key: "barcode", label: "Barcode", render: (value) => value || "—" },
         { key: "baseUnit", label: "Unit", render: (value) => value || "—" },
         { key: "orderedQuantity", label: "Ordered Quantity", render: (value) => value ?? "—" },
         { key: "receivedQuantity", label: "Received Quantity", render: (value) => value ?? "—" },
