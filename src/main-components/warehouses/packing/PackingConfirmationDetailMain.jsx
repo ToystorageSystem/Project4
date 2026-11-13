@@ -108,7 +108,8 @@ export default function PackingConfirmationDetailMain() {
             const accepted =
                 await confirmDialog(
                     "Confirm packing for this transfer?\n\n" +
-                    "All packages will be marked CHECKED and a shipment manifest will be created."
+                    "All packages will be marked CHECKED, a shipment manifest is created " +
+                    "and the delivery trip is sent to the nearest available driver."
                 );
 
             if (!accepted) {
@@ -395,6 +396,28 @@ export default function PackingConfirmationDetailMain() {
                                                 </p>
                                             </div>
                                         </div>
+
+                                        {/* 2026-11-13: next step after packing review */}
+                                        {data?.transferStatus === "PACKED" && (
+                                            <div className="mt-4 border-t border-emerald-100 pt-4">
+                                                <p className="text-xs leading-5 text-slate-600">
+                                                    Next: a delivery trip was sent to the nearest available driver.
+                                                    When the driver accepts it in the app, open Dispatch handover,
+                                                    give the packages to the driver and confirm.
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/warehouse/dispatch/${data.transferId ?? transferId}`
+                                                        )
+                                                    }
+                                                    className="mt-3 w-full rounded-xl bg-[#f25d19] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#d94f12]"
+                                                >
+                                                    Go to Dispatch handover
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
