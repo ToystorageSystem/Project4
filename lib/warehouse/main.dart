@@ -2102,10 +2102,20 @@ class _PackingState extends State<PackingPage> {
     });
   }
 
+  /// Seal = close the box and put a numbered seal sticker / tamper tape on it.
+  /// The driver and the store check this number later: if it changed or is
+  /// broken, the box was opened on the way. A number is prefilled for the demo.
   Future<void> seal(Json p) async {
-    final v = await fields(context, 'Seal package', {
-      'sealNumber': 'Seal number',
-    });
+    final v = await fields(
+      context,
+      'Close & seal ${p['packageCode']}',
+      {'sealNumber': 'Seal number'},
+      initial: {'sealNumber': 'SEAL-${p['packageCode']}'},
+      helpText:
+          'Close the box and stick the seal on it. Enter the number printed on the seal '
+          '(or keep the suggested one). After sealing, nothing can be added to this package. '
+          'The driver and the store check this number on arrival.',
+    );
     if (v == null || !mounted) return;
     await run(() async {
       if (widget.demo) {
@@ -2127,9 +2137,11 @@ class _PackingState extends State<PackingPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Submit for manager approval?'),
+        title: const Text('Submit for manager review?'),
         content: Text(
-          'Packed $packed products in ${packages.length} packages. After submitting, the task becomes PACKED.',
+          'Packed $packed products in ${packages.length} packages. '
+          'The warehouse manager reviews the packing on the web. '
+          'After approval a delivery trip is created and sent to a driver.',
         ),
         actions: [
           TextButton(
@@ -2334,7 +2346,7 @@ class _PackingState extends State<PackingPage> {
                     ],
                   ),
                   Text(
-                    '${p['totalQuantity'] ?? 0} products • ${p['packageStatus'] == 'PACKED' ? 'Sealed' : 'Packing'}',
+                    '${p['totalQuantity'] ?? 0} products • ${p['packageStatus'] == 'PACKING' ? 'Open — add products, then close & seal' : 'Sealed'}',
                   ),
                   if (p['sealNumber'] != null) Text('Seal: ${p['sealNumber']}'),
                   if (error == null &&
@@ -2352,7 +2364,7 @@ class _PackingState extends State<PackingPage> {
                         TextButton.icon(
                           onPressed: busy ? null : () => seal(p),
                           icon: const Icon(Icons.lock_outline),
-                          label: const Text('Sealed'),
+                          label: const Text('Close & seal'),
                         ),
                       ],
                     ),
@@ -2361,20 +2373,34 @@ class _PackingState extends State<PackingPage> {
             ),
           ),
         const SizedBox(height: 16),
-        if (summary['status'] == 'PACKING') ...[
+        // Submitted (option B): wait for the manager, nothing else to do here.
+        if (summary['status'] == 'PACKING' && summary['completedAt'] != null)
+          const Card(
+            elevation: 0,
+            color: Color(0xFFFFF8E1),
+            child: Padding(
+              padding: EdgeInsets.all(18),
+              child: Text(
+                'Submitted. Waiting for the warehouse manager to review the packing (web → Review packing). '
+                'After approval the trip goes to a driver.',
+              ),
+            ),
+          ),
+        if (summary['status'] == 'PACKING' && summary['completedAt'] == null) ...[
           OutlinedButton.icon(
             onPressed: busy || error != null || !canCreate ? null : create,
             icon: const Icon(Icons.add),
-            label: const Text('Create package'),
+            label: Text(packages.isEmpty ? 'Open first package' : 'Open another package'),
           ),
           const SizedBox(height: 12),
           FilledButton(
             onPressed: busy || error != null || !ready ? null : submit,
-            child: const Text('Submit for manager approval'),
+            child: const Text('Submit for manager review'),
           ),
           const SizedBox(height: 12),
           const Text(
-            'Pack all quantities and seal every package before submitting.',
+            '1. Open a package  2. Add product (scan)  3. Close & seal\n'
+            'Repeat until all picked products are packed, then submit.',
             textAlign: TextAlign.center,
           ),
         ],

@@ -570,6 +570,11 @@ class _DriverTripState extends State<DriverTripPage> {
                 ),
               const SizedBox(height: 16),
               if (status == 'ASSIGNED') ...[
+                _Notice(
+                  'New trip: pick up ${packages.length} package(s) at '
+                  '${data['fromLocationName'] ?? 'the warehouse'} and deliver to '
+                  '${data['toLocationName'] ?? 'the destination'}. Accept or reject it.',
+                ),
                 _button(
                   'Accept trip',
                   Icons.check,
@@ -582,10 +587,15 @@ class _DriverTripState extends State<DriverTripPage> {
                   label: const Text('Reject'),
                 ),
               ],
+              // The warehouse manager confirms the handover on the web
+              // (Dispatch handover). Only then is the trip In transit and
+              // "Confirm arrival" appears here.
               if (status == 'ACCEPTED' || status == 'READY_TO_SHIP')
-                const _Notice(
-                  'Waiting for the warehouse to hand over and dispatch the shipment. '
-                  'The trip will then move to In transit.',
+                _Notice(
+                  'Go to ${data['fromLocationName'] ?? 'the warehouse'} and collect the packages. '
+                  'Check each package code and seal number against the list above. '
+                  'When the warehouse manager confirms the handover, the trip moves to In transit '
+                  'and the Confirm arrival button appears. Pull down to refresh.',
                 ),
               if (status == 'IN_TRANSIT') ...[
                 _button(
