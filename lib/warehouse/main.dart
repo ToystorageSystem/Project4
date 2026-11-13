@@ -759,6 +759,10 @@ class _TaskState extends State<TaskPage> {
   /// Lines in walking order: grouped by location so the staff does not go back and forth.
   List<Json> get routeItems {
     final list = items;
+    if (widget.module == 0) {
+      list.sort((a, b) =>
+          (a['inspected'] == true ? 1 : 0) - (b['inspected'] == true ? 1 : 0));
+    }
     if (widget.module == 1 || widget.module == 2) {
       list.sort((a, b) {
         final doneA = (a['remainingQuantity'] as num? ?? 0) <= 0 ? 1 : 0;
@@ -1028,13 +1032,226 @@ class _TaskState extends State<TaskPage> {
     }
   }
 
+  // =====================================================================
+  // 2026-11-13 simplified flow: ONE "Scan" button per task.
+  //   Receiving: scan product -> received / damaged / notes
+  //   Picking:   scan shelf -> scan product -> quantity (default 1)
+  //   Putaway:   scan product -> scan shelf -> quantity (default 1)
+  // Quantities are only shown after the right code was scanned.
+  // Stock count keeps the previous flow (scan()).
+  // =====================================================================
+
+  Future<String?> scanCode(String prompt) => Navigator.push<String>(
+    context,
+    MaterialPageRoute(builder: (_) => ScanPage(prompt: prompt)),
+  );
+
+  static String _norm(dynamic value) => '${value ?? ''}'.trim().toUpperCase();
+
+  static bool _sameProduct(Json item, String code) =>
+      _norm(item['barcode']) == _norm(code) ||
+      _norm(item['productCode']) == _norm(code);
+
+  static int _remaining(Json item) =>
+      (item['remainingQuantity'] as num? ?? 0).toInt();
+
+  String _productName(Json item) =>
+      '${item['productName'] ?? item['productCode'] ?? 'Product'}';
+
+  Future<void> scanFlow() async {
+    switch (widget.module) {
+      case 0:
+        return receiveFlow();
+      case 1:
+        return putawayFlow();
+      case 2:
+        return pickFlow();
+      default:
+        return scan();
+    }
+  }
+
+  Future<void> receiveFlow() async {
+    final code = await scanCode('Scan the product barcode');
+    if (code == null || !mounted) return;
+    final item = items.where((x) => _sameProduct(x, code)).firstOrNull;
+    if (item == null) {
+      message(context, 'Code $code is not on this receipt.');
+      return;
+    }
+    final v = await askInspection(context, item);
+    if (v == null || !mounted) return;
+    final payload = <String, dynamic>{
+      'productId': item['productId'],
+      'actualQuantity': v.actual,
+      'damagedQuantity': v.damaged,
+      'packageCode': item['packageCode'],
+      'notes': v.notes,
+    };
+    await action(
+      'PUT',
+      '/inspections',
+      body: {
+        'items': [payload],
+      },
+      demo: () {
+        final target = (task['items'] as List).firstWhere(
+          (x) => x['productId'] == item['productId'],
+        );
+        target.addAll({...payload, 'inspected': true});
+      },
+    );
+  }
+
+  Future<void> pickFlow() async {
+    final next = nextStop;
+    final shelf = await scanCode(
+      next != null && targetLocation(next) != null
+          ? 'Go to shelf ${targetLocation(next)} and scan the shelf code'
+          : 'Scan the shelf code',
+    );
+    if (shelf == null || !mounted) return;
+    final atShelf = items
+        .where((x) => _norm(x['locationCode']) == _norm(shelf) && _remaining(x) > 0)
+        .toList();
+    if (atShelf.isEmpty) {
+      message(context, 'Nothing left to pick on shelf $shelf.');
+      return;
+    }
+    final code = await scanCode('Shelf $shelf — now scan the product barcode');
+    if (code == null || !mounted) return;
+    final item = atShelf.where((x) => _sameProduct(x, code)).firstOrNull;
+    if (item == null) {
+      message(context, 'This product is not to be picked from shelf $shelf.');
+      return;
+    }
+    final qty = await askQuantity(
+      context,
+      title: 'Pick ${_productName(item)}',
+      info: ['Shelf: ${item['locationCode']}', 'Still to pick: ${_remaining(item)}'],
+      max: _remaining(item),
+    );
+    if (qty == null || !mounted) return;
+    await submitLine(item, '${item['locationCode']}', qty);
+  }
+
+  Future<void> putawayFlow() async {
+    final code = await scanCode('Scan the product barcode');
+    if (code == null || !mounted) return;
+    final candidates = items
+        .where((x) => _sameProduct(x, code) && _remaining(x) > 0)
+        .toList();
+    if (candidates.isEmpty) {
+      message(context, 'Code $code has nothing left to put away in this task.');
+      return;
+    }
+    final item = candidates.length == 1
+        ? candidates.first
+        : await chooseItemLocation(context, candidates);
+    if (item == null || !mounted) return;
+    final assigned = '${item['toLocationCode'] ?? ''}'.trim();
+    final suggested = '${item['suggestedLocationCode'] ?? ''}'.trim();
+    final shelf = await scanCode(
+      assigned.isNotEmpty
+          ? 'Scan shelf $assigned'
+          : suggested.isNotEmpty
+          ? 'Scan the shelf (suggested: $suggested)'
+          : 'Scan a storage shelf',
+    );
+    if (shelf == null || !mounted) return;
+    if (assigned.isNotEmpty && _norm(shelf) != _norm(assigned)) {
+      message(context, 'This product goes to shelf $assigned. Scan that shelf.');
+      return;
+    }
+    final qty = await askQuantity(
+      context,
+      title: 'Put away ${_productName(item)}',
+      info: [
+        'Shelf: ${assigned.isNotEmpty ? assigned : shelf.trim().toUpperCase()}',
+        'Still to put away: ${_remaining(item)}',
+      ],
+      max: _remaining(item),
+    );
+    if (qty == null || !mounted) return;
+    await submitLine(
+      item,
+      assigned.isNotEmpty ? assigned : shelf.trim().toUpperCase(),
+      qty,
+    );
+  }
+
+  /// Picking / putaway: one scanned quantity is added to the line on the server.
+  Future<void> submitLine(Json item, String location, int qty) async {
+    final payload = <String, dynamic>{
+      'productBarcode': item['barcode'],
+      'locationCode': location,
+      'quantity': qty,
+    };
+    await action(
+      'PATCH',
+      '/items/${item['itemId']}',
+      body: payload,
+      demo: () {
+        final target = (task['items'] as List).firstWhere(
+          (x) => x['itemId'] == item['itemId'],
+        );
+        if (widget.module == 1) target['toLocationCode'] = location;
+        target['remainingQuantity'] -= qty;
+        target[widget.module == 1 ? 'putawayQuantity' : 'pickedQuantity'] += qty;
+      },
+    );
+  }
+
+  /// Receiving finished: put away now (same staff) or later from the Putaway list.
+  Future<void> askPutawayNow() async {
+    final now = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Put the goods on the shelves now?'),
+        content: const Text(
+          'The inspection is finished. Good items are in the receiving area. '
+          'You can put them away now, or later from Putaway on the home screen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Later'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Put away now'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (now == true) {
+      await continueToPutaway();
+    } else {
+      message(context, 'Inspection finished. The putaway task is waiting in Putaway.');
+    }
+  }
+
   Future<void> complete() async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Complete task?'),
-        content: const Text(
-          'Check quantities before submitting. The result will move to the next step.',
+        title: Text(
+          const [
+            'Finish inspection?',
+            'Finish putaway?',
+            'Finish picking?',
+            'Submit stock count?',
+          ][widget.module],
+        ),
+        content: Text(
+          const [
+            'Good items stay in the receiving area until they are put away. '
+                'Damaged items go to the quarantine area. Shortages, overages and damage are reported automatically.',
+            'The goods on the shelves become available stock.',
+            'The transfer moves to packing.',
+            'The counted quantities are sent to the manager for review.',
+          ][widget.module],
         ),
         actions: [
           TextButton(
@@ -1066,7 +1283,7 @@ class _TaskState extends State<TaskPage> {
       ][widget.module],
     );
     if (widget.module == 0 && mounted && error == null && task['status'] != before) {
-      await continueToPutaway();
+      await askPutawayNow();
     }
   }
 
@@ -1128,29 +1345,23 @@ class _TaskState extends State<TaskPage> {
             ),
           ),
         if (active)
-          OutlinedButton.icon(
-            onPressed: busy || error != null ? null : scan,
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(56),
+              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            onPressed: busy || error != null ? null : scanFlow,
             icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Scan product code'),
+            label: Text(
+              const [
+                'Scan product',
+                'Scan product',
+                'Scan shelf',
+                'Scan product code',
+              ][widget.module],
+            ),
           ),
         const SizedBox(height: 18),
-        if (active && widget.module != 3)
-          TextButton.icon(
-            onPressed: busy
-                ? null
-                : () => Navigator.push(
-                    context,
-                    MaterialPageRoute<Json>(
-                      builder: (_) => ReportForm(
-                        api: widget.api,
-                        demo: widget.demo,
-                        shortage: false,
-                      ),
-                    ),
-                  ),
-            icon: const Icon(Icons.broken_image_outlined),
-            label: const Text('Damaged goods report'),
-          ),
         if (active && nextStop != null) _NextStopCard(
           title: widget.module == 1 ? 'Put away next' : 'Pick next',
           location: targetLocation(nextStop!) ??
@@ -1162,7 +1373,7 @@ class _TaskState extends State<TaskPage> {
           product:
               '${nextStop!['productName'] ?? nextStop!['productCode'] ?? ''}',
           quantity: '${nextStop!['remainingQuantity'] ?? ''}',
-          onConfirm: busy || error != null ? null : () => editItem(nextStop!),
+          onConfirm: null, // info only: the Scan button does the work
         ),
         Text(
           '${items.length} products',
@@ -1179,12 +1390,20 @@ class _TaskState extends State<TaskPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${item['productName'] ?? item['productCode'] ?? 'Products'}',
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${item['productName'] ?? item['productCode'] ?? 'Products'}',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (itemComplete(widget.module, task, item))
+                        const Icon(Icons.check_circle, color: Colors.green),
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -1192,29 +1411,6 @@ class _TaskState extends State<TaskPage> {
                     style: const TextStyle(color: Colors.black54),
                   ),
                   const Divider(height: 28),
-                  if (widget.module == 0 &&
-                      active &&
-                      item['actualQuantity'] != null &&
-                      (item['actualQuantity'] as num) <
-                          (item['expectedQuantity'] as num))
-                    TextButton.icon(
-                      onPressed: busy
-                          ? null
-                          : () => Navigator.push(
-                              context,
-                              MaterialPageRoute<Json>(
-                                builder: (_) => ReportForm(
-                                  api: widget.api,
-                                  demo: widget.demo,
-                                  shortage: true,
-                                  receipt: task,
-                                  item: item,
-                                ),
-                              ),
-                            ),
-                      icon: const Icon(Icons.report_outlined),
-                      label: const Text('Report shortage and attach photo'),
-                    ),
                   if (widget.module == 0)
                     Text(
                       'Expected: ${item['expectedQuantity'] ?? '—'}   •   Received: ${item['actualQuantity'] ?? '—'}\nDamaged: ${item['damagedQuantity'] ?? 0}   •   ${item['inspected'] == true ? 'Inspected' : 'Not inspected'}',
@@ -1256,7 +1452,7 @@ class _TaskState extends State<TaskPage> {
                       'Location: ${item['locationCode'] ?? '—'}\nFirst count: ${item['firstCountQuantity'] ?? 'Not recorded'}${item['secondCountQuantity'] != null ? '\nRecount: ${item['secondCountQuantity']}' : ''}${item['finalQuantity'] != null ? '\nResult: ${item['finalQuantity']}' : ''}',
                       style: const TextStyle(height: 1.8),
                     ),
-                  if (active)
+                  if (active && widget.module == 3)
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton.icon(
@@ -1264,7 +1460,7 @@ class _TaskState extends State<TaskPage> {
                             ? null
                             : () => editItem(item),
                         icon: const Icon(Icons.edit_outlined, size: 18),
-                        label: const Text('Save'),
+                        label: const Text('Record count'),
                       ),
                     ),
                 ],
@@ -1284,7 +1480,7 @@ class _TaskState extends State<TaskPage> {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              'Record all products to finish. If stock is missing or the location is wrong, ask a manager to correct the task.',
+              'Scan every product to finish. If stock is missing or the shelf is wrong, ask a manager.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.black54),
             ),
@@ -1309,8 +1505,220 @@ class _TaskState extends State<TaskPage> {
   );
 }
 
+/// Quantity after a successful scan. Starts at 1, can go down to 0, never above [max].
+/// 0 cannot be confirmed (nothing to record) — the user cancels instead.
+Future<int?> askQuantity(
+  BuildContext context, {
+  required String title,
+  required List<String> info,
+  required int max,
+}) {
+  final ctrl = TextEditingController(text: max < 1 ? '0' : '1');
+  return showDialog<int>(
+    context: context,
+    builder: (c) => StatefulBuilder(
+      builder: (c, setLocal) {
+        final value = int.tryParse(ctrl.text.trim()) ?? 0;
+        final valid = value >= 1 && value <= max;
+        return AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final line in info) Text(line),
+              const SizedBox(height: 16),
+              _QtyStepper(
+                controller: ctrl,
+                min: 0,
+                max: max,
+                onChanged: () => setLocal(() {}),
+              ),
+              if (!valid)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    value > max ? 'Maximum is $max.' : 'Enter at least 1.',
+                    style: TextStyle(color: Theme.of(c).colorScheme.error),
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: valid ? () => Navigator.pop(c, value) : null,
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+class InspectionValue {
+  final int actual;
+  final int damaged;
+  final String notes;
+  const InspectionValue(this.actual, this.damaged, this.notes);
+}
+
+/// Receiving: shown only after the product barcode matched a receipt line.
+/// Saving again overwrites the previous values for this product.
+Future<InspectionValue?> askInspection(BuildContext context, Json item) {
+  final expected = (item['expectedQuantity'] as num? ?? 0).toInt();
+  final inspected = item['inspected'] == true;
+  final actualCtrl = TextEditingController(
+    text: inspected ? '${item['actualQuantity'] ?? 1}' : '1',
+  );
+  final damagedCtrl = TextEditingController(
+    text: inspected ? '${item['damagedQuantity'] ?? 0}' : '0',
+  );
+  final notesCtrl = TextEditingController(
+    text: inspected ? '${item['notes'] ?? ''}' : '',
+  );
+  return showDialog<InspectionValue>(
+    context: context,
+    builder: (c) => StatefulBuilder(
+      builder: (c, setLocal) {
+        final actual = int.tryParse(actualCtrl.text.trim()) ?? -1;
+        final damaged = int.tryParse(damagedCtrl.text.trim()) ?? -1;
+        final needsNotes = actual != expected || damaged > 0;
+        String? problem;
+        if (actual < 0 || damaged < 0) {
+          problem = 'Enter a number.';
+        } else if (damaged > actual) {
+          problem = 'Damaged cannot be more than received.';
+        } else if (needsNotes && notesCtrl.text.trim().isEmpty) {
+          problem = 'Add a note: quantity differs or goods are damaged.';
+        }
+        return AlertDialog(
+          title: Text('${item['productName'] ?? item['productCode'] ?? 'Product'}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Expected: $expected',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 14),
+                const Text('Received'),
+                _QtyStepper(
+                  controller: actualCtrl,
+                  min: 0,
+                  onChanged: () => setLocal(() {}),
+                ),
+                const SizedBox(height: 12),
+                const Text('Damaged (included in received)'),
+                _QtyStepper(
+                  controller: damagedCtrl,
+                  min: 0,
+                  onChanged: () => setLocal(() {}),
+                ),
+                if (needsNotes) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesCtrl,
+                    onChanged: (_) => setLocal(() {}),
+                    decoration: const InputDecoration(
+                      labelText: 'Note (required)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+                if (problem != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      problem,
+                      style: TextStyle(color: Theme.of(c).colorScheme.error),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: problem == null
+                  ? () => Navigator.pop(
+                      c,
+                      InspectionValue(
+                        actual,
+                        damaged,
+                        needsNotes ? notesCtrl.text.trim() : '',
+                      ),
+                    )
+                  : null,
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+/// [-]  [ 12 ]  [+]
+class _QtyStepper extends StatelessWidget {
+  final TextEditingController controller;
+  final int min;
+  final int? max;
+  final VoidCallback onChanged;
+  const _QtyStepper({
+    required this.controller,
+    required this.min,
+    this.max,
+    required this.onChanged,
+  });
+
+  void _set(int value) {
+    var v = value < min ? min : value;
+    if (max != null && v > max!) v = max!;
+    controller.text = '$v';
+    onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = int.tryParse(controller.text.trim()) ?? 0;
+    return Row(
+      children: [
+        IconButton.filledTonal(
+          onPressed: value > min ? () => _set(value - 1) : null,
+          icon: const Icon(Icons.remove),
+        ),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+            onChanged: (_) => onChanged(),
+          ),
+        ),
+        IconButton.filledTonal(
+          onPressed: max == null || value < max! ? () => _set(value + 1) : null,
+          icon: const Icon(Icons.add),
+        ),
+      ],
+    );
+  }
+}
+
 class ScanPage extends StatefulWidget {
-  const ScanPage({super.key});
+  /// What to scan, e.g. "Scan the shelf code" (shown under the camera).
+  final String? prompt;
+  const ScanPage({super.key, this.prompt});
   @override
   State<ScanPage> createState() => _ScanState();
 }
@@ -1372,9 +1780,13 @@ class _ScanState extends State<ScanPage> {
             ),
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.all(20),
-          child: Text('Place the barcode or QR code in the camera frame.'),
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            widget.prompt ?? 'Place the barcode or QR code in the camera frame.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.all(20),
@@ -1914,12 +2326,14 @@ class _NextStopCard extends StatelessWidget {
             '$product  ×  $quantity',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: onConfirm,
-            icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Arrived — scan & confirm'),
-          ),
+          if (onConfirm != null) ...[
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onConfirm,
+              icon: const Icon(Icons.qr_code_scanner),
+              label: const Text('Arrived — scan & confirm'),
+            ),
+          ],
         ],
       ),
     ),
